@@ -31,7 +31,7 @@ const ProfileSetup = () => {
             className="absolute rounded-full"
             style={{
               inset: -3,
-              border: '0.5px solid rgba(224,221,213,0.08)',
+              border: '1px solid rgba(169,140,255,0.2)',
               borderRadius: '50%',
             }}
           />
@@ -40,14 +40,14 @@ const ProfileSetup = () => {
             style={{
               width: 64,
               height: 64,
-              background: '#0e0e14',
-              border: '0.5px solid #1a1a20',
+              background: '#1a1a2e',
+              border: '1px solid #3a3a5a',
               borderRadius: '50%',
             }}
           >
             <svg width="28" height="36" viewBox="0 0 28 36" fill="none">
-              <circle cx="14" cy="10" r="10" fill="#1a1a28" />
-              <path d="M6 22 L22 22 L28 38 L0 38 Z" fill="#1a1a28" />
+              <circle cx="14" cy="10" r="10" fill="#4a4a7a" />
+              <path d="M6 22 L22 22 L28 38 L0 38 Z" fill="#4a4a7a" />
             </svg>
           </div>
         </div>
@@ -178,7 +178,7 @@ const ProfileSetup = () => {
           cursor: 'pointer',
         }}
       >
-        ENTER THE DIMENSION
+        ENTER
       </button>
     </div>
   );

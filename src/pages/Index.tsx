@@ -118,7 +118,7 @@ const Index = () => {
 
         {/* Wordmark */}
         <h1
-          className="font-cinzel font-normal uppercase text-[42px] sm:text-[52px]"
+          className="font-cinzel font-normal uppercase text-[43px] sm:text-[53px]"
           style={{
             letterSpacing: '0.25em',
             color: '#e0ddd5',
@@ -133,7 +133,7 @@ const Index = () => {
           onClick={() => navigate('/entity-questions')}
           className="font-fell italic"
           style={{
-            fontSize: 12,
+            fontSize: 13,
             letterSpacing: '0.4em',
             color: '#a98cff',
             marginTop: 44,

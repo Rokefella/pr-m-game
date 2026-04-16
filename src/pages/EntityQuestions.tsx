@@ -55,7 +55,7 @@ const EntityQuestions = () => {
         <p
           className="font-fell italic"
           style={{
-            fontSize: 15,
+            fontSize: 16,
             color: '#e0ddd5',
             textAlign: 'center',
             lineHeight: 1.65,
@@ -79,7 +79,7 @@ const EntityQuestions = () => {
               onClick={() => navigate('/profile-setup')}
               className="font-fell italic"
               style={{
-                fontSize: 11,
+                fontSize: 12,
                 color: '#c8c5bd',
                 background: 'rgba(169,140,255,0.06)',
                 border: '1px solid rgba(169,140,255,0.4)',
@@ -110,7 +110,7 @@ const EntityQuestions = () => {
         <p
           className="font-mono"
           style={{
-            fontSize: 7,
+            fontSize: 8,
             letterSpacing: '0.14em',
             color: '#9a9890',
             textAlign: 'center',

@@ -1,25 +1,39 @@
 
 
-## PRÆM — Dark Atmospheric Launch Screen
+## Add Entity Questions and Profile Setup Screens
 
-### Design System Setup
-- Add CSS variables for all colors (background #04040a, primary #e0ddd5, secondary #9a9890, muted #5a5855, gold #c8943a, purple #a98cff, teal #1a9e7a)
-- Import Google Fonts: Cinzel (400, 500), IM Fell English (400, italic), DM Mono (300, 400, 500)
-- Add `style="background-color:#04040a"` to `<body>` in index.html to prevent white flash
-- Update Tailwind config with custom colors and font families
+### Overview
+Add two new screens with navigation flow: Launch → Entity Questions → Profile Setup.
 
-### Launch Screen (Index page)
-Full viewport, centered content on #04040a background:
+### Files to Create/Modify
 
-1. **Sigil** — 5×5 grid of 10px circles with 4px gap, specific pattern of FILLED (pulsing glow, staggered delays), DIM (static low opacity), and EMPTY (faint border) circles
+**1. `src/pages/EntityQuestions.tsx`** — Screen 2
+- Full viewport, centered layout on #04040a
+- Custom SVG eye icon (52×30px) with purple tones and pulse animation
+- Question: "Why have you come to this place?" in IM Fell English italic
+- Three option buttons with hover states, sharp corners, purple-tinted backgrounds
+- Warning text in DM Mono 7px
+- On option click → navigate to `/profile-setup`
 
-2. **Wordmark** — "PRÆM" in Cinzel 400, 42px mobile / 52px desktop, letter-spacing 0.25em, 28px below sigil
+**2. `src/pages/ProfileSetup.tsx`** — Screen 3
+- Full viewport with padding, flex column layout
+- "Who are you?" title in Cinzel
+- Avatar placeholder (64px circle with silhouette SVG + outer ring)
+- Username input field with DM Mono styling, placeholder, and warning text
+- Aura colour picker: 5 circles (20px), last selected by default with purple border
+- Title slot: locked display with hint text
+- CTA button "ENTER THE DIMENSION" pinned to bottom via `margin-top: auto`
 
-3. **Enter Button** — "ENTER" in IM Fell English italic, 12px, letter-spacing 0.4em, muted color, hairline border, sharp corners, breathing animation
+**3. `src/pages/Index.tsx`** — Update ENTER button
+- Import `useNavigate` from react-router-dom
+- Add `onClick={() => navigate('/entity-questions')}` to ENTER button
 
-4. **Background Glow** — Centered radial gradient ellipse with warm undertone
+**4. `src/App.tsx`** — Add routes
+- Import `EntityQuestions` and `ProfileSetup`
+- Add `/entity-questions` and `/profile-setup` routes
 
-5. **Stars** — 10 tiny dots (1–1.5px) scattered outside center 40%, each with unique opacity and twinkle animation timing
+**5. `src/index.css`** — Add eye-pulse keyframe
+- `eye-pulse`: opacity 0.6 ↔ 1.0, 4s ease-in-out infinite
 
-Nothing else — pure atmosphere.
+All text elements will have explicit font-family classes (`font-fell`, `font-cinzel`, `font-mono`) — no reliance on inheritance.
 

@@ -115,18 +115,14 @@ const Index = () => {
 
         {/* Wordmark */}
         <h1
-          className="font-cinzel font-normal uppercase"
+          className="font-cinzel font-normal uppercase text-[42px] sm:text-[52px]"
           style={{
-            fontSize: 42,
             letterSpacing: '0.25em',
             color: '#e0ddd5',
             marginTop: 28,
           }}
         >
-          <span className="hidden sm:inline" style={{ fontSize: 52 }}>
-            PRÆM
-          </span>
-          <span className="sm:hidden">PRÆM</span>
+          PRÆM
         </h1>
 
         {/* Enter Button */}

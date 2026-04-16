@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const AURA_COLORS = ['#1a1a20', '#0e1428', '#0e1e14', '#1e0e0e', '#140e1e'];
+const AURA_COLORS = ['#2a2a32', '#1a2a4a', '#1a3a2a', '#3a1a1a', '#2a1a4a'];
 
 const ProfileSetup = () => {
   const [selectedAura, setSelectedAura] = useState(4);
@@ -17,7 +17,7 @@ const ProfileSetup = () => {
           fontSize: 9,
           fontWeight: 400,
           letterSpacing: '0.28em',
-          color: '#9a9890',
+          color: '#e0ddd5',
           marginBottom: 28,
         }}
       >
@@ -71,8 +71,8 @@ const ProfileSetup = () => {
           placeholder="choose a name for this dimension"
           className="font-mono w-full placeholder:text-[#5a5855]"
           style={{
-            background: '#0a0a0e',
-            border: '0.5px solid #2a2a2e',
+            background: '#0e0e16',
+            border: '0.5px solid #3a3a44',
             padding: '9px 11px',
             fontSize: 10,
             color: '#e0ddd5',
@@ -85,7 +85,7 @@ const ProfileSetup = () => {
           className="font-mono italic"
           style={{
             fontSize: 7,
-            color: 'rgba(169,140,255,0.6)',
+            color: 'rgba(169,140,255,0.8)',
             marginTop: 3,
           }}
         >
@@ -117,7 +117,7 @@ const ProfileSetup = () => {
                 background: color,
                 border:
                   selectedAura === i
-                    ? '1px solid rgba(169,140,255,0.4)'
+                    ? '1.5px solid #a98cff'
                     : '0.5px solid transparent',
                 cursor: 'pointer',
                 padding: 0,
@@ -131,8 +131,8 @@ const ProfileSetup = () => {
       <div
         style={{
           marginTop: 12,
-          background: '#080810',
-          border: '0.5px solid #1a1a20',
+          background: '#0a0a14',
+          border: '0.5px solid #2a2a3a',
           padding: '10px 12px',
         }}
       >
@@ -141,7 +141,7 @@ const ProfileSetup = () => {
           style={{
             fontSize: 7,
             letterSpacing: '0.18em',
-            color: '#5a5855',
+            color: '#5a5870',
             marginBottom: 2,
           }}
         >
@@ -149,13 +149,13 @@ const ProfileSetup = () => {
         </p>
         <p
           className="font-cinzel"
-          style={{ fontSize: 11, color: '#5a5855' }}
+          style={{ fontSize: 11, color: '#5a5870' }}
         >
           —
         </p>
         <p
           className="font-mono italic"
-          style={{ fontSize: 7, color: '#3a3835', marginTop: 3 }}
+          style={{ fontSize: 7, color: '#4a4860', marginTop: 3 }}
         >
           titles are earned · not chosen · first at level 5
         </p>

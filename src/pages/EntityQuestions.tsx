@@ -71,8 +71,8 @@ const EntityQuestions = () => {
               style={{
                 fontSize: 11,
                 color: 'rgba(224,221,213,0.4)',
-                background: 'rgba(169,140,255,0.04)',
-                border: '0.5px solid rgba(169,140,255,0.18)',
+                background: 'rgba(169,140,255,0.03)',
+                border: '0.5px solid rgba(169,140,255,0.15)',
                 padding: '11px 14px',
                 borderRadius: 0,
                 textAlign: 'center',

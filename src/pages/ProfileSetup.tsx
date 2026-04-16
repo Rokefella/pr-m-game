@@ -17,7 +17,7 @@ const ProfileSetup = () => {
           fontSize: 9,
           fontWeight: 400,
           letterSpacing: '0.28em',
-          color: '#3a3835',
+          color: '#9a9890',
           marginBottom: 28,
         }}
       >

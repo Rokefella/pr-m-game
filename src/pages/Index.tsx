@@ -21,7 +21,10 @@ const STARS = [
   { x: '85%', y: '25%', size: 1, opacity: 0.25, duration: 6.5, delay: 1.8 },
 ];
 
+import { useNavigate } from 'react-router-dom';
+
 const Index = () => {
+  const navigate = useNavigate();
   let filledIndex = 0;
 
   return (
@@ -127,6 +130,7 @@ const Index = () => {
 
         {/* Enter Button */}
         <button
+          onClick={() => navigate('/entity-questions')}
           className="font-fell italic"
           style={{
             fontSize: 12,

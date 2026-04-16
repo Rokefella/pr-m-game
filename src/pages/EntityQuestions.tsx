@@ -71,8 +71,8 @@ const EntityQuestions = () => {
               style={{
                 fontSize: 11,
                 color: 'rgba(224,221,213,0.4)',
-                background: 'rgba(169,140,255,0.04)',
-                border: '0.5px solid rgba(169,140,255,0.18)',
+                background: 'rgba(169,140,255,0.03)',
+                border: '0.5px solid rgba(169,140,255,0.15)',
                 padding: '11px 14px',
                 borderRadius: 0,
                 textAlign: 'center',
@@ -81,11 +81,11 @@ const EntityQuestions = () => {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = 'rgba(224,221,213,0.7)';
-                e.currentTarget.style.borderColor = 'rgba(169,140,255,0.4)';
+                e.currentTarget.style.borderColor = 'rgba(169,140,255,0.35)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.color = 'rgba(224,221,213,0.4)';
-                e.currentTarget.style.borderColor = 'rgba(169,140,255,0.18)';
+                e.currentTarget.style.borderColor = 'rgba(169,140,255,0.15)';
               }}
             >
               {text}
@@ -99,7 +99,7 @@ const EntityQuestions = () => {
           style={{
             fontSize: 7,
             letterSpacing: '0.14em',
-            color: '#2a2825',
+            color: '#3a3835',
             textAlign: 'center',
             marginTop: 20,
           }}

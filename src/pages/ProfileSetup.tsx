@@ -27,7 +27,6 @@ const ProfileSetup = () => {
       {/* Avatar */}
       <div className="flex justify-center" style={{ marginBottom: 24 }}>
         <div className="relative" style={{ width: 64, height: 64 }}>
-          {/* Outer ring */}
           <div
             className="absolute rounded-full"
             style={{
@@ -36,7 +35,6 @@ const ProfileSetup = () => {
               borderRadius: '50%',
             }}
           />
-          {/* Avatar circle */}
           <div
             className="flex items-center justify-center rounded-full"
             style={{
@@ -48,9 +46,7 @@ const ProfileSetup = () => {
             }}
           >
             <svg width="28" height="36" viewBox="0 0 28 36" fill="none">
-              {/* Head */}
               <circle cx="14" cy="10" r="10" fill="#1a1a28" />
-              {/* Torso */}
               <path d="M6 22 L22 22 L28 38 L0 38 Z" fill="#1a1a28" />
             </svg>
           </div>
@@ -64,7 +60,7 @@ const ProfileSetup = () => {
           style={{
             fontSize: 7,
             letterSpacing: '0.2em',
-            color: '#4a4845',
+            color: '#9a9890',
             marginBottom: 5,
           }}
         >
@@ -73,10 +69,10 @@ const ProfileSetup = () => {
         <input
           type="text"
           placeholder="choose a name for this dimension"
-          className="font-mono w-full"
+          className="font-mono w-full placeholder:text-[#5a5855]"
           style={{
             background: '#0a0a0e',
-            border: '0.5px solid #1a1a20',
+            border: '0.5px solid #2a2a2e',
             padding: '9px 11px',
             fontSize: 10,
             color: '#e0ddd5',
@@ -89,7 +85,7 @@ const ProfileSetup = () => {
           className="font-mono italic"
           style={{
             fontSize: 7,
-            color: 'rgba(169,140,255,0.5)',
+            color: 'rgba(169,140,255,0.6)',
             marginTop: 3,
           }}
         >
@@ -103,7 +99,7 @@ const ProfileSetup = () => {
           className="font-mono block"
           style={{
             fontSize: 7,
-            color: '#4a4845',
+            color: '#9a9890',
             marginBottom: 6,
           }}
         >
@@ -136,7 +132,7 @@ const ProfileSetup = () => {
         style={{
           marginTop: 12,
           background: '#080810',
-          border: '0.5px solid #14141c',
+          border: '0.5px solid #1a1a20',
           padding: '10px 12px',
         }}
       >
@@ -145,7 +141,7 @@ const ProfileSetup = () => {
           style={{
             fontSize: 7,
             letterSpacing: '0.18em',
-            color: '#2a2830',
+            color: '#5a5855',
             marginBottom: 2,
           }}
         >
@@ -153,13 +149,13 @@ const ProfileSetup = () => {
         </p>
         <p
           className="font-cinzel"
-          style={{ fontSize: 11, color: '#2a2830' }}
+          style={{ fontSize: 11, color: '#5a5855' }}
         >
           —
         </p>
         <p
           className="font-mono italic"
-          style={{ fontSize: 7, color: '#22201e', marginTop: 3 }}
+          style={{ fontSize: 7, color: '#3a3835', marginTop: 3 }}
         >
           titles are earned · not chosen · first at level 5
         </p>

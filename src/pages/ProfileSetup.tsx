@@ -8,7 +8,7 @@ const ProfileSetup = () => {
   return (
     <div
       className="flex min-h-screen flex-col"
-      style={{ backgroundColor: '#04040a', padding: '52px 22px 28px' }}
+      style={{ backgroundColor: '#04040a', padding: '52px 22px 28px', maxWidth: 390, margin: '0 auto' }}
     >
       {/* Title */}
       <h1

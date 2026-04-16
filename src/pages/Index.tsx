@@ -131,13 +131,14 @@ const Index = () => {
           style={{
             fontSize: 12,
             letterSpacing: '0.4em',
-            color: '#5a5855',
+            color: '#a98cff',
             marginTop: 44,
             padding: '10px 26px',
-            border: '0.5px solid rgba(90,88,85,0.18)',
+            border: '0.5px solid rgba(169,140,255,0.35)',
             background: 'transparent',
             borderRadius: 0,
             cursor: 'pointer',
+            textShadow: '0 0 12px rgba(169,140,255,0.6)',
             animation: 'breathe 3s ease-in-out infinite',
           }}
         >

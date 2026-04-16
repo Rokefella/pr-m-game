@@ -81,3 +81,8 @@
   0%, 100% { opacity: var(--twinkle-min); }
   50% { opacity: var(--twinkle-max); }
 }
+
+@keyframes eye-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1.0; }
+}

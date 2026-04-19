@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const AURA_COLORS = ['#2a2a32', '#1a2a4a', '#1a3a2a', '#3a1a1a', '#2a1a4a'];
 
 const ProfileSetup = () => {
   const [selectedAura, setSelectedAura] = useState(4);
+  const navigate = useNavigate();
 
   return (
     <div
@@ -169,6 +171,7 @@ const ProfileSetup = () => {
 
       {/* CTA */}
       <button
+        onClick={() => navigate('/village')}
         className="font-cinzel w-full"
         style={{
           marginTop: 'auto',

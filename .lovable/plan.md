@@ -1,38 +1,55 @@
 
 
-## Two Changes Across All Screens
+## New Village Screen + Door Transition
 
-### Change 1 — Global font size +1px
+### 1. Add image assets
+- Copy `user-uploads://Village.png` → `public/village.png`
+- Copy `user-uploads://door.png` → `public/door.png`
 
-**Index.tsx:**
-- Line 121: `text-[42px] sm:text-[52px]` → `text-[43px] sm:text-[53px]`
-- Line 136: `fontSize: 12` → `fontSize: 13`
+### 2. New file: `src/pages/Village.tsx`
 
-**EntityQuestions.tsx:**
-- Line 58: `fontSize: 15` → `fontSize: 16`
-- Line 82: `fontSize: 11` → `fontSize: 12`
-- Line 113: `fontSize: 7` → `fontSize: 8`
+Mobile column (max-width 390px, centered, min-h-screen, relative).
 
-**ProfileSetup.tsx:**
-- Line 17: `fontSize: 9` → `fontSize: 10`
-- Line 61: `fontSize: 7` → `fontSize: 8`
-- Line 76: `fontSize: 10` → `fontSize: 11`
-- Line 87: `fontSize: 7` → `fontSize: 8`
-- Line 101: `fontSize: 7` → `fontSize: 8`
-- Line 142: `fontSize: 7` → `fontSize: 8`
-- Line 152: `fontSize: 11` → `fontSize: 12`
-- Line 158: `fontSize: 7` → `fontSize: 8`
-- Line 173: `fontSize: 9` → `fontSize: 10`
+**Layers (bottom → top):**
+- `<img src="/village.png">` absolute inset-0, `object-fit: cover`, with state-driven `transform: scale(1.0 → 1.08)` on tap, `transition: transform 800ms ease-in-out`
+- Dark overlay: absolute inset-0, `background: rgba(0,0,0,0.15)`
+- Prime number labels (absolute positioned, `font-mono`, 14px):
+  - `23` — left ~15%, top ~45%, color `#4a9eff`
+  - `47` — right ~15%, top ~50%, color `#1d9e75`
+  - `89` — center ~50%, top ~30% (above door), color `#c8963a`
+- Entity quote — top center (~top 6%), `font-fell italic`, 13px, color `rgba(160,140,200,0.7)`: *"Another one enters?"*
+- Player silhouette SVG — absolute, centered horizontally, ~bottom 18%, ~40px wide, fill `#5b4fd4` (reuse silhouette shape from ProfileSetup but smaller)
+- HUD bar — absolute bottom, full width of column, `background: rgba(4,4,10,0.92)`, `border-top: 0.5px solid rgba(169,140,255,0.3)`, padding `10px 14px`, three flex columns (`font-mono`, 9px, `letter-spacing: 0.18em`):
+  - Left: `MAZE STEPS  0` color `#e0ddd5`
+  - Center: `CREDITS  0` color `#c8963a`
+  - Right: `LEVEL  1` color `#5b4fd4`
 
-### Change 2 — Title slot fixes + new line (ProfileSetup.tsx)
+**Interaction:**
+- `useState` for `tapCount` (number) and `zoomed` (boolean)
+- Full-screen overlay button (absolute inset-0, transparent, above background but below labels/HUD via z-index) detects taps
+- On tap: increment `tapCount`, toggle scale to 1.08 then back to 1.0 after 800ms
+- When `tapCount >= 3`: navigate to `/door`
 
-Lines 131-162:
-1. Container background: `#0a0a14` → `#0e0e1e`
-2. Container border: `0.5px solid #2a2a3a` → `1px solid #3a3a5a`
-3. "Title" label color: `#5a5870` → `#9a9890`
-4. "—" value color: `#5a5870` → `#9a9890`
-5. Hint color: `#4a4860` → `#5a5855`
-6. Add new `<p>` after existing hint: `"first 500 players receive a founding title"`, className `font-mono italic`, style `fontSize: 8, color: '#5a5855', marginTop: 2`
+### 3. New file: `src/pages/Door.tsx`
 
-No changes to fonts, colors (beyond specified), layout, animations, or navigation.
+- Full-screen `<img src="/door.png">` cover fit
+- Dark overlay `rgba(0,0,0,0.25)` for text legibility
+- Centered column:
+  - Text *"See you on the other side?"* — `font-fell italic`, 18px, color `#e0ddd5`, text-shadow for legibility
+  - Two buttons side-by-side, `marginTop: 28`:
+    - **YES** — `font-cinzel`, 11px, `letter-spacing: 0.28em`, bg `#c8963a`, color `#04040a`, padding `10px 22px`, no radius
+    - **STAY** — `font-cinzel`, 11px, `letter-spacing: 0.28em`, bg transparent, border `0.5px solid #5a5855`, color `#9a9890`, padding `10px 22px`
+  - Both buttons currently no-op (no destination specified)
+
+### 4. Routes — `src/App.tsx`
+Add (above catch-all):
+```
+<Route path="/village" element={<Village />} />
+<Route path="/door" element={<Door />} />
+```
+
+### 5. Wire entry from ProfileSetup
+Update ENTER button on `ProfileSetup.tsx` to `navigate('/village')` (uses `useNavigate`).
+
+No changes to existing Index, EntityQuestions screens. Fonts reuse Cinzel / IM Fell English / DM Mono.
 

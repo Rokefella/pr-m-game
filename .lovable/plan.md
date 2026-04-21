@@ -1,112 +1,75 @@
 
 
-## Village Redesign — Scrollable Eye-Shaped City Map
+## Village.tsx — 8 Fixes + Global Font
 
-Replace `src/pages/Village.tsx` entirely. No other files change. Existing route `/village`, Door transition, and HUD style preserved.
-
-### Architecture
-
-```text
-[viewport div: 100vw × 100vh, overflow hidden, bg #04040a]
-  └─ [map div: 1200×800, position relative, transform: translate(camX, camY)]
-       ├─ grid overlay (1200×800)
-       ├─ pupil ellipse outline + ∅ label
-       ├─ Type C buildings (70, hardcoded)
-       ├─ Type B buildings (30, hardcoded)
-       ├─ Type A buildings (3: 23, 47, 89)
-       ├─ trail dots (up to 50)
-       └─ player dot
-  └─ [fixed UI overlay layer, screen-anchored]
-       ├─ entity quote (top)
-       ├─ D-pad (above HUD, centered)
-       └─ HUD bar (bottom)
+### FIX 1 — Global font +1px (`src/index.css`)
+Add to the `body` rule inside `@layer base`:
+```css
+body {
+  @apply bg-background text-foreground;
+  font-family: 'IM Fell English', serif;
+  font-size: 17px;
+}
 ```
 
-The map translates so player stays centered: `translate(viewportW/2 - playerX, viewportH/2 - playerY)`. Camera is clamped so we don't reveal black void beyond map edges (clamp translate so map edges meet viewport edges when player nears the edge).
+### FIX 2 — Building visibility (`src/pages/Village.tsx`)
+- Type B: `border: 1px solid rgba(100,80,160,0.45)`, `background: rgba(100,80,160,0.12)`
+- Type C: `border: 0.5px solid rgba(100,80,160,0.25)`, `background: rgba(100,80,160,0.07)`
+- Type A unchanged.
 
-### Constants & coordinates
+### FIX 4 — Larger map (do before regenerating buildings)
+- `MAP_W=1600`, `MAP_H=1000`, `CX=800`, `CY=500`
+- `OUTER_RX=680, OUTER_RY=380` · `MIDDLE_RX=440, MIDDLE_RY=240` · `INNER_RX=200, INNER_RY=100`
+- Type A repositioned on new ellipses:
+  - `89` (middle-upper): `x=755, y=240, w=90, h=70`
+  - `23` (inner-left): `x=520, y=475, w=70, h=50`
+  - `47` (middle-right-lower): `x=1150, y=560, w=70, h=50`
+- Camera clamp uses new `MAP_W/MAP_H`.
 
-- Map: `MAP_W=1200`, `MAP_H=800`, center `(600, 400)`.
-- Rings: outer `rx=520, ry=280`; middle `rx=340, ry=180`; inner `rx=160, ry=80`.
-- Step: `STEP=12px` per d-pad press.
+### FIX 3 — Denser buildings (50 B + 120 C)
+Replace both arrays with deterministic angle-sweep generators evaluated **once at module load** (`const TYPE_B = (() => { ... })()`). All values literal-equivalent (no per-render randomness; use a seeded LCG so jitter is stable):
 
-### Hardcoded building positions
+- **Type B (50)**: 36 around middle ring (every 10°) + 14 around inner ring (every ~25°).
+  For each angle θ: base point on ellipse, jitter ±6px, size 35–55 × 25–45. Skip any candidate whose rect overlaps a Type A rect (with 4px padding) or a previously placed B rect (with 18px street gap) — re-roll jitter up to 4 times, otherwise drop and continue. Target gap between adjacent B rects: 15–25px.
+- **Type C (120)**: 72 around outer ring (every 5°) + 30 between outer/middle (two intermediate ellipses at 0.85× and 0.7× outer) + 18 between middle/inner. Sizes 20–40 × 15–30. Same overlap rules with 12px street gap, padded against A and B.
+- Inner pupil (within `INNER_RX × INNER_RY`) stays empty.
+- Generator uses a fixed seed → identical map every session.
 
-A single static module-level array of `{ id, type, x, y, w, h }` — generated once at file authoring time using deterministic angle sweeps so the map is identical every session.
+### FIX 5 — Ring ellipse outlines
+Three absolutely positioned divs inside the map div, behind buildings (`zIndex: 1`), `border-radius: 50%`, no fill:
+- Outer: `left=CX-OUTER_RX, top=CY-OUTER_RY, w=2*OUTER_RX, h=2*OUTER_RY`, `border: 0.5px solid rgba(100,80,160,0.06)`
+- Middle: same pattern with middle radii, opacity `0.08`
+- Inner: replaces the existing pupil outline, opacity `0.10`
 
-- **Type A (3, interactive)**:
-  - `23`: inner-ring left → `x=380, y=375, w=70, h=50` (color `#4a9eff`)
-  - `47`: middle-ring right-lower → `x=860, y=440, w=70, h=50` (color `#1d9e75`)
-  - `89`: middle-ring upper → `x=555, y=170, w=90, h=70` (color `#c8963a`, pulsing border)
-- **Type B (30)**: angles roughly every 12° around middle ring + a few on inner ring; each placed at ellipse point with small jitter (±8px) and varied size (35–65 × 25–55). Hand-tuned to leave radial street gaps.
-- **Type C (70)**: angles every ~5° around outer ring + scattered between outer/middle. Sizes 20–45 × 15–35. Several gaps preserved as streets.
+### FIX 6 — Arrow-key movement
+`useEffect` adds a `window` `keydown` listener. Map `ArrowUp/Down/Left/Right` to `move(0,-STEP) / (0,STEP) / (-STEP,0) / (STEP,0)`, `e.preventDefault()` on match. Cleanup on unmount. Reuses the same `move()` function as the D-pad → identical collision, trail, camera, and feedback behavior.
 
-All numbers are literal constants in the file (no `Math.random` at render). I'll author the arrays so:
-- No Type B/C overlaps any Type A rect (with 4px padding).
-- Multiple radial streets exist between rings.
-- Inner ring (pupil) is empty of buildings.
+### FIX 8 — Solid building obstacles
+Build `OBSTACLES = [...TYPE_A, ...TYPE_B, ...TYPE_C]` once.
+Modify `move(dx, dy)`:
+1. Compute candidate `(nx, ny)` clamped to map bounds.
+2. Check player-point against every obstacle rect inflated by 2px padding. If any hit → **cancel move** (return previous state, no trail push, no step).
+3. If clear → push prev to trail, update player, then run Type A collision (89 → navigate, 23/47 → "Not yet.").
 
-### Background & pupil
+Note: Type A buildings remain non-enterable; touching them is detected by walking adjacent to them and the candidate rect intersecting (2px pad means players stop at the wall, which still counts as contact for response). To preserve A responses, run the A-rect contact check using the **candidate** point against A rects without the 2px pad **before** the obstacle block — if it would land inside A, treat it as contact (trigger response) and cancel the positional move. This way you can't enter an A building but bumping into it still fires the message / navigation.
 
-- Map div: pure black `#04040a` with the same purple grid (`linear-gradient` 40px) as before, sized 1200×800.
-- Pupil outline: an absolutely positioned div at `(440, 320)` size `320×160`, `border: 0.5px solid rgba(100,80,160,0.15)`, `border-radius: 50%`, no fill.
-- Center symbol: `∅` at exact `(600, 400)`, `font-mono`, `24px`, `color: rgba(100,80,160,0.2)`, translated so its center sits on map center.
+Initial player spawn already sits on the outer ellipse, outside all buildings — no spawn collision possible.
 
-### Player dot & trail
-
-- State: `player: {x, y}`, `trail: {x,y,id}[]` (cap 50, FIFO — oldest dropped, no fade animation; permanent for session).
-- Start: compute random angle θ once via `useState` initializer, project onto outer ellipse: `x = 600 + 520*cos(θ)`, `y = 400 + 280*sin(θ)`.
-- Render: 8px purple dot with `boxShadow: 0 0 8px rgba(91,79,212,0.8)` and idle pulse keyframe (`villageIdle` scale 1→1.15→1, 1.5s infinite). Positioned absolutely on the map (so it pans with map, but visually stays centered because the map translation cancels its position).
-- Trail dots: 4px circles, `rgba(91,79,212,0.15)`, no animation, no removal.
-
-### D-pad
-
-Fixed to viewport, `bottom: 70px` (above HUD), centered. 3×3 plus layout via CSS grid with empty cells:
-
-```
-.   ▲   .
-◄   .   ►
-.   ▼   .
-```
-
-Each button 44×44, 4px gap, `bg rgba(91,79,212,0.15)`, `border 0.5px solid rgba(91,79,212,0.4)`, `border-radius: 4px`, `color rgba(160,140,200,0.8)`, font 16px. Handler on `onPointerDown` (covers touch + mouse, no double-fire on click). Each press:
-1. Computes new `(x,y)` clamped to `[0..1200]` × `[0..800]`.
-2. Pushes previous position into trail (cap 50).
-3. Updates `player`.
-4. Runs collision check against the 3 Type A rects.
-
-### Collision
-
-Helper `inside(px, py, rect)` checks player center against each Type A rect:
-- `89` → `setTimeout(navigate('/door'), 600)` (guard a `navigatedRef` so multiple steps inside don't double-fire).
-- `23` / `47` → `setFeedback({ id })` for 1500ms; render "Not yet." line below the label inside that building (font-fell italic 10px `rgba(160,140,200,0.5)`, animation `villageNotYet 1.5s ease-out forwards`).
-
-Type B and C are decorative — no collision.
-
-### Camera
-
-Computed each render:
-```
-const camX = Math.min(0, Math.max(VIEW_W - MAP_W, VIEW_W/2 - player.x));
-const camY = Math.min(0, Math.max(VIEW_H - MAP_H, VIEW_H/2 - player.y));
-```
-Where `VIEW_W/H` come from `window.innerWidth/innerHeight`, captured via `useEffect` + `resize` listener (default to 390×800 on first render to match mobile). Map div uses `transform: translate(camX, camY)` with no transition (snappy follow).
-
-### Entity quote & HUD
-
-- Quote: fixed `top: 24px`, full-width centered, `font-fell italic`, 13px, `rgba(160,140,200,0.6)`, pointer-events none.
-- HUD: identical to current implementation — fixed bottom, three flex columns `MAZE STEPS  0` / `CREDITS  0` / `LEVEL  1`. `MAZE STEPS` is hardcoded `0` (no counter in village).
-
-### Keyframes (inline `<style>`)
-
-```
-@keyframes villagePulse { 0%,100% { opacity:.4 } 50% { opacity:1 } }
-@keyframes villageIdle  { 0%,100% { transform: scale(1) } 50% { transform: scale(1.15) } }
-@keyframes villageNotYet { 0% { opacity:.6 } 80% { opacity:.6 } 100% { opacity:0 } }
-```
+### FIX 7 — Smooth camera (lerp via rAF)
+- New refs: `cameraRef = { x, y }` (current camera, initialized to clamped target for initial player position) and `rafRef`.
+- New state: `camera: { x, y }` for rendering.
+- `useEffect` starts a single `requestAnimationFrame` loop:
+  ```
+  const targetX = clamp(view.w/2 - player.x, view.w - MAP_W, 0)
+  const targetY = clamp(view.h/2 - player.y, view.h - MAP_H, 0)
+  cameraRef.x += (targetX - cameraRef.x) * 0.12
+  cameraRef.y += (targetY - cameraRef.y) * 0.12
+  setCamera({ x: cameraRef.x, y: cameraRef.y })
+  ```
+  Loop runs every frame; when distance < 0.5px on both axes, snap and skip `setCamera` to avoid wasted renders (still keep rAF scheduled so next move resumes smoothly).
+- Effect deps: `[player, view]`. Cleanup cancels the rAF.
+- Map div uses `transform: translate(${camera.x}px, ${camera.y}px)` (no CSS transition — the lerp itself is the smoothing).
 
 ### Out of scope
-
-- No changes to `Door.tsx`, `App.tsx`, `ProfileSetup.tsx`, `EntityQuestions.tsx`, `Index.tsx`, or any other file.
-- No minimap, no credits/steps logic, no new routes, no new assets.
+No changes to `Door.tsx`, `App.tsx`, `ProfileSetup.tsx`, `EntityQuestions.tsx`, `Index.tsx`, or any other file. HUD, entity quote, D-pad layout, trail cap (50), and Type A visuals are unchanged.
 

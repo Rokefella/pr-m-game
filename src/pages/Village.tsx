@@ -457,8 +457,8 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '0.5px solid rgba(100,80,160,0.25)',
-              background: 'rgba(100,80,160,0.07)',
+              border: '0.5px solid rgba(100,80,160,0.35)',
+              background: 'rgba(100,80,160,0.10)',
               zIndex: 1,
             }}
           />

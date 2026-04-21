@@ -269,30 +269,30 @@ const Village = () => {
       const dy = target.y - cur.y;
       const dist = Math.hypot(dx, dy);
 
+      let moved = false;
       if (dist < 0.5) {
         if (cur.x !== target.x || cur.y !== target.y) {
           playerRef.current = { x: target.x, y: target.y };
           setPlayer(playerRef.current);
+          moved = Math.abs(target.x - cur.x) > 0.5 || Math.abs(target.y - cur.y) > 0.5;
         }
       } else {
-        playerRef.current = {
-          x: cur.x + dx * 0.18,
-          y: cur.y + dy * 0.18,
-        };
+        const nx = cur.x + dx * 0.18;
+        const ny = cur.y + dy * 0.18;
+        moved = Math.abs(nx - cur.x) > 0.5 || Math.abs(ny - cur.y) > 0.5;
+        playerRef.current = { x: nx, y: ny };
         setPlayer(playerRef.current);
       }
 
-      // Push trail when visual within 2px of a newly committed target
-      if (dist < 2) {
-        const last = lastTrailPushRef.current;
-        if (!last || last.x !== target.x || last.y !== target.y) {
-          lastTrailPushRef.current = { x: target.x, y: target.y };
-          const id = ++trailIdRef.current;
-          setTrail((t) => {
-            const next = [...t, { x: target.x, y: target.y, id }];
-            return next.length > 50 ? next.slice(next.length - 50) : next;
-          });
-        }
+      // Push previous visual position to trail on every frame the player moves
+      if (moved) {
+        const id = ++trailIdRef.current;
+        const px = cur.x;
+        const py = cur.y;
+        setTrail((t) => {
+          const next = [...t, { x: px, y: py, id }];
+          return next.length > 10 ? next.slice(next.length - 10) : next;
+        });
       }
 
       raf = requestAnimationFrame(loop);
@@ -528,24 +528,42 @@ const Village = () => {
         {renderTypeA(A_47, false)}
         {renderTypeA(A_89, true)}
 
-        {/* Trail dots */}
-        {trail.map((d) => (
-          <div
-            key={d.id}
+        {/* Trail glowing polyline (last 10 positions + current player) */}
+        {trail.length >= 2 && (
+          <svg
+            width={MAP_W}
+            height={MAP_H}
             style={{
               position: 'absolute',
-              left: d.x - 2.5,
-              top: d.y - 2.5,
-              width: 5,
-              height: 5,
-              borderRadius: '50%',
-              background: 'rgba(91,79,212,0.45)',
-              boxShadow: '0 0 6px rgba(91,79,212,0.6)',
+              left: 0,
+              top: 0,
               pointerEvents: 'none',
               zIndex: 4,
             }}
-          />
-        ))}
+          >
+            <defs>
+              <linearGradient
+                id="trailGrad"
+                gradientUnits="userSpaceOnUse"
+                x1={trail[0].x}
+                y1={trail[0].y}
+                x2={player.x}
+                y2={player.y}
+              >
+                <stop offset="0%" stopColor="rgba(91,79,212,1)" stopOpacity={0} />
+                <stop offset="100%" stopColor="rgba(91,79,212,1)" stopOpacity={0.7} />
+              </linearGradient>
+            </defs>
+            <polyline
+              points={[...trail.map((p) => `${p.x},${p.y}`), `${player.x},${player.y}`].join(' ')}
+              fill="none"
+              stroke="url(#trailGrad)"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        )}
 
         {/* Player dot */}
         <div

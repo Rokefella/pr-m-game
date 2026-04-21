@@ -126,10 +126,10 @@ const generateBuildings = () => {
     placeOnEllipse(innerB_RX, innerB_RY, a, 8, 35, 50, 25, 40, B, [B], B_GAP, A_PADDING, 'b', bIdx++);
   }
 
-  // Type C: 72 around outer ring (every 5°)
+  // Type C: dense ring around outer to seal the boundary (every 2°), small jitter
   let cIdx = 0;
-  for (let a = 0; a < 360; a += 5) {
-    placeOnEllipse(OUTER_RX, OUTER_RY, a, 8, 20, 40, 15, 30, C, [C, B], C_GAP, C_VS_AB_PAD, 'c', cIdx++);
+  for (let a = 0; a < 360; a += 2) {
+    placeOnEllipse(OUTER_RX, OUTER_RY, a, 3, 22, 36, 18, 28, C, [C, B], 4, C_VS_AB_PAD, 'c', cIdx++);
   }
   // 30 between outer/middle (two intermediate ellipses)
   const midOutA_RX = OUTER_RX * 0.85, midOutA_RY = OUTER_RY * 0.85;
@@ -163,13 +163,20 @@ const Village = () => {
   const trailIdRef = useRef(0);
 
   // Random start on outer ellipse (computed once)
-  const [player, setPlayer] = useState(() => {
+  const initialPosRef = useRef<{ x: number; y: number } | null>(null);
+  if (initialPosRef.current === null) {
     const theta = Math.random() * Math.PI * 2;
-    return {
+    initialPosRef.current = {
       x: CX + OUTER_RX * Math.cos(theta),
       y: CY + OUTER_RY * Math.sin(theta),
     };
-  });
+  }
+  const initialPos = initialPosRef.current;
+  const [player, setPlayer] = useState(initialPos);
+  const playerRef = useRef(initialPos);
+  const playerTargetRef = useRef(initialPos);
+  const lastTrailPushRef = useRef<{ x: number; y: number } | null>(null);
+
   const [trail, setTrail] = useState<Trail[]>([]);
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });
 
@@ -211,39 +218,32 @@ const Village = () => {
   };
 
   const move = (dx: number, dy: number) => {
-    setPlayer((prev) => {
-      const nx = Math.max(0, Math.min(MAP_W, prev.x + dx));
-      const ny = Math.max(0, Math.min(MAP_H, prev.y + dy));
+    const prev = playerTargetRef.current;
+    const nx = Math.max(0, Math.min(MAP_W, prev.x + dx));
+    const ny = Math.max(0, Math.min(MAP_H, prev.y + dy));
 
-      // Check Type A first (without 2px pad) — bumping fires response but cancels move
-      for (const a of TYPE_A) {
-        if (inside(nx, ny, a)) {
-          triggerA(nx, ny);
-          return prev;
-        }
+    // Type A: bumping fires response but cancels move
+    for (const a of TYPE_A) {
+      if (inside(nx, ny, a)) {
+        triggerA(nx, ny);
+        return;
       }
+    }
 
-      // Check obstacles (B + C) with 2px padding
-      for (const o of OBSTACLES) {
-        if (
-          nx >= o.x - 2 &&
-          nx <= o.x + o.w + 2 &&
-          ny >= o.y - 2 &&
-          ny <= o.y + o.h + 2
-        ) {
-          return prev;
-        }
+    // Obstacles (B + C) with 2px padding
+    for (const o of OBSTACLES) {
+      if (
+        nx >= o.x - 2 &&
+        nx <= o.x + o.w + 2 &&
+        ny >= o.y - 2 &&
+        ny <= o.y + o.h + 2
+      ) {
+        return;
       }
+    }
 
-      // Free move — push trail
-      const id = ++trailIdRef.current;
-      setTrail((t) => {
-        const next = [...t, { x: prev.x, y: prev.y, id }];
-        return next.length > 50 ? next.slice(next.length - 50) : next;
-      });
-
-      return { x: nx, y: ny };
-    });
+    // Commit target
+    playerTargetRef.current = { x: nx, y: ny };
   };
 
   // Keyboard arrow keys
@@ -259,6 +259,48 @@ const Village = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Player lerp loop — visual chases target at 0.18/frame
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      const target = playerTargetRef.current;
+      const cur = playerRef.current;
+      const dx = target.x - cur.x;
+      const dy = target.y - cur.y;
+      const dist = Math.hypot(dx, dy);
+
+      if (dist < 0.5) {
+        if (cur.x !== target.x || cur.y !== target.y) {
+          playerRef.current = { x: target.x, y: target.y };
+          setPlayer(playerRef.current);
+        }
+      } else {
+        playerRef.current = {
+          x: cur.x + dx * 0.18,
+          y: cur.y + dy * 0.18,
+        };
+        setPlayer(playerRef.current);
+      }
+
+      // Push trail when visual within 2px of a newly committed target
+      if (dist < 2) {
+        const last = lastTrailPushRef.current;
+        if (!last || last.x !== target.x || last.y !== target.y) {
+          lastTrailPushRef.current = { x: target.x, y: target.y };
+          const id = ++trailIdRef.current;
+          setTrail((t) => {
+            const next = [...t, { x: target.x, y: target.y, id }];
+            return next.length > 50 ? next.slice(next.length - 50) : next;
+          });
+        }
+      }
+
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
   // Smooth camera (lerp via rAF)
   const initialCam = (() => {
     const tx = Math.min(0, Math.max(view.w - MAP_W, view.w / 2 - player.x));
@@ -271,8 +313,8 @@ const Village = () => {
   useEffect(() => {
     let raf = 0;
     const loop = () => {
-      const targetX = Math.min(0, Math.max(view.w - MAP_W, view.w / 2 - player.x));
-      const targetY = Math.min(0, Math.max(view.h - MAP_H, view.h / 2 - player.y));
+      const targetX = Math.min(0, Math.max(view.w - MAP_W, view.w / 2 - playerRef.current.x));
+      const targetY = Math.min(0, Math.max(view.h - MAP_H, view.h / 2 - playerRef.current.y));
       const dx = targetX - cameraRef.current.x;
       const dy = targetY - cameraRef.current.y;
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
@@ -291,7 +333,7 @@ const Village = () => {
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [player, view]);
+  }, [view]);
 
   const dpadBtn: React.CSSProperties = {
     width: 44,
@@ -457,8 +499,8 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '0.5px solid rgba(100,80,160,0.25)',
-              background: 'rgba(100,80,160,0.07)',
+              border: '0.5px solid rgba(100,80,160,0.35)',
+              background: 'rgba(100,80,160,0.10)',
               zIndex: 1,
             }}
           />
@@ -474,8 +516,8 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '1px solid rgba(100,80,160,0.45)',
-              background: 'rgba(100,80,160,0.12)',
+              border: '1px solid rgba(100,80,160,0.6)',
+              background: 'rgba(100,80,160,0.18)',
               zIndex: 2,
             }}
           />
@@ -492,12 +534,13 @@ const Village = () => {
             key={d.id}
             style={{
               position: 'absolute',
-              left: d.x - 2,
-              top: d.y - 2,
-              width: 4,
-              height: 4,
+              left: d.x - 2.5,
+              top: d.y - 2.5,
+              width: 5,
+              height: 5,
               borderRadius: '50%',
-              background: 'rgba(91,79,212,0.15)',
+              background: 'rgba(91,79,212,0.45)',
+              boxShadow: '0 0 6px rgba(91,79,212,0.6)',
               pointerEvents: 'none',
               zIndex: 4,
             }}

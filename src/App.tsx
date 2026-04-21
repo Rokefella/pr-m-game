@@ -8,6 +8,7 @@ import EntityQuestions from "./pages/EntityQuestions.tsx";
 import ProfileSetup from "./pages/ProfileSetup.tsx";
 import Village from "./pages/Village.tsx";
 import Door from "./pages/Door.tsx";
+import Maze from "./pages/Maze.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/profile-setup" element={<ProfileSetup />} />
           <Route path="/village" element={<Village />} />
           <Route path="/door" element={<Door />} />
+          <Route path="/maze" element={<Maze />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

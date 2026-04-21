@@ -1,144 +1,160 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
 
-const MAP_W = 1200;
-const MAP_H = 800;
-const CX = 600;
-const CY = 400;
+const MAP_W = 1600;
+const MAP_H = 1000;
+const CX = 800;
+const CY = 500;
 const STEP = 12;
 
 // Ring radii
-const OUTER_RX = 520, OUTER_RY = 280;
-const MIDDLE_RX = 340, MIDDLE_RY = 180;
-const INNER_RX = 160, INNER_RY = 80;
+const OUTER_RX = 680, OUTER_RY = 380;
+const MIDDLE_RX = 440, MIDDLE_RY = 240;
+const INNER_RX = 200, INNER_RY = 100;
 
 // ---------- Type A: interactive ----------
-const A_23 = { id: 23, x: 380, y: 375, w: 70, h: 50, color: '#4a9eff', bg: 'rgba(74,158,255,0.06)', label: 12 };
-const A_47 = { id: 47, x: 860, y: 440, w: 70, h: 50, color: '#1d9e75', bg: 'rgba(29,158,117,0.06)', label: 12 };
-const A_89 = { id: 89, x: 555, y: 170, w: 90, h: 70, color: '#c8963a', bg: 'rgba(200,150,58,0.06)', label: 14 };
+const A_23 = { id: 23 as const, x: 520, y: 475, w: 70, h: 50, color: '#4a9eff', bg: 'rgba(74,158,255,0.06)', label: 12 };
+const A_47 = { id: 47 as const, x: 1150, y: 560, w: 70, h: 50, color: '#1d9e75', bg: 'rgba(29,158,117,0.06)', label: 12 };
+const A_89 = { id: 89 as const, x: 755, y: 240, w: 90, h: 70, color: '#c8963a', bg: 'rgba(200,150,58,0.06)', label: 14 };
 const TYPE_A = [A_23, A_47, A_89];
 
-// ---------- Type B: 30 secondary buildings (hand-tuned) ----------
-const TYPE_B: Rect[] = [
-  // Around middle ring (avoiding 89 top, 47 right-lower)
-  { id: 'b1',  x: 280, y: 250, w: 55, h: 40 },
-  { id: 'b2',  x: 350, y: 220, w: 45, h: 35 },
-  { id: 'b3',  x: 430, y: 200, w: 50, h: 40 },
-  { id: 'b4',  x: 500, y: 185, w: 45, h: 35 },
-  // gap (street) before 89
-  { id: 'b5',  x: 660, y: 185, w: 50, h: 40 },
-  { id: 'b6',  x: 730, y: 200, w: 55, h: 35 },
-  { id: 'b7',  x: 800, y: 225, w: 50, h: 45 },
-  { id: 'b8',  x: 865, y: 260, w: 60, h: 40 },
-  { id: 'b9',  x: 905, y: 320, w: 45, h: 50 },
-  // gap before 47
-  { id: 'b10', x: 905, y: 510, w: 50, h: 45 },
-  { id: 'b11', x: 855, y: 555, w: 55, h: 40 },
-  { id: 'b12', x: 790, y: 580, w: 60, h: 45 },
-  { id: 'b13', x: 720, y: 595, w: 50, h: 40 },
-  { id: 'b14', x: 645, y: 605, w: 55, h: 45 },
-  { id: 'b15', x: 575, y: 610, w: 50, h: 40 },
-  { id: 'b16', x: 500, y: 605, w: 55, h: 45 },
-  { id: 'b17', x: 430, y: 595, w: 45, h: 40 },
-  { id: 'b18', x: 365, y: 580, w: 60, h: 45 },
-  { id: 'b19', x: 305, y: 555, w: 50, h: 40 },
-  { id: 'b20', x: 260, y: 510, w: 45, h: 50 },
-  { id: 'b21', x: 240, y: 440, w: 50, h: 45 },
-  { id: 'b22', x: 240, y: 370, w: 50, h: 45 },
-  { id: 'b23', x: 250, y: 310, w: 45, h: 40 },
-  // Inner-ring perimeter (sparse — leaving streets to pupil)
-  { id: 'b24', x: 470, y: 295, w: 40, h: 30 },
-  { id: 'b25', x: 690, y: 295, w: 40, h: 30 },
-  { id: 'b26', x: 690, y: 475, w: 40, h: 30 },
-  { id: 'b27', x: 470, y: 475, w: 40, h: 30 },
-  { id: 'b28', x: 555, y: 290, w: 35, h: 28 },
-  { id: 'b29', x: 615, y: 485, w: 35, h: 28 },
-  { id: 'b30', x: 405, y: 320, w: 40, h: 35 },
-];
-
-// ---------- Type C: 70 background buildings (hand-tuned along outer ring + scatter) ----------
-const TYPE_C: Rect[] = [
-  // Outer ring upper arc
-  { id: 'c1',  x: 95,  y: 380, w: 35, h: 25 },
-  { id: 'c2',  x: 105, y: 320, w: 30, h: 22 },
-  { id: 'c3',  x: 120, y: 270, w: 35, h: 25 },
-  { id: 'c4',  x: 145, y: 220, w: 40, h: 28 },
-  { id: 'c5',  x: 180, y: 180, w: 35, h: 25 },
-  { id: 'c6',  x: 220, y: 150, w: 30, h: 22 },
-  { id: 'c7',  x: 270, y: 130, w: 40, h: 28 },
-  { id: 'c8',  x: 320, y: 115, w: 35, h: 25 },
-  { id: 'c9',  x: 375, y: 105, w: 30, h: 22 },
-  { id: 'c10', x: 430, y: 100, w: 40, h: 28 },
-  { id: 'c11', x: 485, y: 100, w: 35, h: 25 },
-  { id: 'c12', x: 540, y: 105, w: 30, h: 22 },
-  // gap above 89
-  { id: 'c13', x: 660, y: 105, w: 30, h: 22 },
-  { id: 'c14', x: 715, y: 105, w: 35, h: 25 },
-  { id: 'c15', x: 770, y: 110, w: 40, h: 28 },
-  { id: 'c16', x: 825, y: 120, w: 35, h: 25 },
-  { id: 'c17', x: 880, y: 135, w: 30, h: 22 },
-  { id: 'c18', x: 930, y: 155, w: 40, h: 28 },
-  { id: 'c19', x: 975, y: 185, w: 35, h: 25 },
-  { id: 'c20', x: 1015, y: 220, w: 30, h: 22 },
-  { id: 'c21', x: 1045, y: 265, w: 35, h: 25 },
-  { id: 'c22', x: 1065, y: 315, w: 40, h: 28 },
-  { id: 'c23', x: 1075, y: 370, w: 35, h: 25 },
-  { id: 'c24', x: 1075, y: 425, w: 30, h: 22 },
-  { id: 'c25', x: 1065, y: 480, w: 40, h: 28 },
-  { id: 'c26', x: 1045, y: 530, w: 35, h: 25 },
-  { id: 'c27', x: 1015, y: 580, w: 30, h: 22 },
-  { id: 'c28', x: 975, y: 615, w: 40, h: 28 },
-  { id: 'c29', x: 930, y: 645, w: 35, h: 25 },
-  { id: 'c30', x: 880, y: 670, w: 30, h: 22 },
-  { id: 'c31', x: 825, y: 685, w: 35, h: 25 },
-  { id: 'c32', x: 770, y: 695, w: 40, h: 28 },
-  { id: 'c33', x: 715, y: 700, w: 35, h: 25 },
-  { id: 'c34', x: 660, y: 700, w: 30, h: 22 },
-  // gap south
-  { id: 'c35', x: 540, y: 700, w: 30, h: 22 },
-  { id: 'c36', x: 485, y: 700, w: 35, h: 25 },
-  { id: 'c37', x: 430, y: 695, w: 40, h: 28 },
-  { id: 'c38', x: 375, y: 685, w: 35, h: 25 },
-  { id: 'c39', x: 320, y: 670, w: 30, h: 22 },
-  { id: 'c40', x: 270, y: 645, w: 40, h: 28 },
-  { id: 'c41', x: 220, y: 615, w: 35, h: 25 },
-  { id: 'c42', x: 180, y: 580, w: 30, h: 22 },
-  { id: 'c43', x: 145, y: 530, w: 40, h: 28 },
-  { id: 'c44', x: 120, y: 480, w: 35, h: 25 },
-  { id: 'c45', x: 105, y: 425, w: 30, h: 22 },
-  // Scatter between outer & middle rings
-  { id: 'c46', x: 200, y: 250, w: 28, h: 20 },
-  { id: 'c47', x: 200, y: 530, w: 28, h: 20 },
-  { id: 'c48', x: 360, y: 155, w: 30, h: 22 },
-  { id: 'c49', x: 360, y: 625, w: 30, h: 22 },
-  { id: 'c50', x: 470, y: 145, w: 28, h: 20 },
-  { id: 'c51', x: 470, y: 645, w: 28, h: 20 },
-  { id: 'c52', x: 720, y: 145, w: 28, h: 20 },
-  { id: 'c53', x: 720, y: 645, w: 28, h: 20 },
-  { id: 'c54', x: 990, y: 250, w: 30, h: 22 },
-  { id: 'c55', x: 990, y: 530, w: 30, h: 22 },
-  { id: 'c56', x: 165, y: 410, w: 25, h: 18 },
-  { id: 'c57', x: 1010, y: 400, w: 25, h: 18 },
-  { id: 'c58', x: 590, y: 75,  w: 30, h: 20 },
-  { id: 'c59', x: 590, y: 730, w: 30, h: 20 },
-  { id: 'c60', x: 285, y: 200, w: 25, h: 18 },
-  { id: 'c61', x: 285, y: 580, w: 25, h: 18 },
-  { id: 'c62', x: 880, y: 195, w: 25, h: 18 },
-  { id: 'c63', x: 880, y: 580, w: 25, h: 18 },
-  { id: 'c64', x: 410, y: 250, w: 22, h: 16 },
-  { id: 'c65', x: 410, y: 535, w: 22, h: 16 },
-  { id: 'c66', x: 760, y: 250, w: 22, h: 16 },
-  { id: 'c67', x: 760, y: 540, w: 22, h: 16 },
-  { id: 'c68', x: 130, y: 360, w: 22, h: 16 },
-  { id: 'c69', x: 1045, y: 360, w: 22, h: 16 },
-  { id: 'c70', x: 600, y: 130, w: 22, h: 16 },
-];
+// ---------- Helpers ----------
+const rectsOverlap = (
+  a: { x: number; y: number; w: number; h: number },
+  b: { x: number; y: number; w: number; h: number },
+  pad = 0,
+) =>
+  a.x - pad < b.x + b.w &&
+  a.x + a.w + pad > b.x &&
+  a.y - pad < b.y + b.h &&
+  a.y + a.h + pad > b.y;
 
 const inside = (px: number, py: number, r: { x: number; y: number; w: number; h: number }) =>
   px >= r.x && px <= r.x + r.w && py >= r.y && py <= r.y + r.h;
+
+// Seeded LCG (Numerical Recipes)
+const makeRng = (seed: number) => {
+  let s = seed >>> 0;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0xffffffff;
+  };
+};
+
+// ---------- Generate Type B (50) and Type C (120) ----------
+const A_PADDING = 4;
+const B_GAP = 18;
+const C_GAP = 12;
+const C_VS_AB_PAD = 4;
+
+const generateBuildings = () => {
+  const rng = makeRng(0xC0FFEE);
+  const B: Rect[] = [];
+  const C: Rect[] = [];
+
+  const placeOnEllipse = (
+    rx: number,
+    ry: number,
+    angleDeg: number,
+    jitter: number,
+    minW: number,
+    maxW: number,
+    minH: number,
+    maxH: number,
+    list: Rect[],
+    against: Rect[][],
+    gap: number,
+    padA: number,
+    idPrefix: string,
+    idx: number,
+  ) => {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const theta = (angleDeg * Math.PI) / 180;
+      const jx = (rng() * 2 - 1) * jitter;
+      const jy = (rng() * 2 - 1) * jitter;
+      const w = Math.round(minW + rng() * (maxW - minW));
+      const h = Math.round(minH + rng() * (maxH - minH));
+      const cx = CX + rx * Math.cos(theta) + jx;
+      const cy = CY + ry * Math.sin(theta) + jy;
+      const x = Math.round(cx - w / 2);
+      const y = Math.round(cy - h / 2);
+      const cand = { id: `${idPrefix}${idx}`, x, y, w, h };
+
+      // bounds
+      if (x < 6 || y < 6 || x + w > MAP_W - 6 || y + h > MAP_H - 6) continue;
+
+      // skip if inside pupil
+      const px = x + w / 2 - CX;
+      const py = y + h / 2 - CY;
+      if ((px * px) / (INNER_RX * INNER_RX) + (py * py) / (INNER_RY * INNER_RY) < 1) continue;
+
+      // overlap A
+      let bad = false;
+      for (const a of TYPE_A) {
+        if (rectsOverlap(cand, a, padA)) { bad = true; break; }
+      }
+      if (bad) continue;
+
+      // overlap with provided lists
+      for (const lst of against) {
+        for (const r of lst) {
+          if (rectsOverlap(cand, r, gap)) { bad = true; break; }
+        }
+        if (bad) break;
+      }
+      if (bad) continue;
+
+      list.push(cand);
+      return true;
+    }
+    return false;
+  };
+
+  // Type B: 36 around middle ring (every 10°) + 14 around inner-ish ring
+  let bIdx = 0;
+  for (let a = 0; a < 360; a += 10) {
+    placeOnEllipse(MIDDLE_RX, MIDDLE_RY, a, 6, 35, 55, 25, 45, B, [B], B_GAP, A_PADDING, 'b', bIdx++);
+  }
+  // 14 on a ring slightly outside inner
+  const innerB_RX = INNER_RX + 60;
+  const innerB_RY = INNER_RY + 50;
+  for (let i = 0; i < 14; i++) {
+    const a = (i * 360) / 14;
+    placeOnEllipse(innerB_RX, innerB_RY, a, 8, 35, 50, 25, 40, B, [B], B_GAP, A_PADDING, 'b', bIdx++);
+  }
+
+  // Type C: 72 around outer ring (every 5°)
+  let cIdx = 0;
+  for (let a = 0; a < 360; a += 5) {
+    placeOnEllipse(OUTER_RX, OUTER_RY, a, 8, 20, 40, 15, 30, C, [C, B], C_GAP, C_VS_AB_PAD, 'c', cIdx++);
+  }
+  // 30 between outer/middle (two intermediate ellipses)
+  const midOutA_RX = OUTER_RX * 0.85, midOutA_RY = OUTER_RY * 0.85;
+  const midOutB_RX = OUTER_RX * 0.7, midOutB_RY = OUTER_RY * 0.7;
+  for (let i = 0; i < 15; i++) {
+    const a = (i * 360) / 15 + 6;
+    placeOnEllipse(midOutA_RX, midOutA_RY, a, 10, 22, 38, 16, 28, C, [C, B], C_GAP, C_VS_AB_PAD, 'c', cIdx++);
+  }
+  for (let i = 0; i < 15; i++) {
+    const a = (i * 360) / 15 + 12;
+    placeOnEllipse(midOutB_RX, midOutB_RY, a, 10, 22, 36, 16, 26, C, [C, B], C_GAP, C_VS_AB_PAD, 'c', cIdx++);
+  }
+  // 18 between middle/inner (ring slightly outside inner)
+  const midInRX = (MIDDLE_RX + INNER_RX) / 2 + 20;
+  const midInRY = (MIDDLE_RY + INNER_RY) / 2 + 20;
+  for (let i = 0; i < 18; i++) {
+    const a = (i * 360) / 18 + 8;
+    placeOnEllipse(midInRX, midInRY, a, 8, 20, 32, 14, 24, C, [C, B], C_GAP, C_VS_AB_PAD, 'c', cIdx++);
+  }
+
+  return { B, C };
+};
+
+const { B: TYPE_B, C: TYPE_C } = generateBuildings();
+const OBSTACLES: Rect[] = [...TYPE_B, ...TYPE_C];
 
 const Village = () => {
   const navigate = useNavigate();
@@ -171,41 +187,111 @@ const Village = () => {
     };
   }, []);
 
+  const triggerA = (nx: number, ny: number) => {
+    if (inside(nx, ny, A_89)) {
+      if (!navigatedRef.current) {
+        navigatedRef.current = true;
+        window.setTimeout(() => navigate('/door'), 600);
+      }
+      return true;
+    }
+    if (inside(nx, ny, A_23)) {
+      setFeedback({ id: 23 });
+      if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
+      feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);
+      return true;
+    }
+    if (inside(nx, ny, A_47)) {
+      setFeedback({ id: 47 });
+      if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
+      feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);
+      return true;
+    }
+    return false;
+  };
+
   const move = (dx: number, dy: number) => {
     setPlayer((prev) => {
       const nx = Math.max(0, Math.min(MAP_W, prev.x + dx));
       const ny = Math.max(0, Math.min(MAP_H, prev.y + dy));
 
-      // append previous position to trail
+      // Check Type A first (without 2px pad) — bumping fires response but cancels move
+      for (const a of TYPE_A) {
+        if (inside(nx, ny, a)) {
+          triggerA(nx, ny);
+          return prev;
+        }
+      }
+
+      // Check obstacles (B + C) with 2px padding
+      for (const o of OBSTACLES) {
+        if (
+          nx >= o.x - 2 &&
+          nx <= o.x + o.w + 2 &&
+          ny >= o.y - 2 &&
+          ny <= o.y + o.h + 2
+        ) {
+          return prev;
+        }
+      }
+
+      // Free move — push trail
       const id = ++trailIdRef.current;
       setTrail((t) => {
         const next = [...t, { x: prev.x, y: prev.y, id }];
         return next.length > 50 ? next.slice(next.length - 50) : next;
       });
 
-      // collisions
-      if (inside(nx, ny, A_89)) {
-        if (!navigatedRef.current) {
-          navigatedRef.current = true;
-          window.setTimeout(() => navigate('/door'), 600);
-        }
-      } else if (inside(nx, ny, A_23)) {
-        setFeedback({ id: 23 });
-        if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
-        feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);
-      } else if (inside(nx, ny, A_47)) {
-        setFeedback({ id: 47 });
-        if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
-        feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);
-      }
-
       return { x: nx, y: ny };
     });
   };
 
-  // Camera translate (clamped)
-  const camX = Math.min(0, Math.max(view.w - MAP_W, view.w / 2 - player.x));
-  const camY = Math.min(0, Math.max(view.h - MAP_H, view.h / 2 - player.y));
+  // Keyboard arrow keys
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowUp') { e.preventDefault(); move(0, -STEP); }
+      else if (e.key === 'ArrowDown') { e.preventDefault(); move(0, STEP); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); move(-STEP, 0); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); move(STEP, 0); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Smooth camera (lerp via rAF)
+  const initialCam = (() => {
+    const tx = Math.min(0, Math.max(view.w - MAP_W, view.w / 2 - player.x));
+    const ty = Math.min(0, Math.max(view.h - MAP_H, view.h / 2 - player.y));
+    return { x: tx, y: ty };
+  })();
+  const cameraRef = useRef(initialCam);
+  const [camera, setCamera] = useState(initialCam);
+
+  useEffect(() => {
+    let raf = 0;
+    const loop = () => {
+      const targetX = Math.min(0, Math.max(view.w - MAP_W, view.w / 2 - player.x));
+      const targetY = Math.min(0, Math.max(view.h - MAP_H, view.h / 2 - player.y));
+      const dx = targetX - cameraRef.current.x;
+      const dy = targetY - cameraRef.current.y;
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
+        if (cameraRef.current.x !== targetX || cameraRef.current.y !== targetY) {
+          cameraRef.current = { x: targetX, y: targetY };
+          setCamera(cameraRef.current);
+        }
+      } else {
+        cameraRef.current = {
+          x: cameraRef.current.x + dx * 0.12,
+          y: cameraRef.current.y + dy * 0.12,
+        };
+        setCamera(cameraRef.current);
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [player, view]);
 
   const dpadBtn: React.CSSProperties = {
     width: 44,
@@ -284,7 +370,7 @@ const Village = () => {
           top: 0,
           width: MAP_W,
           height: MAP_H,
-          transform: `translate(${camX}px, ${camY}px)`,
+          transform: `translate(${camera.x}px, ${camera.y}px)`,
           willChange: 'transform',
         }}
       >
@@ -301,7 +387,35 @@ const Village = () => {
           }}
         />
 
-        {/* Pupil outline */}
+        {/* Outer ring outline */}
+        <div
+          style={{
+            position: 'absolute',
+            left: CX - OUTER_RX,
+            top: CY - OUTER_RY,
+            width: OUTER_RX * 2,
+            height: OUTER_RY * 2,
+            border: '0.5px solid rgba(100,80,160,0.06)',
+            borderRadius: '50%',
+            pointerEvents: 'none',
+            zIndex: 1,
+          }}
+        />
+        {/* Middle ring outline */}
+        <div
+          style={{
+            position: 'absolute',
+            left: CX - MIDDLE_RX,
+            top: CY - MIDDLE_RY,
+            width: MIDDLE_RX * 2,
+            height: MIDDLE_RY * 2,
+            border: '0.5px solid rgba(100,80,160,0.08)',
+            borderRadius: '50%',
+            pointerEvents: 'none',
+            zIndex: 1,
+          }}
+        />
+        {/* Inner ring (pupil) outline */}
         <div
           style={{
             position: 'absolute',
@@ -309,7 +423,7 @@ const Village = () => {
             top: CY - INNER_RY,
             width: INNER_RX * 2,
             height: INNER_RY * 2,
-            border: '0.5px solid rgba(100,80,160,0.15)',
+            border: '0.5px solid rgba(100,80,160,0.10)',
             borderRadius: '50%',
             pointerEvents: 'none',
             zIndex: 1,
@@ -343,8 +457,8 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '0.5px solid rgba(100,80,160,0.1)',
-              background: 'rgba(100,80,160,0.02)',
+              border: '0.5px solid rgba(100,80,160,0.25)',
+              background: 'rgba(100,80,160,0.07)',
               zIndex: 1,
             }}
           />
@@ -360,8 +474,8 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '0.5px solid rgba(100,80,160,0.25)',
-              background: 'rgba(100,80,160,0.04)',
+              border: '1px solid rgba(100,80,160,0.45)',
+              background: 'rgba(100,80,160,0.12)',
               zIndex: 2,
             }}
           />

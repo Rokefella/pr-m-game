@@ -500,22 +500,35 @@ const Village = () => {
           }}
         />
 
-        {/* ∅ symbol */}
-        <div
-          className="font-mono"
+        {/* Watching eye in town square */}
+        <svg
+          width={60}
+          height={40}
           style={{
             position: 'absolute',
-            left: CX,
-            top: CY,
-            transform: 'translate(-50%, -50%)',
-            fontSize: 24,
-            color: 'rgba(100,80,160,0.2)',
+            left: CX - 30,
+            top: CY - 20,
             pointerEvents: 'none',
             zIndex: 1,
+            overflow: 'visible',
           }}
         >
-          ∅
-        </div>
+          <ellipse
+            cx={30}
+            cy={20}
+            rx={20}
+            ry={12}
+            stroke="rgba(160,140,200,0.4)"
+            strokeWidth={0.5}
+            fill="none"
+          />
+          <circle
+            cx={30 + eyePupil.x}
+            cy={20 + eyePupil.y}
+            r={3.5}
+            fill="#5b4fd4"
+          />
+        </svg>
 
         {/* Type C buildings */}
         {TYPE_C.map((b) => (
@@ -556,7 +569,7 @@ const Village = () => {
         {renderTypeA(A_47, false)}
         {renderTypeA(A_89, true)}
 
-        {/* Trail glowing polyline (last 10 positions + current player) */}
+        {/* Trail glowing polyline (last 80 positions, fades to tail) */}
         {trail.length >= 2 && (
           <svg
             width={MAP_W}
@@ -566,7 +579,7 @@ const Village = () => {
               left: 0,
               top: 0,
               pointerEvents: 'none',
-              zIndex: 4,
+              zIndex: 2,
             }}
           >
             <defs>
@@ -578,15 +591,15 @@ const Village = () => {
                 x2={player.x}
                 y2={player.y}
               >
-                <stop offset="0%" stopColor="rgba(91,79,212,1)" stopOpacity={0} />
-                <stop offset="100%" stopColor="rgba(91,79,212,1)" stopOpacity={0.7} />
+                <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0} />
+                <stop offset="100%" stopColor="#5b4fd4" stopOpacity={0.8} />
               </linearGradient>
             </defs>
             <polyline
               points={[...trail.map((p) => `${p.x},${p.y}`), `${player.x},${player.y}`].join(' ')}
               fill="none"
               stroke="url(#trailGrad)"
-              strokeWidth={1.5}
+              strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
             />

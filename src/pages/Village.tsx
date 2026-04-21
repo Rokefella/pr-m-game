@@ -126,10 +126,10 @@ const generateBuildings = () => {
     placeOnEllipse(innerB_RX, innerB_RY, a, 8, 35, 50, 25, 40, B, [B], B_GAP, A_PADDING, 'b', bIdx++);
   }
 
-  // Type C: 72 around outer ring (every 5°)
+  // Type C: dense ring around outer to seal the boundary (every 2°), small jitter
   let cIdx = 0;
-  for (let a = 0; a < 360; a += 5) {
-    placeOnEllipse(OUTER_RX, OUTER_RY, a, 8, 20, 40, 15, 30, C, [C, B], C_GAP, C_VS_AB_PAD, 'c', cIdx++);
+  for (let a = 0; a < 360; a += 2) {
+    placeOnEllipse(OUTER_RX, OUTER_RY, a, 3, 22, 36, 18, 28, C, [C, B], 4, C_VS_AB_PAD, 'c', cIdx++);
   }
   // 30 between outer/middle (two intermediate ellipses)
   const midOutA_RX = OUTER_RX * 0.85, midOutA_RY = OUTER_RY * 0.85;

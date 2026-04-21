@@ -25,6 +25,7 @@ const App = () => (
           <Route path="/profile-setup" element={<ProfileSetup />} />
           <Route path="/village" element={<Village />} />
           <Route path="/door" element={<Door />} />
+          <Route path="/maze" element={<Maze />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

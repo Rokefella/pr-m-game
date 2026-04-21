@@ -1,55 +1,40 @@
 
 
-## New Village Screen + Door Transition
+## Village Redesign — Updated Plan
 
-### 1. Add image assets
-- Copy `user-uploads://Village.png` → `public/village.png`
-- Copy `user-uploads://door.png` → `public/door.png`
+Same top-down geometric Village screen as previously approved, with one addition: feedback message when the player touches Building 23 or 47.
 
-### 2. New file: `src/pages/Village.tsx`
+### Addition to `src/pages/Village.tsx`
 
-Mobile column (max-width 390px, centered, min-h-screen, relative).
+**Collision feedback for non-active buildings**
 
-**Layers (bottom → top):**
-- `<img src="/village.png">` absolute inset-0, `object-fit: cover`, with state-driven `transform: scale(1.0 → 1.08)` on tap, `transition: transform 800ms ease-in-out`
-- Dark overlay: absolute inset-0, `background: rgba(0,0,0,0.15)`
-- Prime number labels (absolute positioned, `font-mono`, 14px):
-  - `23` — left ~15%, top ~45%, color `#4a9eff`
-  - `47` — right ~15%, top ~50%, color `#1d9e75`
-  - `89` — center ~50%, top ~30% (above door), color `#c8963a`
-- Entity quote — top center (~top 6%), `font-fell italic`, 13px, color `rgba(160,140,200,0.7)`: *"Another one enters?"*
-- Player silhouette SVG — absolute, centered horizontally, ~bottom 18%, ~40px wide, fill `#5b4fd4` (reuse silhouette shape from ProfileSetup but smaller)
-- HUD bar — absolute bottom, full width of column, `background: rgba(4,4,10,0.92)`, `border-top: 0.5px solid rgba(169,140,255,0.3)`, padding `10px 14px`, three flex columns (`font-mono`, 9px, `letter-spacing: 0.18em`):
-  - Left: `MAZE STEPS  0` color `#e0ddd5`
-  - Center: `CREDITS  0` color `#c8963a`
-  - Right: `LEVEL  1` color `#5b4fd4`
+State: `feedback: { building: 23 | 47 | null }` (single slot — newest tap replaces previous).
 
-**Interaction:**
-- `useState` for `tapCount` (number) and `zoomed` (boolean)
-- Full-screen overlay button (absolute inset-0, transparent, above background but below labels/HUD via z-index) detects taps
-- On tap: increment `tapCount`, toggle scale to 1.08 then back to 1.0 after 800ms
-- When `tapCount >= 3`: navigate to `/door`
+After updating player position on tap, run collision checks in this order:
+1. Building 89 rect (x ∈ [145, 245], y ∈ [90, 170]) → `setTimeout(navigate('/door'), 600)` (unchanged)
+2. Building 23 rect (x ∈ [30, 110], y ∈ [240, 300]) → `setFeedback({ building: 23 })`, clear after 1500ms
+3. Building 47 rect (x ∈ [280, 360], y ∈ [240, 300]) → `setFeedback({ building: 47 })`, clear after 1500ms
 
-### 3. New file: `src/pages/Door.tsx`
+**Rendering**
 
-- Full-screen `<img src="/door.png">` cover fit
-- Dark overlay `rgba(0,0,0,0.25)` for text legibility
-- Centered column:
-  - Text *"See you on the other side?"* — `font-fell italic`, 18px, color `#e0ddd5`, text-shadow for legibility
-  - Two buttons side-by-side, `marginTop: 28`:
-    - **YES** — `font-cinzel`, 11px, `letter-spacing: 0.28em`, bg `#c8963a`, color `#04040a`, padding `10px 22px`, no radius
-    - **STAY** — `font-cinzel`, 11px, `letter-spacing: 0.28em`, bg transparent, border `0.5px solid #5a5855`, color `#9a9890`, padding `10px 22px`
-  - Both buttons currently no-op (no destination specified)
+Inside Building 23 and Building 47 boxes, below the numeric label:
+- When `feedback.building === 23` (or 47), render a `<p>`:
+  - Text: *"Not yet."*
+  - `font-fell italic`, 10px, `color: rgba(160,140,200,0.5)`
+  - `marginTop: 4`
+  - Animation: `villageFade` keyframe (reused) `opacity 0.6 → 0` over 1.5s
 
-### 4. Routes — `src/App.tsx`
-Add (above catch-all):
+Add to inline `<style>` block (extends existing keyframes):
 ```
-<Route path="/village" element={<Village />} />
-<Route path="/door" element={<Door />} />
+@keyframes villageNotYet { 0% { opacity:.6 } 80% { opacity:.6 } 100% { opacity:0 } }
 ```
+Use `villageNotYet 1.5s ease-out forwards` so the text holds briefly then fades.
 
-### 5. Wire entry from ProfileSetup
-Update ENTER button on `ProfileSetup.tsx` to `navigate('/village')` (uses `useNavigate`).
+Building label layout switches from centered-only to a small vertical flex column (label on top, feedback line below) so the "Not yet." text appears directly under the number without shifting the box.
 
-No changes to existing Index, EntityQuestions screens. Fonts reuse Cinzel / IM Fell English / DM Mono.
+### Everything else
+Identical to the previously approved plan: pure black background, purple grid overlay, three building boxes, gold pulse on 89, glowing player dot with idle pulse, tap-to-move with 5-dot fading trail, MAZE STEPS counter, entity quote, HUD bar.
+
+### Out of scope
+No changes to `Door.tsx`, `App.tsx`, `ProfileSetup.tsx`, or any other screen.
 

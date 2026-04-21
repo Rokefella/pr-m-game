@@ -178,6 +178,8 @@ const Village = () => {
   const lastTrailPushRef = useRef<{ x: number; y: number } | null>(null);
 
   const [trail, setTrail] = useState<Trail[]>([]);
+  const eyePupilRef = useRef({ x: 0, y: 0 });
+  const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });
 
   const [view, setView] = useState({ w: 390, h: 800 });
@@ -291,8 +293,34 @@ const Village = () => {
         const py = cur.y;
         setTrail((t) => {
           const next = [...t, { x: px, y: py, id }];
-          return next.length > 10 ? next.slice(next.length - 10) : next;
+          return next.length > 80 ? next.slice(next.length - 80) : next;
         });
+      }
+
+      // Eye pupil tracking
+      const pv = playerRef.current;
+      const evx = pv.x - CX;
+      const evy = pv.y - CY;
+      const edist = Math.hypot(evx, evy);
+      let etx: number, ety: number;
+      if (edist > 400) {
+        const tnow = Date.now();
+        etx = Math.cos(tnow / 4000) * 2;
+        ety = Math.sin(tnow / 4000) * 2;
+      } else if (edist < 0.001) {
+        etx = 0;
+        ety = 0;
+      } else {
+        const mag = Math.min(edist / 50, 1) * 8;
+        etx = (evx / edist) * mag;
+        ety = (evy / edist) * mag;
+      }
+      const ep = eyePupilRef.current;
+      const npx = ep.x + (etx - ep.x) * 0.08;
+      const npy = ep.y + (ety - ep.y) * 0.08;
+      if (Math.abs(npx - ep.x) > 0.01 || Math.abs(npy - ep.y) > 0.01) {
+        eyePupilRef.current = { x: npx, y: npy };
+        setEyePupil(eyePupilRef.current);
       }
 
       raf = requestAnimationFrame(loop);
@@ -472,22 +500,35 @@ const Village = () => {
           }}
         />
 
-        {/* ∅ symbol */}
-        <div
-          className="font-mono"
+        {/* Watching eye in town square */}
+        <svg
+          width={60}
+          height={40}
           style={{
             position: 'absolute',
-            left: CX,
-            top: CY,
-            transform: 'translate(-50%, -50%)',
-            fontSize: 24,
-            color: 'rgba(100,80,160,0.2)',
+            left: CX - 30,
+            top: CY - 20,
             pointerEvents: 'none',
             zIndex: 1,
+            overflow: 'visible',
           }}
         >
-          ∅
-        </div>
+          <ellipse
+            cx={30}
+            cy={20}
+            rx={20}
+            ry={12}
+            stroke="rgba(160,140,200,0.4)"
+            strokeWidth={0.5}
+            fill="none"
+          />
+          <circle
+            cx={30 + eyePupil.x}
+            cy={20 + eyePupil.y}
+            r={3.5}
+            fill="#5b4fd4"
+          />
+        </svg>
 
         {/* Type C buildings */}
         {TYPE_C.map((b) => (
@@ -528,7 +569,7 @@ const Village = () => {
         {renderTypeA(A_47, false)}
         {renderTypeA(A_89, true)}
 
-        {/* Trail glowing polyline (last 10 positions + current player) */}
+        {/* Trail glowing polyline (last 80 positions, fades to tail) */}
         {trail.length >= 2 && (
           <svg
             width={MAP_W}
@@ -538,7 +579,7 @@ const Village = () => {
               left: 0,
               top: 0,
               pointerEvents: 'none',
-              zIndex: 4,
+              zIndex: 2,
             }}
           >
             <defs>
@@ -550,15 +591,15 @@ const Village = () => {
                 x2={player.x}
                 y2={player.y}
               >
-                <stop offset="0%" stopColor="rgba(91,79,212,1)" stopOpacity={0} />
-                <stop offset="100%" stopColor="rgba(91,79,212,1)" stopOpacity={0.7} />
+                <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0} />
+                <stop offset="100%" stopColor="#5b4fd4" stopOpacity={0.8} />
               </linearGradient>
             </defs>
             <polyline
               points={[...trail.map((p) => `${p.x},${p.y}`), `${player.x},${player.y}`].join(' ')}
               fill="none"
               stroke="url(#trailGrad)"
-              strokeWidth={1.5}
+              strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
             />

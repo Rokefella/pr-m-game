@@ -163,13 +163,15 @@ const Village = () => {
   const trailIdRef = useRef(0);
 
   // Random start on outer ellipse (computed once)
-  const initialPos = (() => {
+  const initialPosRef = useRef<{ x: number; y: number } | null>(null);
+  if (initialPosRef.current === null) {
     const theta = Math.random() * Math.PI * 2;
-    return {
+    initialPosRef.current = {
       x: CX + OUTER_RX * Math.cos(theta),
       y: CY + OUTER_RY * Math.sin(theta),
     };
-  });
+  }
+  const initialPos = initialPosRef.current;
   const [player, setPlayer] = useState(initialPos);
   const playerRef = useRef(initialPos);
   const playerTargetRef = useRef(initialPos);

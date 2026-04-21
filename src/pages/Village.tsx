@@ -492,12 +492,13 @@ const Village = () => {
             key={d.id}
             style={{
               position: 'absolute',
-              left: d.x - 2,
-              top: d.y - 2,
-              width: 4,
-              height: 4,
+              left: d.x - 2.5,
+              top: d.y - 2.5,
+              width: 5,
+              height: 5,
               borderRadius: '50%',
-              background: 'rgba(91,79,212,0.15)',
+              background: 'rgba(91,79,212,0.45)',
+              boxShadow: '0 0 6px rgba(91,79,212,0.6)',
               pointerEvents: 'none',
               zIndex: 4,
             }}

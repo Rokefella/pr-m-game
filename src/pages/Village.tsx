@@ -178,6 +178,8 @@ const Village = () => {
   const lastTrailPushRef = useRef<{ x: number; y: number } | null>(null);
 
   const [trail, setTrail] = useState<Trail[]>([]);
+  const eyePupilRef = useRef({ x: 0, y: 0 });
+  const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });
 
   const [view, setView] = useState({ w: 390, h: 800 });
@@ -291,8 +293,34 @@ const Village = () => {
         const py = cur.y;
         setTrail((t) => {
           const next = [...t, { x: px, y: py, id }];
-          return next.length > 10 ? next.slice(next.length - 10) : next;
+          return next.length > 80 ? next.slice(next.length - 80) : next;
         });
+      }
+
+      // Eye pupil tracking
+      const pv = playerRef.current;
+      const evx = pv.x - CX;
+      const evy = pv.y - CY;
+      const edist = Math.hypot(evx, evy);
+      let etx: number, ety: number;
+      if (edist > 400) {
+        const tnow = Date.now();
+        etx = Math.cos(tnow / 4000) * 2;
+        ety = Math.sin(tnow / 4000) * 2;
+      } else if (edist < 0.001) {
+        etx = 0;
+        ety = 0;
+      } else {
+        const mag = Math.min(edist / 50, 1) * 8;
+        etx = (evx / edist) * mag;
+        ety = (evy / edist) * mag;
+      }
+      const ep = eyePupilRef.current;
+      const npx = ep.x + (etx - ep.x) * 0.08;
+      const npy = ep.y + (ety - ep.y) * 0.08;
+      if (Math.abs(npx - ep.x) > 0.01 || Math.abs(npy - ep.y) > 0.01) {
+        eyePupilRef.current = { x: npx, y: npy };
+        setEyePupil(eyePupilRef.current);
       }
 
       raf = requestAnimationFrame(loop);

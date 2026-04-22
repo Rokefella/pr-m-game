@@ -172,6 +172,12 @@ const Maze = () => {
 
   const [pulse, setPulse] = useState(1);
 
+  // Visibility upgrade levels (1=120px, 2=200px, 3=280px, 4=400px)
+  const [visibilityLevel] = useState(1);
+  const VIS_RADIUS = visibilityLevel === 1 ? 120 : visibilityLevel === 2 ? 200 : visibilityLevel === 3 ? 280 : 400;
+  const VIS_INNER = Math.round(VIS_RADIUS * 0.75);
+  const VIS_MID = Math.round(VIS_RADIUS * 0.9);
+
   const showWhisper = (text: string, color = 'rgba(160,140,200,0.85)', dur = 3000) => {
     setWhisper(text);
     setWhisperColor(color);
@@ -349,22 +355,46 @@ const Maze = () => {
           );
         })}
 
-        {/* trail dots */}
-        {trail.map((t, i) => (
-          <div
-            key={`t-${i}`}
-            style={{
-              position: 'absolute',
-              left: t.col * CELL + CELL / 2 - 2.5,
-              top: t.row * CELL + CELL / 2 - 2.5,
-              width: 5,
-              height: 5,
-              borderRadius: '50%',
-              background: 'rgba(91,79,212,0.65)',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+        {/* trail polyline (only points within visibility radius of player) */}
+        {(() => {
+          const px = posRef.current.col * CELL + CELL / 2;
+          const py = posRef.current.row * CELL + CELL / 2;
+          const visible = trail
+            .map((t) => ({ x: t.col * CELL + CELL / 2, y: t.row * CELL + CELL / 2 }))
+            .filter((p) => Math.hypot(p.x - px, p.y - py) <= VIS_RADIUS);
+          if (visible.length < 2) return null;
+          const head = visible[visible.length - 1];
+          const tail = visible[0];
+          return (
+            <svg
+              width={MAP_W}
+              height={MAP_H}
+              style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}
+            >
+              <defs>
+                <linearGradient
+                  id="mazeTrailGrad"
+                  gradientUnits="userSpaceOnUse"
+                  x1={head.x}
+                  y1={head.y}
+                  x2={tail.x}
+                  y2={tail.y}
+                >
+                  <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="rgba(150,150,160,1)" stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
+              <polyline
+                points={visible.map((p) => `${p.x},${p.y}`).join(' ')}
+                fill="none"
+                stroke="url(#mazeTrailGrad)"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          );
+        })()}
 
         {/* fragments — invisible until walked into */}
 
@@ -405,8 +435,7 @@ const Maze = () => {
         style={{
           position: 'fixed',
           inset: 0,
-          background:
-            'radial-gradient(circle 380px at 50vw calc(50vh - 40px), transparent 0px, transparent 300px, rgba(4,4,10,0.85) 360px, rgba(4,4,10,1) 400px)',
+          background: `radial-gradient(circle ${VIS_RADIUS}px at 50vw calc(50vh - 40px), transparent 0px, transparent ${VIS_INNER}px, rgba(4,4,10,0.85) ${VIS_MID}px, rgba(4,4,10,1) ${VIS_RADIUS}px)`,
           pointerEvents: 'none',
           zIndex: 50,
         }}
@@ -478,11 +507,12 @@ const Maze = () => {
       <div
         style={{
           position: 'fixed',
-          bottom: 90,
-          right: 20,
+          bottom: 80,
+          left: '50%',
+          transform: 'translateX(-50%)',
           width: 120,
           height: 120,
-          zIndex: 25,
+          zIndex: 55,
         }}
       >
         {[
@@ -524,22 +554,20 @@ const Maze = () => {
           bottom: 0,
           left: 0,
           right: 0,
-          height: 44,
-          background: 'rgba(8,6,16,0.92)',
-          borderTop: '1px solid rgba(100,80,160,0.3)',
+          background: 'rgba(4,4,10,0.92)',
+          borderTop: '0.5px solid rgba(169,140,255,0.3)',
+          padding: '10px 14px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-around',
-          padding: '0 16px',
-          fontSize: 10,
-          letterSpacing: '0.15em',
-          color: 'rgba(160,140,200,0.7)',
-          zIndex: 25,
+          justifyContent: 'space-between',
+          fontSize: 9,
+          letterSpacing: '0.18em',
+          zIndex: 60,
         }}
       >
-        <span>MAZE STEPS {String(steps).padStart(4, '0')}</span>
+        <span style={{ color: '#e0ddd5' }}>MAZE STEPS {steps}</span>
         <span style={{ color: '#c8963a' }}>FRAGMENTS {collected.size}/5</span>
-        <span style={{ color: '#a98cff' }}>LEVEL 01</span>
+        <span style={{ color: '#5b4fd4' }}>LEVEL 01</span>
       </div>
     </div>
   );

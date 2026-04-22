@@ -239,6 +239,9 @@ const Village = () => {
   const eyePupilRef = useRef({ x: 0, y: 0 });
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });
+  const [whisper, setWhisper] = useState<string | null>(null);
+  const whisperTimer = useRef<number | null>(null);
+  const lastWhisperIdxRef = useRef<number | null>(null);
 
   const [view, setView] = useState({ w: 390, h: 800 });
   useEffect(() => {

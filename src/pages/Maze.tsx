@@ -355,33 +355,19 @@ const Maze = () => {
             key={`t-${i}`}
             style={{
               position: 'absolute',
-              left: t.col * CELL + CELL / 2 - 2,
-              top: t.row * CELL + CELL / 2 - 2,
-              width: 4,
-              height: 4,
+              left: t.col * CELL + CELL / 2 - 2.5,
+              top: t.row * CELL + CELL / 2 - 2.5,
+              width: 5,
+              height: 5,
               borderRadius: '50%',
-              background: 'rgba(91,79,212,0.4)',
+              background: 'rgba(91,79,212,0.65)',
               pointerEvents: 'none',
             }}
           />
         ))}
 
-        {/* fragments */}
-        {FRAGMENTS.filter((f) => !collected.has(f.prime)).map((f) => (
-          <div
-            key={`f-${f.prime}`}
-            style={{
-              position: 'absolute',
-              left: f.col * CELL + CELL / 2 - 3,
-              top: f.row * CELL + CELL / 2 - 3,
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: 'rgba(200,150,58,0.4)',
-              boxShadow: '0 0 6px rgba(200,150,58,0.4)',
-            }}
-          />
-        ))}
+        {/* fragments — invisible until walked into */}
+
 
         {/* golden door */}
         <div

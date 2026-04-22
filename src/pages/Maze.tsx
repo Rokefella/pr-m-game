@@ -168,7 +168,7 @@ const Maze = () => {
   const camRef = useRef({ x: 0, y: 0 });
 
   const heldKeysRef = useRef<Set<string>>(new Set());
-  const keyFrameCounter = useRef(0);
+  const lastMoveTimeRef = useRef(0);
 
   const [pulse, setPulse] = useState(1);
 

@@ -196,6 +196,14 @@ const Maze = () => {
 
   const [activeFragment, setActiveFragment] = useState<{ prime: number; index: number } | null>(null);
 
+  // TODO production: load from Supabase player record
+  const [credits, setCredits] = useState(50);
+  const [exchangeOpen, setExchangeOpen] = useState(false);
+  const [selectedCredits, setSelectedCredits] = useState(1);
+  const [exchangeError, setExchangeError] = useState(false);
+  const exchangeOpenRef = useRef(false);
+  useEffect(() => { exchangeOpenRef.current = exchangeOpen; }, [exchangeOpen]);
+
   // Visibility upgrade levels (1=120px, 2=200px, 3=280px, 4=400px)
   const [visibilityLevel] = useState(1);
   const VIS_RADIUS = visibilityLevel === 1 ? 120 : visibilityLevel === 2 ? 200 : visibilityLevel === 3 ? 280 : 400;
@@ -214,6 +222,7 @@ const Maze = () => {
     // TODO: restore to 200ms for production
     if (now - lastMoveTimeRef.current < 150) return;
     if (stepsRemainingRef.current <= 0) return;
+    if (exchangeOpenRef.current) return;
     // Clamp to max 1 cell per axis per call — never allow multi-cell jumps
     const sdc = dc === 0 ? 0 : dc > 0 ? 1 : -1;
     const sdr = dr === 0 ? 0 : dr > 0 ? 1 : -1;
@@ -458,6 +467,7 @@ const Maze = () => {
           0%, 100% { box-shadow: 0 0 8px rgba(59,130,246,0.5); }
           50% { box-shadow: 0 0 20px rgba(59,130,246,0.9); }
         }
+        @keyframes mazePanelSlide { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}</style>
 
       {/* PLAYER (fixed center) */}
@@ -633,10 +643,167 @@ const Maze = () => {
           zIndex: 60,
         }}
       >
-        <span style={{ color: stepsRemaining === 0 ? 'rgba(200,80,80,0.9)' : stepsRemaining <= 20 ? 'rgba(200,150,58,0.9)' : '#e0ddd5' }}>STEPS {stepsRemaining}</span>
-        <span style={{ color: '#c8963a' }}>FRAGMENTS {collected.size}/5</span>
+        <span
+          onClick={() => { setExchangeError(false); setSelectedCredits(1); setExchangeOpen(true); }}
+          style={{
+            color: stepsRemaining === 0 ? 'rgba(200,80,80,0.9)' : stepsRemaining <= 20 ? 'rgba(200,150,58,0.9)' : '#e0ddd5',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: 2,
+          }}
+        >
+          <span>STEPS {stepsRemaining}</span>
+          {stepsRemaining <= 20 && (
+            <span style={{ color: 'rgba(160,140,200,0.4)', fontSize: 8, letterSpacing: '0.15em' }}>tap to exchange</span>
+          )}
+        </span>
+        <span style={{ color: '#c8963a' }}>CREDITS {credits}</span>
         <span style={{ color: '#5b4fd4' }}>LEVEL 01</span>
       </div>
+
+      {/* EXCHANGE PANEL */}
+      {exchangeOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            bottom: 36,
+            height: 220,
+            background: 'rgba(4,4,10,0.97)',
+            borderTop: '1px solid rgba(100,80,160,0.4)',
+            zIndex: 70,
+            animation: 'mazePanelSlide 280ms ease-out',
+          }}
+        >
+          <button
+            onClick={() => setExchangeOpen(false)}
+            style={{
+              position: 'absolute',
+              top: 8,
+              right: 12,
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(160,140,200,0.4)',
+              fontSize: 18,
+              cursor: 'pointer',
+              padding: 4,
+            }}
+          >
+            ×
+          </button>
+
+          {exchangeError ? (
+            <div
+              className="font-fell italic"
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: 0,
+                right: 0,
+                transform: 'translateY(-50%)',
+                textAlign: 'center',
+                fontSize: 16,
+                color: 'rgba(200,80,80,0.6)',
+              }}
+            >
+              You have nothing left to give.
+            </div>
+          ) : (
+            <>
+              <div
+                className="font-cinzel"
+                style={{
+                  textAlign: 'center',
+                  paddingTop: 16,
+                  fontSize: 12,
+                  color: 'rgba(160,140,200,0.7)',
+                  letterSpacing: '0.2em',
+                }}
+              >
+                Exchange Credits for Steps
+              </div>
+              <div
+                className="font-mono"
+                style={{
+                  textAlign: 'center',
+                  marginTop: 8,
+                  fontSize: 11,
+                  color: 'rgba(160,140,200,0.4)',
+                }}
+              >
+                1 CREDIT = 100 STEPS
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 48, marginTop: 12 }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>CREDITS</div>
+                  <div className="font-mono" style={{ fontSize: 18, color: '#c8963a', marginTop: 2 }}>{credits}</div>
+                </div>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>STEPS</div>
+                  <div className="font-mono" style={{ fontSize: 18, color: '#e0ddd5', marginTop: 2 }}>{stepsRemaining}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 16 }}>
+                {[1, 5, 10].map((n) => {
+                  const sel = selectedCredits === n;
+                  return (
+                    <button
+                      key={n}
+                      className="font-cinzel"
+                      onClick={() => setSelectedCredits(n)}
+                      style={{
+                        fontSize: 9,
+                        letterSpacing: '0.15em',
+                        padding: '8px 12px',
+                        border: `0.5px solid ${sel ? '#c8963a' : 'rgba(100,80,160,0.4)'}`,
+                        background: 'rgba(100,80,160,0.08)',
+                        color: sel ? '#c8963a' : 'rgba(160,140,200,0.7)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {n} CREDIT{n > 1 ? 'S' : ''} → {n * 100} STEPS
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+                <button
+                  className="font-cinzel"
+                  onClick={() => {
+                    if (credits < selectedCredits) {
+                      setExchangeError(true);
+                      window.setTimeout(() => { setExchangeOpen(false); setExchangeError(false); }, 2000);
+                      return;
+                    }
+                    setCredits((c) => c - selectedCredits);
+                    const gained = selectedCredits * 100;
+                    stepsRemainingRef.current += gained;
+                    setStepsRemaining(stepsRemainingRef.current);
+                    setExchangeOpen(false);
+                  }}
+                  style={{
+                    fontSize: 11,
+                    letterSpacing: '0.28em',
+                    background: '#c8963a',
+                    color: '#04040a',
+                    padding: '10px 32px',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                >
+                  CONFIRM
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* FRAGMENT OVERLAY */}
       {activeFragment && (

@@ -63,14 +63,8 @@ const PRIME_BUBBLE_CELLS: Set<string> = (() => {
   for (const n of PRIME_SET) {
     const pc = n % COLS;
     const pr = Math.floor(n / COLS);
-    for (let dr = -2; dr <= 2; dr++) {
-      for (let dc = -2; dc <= 2; dc++) {
-        const c = pc + dc;
-        const r = pr + dr;
-        if (c >= 0 && c < COLS && r >= 0 && r < ROWS) {
-          s.add(`${c},${r}`);
-        }
-      }
+    if (pc >= 0 && pc < COLS && pr >= 0 && pr < ROWS) {
+      s.add(`${pc},${pr}`);
     }
   }
   return s;

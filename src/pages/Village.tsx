@@ -763,6 +763,30 @@ const Village = () => {
         Another one enters?
       </p>
 
+      {/* Easter egg whisper */}
+      {whisper && (
+        <p
+          key={whisper}
+          className="font-fell italic"
+          style={{
+            position: 'absolute',
+            top: '18%',
+            left: 0,
+            right: 0,
+            textAlign: 'center',
+            fontSize: 13,
+            color: 'rgba(160,140,200,0.85)',
+            textShadow: '0 0 12px rgba(91,79,212,0.6)',
+            margin: 0,
+            zIndex: 11,
+            pointerEvents: 'none',
+            animation: 'villageNotYet 2.5s ease-out forwards',
+          }}
+        >
+          {whisper}
+        </p>
+      )}
+
       {/* D-pad */}
       <div
         style={{

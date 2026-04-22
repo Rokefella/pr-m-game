@@ -172,6 +172,12 @@ const Maze = () => {
 
   const [pulse, setPulse] = useState(1);
 
+  // Visibility upgrade levels (1=120px, 2=200px, 3=280px, 4=400px)
+  const [visibilityLevel] = useState(1);
+  const VIS_RADIUS = visibilityLevel === 1 ? 120 : visibilityLevel === 2 ? 200 : visibilityLevel === 3 ? 280 : 400;
+  const VIS_INNER = Math.round(VIS_RADIUS * 0.75);
+  const VIS_MID = Math.round(VIS_RADIUS * 0.9);
+
   const showWhisper = (text: string, color = 'rgba(160,140,200,0.85)', dur = 3000) => {
     setWhisper(text);
     setWhisperColor(color);

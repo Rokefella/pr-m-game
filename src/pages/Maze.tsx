@@ -599,7 +599,7 @@ const Maze = () => {
       <div
         style={{
           position: 'fixed',
-          bottom: 80,
+          bottom: 120,
           left: '50%',
           transform: 'translateX(-50%)',
           width: 120,

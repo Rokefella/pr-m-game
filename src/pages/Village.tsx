@@ -496,8 +496,21 @@ const Village = () => {
       }
     }
 
+    // Hard ellipse boundary: clamp to outermost ellipse +20px buffer
+    const BX = OUTERMOST_RX + 20;
+    const BY = OUTERMOST_RY + 20;
+    let fx = nx, fy = ny;
+    const ex = (fx - CX) / BX;
+    const ey = (fy - CY) / BY;
+    const e2 = ex * ex + ey * ey;
+    if (e2 > 1) {
+      const mag = Math.sqrt(e2);
+      fx = CX + (fx - CX) / mag;
+      fy = CY + (fy - CY) / mag;
+    }
+
     // Commit target
-    playerTargetRef.current = { x: nx, y: ny };
+    playerTargetRef.current = { x: fx, y: fy };
   };
 
   // Keyboard arrow keys

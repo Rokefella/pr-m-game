@@ -22,6 +22,20 @@ const A_47 = { id: 47 as const, x: 1580, y: 780, w: 70, h: 50, color: '#1d9e75',
 const A_89 = { id: 89 as const, x: 1055, y: 440, w: 90, h: 70, color: '#c8963a', bg: 'rgba(200,150,58,0.06)', label: 14 };
 const TYPE_A = [A_23, A_47, A_89];
 
+// Easter egg whispers — keyed by Type B index
+const WHISPERS: Record<number, string> = {
+  0: 'The mathematics knew you were coming.',
+  7: 'She left something here.',
+  12: 'Junction 89 is closer than you think.',
+  18: 'You have been here before.',
+  23: 'The spiral does not forget.',
+  29: 'Something emerged here.',
+  35: 'Count the doors.',
+  41: '89 is not the end.',
+  46: 'The order was never real.',
+  49: 'This is not the door through which I came in.',
+};
+
 // ---------- Helpers ----------
 const rectsOverlap = (
   a: { x: number; y: number; w: number; h: number },
@@ -165,21 +179,14 @@ const generateBuildings = () => {
     placeOnEllipse(rx, ry, a, 14, 22, 36, 16, 26, C, [C, B], C_GAP, C_VS_AB_PAD, 'c', cIdx++);
   }
 
-  // Outermost rim: 60 buildings every 6°, each 28x22, with wider gaps every 30°
-  // To create wider gaps: skip placing the building when it would be at one of the wide-gap angles.
-  // Actually: we place all 60 but offset every 5th building (at multiples of 30°) outward slightly so the gap doubles.
-  // Simpler: skip building entirely at the wide-gap centers — but spec says gap doubles, not removed.
-  // We'll place 60, but for buildings whose angle is within 3° of a multiple of 30°, nudge them outward by ~30px,
-  // effectively creating wider gaps along the rim path.
-  for (let i = 0; i < 60; i++) {
-    const angleDeg = i * 6;
-    const isWideGap = angleDeg % 30 === 0;
-    if (isWideGap) continue; // skip to create the wider entry/exit street
+  // Outermost rim: solid wall, building every 3°, 30x24, no navigable gaps
+  for (let i = 0; i < 120; i++) {
+    const angleDeg = i * 3;
     const theta = (angleDeg * Math.PI) / 180;
     const cx = CX + OUTERMOST_RX * Math.cos(theta);
     const cy = CY + OUTERMOST_RY * Math.sin(theta);
-    const w = 28;
-    const h = 22;
+    const w = 30;
+    const h = 24;
     const x = Math.round(cx - w / 2);
     const y = Math.round(cy - h / 2);
     if (x < 6 || y < 6 || x + w > MAP_W - 6 || y + h > MAP_H - 6) continue;
@@ -192,19 +199,33 @@ const generateBuildings = () => {
 const { B: TYPE_B, C: TYPE_C, RIM: TYPE_RIM } = generateBuildings();
 const OBSTACLES: Rect[] = [...TYPE_B, ...TYPE_C, ...TYPE_RIM];
 
-// Compute valid spawn point on outermost ring
+// Compute valid spawn point — inside outermost ellipse, not overlapping buildings
 const computeSpawn = (): { x: number; y: number } => {
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 100; i++) {
+    // Spawn somewhere between OUTER ring and 85% of outermost (well inside boundary)
     const theta = Math.random() * Math.PI * 2;
-    const x = CX + OUTERMOST_RX * Math.cos(theta);
-    const y = CY + OUTERMOST_RY * Math.sin(theta);
+    const t = 0.55 + Math.random() * 0.3; // 55%..85% out from center
+    let x = CX + OUTERMOST_RX * t * Math.cos(theta);
+    let y = CY + OUTERMOST_RY * t * Math.sin(theta);
+
+    // Ensure inside outermost ellipse (scale to 85% if outside)
+    const nx = (x - CX) / OUTERMOST_RX;
+    const ny = (y - CY) / OUTERMOST_RY;
+    if (nx * nx + ny * ny > 1) {
+      const mag = Math.sqrt(nx * nx + ny * ny);
+      x = CX + (x - CX) * (0.85 / mag);
+      y = CY + (y - CY) * (0.85 / mag);
+    }
+
     const playerRect = { x: x - 4, y: y - 4, w: 8, h: 8 };
     let collides = false;
     for (const o of OBSTACLES) {
-      if (rectsOverlap(playerRect, o, 8)) { collides = true; break; }
+      if (rectsOverlap(playerRect, o, 10)) { collides = true; break; }
     }
-    for (const a of TYPE_A) {
-      if (rectsOverlap(playerRect, a, 8)) { collides = true; break; }
+    if (!collides) {
+      for (const a of TYPE_A) {
+        if (rectsOverlap(playerRect, a, 10)) { collides = true; break; }
+      }
     }
     if (!collides) return { x, y };
   }
@@ -232,6 +253,9 @@ const Village = () => {
   const eyePupilRef = useRef({ x: 0, y: 0 });
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });
+  const [whisper, setWhisper] = useState<string | null>(null);
+  const whisperTimer = useRef<number | null>(null);
+  const lastWhisperIdxRef = useRef<number | null>(null);
 
   const [view, setView] = useState({ w: 390, h: 800 });
   useEffect(() => {
@@ -244,6 +268,7 @@ const Village = () => {
   useEffect(() => {
     return () => {
       if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
+      if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
     };
   }, []);
 
@@ -283,7 +308,7 @@ const Village = () => {
       }
     }
 
-    // Obstacles (B + C + RIM) with 2px padding
+    // Obstacles (B + C + RIM) with 2px padding — also check whisper trigger on Type B
     for (const o of OBSTACLES) {
       if (
         nx >= o.x - 2 &&
@@ -291,6 +316,19 @@ const Village = () => {
         ny >= o.y - 2 &&
         ny <= o.y + o.h + 2
       ) {
+        // Whisper check: is this a Type B with a whisper index?
+        const bIdx = TYPE_B.indexOf(o);
+        if (bIdx !== -1 && WHISPERS[bIdx] !== undefined) {
+          if (lastWhisperIdxRef.current !== bIdx) {
+            lastWhisperIdxRef.current = bIdx;
+            setWhisper(WHISPERS[bIdx]);
+            if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
+            whisperTimer.current = window.setTimeout(() => {
+              setWhisper(null);
+              lastWhisperIdxRef.current = null;
+            }, 2500);
+          }
+        }
         return;
       }
     }
@@ -605,8 +643,8 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '0.5px solid rgba(100,80,160,0.3)',
-              background: 'rgba(100,80,160,0.08)',
+              border: '0.5px solid rgba(100,80,160,0.25)',
+              background: 'rgba(100,80,160,0.07)',
               zIndex: 1,
             }}
           />
@@ -622,8 +660,8 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '0.5px solid rgba(100,80,160,0.35)',
-              background: 'rgba(100,80,160,0.10)',
+              border: '0.5px solid rgba(100,80,160,0.45)',
+              background: 'rgba(100,80,160,0.12)',
               zIndex: 1,
             }}
           />
@@ -639,8 +677,8 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '1px solid rgba(100,80,160,0.6)',
-              background: 'rgba(100,80,160,0.18)',
+              border: '1px solid rgba(100,80,160,0.7)',
+              background: 'rgba(100,80,160,0.20)',
               zIndex: 2,
             }}
           />
@@ -724,6 +762,30 @@ const Village = () => {
       >
         Another one enters?
       </p>
+
+      {/* Easter egg whisper */}
+      {whisper && (
+        <p
+          key={whisper}
+          className="font-fell italic"
+          style={{
+            position: 'absolute',
+            top: '18%',
+            left: 0,
+            right: 0,
+            textAlign: 'center',
+            fontSize: 13,
+            color: 'rgba(160,140,200,0.85)',
+            textShadow: '0 0 12px rgba(91,79,212,0.6)',
+            margin: 0,
+            zIndex: 11,
+            pointerEvents: 'none',
+            animation: 'villageNotYet 2.5s ease-out forwards',
+          }}
+        >
+          {whisper}
+        </p>
+      )}
 
       {/* D-pad */}
       <div

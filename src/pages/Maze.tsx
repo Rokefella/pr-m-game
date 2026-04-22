@@ -274,6 +274,7 @@ const Maze = () => {
     if (nc === DOOR.col && nr === DOOR.row) {
       if (collectedRef.current.size >= 5) {
         showWhisper('The way opens.', '#c8963a', 2000);
+        localStorage.setItem('praem_maze_completed_level', String(currentLevel));
         window.setTimeout(() => navigate('/shadow'), 2000);
       } else {
         const remaining = 5 - collectedRef.current.size;

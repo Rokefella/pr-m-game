@@ -406,9 +406,9 @@ const Maze = () => {
           position: 'fixed',
           inset: 0,
           background:
-            'radial-gradient(circle 380px at 50% 50%, transparent 320px, rgba(4,4,10,0.7) 360px, rgba(4,4,10,1) 400px)',
+            'radial-gradient(circle 380px at 50vw calc(50vh - 40px), transparent 0px, transparent 300px, rgba(4,4,10,0.85) 360px, rgba(4,4,10,1) 400px)',
           pointerEvents: 'none',
-          zIndex: 10,
+          zIndex: 50,
         }}
       />
 

@@ -473,7 +473,7 @@ const Maze = () => {
                 y2={tail.y}
               >
                 <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="rgb(150,150,160)" stopOpacity={0} />
+                <stop offset="100%" stopColor="#5b4fd4" stopOpacity={0} />
               </linearGradient>
             </defs>
             <polyline

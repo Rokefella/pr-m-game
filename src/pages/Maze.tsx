@@ -211,9 +211,12 @@ const Maze = () => {
     const now = Date.now();
     // TODO: restore to 200ms for production
     if (now - lastMoveTimeRef.current < 50) return;
+    // Clamp to max 1 cell per axis per call — never allow multi-cell jumps
+    const sdc = dc === 0 ? 0 : dc > 0 ? 1 : -1;
+    const sdr = dr === 0 ? 0 : dr > 0 ? 1 : -1;
     const cur = posRef.current;
-    const nc = Math.max(0, Math.min(COLS - 1, cur.col + dc));
-    const nr = Math.max(0, Math.min(ROWS - 1, cur.row + dr));
+    const nc = Math.max(0, Math.min(COLS - 1, cur.col + sdc));
+    const nr = Math.max(0, Math.min(ROWS - 1, cur.row + sdr));
     if (nc === cur.col && nr === cur.row) return;
     if (isWall(nc, nr)) return;
     lastMoveTimeRef.current = now;

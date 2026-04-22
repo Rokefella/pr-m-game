@@ -307,7 +307,7 @@ const Village = () => {
       }
     }
 
-    // Obstacles (B + C + RIM) with 2px padding
+    // Obstacles (B + C + RIM) with 2px padding — also check whisper trigger on Type B
     for (const o of OBSTACLES) {
       if (
         nx >= o.x - 2 &&
@@ -315,6 +315,19 @@ const Village = () => {
         ny >= o.y - 2 &&
         ny <= o.y + o.h + 2
       ) {
+        // Whisper check: is this a Type B with a whisper index?
+        const bIdx = TYPE_B.indexOf(o);
+        if (bIdx !== -1 && WHISPERS[bIdx] !== undefined) {
+          if (lastWhisperIdxRef.current !== bIdx) {
+            lastWhisperIdxRef.current = bIdx;
+            setWhisper(WHISPERS[bIdx]);
+            if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
+            whisperTimer.current = window.setTimeout(() => {
+              setWhisper(null);
+              lastWhisperIdxRef.current = null;
+            }, 2500);
+          }
+        }
         return;
       }
     }

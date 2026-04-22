@@ -250,39 +250,89 @@ const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => 
         </div>
       )}
 
+      {/* Player avatar */}
+      {showPrime && (
+        <div
+          style={{
+            marginTop: 24,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <svg width={40} height={40} viewBox="-20 -20 40 40">
+            <circle
+              cx={0}
+              cy={0}
+              r={8}
+              fill="#5b4fd4"
+              style={{ filter: 'drop-shadow(0 0 12px rgba(91,79,212,0.8))' }}
+            />
+          </svg>
+          <div
+            className="font-mono"
+            style={{ fontSize: 11, color: 'rgba(160,140,200,0.4)' }}
+          >
+            #0001
+          </div>
+        </div>
+      )}
+
       {/* Buttons */}
       {showButtons && (
-        <div style={{ marginTop: 40, display: 'flex', gap: 16 }}>
-          <button
-            className="font-cinzel"
-            onClick={handleCapture}
-            style={{
-              fontSize: 11,
-              letterSpacing: '0.28em',
-              background: '#c8963a',
-              color: '#04040a',
-              padding: '10px 24px',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            CAPTURE
-          </button>
-          <button
-            className="font-cinzel"
-            onClick={handleContinue}
-            style={{
-              fontSize: 11,
-              letterSpacing: '0.28em',
-              background: 'transparent',
-              border: '0.5px solid rgba(160,140,200,0.4)',
-              color: 'rgba(160,140,200,0.7)',
-              padding: '10px 24px',
-              cursor: 'pointer',
-            }}
-          >
-            CONTINUE
-          </button>
+        <div
+          style={{
+            marginTop: 24,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', gap: 16 }}>
+            <button
+              className="font-cinzel"
+              onClick={handleCapture}
+              style={{
+                fontSize: 11,
+                letterSpacing: '0.28em',
+                background: '#c8963a',
+                color: '#04040a',
+                padding: '10px 24px',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              SAVE TO BACKPACK
+            </button>
+            <button
+              className="font-cinzel"
+              onClick={handleContinue}
+              style={{
+                fontSize: 11,
+                letterSpacing: '0.28em',
+                background: 'transparent',
+                border: '0.5px solid rgba(160,140,200,0.4)',
+                color: 'rgba(160,140,200,0.7)',
+                padding: '10px 24px',
+                cursor: 'pointer',
+              }}
+            >
+              CONTINUE
+            </button>
+          </div>
+          {savedMsg && (
+            <div
+              className="font-fell italic"
+              style={{
+                fontSize: 13,
+                color: 'rgba(160,140,200,0.6)',
+              }}
+            >
+              Saved to your backpack.
+            </div>
+          )}
         </div>
       )}
 

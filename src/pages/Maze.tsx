@@ -529,6 +529,27 @@ const Maze = () => {
         </p>
       )}
 
+      {/* NO STEPS MESSAGE */}
+      {stepsRemaining === 0 && (
+        <p
+          className="font-fell italic"
+          style={{
+            position: 'fixed',
+            top: '20%',
+            left: 0,
+            right: 0,
+            textAlign: 'center',
+            fontSize: 16,
+            color: 'rgba(160,140,200,0.6)',
+            margin: 0,
+            zIndex: 30,
+            pointerEvents: 'none',
+          }}
+        >
+          You have no steps remaining. Walk to continue.
+        </p>
+      )}
+
       {/* RETURN */}
       <button
         className="font-cinzel"

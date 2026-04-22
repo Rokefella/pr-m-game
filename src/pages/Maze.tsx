@@ -291,8 +291,15 @@ const Maze = () => {
       if (k.has('ArrowUp')) dr -= 1;
       if (k.has('ArrowDown')) dr += 1;
       if (dc !== 0 || dr !== 0) {
+        // try combined diagonal first; if blocked, fall back to single-axis
         if (dc !== 0 && dr !== 0) {
-          tryMove(dc, 0);
+          const cur = posRef.current;
+          if (!isWall(cur.col + dc, cur.row + dr)) {
+            tryMove(dc, dr);
+          } else {
+            tryMove(dc, 0);
+            tryMove(0, dr);
+          }
         } else {
           tryMove(dc, dr);
         }

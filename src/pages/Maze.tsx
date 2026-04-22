@@ -67,9 +67,6 @@ const OPEN_SET: Set<string> = (() => {
   hLine(23, 27, 5);
   vLine(27, 23, 6);
 
-  // Path to credit-game door at (5,25)
-  vLine(5, 22, 4);
-
   // Some dead-end stubs for complexity
   hLine(5, 9, 3);
   hLine(13, 13, 4);

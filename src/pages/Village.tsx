@@ -22,19 +22,19 @@ const A_47 = { id: 47 as const, x: 1580, y: 780, w: 70, h: 50, color: '#1d9e75',
 const A_89 = { id: 89 as const, x: 1055, y: 440, w: 90, h: 70, color: '#c8963a', bg: 'rgba(200,150,58,0.06)', label: 14 };
 const TYPE_A = [A_23, A_47, A_89];
 
-// Easter egg whispers — keyed by Type B index
-const WHISPERS: Record<number, string> = {
-  0: 'The mathematics knew you were coming.',
-  7: 'She left something here.',
-  12: 'Junction 89 is closer than you think.',
-  18: 'You have been here before.',
-  23: 'The spiral does not forget.',
-  29: 'Something emerged here.',
-  35: 'Count the doors.',
-  41: '89 is not the end.',
-  46: 'The order was never real.',
-  49: 'This is not the door through which I came in.',
-};
+// Easter egg whispers — assigned to nearest building (any type) of these map points
+const WHISPER_POINTS: { p: [number, number]; msg: string }[] = [
+  { p: [300, 200], msg: 'The mathematics knew you were coming.' },
+  { p: [1800, 300], msg: 'She left something here.' },
+  { p: [400, 900], msg: 'Junction 89 is closer than you think.' },
+  { p: [1900, 800], msg: 'You have been here before.' },
+  { p: [1100, 200], msg: 'The spiral does not forget.' },
+  { p: [200, 600], msg: 'Something emerged here.' },
+  { p: [1900, 500], msg: 'Count the doors.' },
+  { p: [600, 1200], msg: '89 is not the end.' },
+  { p: [1500, 1100], msg: 'The order was never real.' },
+  { p: [1100, 1100], msg: 'This is not the door through which I came in.' },
+];
 
 // ---------- Helpers ----------
 const rectsOverlap = (

@@ -165,21 +165,14 @@ const generateBuildings = () => {
     placeOnEllipse(rx, ry, a, 14, 22, 36, 16, 26, C, [C, B], C_GAP, C_VS_AB_PAD, 'c', cIdx++);
   }
 
-  // Outermost rim: 60 buildings every 6°, each 28x22, with wider gaps every 30°
-  // To create wider gaps: skip placing the building when it would be at one of the wide-gap angles.
-  // Actually: we place all 60 but offset every 5th building (at multiples of 30°) outward slightly so the gap doubles.
-  // Simpler: skip building entirely at the wide-gap centers — but spec says gap doubles, not removed.
-  // We'll place 60, but for buildings whose angle is within 3° of a multiple of 30°, nudge them outward by ~30px,
-  // effectively creating wider gaps along the rim path.
-  for (let i = 0; i < 60; i++) {
-    const angleDeg = i * 6;
-    const isWideGap = angleDeg % 30 === 0;
-    if (isWideGap) continue; // skip to create the wider entry/exit street
+  // Outermost rim: solid wall, building every 3°, 30x24, no navigable gaps
+  for (let i = 0; i < 120; i++) {
+    const angleDeg = i * 3;
     const theta = (angleDeg * Math.PI) / 180;
     const cx = CX + OUTERMOST_RX * Math.cos(theta);
     const cy = CY + OUTERMOST_RY * Math.sin(theta);
-    const w = 28;
-    const h = 22;
+    const w = 30;
+    const h = 24;
     const x = Math.round(cx - w / 2);
     const y = Math.round(cy - h / 2);
     if (x < 6 || y < 6 || x + w > MAP_W - 6 || y + h > MAP_H - 6) continue;

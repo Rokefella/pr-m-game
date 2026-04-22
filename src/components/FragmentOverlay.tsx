@@ -22,6 +22,8 @@ const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => 
   const [showPrime, setShowPrime] = useState(false);
   const [showButtons, setShowButtons] = useState(false);
   const [fadingOut, setFadingOut] = useState(false);
+  const [savedMsg, setSavedMsg] = useState(false);
+  const savedTimerRef = useRef<number | null>(null);
   const anchorRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
@@ -123,15 +125,23 @@ const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => 
     ctx.textBaseline = 'middle';
     ctx.fillText(String(prime), 300, 420);
 
-    // player avatar at (300, 560): glow arc + circle r=16
-    ctx.fillStyle = 'rgba(91,79,212,0.6)';
+    // player avatar at (300, 560): outer ring + filled circle
+    ctx.strokeStyle = 'rgba(91,79,212,0.4)';
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(300, 560, 28, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.arc(300, 560, 22, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.fillStyle = '#5b4fd4';
     ctx.beginPath();
     ctx.arc(300, 560, 16, 0, Math.PI * 2);
     ctx.fill();
+
+    // registration label below avatar
+    ctx.fillStyle = 'rgba(160,140,200,0.4)';
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('#0001', 300, 590);
 
     // PRÆM at bottom
     ctx.fillStyle = 'rgba(160,140,200,0.4)';
@@ -156,14 +166,23 @@ const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => 
       cx += widths[i] + spacing;
     }
 
-    canvas.toBlob((blob) => {
-      if (!blob || !anchorRef.current) return;
-      const url = URL.createObjectURL(blob);
-      anchorRef.current.href = url;
-      anchorRef.current.download = `praem-fragment-${prime}.png`;
-      anchorRef.current.click();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }, 'image/png');
+    // Save to localStorage instead of downloading
+    try {
+      const dataUrl = canvas.toDataURL('image/png');
+      localStorage.setItem(`praem_fragment_${prime}`, dataUrl);
+      const meta = {
+        prime,
+        collectedAt: Date.now(),
+        registrationNumber: '0001',
+        level: 1,
+      };
+      localStorage.setItem(`praem_fragment_${prime}_meta`, JSON.stringify(meta));
+      setSavedMsg(true);
+      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = window.setTimeout(() => setSavedMsg(false), 1500);
+    } catch (err) {
+      console.error('Failed to save fragment to backpack', err);
+    }
   };
 
   return (
@@ -231,39 +250,89 @@ const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => 
         </div>
       )}
 
+      {/* Player avatar */}
+      {showPrime && (
+        <div
+          style={{
+            marginTop: 24,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <svg width={40} height={40} viewBox="-20 -20 40 40">
+            <circle
+              cx={0}
+              cy={0}
+              r={8}
+              fill="#5b4fd4"
+              style={{ filter: 'drop-shadow(0 0 12px rgba(91,79,212,0.8))' }}
+            />
+          </svg>
+          <div
+            className="font-mono"
+            style={{ fontSize: 11, color: 'rgba(160,140,200,0.4)' }}
+          >
+            #0001
+          </div>
+        </div>
+      )}
+
       {/* Buttons */}
       {showButtons && (
-        <div style={{ marginTop: 40, display: 'flex', gap: 16 }}>
-          <button
-            className="font-cinzel"
-            onClick={handleCapture}
-            style={{
-              fontSize: 11,
-              letterSpacing: '0.28em',
-              background: '#c8963a',
-              color: '#04040a',
-              padding: '10px 24px',
-              border: 'none',
-              cursor: 'pointer',
-            }}
-          >
-            CAPTURE
-          </button>
-          <button
-            className="font-cinzel"
-            onClick={handleContinue}
-            style={{
-              fontSize: 11,
-              letterSpacing: '0.28em',
-              background: 'transparent',
-              border: '0.5px solid rgba(160,140,200,0.4)',
-              color: 'rgba(160,140,200,0.7)',
-              padding: '10px 24px',
-              cursor: 'pointer',
-            }}
-          >
-            CONTINUE
-          </button>
+        <div
+          style={{
+            marginTop: 24,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', gap: 16 }}>
+            <button
+              className="font-cinzel"
+              onClick={handleCapture}
+              style={{
+                fontSize: 11,
+                letterSpacing: '0.28em',
+                background: '#c8963a',
+                color: '#04040a',
+                padding: '10px 24px',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              SAVE TO BACKPACK
+            </button>
+            <button
+              className="font-cinzel"
+              onClick={handleContinue}
+              style={{
+                fontSize: 11,
+                letterSpacing: '0.28em',
+                background: 'transparent',
+                border: '0.5px solid rgba(160,140,200,0.4)',
+                color: 'rgba(160,140,200,0.7)',
+                padding: '10px 24px',
+                cursor: 'pointer',
+              }}
+            >
+              CONTINUE
+            </button>
+          </div>
+          {savedMsg && (
+            <div
+              className="font-fell italic"
+              style={{
+                fontSize: 13,
+                color: 'rgba(160,140,200,0.6)',
+              }}
+            >
+              Saved to your backpack.
+            </div>
+          )}
         </div>
       )}
 

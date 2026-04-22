@@ -211,9 +211,12 @@ const Maze = () => {
     const now = Date.now();
     // TODO: restore to 200ms for production
     if (now - lastMoveTimeRef.current < 50) return;
+    // Clamp to max 1 cell per axis per call — never allow multi-cell jumps
+    const sdc = dc === 0 ? 0 : dc > 0 ? 1 : -1;
+    const sdr = dr === 0 ? 0 : dr > 0 ? 1 : -1;
     const cur = posRef.current;
-    const nc = Math.max(0, Math.min(COLS - 1, cur.col + dc));
-    const nr = Math.max(0, Math.min(ROWS - 1, cur.row + dr));
+    const nc = Math.max(0, Math.min(COLS - 1, cur.col + sdc));
+    const nr = Math.max(0, Math.min(ROWS - 1, cur.row + sdr));
     if (nc === cur.col && nr === cur.row) return;
     if (isWall(nc, nr)) return;
     lastMoveTimeRef.current = now;
@@ -255,7 +258,9 @@ const Maze = () => {
         showWhisper('The way opens.', '#c8963a', 2000);
         window.setTimeout(() => navigate('/shadow'), 2000);
       } else {
-        showWhisper('You are not ready.', 'rgba(160,140,200,0.6)', 2000);
+        const remaining = 5 - collectedRef.current.size;
+        const msg = remaining === 1 ? 'One fragment remains.' : `${remaining} fragments remain.`;
+        showWhisper(`${msg} The door does not open.`, 'rgba(200,150,58,0.7)', 2500);
       }
     }
 
@@ -298,18 +303,11 @@ const Maze = () => {
       if (k.has('ArrowUp')) dr -= 1;
       if (k.has('ArrowDown')) dr += 1;
       if (dc !== 0 || dr !== 0) {
-        // try combined diagonal first; if blocked, fall back to single-axis
-        if (dc !== 0 && dr !== 0) {
-          const cur = posRef.current;
-          if (!isWall(cur.col + dc, cur.row + dr)) {
-            tryMove(dc, dr);
-          } else {
-            tryMove(dc, 0);
-            tryMove(0, dr);
-          }
-        } else {
-          tryMove(dc, dr);
-        }
+        // Process axes independently so diagonals slide along walls
+        // instead of clipping through corners. Each tryMove is gated by
+        // its own cooldown and clamped to exactly 1 cell per axis.
+        if (dc !== 0) tryMove(dc, 0);
+        if (dr !== 0) tryMove(0, dr);
       }
 
       // camera follows player

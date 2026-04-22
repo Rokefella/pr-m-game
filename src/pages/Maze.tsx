@@ -180,11 +180,14 @@ const Maze = () => {
   };
 
   const tryMove = (dc: number, dr: number) => {
+    const now = Date.now();
+    if (now - lastMoveTimeRef.current < 300) return;
     const cur = posRef.current;
     const nc = Math.max(0, Math.min(COLS - 1, cur.col + dc));
     const nr = Math.max(0, Math.min(ROWS - 1, cur.row + dr));
     if (nc === cur.col && nr === cur.row) return;
     if (isWall(nc, nr)) return;
+    lastMoveTimeRef.current = now;
 
     const newPos = { col: nc, row: nr };
     posRef.current = newPos;

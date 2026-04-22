@@ -7,6 +7,9 @@ import FragmentOverlay from '@/components/FragmentOverlay';
 // Testing value: 100 steps
 const INITIAL_STEPS = 100;
 
+// TODO: load level-specific maze layout from Supabase based on currentLevel
+
+
 const COLS = 30;
 const ROWS = 30;
 const CELL = 40;
@@ -195,6 +198,13 @@ const Maze = () => {
   const [pulse, setPulse] = useState(1);
 
   const [activeFragment, setActiveFragment] = useState<{ prime: number; index: number } | null>(null);
+
+  // Current level (read from localStorage)
+  const [currentLevel, setCurrentLevel] = useState(1);
+  useEffect(() => {
+    const lv = Number(localStorage.getItem('praem_level') || '1');
+    setCurrentLevel(lv);
+  }, []);
 
   // TODO production: load from Supabase player record
   const [credits, setCredits] = useState(50);
@@ -660,7 +670,7 @@ const Maze = () => {
           )}
         </span>
         <span style={{ color: '#c8963a' }}>CREDITS {credits}</span>
-        <span style={{ color: '#5b4fd4' }}>LEVEL 01</span>
+        <span style={{ color: '#5b4fd4' }}>LEVEL {String(currentLevel).padStart(2, '0')}</span>
       </div>
 
       {/* EXCHANGE PANEL */}

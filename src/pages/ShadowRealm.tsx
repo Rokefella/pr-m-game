@@ -366,6 +366,19 @@ const ShadowRealm = () => {
   }, [view]);
 
   const dpadMove = (dc: number, dr: number) => move(dc * STEP, dr * STEP);
+  const dpadIntervalRef = useRef<number | null>(null);
+  const startDpadHold = (dc: number, dr: number) => {
+    dpadMove(dc, dr);
+    if (dpadIntervalRef.current) window.clearInterval(dpadIntervalRef.current);
+    dpadIntervalRef.current = window.setInterval(() => dpadMove(dc, dr), 150);
+  };
+  const stopDpadHold = () => {
+    if (dpadIntervalRef.current) {
+      window.clearInterval(dpadIntervalRef.current);
+      dpadIntervalRef.current = null;
+    }
+  };
+  useEffect(() => () => { if (dpadIntervalRef.current) window.clearInterval(dpadIntervalRef.current); }, []);
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#04040a', overflow: 'hidden' }}>

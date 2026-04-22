@@ -445,6 +445,7 @@ const ShadowRealm = () => {
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
   const [shadowFadeOut, setShadowFadeOut] = useState(false);
+  const [exitConfirm, setExitConfirm] = useState<{ levelUp: boolean; nextLevel: number } | null>(null);
 
   useEffect(() => {
     const lv = Number(localStorage.getItem('praem_level') || '1');

@@ -1353,6 +1353,30 @@ const ShadowRealm = () => {
           </button>
         </div>
       )}
+      {/* WHISPER — must remain outside map div, fixed to screen */}
+      {eyeMessage && (
+        <p
+          key={`eye-${eyeMessage}`}
+          style={{
+            position: 'fixed',
+            top: '18%',
+            left: 0,
+            width: '100vw',
+            textAlign: 'center',
+            zIndex: 50,
+            pointerEvents: 'none',
+            fontFamily: 'IM Fell English, serif',
+            fontStyle: 'italic',
+            fontSize: '20px',
+            color: 'rgba(120,200,140,0.85)',
+            textShadow: '0 0 12px rgba(34,197,94,0.6)',
+            margin: 0,
+            animation: 'villageNotYet 3s ease-out forwards',
+          }}
+        >
+          {eyeMessage}
+        </p>
+      )}
     </div>
   );
 };

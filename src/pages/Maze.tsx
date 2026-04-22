@@ -206,7 +206,7 @@ const Maze = () => {
 
   const tryMove = (dc: number, dr: number) => {
     const now = Date.now();
-    if (now - lastMoveTimeRef.current < 300) return;
+    if (now - lastMoveTimeRef.current < 200) return;
     const cur = posRef.current;
     const nc = Math.max(0, Math.min(COLS - 1, cur.col + dc));
     const nr = Math.max(0, Math.min(ROWS - 1, cur.row + dr));
@@ -214,15 +214,15 @@ const Maze = () => {
     if (isWall(nc, nr)) return;
     lastMoveTimeRef.current = now;
 
+    // trail — push PREVIOUS cell before updating, so trail is always behind player
+    trailRef.current = [...trailRef.current, { col: cur.col, row: cur.row }];
+    setTrail(trailRef.current);
+
     const newPos = { col: nc, row: nr };
     posRef.current = newPos;
     setPos(newPos);
     stepsRef.current += 1;
     setSteps(stepsRef.current);
-
-    // trail — one entry per move, no gaps
-    trailRef.current = [...trailRef.current, newPos];
-    setTrail(trailRef.current);
 
     // fragment check
     const frag = FRAGMENTS.find((f) => f.col === nc && f.row === nr);
@@ -232,6 +232,14 @@ const Maze = () => {
       collectedRef.current = next;
       setCollected(next);
       showWhisper(frag.line);
+    }
+
+    // easter egg check
+    const eggKey = `${nc},${nr}`;
+    const egg = EASTER_EGGS.find((e) => e.col === nc && e.row === nr);
+    if (egg && !eggsTriggeredRef.current.has(eggKey)) {
+      eggsTriggeredRef.current.add(eggKey);
+      showWhisper(egg.line, 'rgba(160,140,200,0.85)', 2500);
     }
 
     // door check

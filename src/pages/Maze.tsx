@@ -507,11 +507,12 @@ const Maze = () => {
       <div
         style={{
           position: 'fixed',
-          bottom: 90,
-          right: 20,
+          bottom: 80,
+          left: '50%',
+          transform: 'translateX(-50%)',
           width: 120,
           height: 120,
-          zIndex: 25,
+          zIndex: 55,
         }}
       >
         {[
@@ -553,22 +554,20 @@ const Maze = () => {
           bottom: 0,
           left: 0,
           right: 0,
-          height: 44,
-          background: 'rgba(8,6,16,0.92)',
-          borderTop: '1px solid rgba(100,80,160,0.3)',
+          background: 'rgba(4,4,10,0.92)',
+          borderTop: '0.5px solid rgba(169,140,255,0.3)',
+          padding: '10px 14px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-around',
-          padding: '0 16px',
-          fontSize: 10,
-          letterSpacing: '0.15em',
-          color: 'rgba(160,140,200,0.7)',
-          zIndex: 25,
+          justifyContent: 'space-between',
+          fontSize: 9,
+          letterSpacing: '0.18em',
+          zIndex: 60,
         }}
       >
-        <span>MAZE STEPS {String(steps).padStart(4, '0')}</span>
+        <span style={{ color: '#e0ddd5' }}>MAZE STEPS {steps}</span>
         <span style={{ color: '#c8963a' }}>FRAGMENTS {collected.size}/5</span>
-        <span style={{ color: '#a98cff' }}>LEVEL 01</span>
+        <span style={{ color: '#5b4fd4' }}>LEVEL 01</span>
       </div>
     </div>
   );

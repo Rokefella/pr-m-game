@@ -67,9 +67,6 @@ const OPEN_SET: Set<string> = (() => {
   hLine(23, 27, 5);
   vLine(27, 23, 6);
 
-  // Path to credit-game door at (5,25)
-  vLine(5, 22, 4);
-
   // Some dead-end stubs for complexity
   hLine(5, 9, 3);
   hLine(13, 13, 4);
@@ -83,17 +80,26 @@ const OPEN_SET: Set<string> = (() => {
   return s;
 })();
 
+// ---- Special block cells (sit inside walls but enterable) ----
+const SPECIAL_CELLS: Set<string> = new Set([
+  '8,4', '22,4', '4,20', '24,20', '14,6', // fragments
+  '28,28', // golden door
+  '2,14',  // credit door
+]);
+
 const isWall = (c: number, r: number) => {
   if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return true;
+  if (SPECIAL_CELLS.has(`${c},${r}`)) return false;
   return !OPEN_SET.has(`${c},${r}`);
 };
 
-// Wall cells (for rendering) — every in-bounds cell that is not open
+// Wall cells (for rendering) — every in-bounds cell that is not open and not special
 const WALL_SET: Set<string> = (() => {
   const s = new Set<string>();
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      if (!OPEN_SET.has(`${c},${r}`)) s.add(`${c},${r}`);
+      const k = `${c},${r}`;
+      if (!OPEN_SET.has(k) && !SPECIAL_CELLS.has(k)) s.add(k);
     }
   }
   return s;
@@ -128,15 +134,22 @@ const inPrimeBubble = (c: number, r: number) => PRIME_BUBBLE_CELLS.has(`${c},${r
 
 // ---- Fragments ----
 const FRAGMENTS: Array<Cell & { prime: number; line: string }> = [
-  { col: 5, row: 5, prime: 23, line: 'Fragment 23. It has been waiting.' },
-  { col: 24, row: 8, prime: 47, line: 'Fragment 47. It has been waiting.' },
-  { col: 8, row: 22, prime: 89, line: 'Fragment 89. It has been waiting.' },
-  { col: 22, row: 24, prime: 139, line: 'Fragment 139. It has been waiting.' },
-  { col: 15, row: 8, prime: 211, line: 'Fragment 211. It has been waiting.' },
+  { col: 8, row: 4, prime: 23, line: 'Fragment 23. It has been waiting.' },
+  { col: 22, row: 4, prime: 47, line: 'Fragment 47. It has been waiting.' },
+  { col: 4, row: 20, prime: 89, line: 'Fragment 89. It has been waiting.' },
+  { col: 24, row: 20, prime: 139, line: 'Fragment 139. It has been waiting.' },
+  { col: 14, row: 6, prime: 211, line: 'Fragment 211. It has been waiting.' },
 ];
 
-const DOOR: Cell = { col: 27, row: 27 };
-const CREDIT_DOOR: Cell = { col: 5, row: 25 };
+const DOOR: Cell = { col: 28, row: 28 };
+const CREDIT_DOOR: Cell = { col: 2, row: 14 };
+
+const EASTER_EGGS: Array<Cell & { line: string }> = [
+  { col: 10, row: 26, line: 'The corner holds the answer.' },
+  { col: 26, row: 10, line: 'Walk toward the darkness.' },
+  { col: 26, row: 26, line: 'You are close. Keep going.' },
+  { col: 20, row: 20, line: 'The gold waits at the edge.' },
+];
 
 const QUOTES = [
   'Navigate.',
@@ -154,6 +167,8 @@ const Maze = () => {
 
   const [trail, setTrail] = useState<Cell[]>([]);
   const trailRef = useRef<Cell[]>([]);
+
+  const eggsTriggeredRef = useRef<Set<string>>(new Set());
 
   const [collected, setCollected] = useState<Set<number>>(new Set());
   const collectedRef = useRef<Set<number>>(new Set());
@@ -191,7 +206,7 @@ const Maze = () => {
 
   const tryMove = (dc: number, dr: number) => {
     const now = Date.now();
-    if (now - lastMoveTimeRef.current < 300) return;
+    if (now - lastMoveTimeRef.current < 200) return;
     const cur = posRef.current;
     const nc = Math.max(0, Math.min(COLS - 1, cur.col + dc));
     const nr = Math.max(0, Math.min(ROWS - 1, cur.row + dr));
@@ -199,15 +214,15 @@ const Maze = () => {
     if (isWall(nc, nr)) return;
     lastMoveTimeRef.current = now;
 
+    // trail — push PREVIOUS cell before updating, so trail is always behind player
+    trailRef.current = [...trailRef.current, { col: cur.col, row: cur.row }];
+    setTrail(trailRef.current);
+
     const newPos = { col: nc, row: nr };
     posRef.current = newPos;
     setPos(newPos);
     stepsRef.current += 1;
     setSteps(stepsRef.current);
-
-    // trail — one entry per move, no gaps
-    trailRef.current = [...trailRef.current, newPos];
-    setTrail(trailRef.current);
 
     // fragment check
     const frag = FRAGMENTS.find((f) => f.col === nc && f.row === nr);
@@ -217,6 +232,14 @@ const Maze = () => {
       collectedRef.current = next;
       setCollected(next);
       showWhisper(frag.line);
+    }
+
+    // easter egg check
+    const eggKey = `${nc},${nr}`;
+    const egg = EASTER_EGGS.find((e) => e.col === nc && e.row === nr);
+    if (egg && !eggsTriggeredRef.current.has(eggKey)) {
+      eggsTriggeredRef.current.add(eggKey);
+      showWhisper(egg.line, 'rgba(160,140,200,0.85)', 2500);
     }
 
     // door check
@@ -268,8 +291,15 @@ const Maze = () => {
       if (k.has('ArrowUp')) dr -= 1;
       if (k.has('ArrowDown')) dr += 1;
       if (dc !== 0 || dr !== 0) {
+        // try combined diagonal first; if blocked, fall back to single-axis
         if (dc !== 0 && dr !== 0) {
-          tryMove(dc, 0);
+          const cur = posRef.current;
+          if (!isWall(cur.col + dc, cur.row + dr)) {
+            tryMove(dc, dr);
+          } else {
+            tryMove(dc, 0);
+            tryMove(0, dr);
+          }
         } else {
           tryMove(dc, dr);
         }
@@ -443,7 +473,7 @@ const Maze = () => {
                 y2={tail.y}
               >
                 <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="rgb(150,150,160)" stopOpacity={0} />
+                <stop offset="100%" stopColor="#5b4fd4" stopOpacity={0} />
               </linearGradient>
             </defs>
             <polyline
@@ -569,7 +599,7 @@ const Maze = () => {
       <div
         style={{
           position: 'fixed',
-          bottom: 80,
+          bottom: 120,
           left: '50%',
           transform: 'translateX(-50%)',
           width: 120,

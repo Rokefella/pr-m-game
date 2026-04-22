@@ -794,6 +794,44 @@ const Village = () => {
           }}
         />
 
+        {/* Forest blocks (outside outermost ring) */}
+        {FOREST.map((f, i) => (
+          <div
+            key={`f-${i}`}
+            style={{
+              position: 'absolute',
+              left: f.x,
+              top: f.y,
+              width: f.w,
+              height: f.h,
+              border: '0.5px solid rgba(40,100,60,0.25)',
+              background: 'rgba(30,80,50,0.10)',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
+        ))}
+
+        {/* Forest atmosphere text fragments */}
+        {FOREST_TEXTS.map((ft, i) => (
+          <span
+            key={`ft-${i}`}
+            className="font-fell italic"
+            style={{
+              position: 'absolute',
+              left: ft.x,
+              top: ft.y,
+              fontSize: 10,
+              color: 'rgba(40,100,60,0.20)',
+              pointerEvents: 'none',
+              zIndex: 1,
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {ft.t}
+          </span>
+        ))}
+
         {/* Watching eye in town square */}
         <svg
           width={60}

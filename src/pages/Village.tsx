@@ -513,17 +513,25 @@ const Village = () => {
     playerTargetRef.current = { x: fx, y: fy };
   };
 
-  // Keyboard arrow keys
+  // Keyboard arrow keys — held-keys system for smooth diagonal movement
+  const heldKeysRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowUp') { e.preventDefault(); move(0, -STEP); }
-      else if (e.key === 'ArrowDown') { e.preventDefault(); move(0, STEP); }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); move(-STEP, 0); }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); move(STEP, 0); }
+    const ARROWS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+    const onDown = (e: KeyboardEvent) => {
+      if (ARROWS.has(e.key)) {
+        e.preventDefault();
+        heldKeysRef.current.add(e.key);
+      }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const onUp = (e: KeyboardEvent) => {
+      heldKeysRef.current.delete(e.key);
+    };
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
+    return () => {
+      window.removeEventListener('keydown', onDown);
+      window.removeEventListener('keyup', onUp);
+    };
   }, []);
 
   // Player lerp loop — visual chases target at 0.18/frame

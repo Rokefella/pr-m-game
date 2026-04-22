@@ -355,22 +355,46 @@ const Maze = () => {
           );
         })}
 
-        {/* trail dots */}
-        {trail.map((t, i) => (
-          <div
-            key={`t-${i}`}
-            style={{
-              position: 'absolute',
-              left: t.col * CELL + CELL / 2 - 2.5,
-              top: t.row * CELL + CELL / 2 - 2.5,
-              width: 5,
-              height: 5,
-              borderRadius: '50%',
-              background: 'rgba(91,79,212,0.65)',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+        {/* trail polyline (only points within visibility radius of player) */}
+        {(() => {
+          const px = posRef.current.col * CELL + CELL / 2;
+          const py = posRef.current.row * CELL + CELL / 2;
+          const visible = trail
+            .map((t) => ({ x: t.col * CELL + CELL / 2, y: t.row * CELL + CELL / 2 }))
+            .filter((p) => Math.hypot(p.x - px, p.y - py) <= VIS_RADIUS);
+          if (visible.length < 2) return null;
+          const head = visible[visible.length - 1];
+          const tail = visible[0];
+          return (
+            <svg
+              width={MAP_W}
+              height={MAP_H}
+              style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}
+            >
+              <defs>
+                <linearGradient
+                  id="mazeTrailGrad"
+                  gradientUnits="userSpaceOnUse"
+                  x1={head.x}
+                  y1={head.y}
+                  x2={tail.x}
+                  y2={tail.y}
+                >
+                  <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0.8} />
+                  <stop offset="100%" stopColor="rgba(150,150,160,1)" stopOpacity={0.1} />
+                </linearGradient>
+              </defs>
+              <polyline
+                points={visible.map((p) => `${p.x},${p.y}`).join(' ')}
+                fill="none"
+                stroke="url(#mazeTrailGrad)"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          );
+        })()}
 
         {/* fragments — invisible until walked into */}
 

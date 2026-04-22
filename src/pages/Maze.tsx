@@ -395,7 +395,7 @@ const Maze = () => {
           background: '#5b4fd4',
           boxShadow: '0 0 8px rgba(91,79,212,0.8)',
           transform: `scale(${pulse})`,
-          zIndex: 5,
+          zIndex: 60,
           pointerEvents: 'none',
         }}
       />

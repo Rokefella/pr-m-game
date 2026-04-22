@@ -612,8 +612,8 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '0.5px solid rgba(100,80,160,0.3)',
-              background: 'rgba(100,80,160,0.08)',
+              border: '0.5px solid rgba(100,80,160,0.25)',
+              background: 'rgba(100,80,160,0.07)',
               zIndex: 1,
             }}
           />

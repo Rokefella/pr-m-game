@@ -481,22 +481,21 @@ const ShadowRealm = () => {
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
       if (!navigatedRef.current) {
+        navigatedRef.current = true;
         const cur = Number(localStorage.getItem('praem_level') || '1');
         const completed = Number(localStorage.getItem('praem_maze_completed_level') || '0');
-        if (completed !== cur) {
-          setWhisper('The maze is not yet complete.');
-          if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
-          whisperTimer.current = window.setTimeout(() => setWhisper(null), 2500);
-          return true;
+        if (completed === cur) {
+          const next = cur + 1;
+          localStorage.setItem('praem_level', String(next));
+          localStorage.setItem('praem_levelup_pending', 'true');
+          localStorage.setItem('praem_levelup_newlevel', String(next));
+          localStorage.removeItem('praem_maze_completed_level');
+          setShadowFadeOut(true);
+          window.setTimeout(() => navigate('/village'), 800);
+        } else {
+          setShadowFadeOut(true);
+          window.setTimeout(() => navigate('/village'), 800);
         }
-        navigatedRef.current = true;
-        const next = cur + 1;
-        localStorage.setItem('praem_level', String(next));
-        localStorage.setItem('praem_levelup_pending', 'true');
-        localStorage.setItem('praem_levelup_newlevel', String(next));
-        localStorage.removeItem('praem_maze_completed_level');
-        setShadowFadeOut(true);
-        window.setTimeout(() => navigate('/village'), 800);
       }
       return true;
     }
@@ -1088,11 +1087,7 @@ const ShadowRealm = () => {
             width: '100%',
             textAlign: 'center',
             fontSize: 20,
-            color: whisper === 'The maze is not yet complete.' ? 'rgba(249,115,22,0.7)' : undefined,
-            textShadow:
-              whisper === 'The maze is not yet complete.'
-                ? '0 0 12px rgba(249,115,22,0.5)'
-                : '0 0 12px rgba(34,197,94,0.6)',
+            textShadow: '0 0 12px rgba(34,197,94,0.6)',
             margin: 0,
             zIndex: 50,
             pointerEvents: 'none',

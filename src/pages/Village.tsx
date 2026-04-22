@@ -1067,15 +1067,15 @@ const Village = () => {
           key={whisper}
           className="font-fell italic"
           style={{
-            position: 'absolute',
+            position: 'fixed',
             top: '18%',
             left: 0,
-            right: 0,
+            width: '100vw',
             textAlign: 'center',
             fontSize: 20,
             textShadow: '0 0 12px rgba(91,79,212,0.6)',
             margin: 0,
-            zIndex: 11,
+            zIndex: 50,
             pointerEvents: 'none',
             animation: 'villageNotYet 2.5s ease-out forwards',
           }}
@@ -1090,17 +1090,17 @@ const Village = () => {
           key={`eye-${eyeMessage}`}
           className="font-fell italic"
           style={{
-            position: 'absolute',
+            position: 'fixed',
             top: '50%',
             left: 0,
-            right: 0,
+            width: '100vw',
             textAlign: 'center',
             fontSize: 20,
             color: 'rgba(160,140,200,0.85)',
             textShadow: '0 0 12px rgba(91,79,212,0.6)',
             margin: 0,
             transform: 'translateY(-50%)',
-            zIndex: 11,
+            zIndex: 50,
             pointerEvents: 'none',
             animation: 'villageNotYet 3s ease-out forwards',
           }}

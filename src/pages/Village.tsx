@@ -413,6 +413,12 @@ const Village = () => {
   const whisperTimer = useRef<number | null>(null);
   const lastWhisperIdxRef = useRef<number | null>(null);
 
+  // Eye whisper state
+  const [eyeMessage, setEyeMessage] = useState<string | null>(null);
+  const eyeMessageIndexRef = useRef(0);
+  const eyeTriggeredRef = useRef(false);
+  const eyeTimer = useRef<number | null>(null);
+
   const [view, setView] = useState({ w: 390, h: 800 });
   useEffect(() => {
     const update = () => setView({ w: window.innerWidth, h: window.innerHeight });

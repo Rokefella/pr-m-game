@@ -22,19 +22,19 @@ const A_47 = { id: 47 as const, x: 1580, y: 780, w: 70, h: 50, color: '#1d9e75',
 const A_89 = { id: 89 as const, x: 1055, y: 440, w: 90, h: 70, color: '#c8963a', bg: 'rgba(200,150,58,0.06)', label: 14 };
 const TYPE_A = [A_23, A_47, A_89];
 
-// Easter egg whispers — keyed by Type B index
-const WHISPERS: Record<number, string> = {
-  0: 'The mathematics knew you were coming.',
-  7: 'She left something here.',
-  12: 'Junction 89 is closer than you think.',
-  18: 'You have been here before.',
-  23: 'The spiral does not forget.',
-  29: 'Something emerged here.',
-  35: 'Count the doors.',
-  41: '89 is not the end.',
-  46: 'The order was never real.',
-  49: 'This is not the door through which I came in.',
-};
+// Easter egg whispers — assigned to nearest building (any type) of these map points
+const WHISPER_POINTS: { p: [number, number]; msg: string }[] = [
+  { p: [300, 200], msg: 'The mathematics knew you were coming.' },
+  { p: [1800, 300], msg: 'She left something here.' },
+  { p: [400, 900], msg: 'Junction 89 is closer than you think.' },
+  { p: [1900, 800], msg: 'You have been here before.' },
+  { p: [1100, 200], msg: 'The spiral does not forget.' },
+  { p: [200, 600], msg: 'Something emerged here.' },
+  { p: [1900, 500], msg: 'Count the doors.' },
+  { p: [600, 1200], msg: '89 is not the end.' },
+  { p: [1500, 1100], msg: 'The order was never real.' },
+  { p: [1100, 1100], msg: 'This is not the door through which I came in.' },
+];
 
 // ---------- Helpers ----------
 const rectsOverlap = (
@@ -199,6 +199,20 @@ const generateBuildings = () => {
 const { B: TYPE_B, C: TYPE_C, RIM: TYPE_RIM } = generateBuildings();
 const OBSTACLES: Rect[] = [...TYPE_B, ...TYPE_C, ...TYPE_RIM];
 
+// Map each whisper point to its nearest obstacle (by center distance)
+const WHISPER_BY_RECT = new Map<Rect, string>();
+for (const wp of WHISPER_POINTS) {
+  let best: Rect | null = null;
+  let bestD = Infinity;
+  for (const o of OBSTACLES) {
+    const cx = o.x + o.w / 2;
+    const cy = o.y + o.h / 2;
+    const d = (cx - wp.p[0]) ** 2 + (cy - wp.p[1]) ** 2;
+    if (d < bestD) { bestD = d; best = o; }
+  }
+  if (best && !WHISPER_BY_RECT.has(best)) WHISPER_BY_RECT.set(best, wp.msg);
+}
+
 // Compute valid spawn point — inside outermost ellipse, not overlapping buildings
 const computeSpawn = (): { x: number; y: number } => {
   for (let i = 0; i < 100; i++) {
@@ -308,7 +322,7 @@ const Village = () => {
       }
     }
 
-    // Obstacles (B + C + RIM) with 2px padding — also check whisper trigger on Type B
+    // Obstacles (B + C + RIM) with 2px padding — also check whisper trigger on any whispered building
     for (const o of OBSTACLES) {
       if (
         nx >= o.x - 2 &&
@@ -316,12 +330,12 @@ const Village = () => {
         ny >= o.y - 2 &&
         ny <= o.y + o.h + 2
       ) {
-        // Whisper check: is this a Type B with a whisper index?
-        const bIdx = TYPE_B.indexOf(o);
-        if (bIdx !== -1 && WHISPERS[bIdx] !== undefined) {
-          if (lastWhisperIdxRef.current !== bIdx) {
-            lastWhisperIdxRef.current = bIdx;
-            setWhisper(WHISPERS[bIdx]);
+        const msg = WHISPER_BY_RECT.get(o);
+        if (msg !== undefined) {
+          const oIdx = OBSTACLES.indexOf(o);
+          if (lastWhisperIdxRef.current !== oIdx) {
+            lastWhisperIdxRef.current = oIdx;
+            setWhisper(msg);
             if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
             whisperTimer.current = window.setTimeout(() => {
               setWhisper(null);
@@ -753,8 +767,7 @@ const Village = () => {
           left: 0,
           right: 0,
           textAlign: 'center',
-          fontSize: 13,
-          color: 'rgba(160,140,200,0.6)',
+          fontSize: 17,
           margin: 0,
           zIndex: 10,
           pointerEvents: 'none',
@@ -774,8 +787,7 @@ const Village = () => {
             left: 0,
             right: 0,
             textAlign: 'center',
-            fontSize: 13,
-            color: 'rgba(160,140,200,0.85)',
+            fontSize: 20,
             textShadow: '0 0 12px rgba(91,79,212,0.6)',
             margin: 0,
             zIndex: 11,

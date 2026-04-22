@@ -458,6 +458,23 @@ const Maze = () => {
         );
       })()}
 
+      {/* Keyframes */}
+      <style>{`
+        @keyframes mazeDotPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        @keyframes mazePurplePulse {
+          0%, 100% { box-shadow: 0 0 8px rgba(91,79,212,0.6); }
+          50% { box-shadow: 0 0 20px rgba(91,79,212,0.9); }
+        }
+        @keyframes mazeGoldPulse {
+          0%, 100% { box-shadow: 0 0 8px rgba(200,150,58,0.5); }
+          50% { box-shadow: 0 0 24px rgba(200,150,58,1); }
+        }
+        @keyframes mazeBluePulse {
+          0%, 100% { box-shadow: 0 0 8px rgba(59,130,246,0.5); }
+          50% { box-shadow: 0 0 20px rgba(59,130,246,0.9); }
+        }
+      `}</style>
+
       {/* PLAYER (fixed center) */}
       <div
         style={{
@@ -469,7 +486,7 @@ const Maze = () => {
           borderRadius: '50%',
           background: '#5b4fd4',
           boxShadow: '0 0 8px rgba(91,79,212,0.8)',
-          transform: `scale(${pulse})`,
+          animation: 'mazeDotPulse 1.5s ease-in-out infinite',
           zIndex: 60,
           pointerEvents: 'none',
         }}

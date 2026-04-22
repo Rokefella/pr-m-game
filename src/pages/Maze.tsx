@@ -8,41 +8,61 @@ const Maze = () => {
         position: 'fixed',
         inset: 0,
         background: '#04040a',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 24,
+        overflow: 'hidden',
       }}
     >
+      {/* Purple grid overlay (same as Village) */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          backgroundImage:
+            'linear-gradient(rgba(100,80,160,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(100,80,160,0.08) 1px, transparent 1px)',
+          backgroundSize: '40px 40px',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }}
+      />
+
+      {/* Center text */}
       <p
         className="font-fell italic"
         style={{
+          position: 'absolute',
+          top: '50%',
+          left: 0,
+          right: 0,
+          transform: 'translateY(-50%)',
+          textAlign: 'center',
           fontSize: 16,
           color: 'rgba(160,140,200,0.7)',
-          textAlign: 'center',
           margin: 0,
+          zIndex: 1,
         }}
       >
         The maze is not yet open.
       </p>
+
+      {/* Return button */}
       <button
         className="font-cinzel"
         onClick={() => navigate('/village')}
         style={{
           position: 'absolute',
           bottom: 40,
+          left: '50%',
+          transform: 'translateX(-50%)',
           background: 'transparent',
-          color: '#9a9890',
+          color: 'rgba(160,140,200,0.4)',
           padding: '10px 22px',
-          fontSize: 11,
-          letterSpacing: '0.28em',
-          border: '0.5px solid #5a5855',
-          borderRadius: 0,
+          fontSize: 10,
+          letterSpacing: '0.2em',
+          border: 'none',
           cursor: 'pointer',
+          zIndex: 1,
         }}
       >
-        BACK
+        RETURN
       </button>
     </div>
   );

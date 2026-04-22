@@ -63,7 +63,7 @@ const Door = () => {
           style={{
             background: '#c8963a',
             color: '#04040a',
-            padding: '10px 22px',
+            padding: '10px 28px',
             fontSize: 11,
             letterSpacing: '0.28em',
             border: 'none',

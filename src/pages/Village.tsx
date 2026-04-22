@@ -513,23 +513,51 @@ const Village = () => {
     playerTargetRef.current = { x: fx, y: fy };
   };
 
-  // Keyboard arrow keys
+  // Keyboard arrow keys — held-keys system for smooth diagonal movement
+  const heldKeysRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowUp') { e.preventDefault(); move(0, -STEP); }
-      else if (e.key === 'ArrowDown') { e.preventDefault(); move(0, STEP); }
-      else if (e.key === 'ArrowLeft') { e.preventDefault(); move(-STEP, 0); }
-      else if (e.key === 'ArrowRight') { e.preventDefault(); move(STEP, 0); }
+    const ARROWS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
+    const onDown = (e: KeyboardEvent) => {
+      if (ARROWS.has(e.key)) {
+        e.preventDefault();
+        heldKeysRef.current.add(e.key);
+      }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const onUp = (e: KeyboardEvent) => {
+      heldKeysRef.current.delete(e.key);
+    };
+    window.addEventListener('keydown', onDown);
+    window.addEventListener('keyup', onUp);
+    return () => {
+      window.removeEventListener('keydown', onDown);
+      window.removeEventListener('keyup', onUp);
+    };
   }, []);
 
   // Player lerp loop — visual chases target at 0.18/frame
   useEffect(() => {
     let raf = 0;
+    let keyFrameCounter = 0;
     const loop = () => {
+      // Held-keys movement — process every 4 frames (~15Hz) for consistent speed
+      keyFrameCounter++;
+      if (keyFrameCounter >= 4) {
+        keyFrameCounter = 0;
+        const held = heldKeysRef.current;
+        let kdx = 0, kdy = 0;
+        if (held.has('ArrowLeft')) kdx -= STEP;
+        if (held.has('ArrowRight')) kdx += STEP;
+        if (held.has('ArrowUp')) kdy -= STEP;
+        if (held.has('ArrowDown')) kdy += STEP;
+        if (kdx !== 0 && kdy !== 0) {
+          kdx *= 0.707;
+          kdy *= 0.707;
+        }
+        if (kdx !== 0 || kdy !== 0) {
+          move(kdx, kdy);
+        }
+      }
+
       const target = playerTargetRef.current;
       const cur = playerRef.current;
       const dx = target.x - cur.x;

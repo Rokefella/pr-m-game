@@ -663,7 +663,10 @@ const ShadowRealm = () => {
         ].map((b, i) => (
           <button
             key={i}
-            onPointerDown={(e) => { e.preventDefault(); dpadMove(b.dc, b.dr); }}
+            onPointerDown={(e) => { e.preventDefault(); startDpadHold(b.dc, b.dr); }}
+            onPointerUp={stopDpadHold}
+            onPointerLeave={stopDpadHold}
+            onPointerCancel={stopDpadHold}
             style={{
               position: 'absolute',
               top: b.top,

@@ -199,6 +199,148 @@ const generateBuildings = () => {
 const { B: TYPE_B, C: TYPE_C, RIM: TYPE_RIM } = generateBuildings();
 const OBSTACLES: Rect[] = [...TYPE_B, ...TYPE_C, ...TYPE_RIM];
 
+// ---------- Forest blocks (outside outermost ring, hardcoded via seeded RNG) ----------
+type ForestBlock = { x: number; y: number; w: number; h: number };
+const generateForest = (): ForestBlock[] => {
+  const rng = makeRng(0xF0FE57);
+  const blocks: ForestBlock[] = [];
+  const placed: ForestBlock[] = [];
+
+  // 2 winding path corridors — each described as a series of points the path passes through.
+  // Forest blocks within `pathRadius` of any segment are excluded.
+  const paths: { pts: [number, number][]; radius: number }[] = [
+    {
+      pts: [
+        [200, 80],
+        [320, 220],
+        [260, 380],
+        [380, 520],
+        [300, 660],
+        [420, 780],
+        [340, 940],
+        [500, 1080],
+      ],
+      radius: 22,
+    },
+    {
+      pts: [
+        [2050, 120],
+        [1920, 260],
+        [2000, 420],
+        [1880, 560],
+        [1980, 720],
+        [1860, 880],
+        [1960, 1020],
+        [1820, 1180],
+      ],
+      radius: 22,
+    },
+    {
+      pts: [
+        [600, 1320],
+        [780, 1240],
+        [960, 1300],
+        [1140, 1240],
+        [1320, 1300],
+        [1500, 1230],
+      ],
+      radius: 20,
+    },
+  ];
+
+  const distToSeg = (px: number, py: number, ax: number, ay: number, bx: number, by: number) => {
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    if (len2 === 0) return Math.hypot(px - ax, py - ay);
+    let t = ((px - ax) * dx + (py - ay) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(px - (ax + t * dx), py - (ay + t * dy));
+  };
+
+  const inPathCorridor = (x: number, y: number) => {
+    for (const path of paths) {
+      for (let i = 0; i < path.pts.length - 1; i++) {
+        const [ax, ay] = path.pts[i];
+        const [bx, by] = path.pts[i + 1];
+        if (distToSeg(x, y, ax, ay, bx, by) < path.radius) return true;
+      }
+    }
+    return false;
+  };
+
+  // Generate cluster centers, then place 4-8 blocks per cluster
+  const targetCount = 300;
+  let attempts = 0;
+  while (blocks.length < targetCount && attempts < 6000) {
+    attempts++;
+    // Cluster center: random map point
+    const ccx = rng() * (MAP_W - 40) + 20;
+    const ccy = rng() * (MAP_H - 40) + 20;
+
+    // Must be outside outermost ellipse
+    const nx = (ccx - CX) / OUTERMOST_RX;
+    const ny = (ccy - CY) / OUTERMOST_RY;
+    if (nx * nx + ny * ny < 1.05) continue;
+
+    if (inPathCorridor(ccx, ccy)) continue;
+
+    const clusterSize = 4 + Math.floor(rng() * 5); // 4-8
+    for (let i = 0; i < clusterSize && blocks.length < targetCount; i++) {
+      // Position within ~30px of cluster center
+      const offX = (rng() * 2 - 1) * 28;
+      const offY = (rng() * 2 - 1) * 28;
+      const x = Math.round(ccx + offX);
+      const y = Math.round(ccy + offY);
+      const w = 12 + Math.floor(rng() * 11); // 12-22
+      const h = 12 + Math.floor(rng() * 7);  // 12-18
+
+      if (x < 4 || y < 4 || x + w > MAP_W - 4 || y + h > MAP_H - 4) continue;
+
+      // Outside outermost ellipse
+      const cx = x + w / 2, cy = y + h / 2;
+      const enx = (cx - CX) / OUTERMOST_RX;
+      const eny = (cy - CY) / OUTERMOST_RY;
+      if (enx * enx + eny * eny < 1.02) continue;
+
+      if (inPathCorridor(cx, cy)) continue;
+
+      // Avoid overlap with already placed forest (small gap)
+      const cand = { x, y, w, h };
+      let bad = false;
+      for (const p of placed) {
+        if (rectsOverlap(cand, p, 2)) { bad = true; break; }
+      }
+      if (bad) continue;
+
+      blocks.push(cand);
+      placed.push(cand);
+    }
+  }
+  return blocks;
+};
+const FOREST = generateForest();
+
+// Forest atmosphere text fragments
+const FOREST_TEXTS: { x: number; y: number; t: string }[] = [
+  { x: 150, y: 150, t: '∅' },
+  { x: 1900, y: 200, t: '89' },
+  { x: 100, y: 800, t: 'she stopped here' },
+  { x: 2000, y: 900, t: 'the path ends' },
+  { x: 300, y: 1250, t: 'do not follow' },
+  { x: 1800, y: 1200, t: 'it found her first' },
+  { x: 1100, y: 100, t: 'junction' },
+  { x: 1100, y: 1320, t: 'this was not designed' },
+];
+
+// Eye whisper messages
+const EYE_MESSAGES = [
+  'You found me.',
+  'I have been watching.',
+  'You keep coming back.',
+  'Junction 89. You already know.',
+];
+const EYE_RADIUS = 80;
+
 // Map each whisper point to its nearest obstacle (by center distance)
 const WHISPER_BY_RECT = new Map<Rect, string>();
 for (const wp of WHISPER_POINTS) {

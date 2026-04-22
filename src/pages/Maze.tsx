@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import FragmentOverlay from '@/components/FragmentOverlay';
 
 const COLS = 30;
 const ROWS = 30;
@@ -191,6 +192,8 @@ const Maze = () => {
 
   const [pulse, setPulse] = useState(1);
 
+  const [activeFragment, setActiveFragment] = useState<{ prime: number; index: number } | null>(null);
+
   // Visibility upgrade levels (1=120px, 2=200px, 3=280px, 4=400px)
   const [visibilityLevel] = useState(1);
   const VIS_RADIUS = visibilityLevel === 1 ? 120 : visibilityLevel === 2 ? 200 : visibilityLevel === 3 ? 280 : 400;
@@ -206,7 +209,8 @@ const Maze = () => {
 
   const tryMove = (dc: number, dr: number) => {
     const now = Date.now();
-    if (now - lastMoveTimeRef.current < 200) return;
+    // TODO: restore to 200ms for production
+    if (now - lastMoveTimeRef.current < 50) return;
     const cur = posRef.current;
     const nc = Math.max(0, Math.min(COLS - 1, cur.col + dc));
     const nr = Math.max(0, Math.min(ROWS - 1, cur.row + dr));
@@ -225,13 +229,16 @@ const Maze = () => {
     setSteps(stepsRef.current);
 
     // fragment check
-    const frag = FRAGMENTS.find((f) => f.col === nc && f.row === nr);
-    if (frag && !collectedRef.current.has(frag.prime)) {
-      const next = new Set(collectedRef.current);
-      next.add(frag.prime);
-      collectedRef.current = next;
-      setCollected(next);
-      showWhisper(frag.line);
+    const fragIdx = FRAGMENTS.findIndex((f) => f.col === nc && f.row === nr);
+    if (fragIdx !== -1) {
+      const frag = FRAGMENTS[fragIdx];
+      if (!collectedRef.current.has(frag.prime)) {
+        const next = new Set(collectedRef.current);
+        next.add(frag.prime);
+        collectedRef.current = next;
+        setCollected(next);
+        setActiveFragment({ prime: frag.prime, index: fragIdx });
+      }
     }
 
     // easter egg check

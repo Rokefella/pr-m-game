@@ -427,6 +427,48 @@ const Village = () => {
     return () => window.removeEventListener('resize', update);
   }, []);
 
+  // ---- Level / title state ----
+  const TITLES_BY_LEVEL: Record<number, string> = {
+    1: 'Wanderer',
+    2: 'Fragment Seeker',
+    3: 'The Initiated',
+    4: 'Threshold Walker',
+    5: 'One Who Returns',
+    6: 'The Remembered',
+    7: 'Junction Finder',
+    8: 'The Spiral Knows',
+    9: 'Almost There',
+    10: 'First One Through',
+  };
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const [currentTitle, setCurrentTitle] = useState('Wanderer');
+  const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
+  const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
+
+  useEffect(() => {
+    const lv = Number(localStorage.getItem('praem_level') || '1');
+    const tt = localStorage.getItem('praem_title') || 'Wanderer';
+    setCurrentLevel(lv);
+    setCurrentTitle(tt);
+    setOverlaySelectedTitle(tt);
+
+    // Check for pending level-up
+    const pending = localStorage.getItem('praem_levelup_pending');
+    if (pending === 'true') {
+      const newLv = Number(localStorage.getItem('praem_levelup_newlevel') || String(lv));
+      const newTitle = TITLES_BY_LEVEL[newLv] || 'Wanderer';
+      window.setTimeout(() => {
+        setLevelUpOverlay({ newLevel: newLv });
+        setOverlaySelectedTitle(newTitle);
+        // Save the newly unlocked title as current
+        localStorage.setItem('praem_title', newTitle);
+        setCurrentTitle(newTitle);
+      }, 2000);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+
   useEffect(() => {
     return () => {
       if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);

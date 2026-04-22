@@ -67,6 +67,9 @@ const OPEN_SET: Set<string> = (() => {
   hLine(23, 27, 5);
   vLine(27, 23, 6);
 
+  // Path to credit-game door at (5,25)
+  vLine(5, 22, 4);
+
   // Some dead-end stubs for complexity
   hLine(5, 9, 3);
   hLine(13, 13, 4);
@@ -133,6 +136,7 @@ const FRAGMENTS: Array<Cell & { prime: number; line: string }> = [
 ];
 
 const DOOR: Cell = { col: 27, row: 27 };
+const CREDIT_DOOR: Cell = { col: 5, row: 25 };
 
 const QUOTES = [
   'Navigate.',
@@ -201,14 +205,9 @@ const Maze = () => {
     stepsRef.current += 1;
     setSteps(stepsRef.current);
 
-    // trail (skip if inside prime bubble)
-    if (!inPrimeBubble(nc, nr)) {
-      const exists = trailRef.current.some((t) => t.col === nc && t.row === nr);
-      if (!exists) {
-        trailRef.current = [...trailRef.current, newPos];
-        setTrail(trailRef.current);
-      }
-    }
+    // trail — one entry per move, no gaps
+    trailRef.current = [...trailRef.current, newPos];
+    setTrail(trailRef.current);
 
     // fragment check
     const frag = FRAGMENTS.find((f) => f.col === nc && f.row === nr);
@@ -228,6 +227,11 @@ const Maze = () => {
       } else {
         showWhisper('You are not ready.', 'rgba(160,140,200,0.6)', 2000);
       }
+    }
+
+    // credit-game door
+    if (nc === CREDIT_DOOR.col && nr === CREDIT_DOOR.row) {
+      showWhisper('A game exists here. Not yet open.', 'rgba(59,130,246,0.8)', 2500);
     }
   };
 
@@ -355,63 +359,121 @@ const Maze = () => {
           );
         })}
 
-        {/* trail polyline (only points within visibility radius of player) */}
-        {(() => {
-          const px = posRef.current.col * CELL + CELL / 2;
-          const py = posRef.current.row * CELL + CELL / 2;
-          const visible = trail
-            .map((t) => ({ x: t.col * CELL + CELL / 2, y: t.row * CELL + CELL / 2 }))
-            .filter((p) => Math.hypot(p.x - px, p.y - py) <= VIS_RADIUS);
-          if (visible.length < 2) return null;
-          const head = visible[visible.length - 1];
-          const tail = visible[0];
-          return (
-            <svg
-              width={MAP_W}
-              height={MAP_H}
-              style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}
-            >
-              <defs>
-                <linearGradient
-                  id="mazeTrailGrad"
-                  gradientUnits="userSpaceOnUse"
-                  x1={head.x}
-                  y1={head.y}
-                  x2={tail.x}
-                  y2={tail.y}
-                >
-                  <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0.8} />
-                  <stop offset="100%" stopColor="rgba(150,150,160,1)" stopOpacity={0.1} />
-                </linearGradient>
-              </defs>
-              <polyline
-                points={visible.map((p) => `${p.x},${p.y}`).join(' ')}
-                fill="none"
-                stroke="url(#mazeTrailGrad)"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          );
-        })()}
+        {/* fragment blocks — purple pulse, hidden once collected */}
+        {FRAGMENTS.filter((f) => !collected.has(f.prime)).map((f) => (
+          <div
+            key={`frag-${f.prime}`}
+            style={{
+              position: 'absolute',
+              left: f.col * CELL,
+              top: f.row * CELL,
+              width: CELL,
+              height: CELL,
+              background: 'rgba(91,79,212,0.15)',
+              border: '1px solid #5b4fd4',
+              animation: 'mazePurplePulse 1.8s ease-in-out infinite',
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
 
-        {/* fragments — invisible until walked into */}
-
-
-        {/* golden door */}
+        {/* golden door — gold pulse */}
         <div
           style={{
             position: 'absolute',
-            left: DOOR.col * CELL + (CELL - 32) / 2,
-            top: DOOR.row * CELL + (CELL - 40) / 2,
-            width: 32,
-            height: 40,
+            left: DOOR.col * CELL,
+            top: DOOR.row * CELL,
+            width: CELL,
+            height: CELL,
+            background: 'rgba(200,150,58,0.12)',
             border: '1px solid #c8963a',
-            background: 'rgba(200,150,58,0.08)',
+            animation: 'mazeGoldPulse 2.2s ease-in-out infinite',
+            pointerEvents: 'none',
+          }}
+        />
+
+        {/* credit-game door — blue pulse */}
+        <div
+          style={{
+            position: 'absolute',
+            left: CREDIT_DOOR.col * CELL,
+            top: CREDIT_DOOR.row * CELL,
+            width: CELL,
+            height: CELL,
+            background: 'rgba(59,130,246,0.12)',
+            border: '1px solid #3b82f6',
+            animation: 'mazeBluePulse 1.5s ease-in-out infinite',
+            pointerEvents: 'none',
           }}
         />
       </div>
+
+      {/* TRAIL (screen-fixed SVG) */}
+      {(() => {
+        const cx = window.innerWidth / 2;
+        const cy = window.innerHeight / 2 - 40;
+        const screenPts = trail
+          .map((t) => ({
+            x: t.col * CELL + CELL / 2 + camRef.current.x,
+            y: t.row * CELL + CELL / 2 + camRef.current.y,
+          }))
+          .filter((p) => Math.hypot(p.x - cx, p.y - cy) <= VIS_RADIUS);
+        if (screenPts.length < 2) return null;
+        const head = screenPts[screenPts.length - 1];
+        const tail = screenPts[0];
+        return (
+          <svg
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100vw',
+              height: '100vh',
+              pointerEvents: 'none',
+              zIndex: 40,
+            }}
+          >
+            <defs>
+              <linearGradient
+                id="mazeTrailGrad"
+                gradientUnits="userSpaceOnUse"
+                x1={head.x}
+                y1={head.y}
+                x2={tail.x}
+                y2={tail.y}
+              >
+                <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0.8} />
+                <stop offset="100%" stopColor="rgb(150,150,160)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <polyline
+              points={screenPts.map((p) => `${p.x},${p.y}`).join(' ')}
+              fill="none"
+              stroke="url(#mazeTrailGrad)"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        );
+      })()}
+
+      {/* Keyframes */}
+      <style>{`
+        @keyframes mazeDotPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        @keyframes mazePurplePulse {
+          0%, 100% { box-shadow: 0 0 8px rgba(91,79,212,0.6); }
+          50% { box-shadow: 0 0 20px rgba(91,79,212,0.9); }
+        }
+        @keyframes mazeGoldPulse {
+          0%, 100% { box-shadow: 0 0 8px rgba(200,150,58,0.5); }
+          50% { box-shadow: 0 0 24px rgba(200,150,58,1); }
+        }
+        @keyframes mazeBluePulse {
+          0%, 100% { box-shadow: 0 0 8px rgba(59,130,246,0.5); }
+          50% { box-shadow: 0 0 20px rgba(59,130,246,0.9); }
+        }
+      `}</style>
 
       {/* PLAYER (fixed center) */}
       <div
@@ -424,7 +486,7 @@ const Maze = () => {
           borderRadius: '50%',
           background: '#5b4fd4',
           boxShadow: '0 0 8px rgba(91,79,212,0.8)',
-          transform: `scale(${pulse})`,
+          animation: 'mazeDotPulse 1.5s ease-in-out infinite',
           zIndex: 60,
           pointerEvents: 'none',
         }}

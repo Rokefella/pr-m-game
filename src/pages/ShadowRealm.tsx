@@ -149,8 +149,12 @@ const ShadowRealm = () => {
   const lastMoveAtRef = useRef(Date.now());
 
   const [view, setView] = useState({ w: 390, h: 800 });
+  const [screenCenter, setScreenCenter] = useState({ x: 0, y: 0 });
   useEffect(() => {
-    const u = () => setView({ w: window.innerWidth, h: window.innerHeight });
+    const u = () => {
+      setView({ w: window.innerWidth, h: window.innerHeight });
+      setScreenCenter({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    };
     u();
     window.addEventListener('resize', u);
     return () => window.removeEventListener('resize', u);

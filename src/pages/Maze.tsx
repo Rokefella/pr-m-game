@@ -134,15 +134,22 @@ const inPrimeBubble = (c: number, r: number) => PRIME_BUBBLE_CELLS.has(`${c},${r
 
 // ---- Fragments ----
 const FRAGMENTS: Array<Cell & { prime: number; line: string }> = [
-  { col: 5, row: 5, prime: 23, line: 'Fragment 23. It has been waiting.' },
-  { col: 24, row: 8, prime: 47, line: 'Fragment 47. It has been waiting.' },
-  { col: 8, row: 22, prime: 89, line: 'Fragment 89. It has been waiting.' },
-  { col: 22, row: 24, prime: 139, line: 'Fragment 139. It has been waiting.' },
-  { col: 15, row: 8, prime: 211, line: 'Fragment 211. It has been waiting.' },
+  { col: 8, row: 4, prime: 23, line: 'Fragment 23. It has been waiting.' },
+  { col: 22, row: 4, prime: 47, line: 'Fragment 47. It has been waiting.' },
+  { col: 4, row: 20, prime: 89, line: 'Fragment 89. It has been waiting.' },
+  { col: 24, row: 20, prime: 139, line: 'Fragment 139. It has been waiting.' },
+  { col: 14, row: 6, prime: 211, line: 'Fragment 211. It has been waiting.' },
 ];
 
-const DOOR: Cell = { col: 27, row: 27 };
-const CREDIT_DOOR: Cell = { col: 5, row: 25 };
+const DOOR: Cell = { col: 28, row: 28 };
+const CREDIT_DOOR: Cell = { col: 2, row: 14 };
+
+const EASTER_EGGS: Array<Cell & { line: string }> = [
+  { col: 10, row: 26, line: 'The corner holds the answer.' },
+  { col: 26, row: 10, line: 'Walk toward the darkness.' },
+  { col: 26, row: 26, line: 'You are close. Keep going.' },
+  { col: 20, row: 20, line: 'The gold waits at the edge.' },
+];
 
 const QUOTES = [
   'Navigate.',
@@ -160,6 +167,8 @@ const Maze = () => {
 
   const [trail, setTrail] = useState<Cell[]>([]);
   const trailRef = useRef<Cell[]>([]);
+
+  const eggsTriggeredRef = useRef<Set<string>>(new Set());
 
   const [collected, setCollected] = useState<Set<number>>(new Set());
   const collectedRef = useRef<Set<number>>(new Set());

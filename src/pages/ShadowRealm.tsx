@@ -1082,15 +1082,19 @@ const ShadowRealm = () => {
           key={whisper}
           className="font-fell italic"
           style={{
-            position: 'absolute',
+            position: 'fixed',
             top: '18%',
             left: 0,
-            right: 0,
+            width: '100%',
             textAlign: 'center',
             fontSize: 20,
-            textShadow: '0 0 12px rgba(34,197,94,0.6)',
+            color: whisper === 'The maze is not yet complete.' ? 'rgba(249,115,22,0.7)' : undefined,
+            textShadow:
+              whisper === 'The maze is not yet complete.'
+                ? '0 0 12px rgba(249,115,22,0.5)'
+                : '0 0 12px rgba(34,197,94,0.6)',
             margin: 0,
-            zIndex: 11,
+            zIndex: 50,
             pointerEvents: 'none',
             animation: 'villageNotYet 2.5s ease-out forwards',
           }}
@@ -1105,17 +1109,17 @@ const ShadowRealm = () => {
           key={`eye-${eyeMessage}`}
           className="font-fell italic"
           style={{
-            position: 'absolute',
+            position: 'fixed',
             top: '50%',
             left: 0,
-            right: 0,
+            width: '100%',
             textAlign: 'center',
             fontSize: 20,
             color: 'rgba(120,200,140,0.85)',
             textShadow: '0 0 12px rgba(34,197,94,0.6)',
             margin: 0,
             transform: 'translateY(-50%)',
-            zIndex: 11,
+            zIndex: 50,
             pointerEvents: 'none',
             animation: 'villageNotYet 3s ease-out forwards',
           }}

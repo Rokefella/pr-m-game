@@ -205,14 +205,9 @@ const Maze = () => {
     stepsRef.current += 1;
     setSteps(stepsRef.current);
 
-    // trail (skip if inside prime bubble)
-    if (!inPrimeBubble(nc, nr)) {
-      const exists = trailRef.current.some((t) => t.col === nc && t.row === nr);
-      if (!exists) {
-        trailRef.current = [...trailRef.current, newPos];
-        setTrail(trailRef.current);
-      }
-    }
+    // trail — one entry per move, no gaps
+    trailRef.current = [...trailRef.current, newPos];
+    setTrail(trailRef.current);
 
     // fragment check
     const frag = FRAGMENTS.find((f) => f.col === nc && f.row === nr);

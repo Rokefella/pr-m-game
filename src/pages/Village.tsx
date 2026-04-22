@@ -4,21 +4,22 @@ import { useNavigate } from 'react-router-dom';
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
 
-const MAP_W = 1600;
-const MAP_H = 1000;
-const CX = 800;
-const CY = 500;
+const MAP_W = 2200;
+const MAP_H = 1400;
+const CX = 1100;
+const CY = 700;
 const STEP = 12;
 
 // Ring radii
-const OUTER_RX = 680, OUTER_RY = 380;
-const MIDDLE_RX = 440, MIDDLE_RY = 240;
-const INNER_RX = 200, INNER_RY = 100;
+const OUTERMOST_RX = 900, OUTERMOST_RY = 500;
+const OUTER_RX = 600, OUTER_RY = 340;
+const MIDDLE_RX = 380, MIDDLE_RY = 220;
+const INNER_RX = 200, INNER_RY = 120;
 
 // ---------- Type A: interactive ----------
-const A_23 = { id: 23 as const, x: 520, y: 475, w: 70, h: 50, color: '#4a9eff', bg: 'rgba(74,158,255,0.06)', label: 12 };
-const A_47 = { id: 47 as const, x: 1150, y: 560, w: 70, h: 50, color: '#1d9e75', bg: 'rgba(29,158,117,0.06)', label: 12 };
-const A_89 = { id: 89 as const, x: 755, y: 240, w: 90, h: 70, color: '#c8963a', bg: 'rgba(200,150,58,0.06)', label: 14 };
+const A_23 = { id: 23 as const, x: 720, y: 675, w: 70, h: 50, color: '#4a9eff', bg: 'rgba(74,158,255,0.06)', label: 12 };
+const A_47 = { id: 47 as const, x: 1580, y: 780, w: 70, h: 50, color: '#1d9e75', bg: 'rgba(29,158,117,0.06)', label: 12 };
+const A_89 = { id: 89 as const, x: 1055, y: 440, w: 90, h: 70, color: '#c8963a', bg: 'rgba(200,150,58,0.06)', label: 14 };
 const TYPE_A = [A_23, A_47, A_89];
 
 // ---------- Helpers ----------
@@ -44,7 +45,7 @@ const makeRng = (seed: number) => {
   };
 };
 
-// ---------- Generate Type B (50) and Type C (120) ----------
+// ---------- Generate Type B (50) and Type C (120 + extras) and Outermost rim ----------
 const A_PADDING = 4;
 const B_GAP = 18;
 const C_GAP = 12;
@@ -54,6 +55,7 @@ const generateBuildings = () => {
   const rng = makeRng(0xC0FFEE);
   const B: Rect[] = [];
   const C: Rect[] = [];
+  const RIM: Rect[] = [];
 
   const placeOnEllipse = (
     rx: number,
@@ -126,7 +128,7 @@ const generateBuildings = () => {
     placeOnEllipse(innerB_RX, innerB_RY, a, 8, 35, 50, 25, 40, B, [B], B_GAP, A_PADDING, 'b', bIdx++);
   }
 
-  // Type C: dense ring around outer to seal the boundary (every 2°), small jitter
+  // Type C: dense ring around outer (every 2°), small jitter
   let cIdx = 0;
   for (let a = 0; a < 360; a += 2) {
     placeOnEllipse(OUTER_RX, OUTER_RY, a, 3, 22, 36, 18, 28, C, [C, B], 4, C_VS_AB_PAD, 'c', cIdx++);
@@ -150,11 +152,64 @@ const generateBuildings = () => {
     placeOnEllipse(midInRX, midInRY, a, 8, 20, 32, 14, 24, C, [C, B], C_GAP, C_VS_AB_PAD, 'c', cIdx++);
   }
 
-  return { B, C };
+  // 40 additional Type C scattered between OUTER and OUTERMOST rings
+  const extraInnerRX = OUTER_RX + 40;
+  const extraInnerRY = OUTER_RY + 30;
+  const extraOuterRX = OUTERMOST_RX - 80;
+  const extraOuterRY = OUTERMOST_RY - 60;
+  for (let i = 0; i < 40; i++) {
+    const a = (i * 360) / 40 + (rng() * 9);
+    const t = rng();
+    const rx = extraInnerRX + (extraOuterRX - extraInnerRX) * t;
+    const ry = extraInnerRY + (extraOuterRY - extraInnerRY) * t;
+    placeOnEllipse(rx, ry, a, 14, 22, 36, 16, 26, C, [C, B], C_GAP, C_VS_AB_PAD, 'c', cIdx++);
+  }
+
+  // Outermost rim: 60 buildings every 6°, each 28x22, with wider gaps every 30°
+  // To create wider gaps: skip placing the building when it would be at one of the wide-gap angles.
+  // Actually: we place all 60 but offset every 5th building (at multiples of 30°) outward slightly so the gap doubles.
+  // Simpler: skip building entirely at the wide-gap centers — but spec says gap doubles, not removed.
+  // We'll place 60, but for buildings whose angle is within 3° of a multiple of 30°, nudge them outward by ~30px,
+  // effectively creating wider gaps along the rim path.
+  for (let i = 0; i < 60; i++) {
+    const angleDeg = i * 6;
+    const isWideGap = angleDeg % 30 === 0;
+    if (isWideGap) continue; // skip to create the wider entry/exit street
+    const theta = (angleDeg * Math.PI) / 180;
+    const cx = CX + OUTERMOST_RX * Math.cos(theta);
+    const cy = CY + OUTERMOST_RY * Math.sin(theta);
+    const w = 28;
+    const h = 22;
+    const x = Math.round(cx - w / 2);
+    const y = Math.round(cy - h / 2);
+    if (x < 6 || y < 6 || x + w > MAP_W - 6 || y + h > MAP_H - 6) continue;
+    RIM.push({ id: `rim${i}`, x, y, w, h });
+  }
+
+  return { B, C, RIM };
 };
 
-const { B: TYPE_B, C: TYPE_C } = generateBuildings();
-const OBSTACLES: Rect[] = [...TYPE_B, ...TYPE_C];
+const { B: TYPE_B, C: TYPE_C, RIM: TYPE_RIM } = generateBuildings();
+const OBSTACLES: Rect[] = [...TYPE_B, ...TYPE_C, ...TYPE_RIM];
+
+// Compute valid spawn point on outermost ring
+const computeSpawn = (): { x: number; y: number } => {
+  for (let i = 0; i < 50; i++) {
+    const theta = Math.random() * Math.PI * 2;
+    const x = CX + OUTERMOST_RX * Math.cos(theta);
+    const y = CY + OUTERMOST_RY * Math.sin(theta);
+    const playerRect = { x: x - 4, y: y - 4, w: 8, h: 8 };
+    let collides = false;
+    for (const o of OBSTACLES) {
+      if (rectsOverlap(playerRect, o, 8)) { collides = true; break; }
+    }
+    for (const a of TYPE_A) {
+      if (rectsOverlap(playerRect, a, 8)) { collides = true; break; }
+    }
+    if (!collides) return { x, y };
+  }
+  return { x: CX, y: CY };
+};
 
 const Village = () => {
   const navigate = useNavigate();
@@ -162,14 +217,10 @@ const Village = () => {
   const feedbackTimer = useRef<number | null>(null);
   const trailIdRef = useRef(0);
 
-  // Random start on outer ellipse (computed once)
+  // Validated random spawn (computed once)
   const initialPosRef = useRef<{ x: number; y: number } | null>(null);
   if (initialPosRef.current === null) {
-    const theta = Math.random() * Math.PI * 2;
-    initialPosRef.current = {
-      x: CX + OUTER_RX * Math.cos(theta),
-      y: CY + OUTER_RY * Math.sin(theta),
-    };
+    initialPosRef.current = computeSpawn();
   }
   const initialPos = initialPosRef.current;
   const [player, setPlayer] = useState(initialPos);
@@ -232,7 +283,7 @@ const Village = () => {
       }
     }
 
-    // Obstacles (B + C) with 2px padding
+    // Obstacles (B + C + RIM) with 2px padding
     for (const o of OBSTACLES) {
       if (
         nx >= o.x - 2 &&
@@ -457,6 +508,20 @@ const Village = () => {
           }}
         />
 
+        {/* Outermost ring outline */}
+        <div
+          style={{
+            position: 'absolute',
+            left: CX - OUTERMOST_RX,
+            top: CY - OUTERMOST_RY,
+            width: OUTERMOST_RX * 2,
+            height: OUTERMOST_RY * 2,
+            border: '0.5px solid rgba(100,80,160,0.05)',
+            borderRadius: '50%',
+            pointerEvents: 'none',
+            zIndex: 1,
+          }}
+        />
         {/* Outer ring outline */}
         <div
           style={{
@@ -529,6 +594,23 @@ const Village = () => {
             fill="#5b4fd4"
           />
         </svg>
+
+        {/* Outermost rim buildings */}
+        {TYPE_RIM.map((b) => (
+          <div
+            key={`rim-${b.id}`}
+            style={{
+              position: 'absolute',
+              left: b.x,
+              top: b.y,
+              width: b.w,
+              height: b.h,
+              border: '0.5px solid rgba(100,80,160,0.3)',
+              background: 'rgba(100,80,160,0.08)',
+              zIndex: 1,
+            }}
+          />
+        ))}
 
         {/* Type C buildings */}
         {TYPE_C.map((b) => (

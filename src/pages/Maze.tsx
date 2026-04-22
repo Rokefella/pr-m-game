@@ -10,40 +10,91 @@ const MAP_H = ROWS * CELL;
 type Cell = { col: number; row: number };
 
 // ---- Walls ----
-const WALL_SET: Set<string> = (() => {
+// ---- Open corridor cells (carved passages, 1 cell wide) ----
+const OPEN_SET: Set<string> = (() => {
   const s = new Set<string>();
-  const add = (c: number, r: number) => s.add(`${c},${r}`);
-  // outer border
-  for (let c = 0; c < COLS; c++) {
-    add(c, 0);
-    add(c, ROWS - 1);
-  }
-  for (let r = 0; r < ROWS; r++) {
-    add(0, r);
-    add(COLS - 1, r);
-  }
-  // 8 horizontal segments
-  const hSegs: Array<[number, number, number]> = [
-    [3, 4, 4], [10, 4, 5], [20, 5, 4],
-    [4, 11, 5], [14, 11, 4], [22, 12, 4],
-    [6, 18, 4], [18, 19, 5],
-  ];
-  for (const [c, r, len] of hSegs) {
-    for (let i = 0; i < len; i++) add(c + i, r);
-  }
-  // 8 vertical segments
-  const vSegs: Array<[number, number, number]> = [
-    [7, 6, 4], [13, 7, 3], [23, 15, 4],
-    [4, 14, 5], [10, 14, 3], [17, 14, 4],
-    [25, 20, 5], [12, 22, 4],
-  ];
-  for (const [c, r, len] of vSegs) {
-    for (let i = 0; i < len; i++) add(c, r + i);
-  }
+  const open = (c: number, r: number) => {
+    if (c > 0 && c < COLS - 1 && r > 0 && r < ROWS - 1) s.add(`${c},${r}`);
+  };
+  const hLine = (c: number, r: number, len: number) => {
+    for (let i = 0; i < len; i++) open(c + i, r);
+  };
+  const vLine = (c: number, r: number, len: number) => {
+    for (let i = 0; i < len; i++) open(c, r + i);
+  };
+
+  // Spine running through center
+  hLine(1, 15, 28);
+  vLine(15, 1, 28);
+
+  // Branches off the horizontal spine
+  vLine(3, 1, 15);
+  vLine(7, 5, 11);
+  vLine(11, 1, 15);
+  vLine(19, 1, 15);
+  vLine(23, 5, 11);
+  vLine(27, 1, 15);
+
+  vLine(3, 15, 14);
+  vLine(7, 15, 11);
+  vLine(11, 15, 14);
+  vLine(19, 15, 14);
+  vLine(23, 15, 11);
+  vLine(27, 15, 14);
+
+  // Cross-corridors off the vertical spine
+  hLine(1, 3, 28);
+  hLine(1, 7, 14);
+  hLine(15, 7, 14);
+  hLine(1, 11, 28);
+  hLine(1, 19, 28);
+  hLine(1, 23, 14);
+  hLine(15, 23, 14);
+  hLine(1, 27, 28);
+
+  // Path to fragments
+  hLine(5, 5, 7);
+  vLine(5, 1, 8);
+  hLine(20, 8, 5);
+  vLine(24, 3, 8);
+  hLine(5, 22, 6);
+  vLine(8, 19, 6);
+  hLine(18, 24, 6);
+  vLine(22, 19, 8);
+  hLine(13, 8, 5);
+
+  // Path to door
+  hLine(23, 27, 5);
+  vLine(27, 23, 6);
+
+  // Some dead-end stubs for complexity
+  hLine(5, 9, 3);
+  hLine(13, 13, 4);
+  vLine(9, 17, 3);
+  hLine(17, 17, 3);
+  vLine(13, 25, 3);
+  hLine(21, 13, 3);
+  vLine(25, 9, 4);
+  hLine(9, 25, 3);
+
   return s;
 })();
 
-const isWall = (c: number, r: number) => WALL_SET.has(`${c},${r}`);
+const isWall = (c: number, r: number) => {
+  if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return true;
+  return !OPEN_SET.has(`${c},${r}`);
+};
+
+// Wall cells (for rendering) — every in-bounds cell that is not open
+const WALL_SET: Set<string> = (() => {
+  const s = new Set<string>();
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (!OPEN_SET.has(`${c},${r}`)) s.add(`${c},${r}`);
+    }
+  }
+  return s;
+})();
 
 // ---- Primes ----
 const PRIME_SET: Set<number> = (() => {
@@ -63,14 +114,8 @@ const PRIME_BUBBLE_CELLS: Set<string> = (() => {
   for (const n of PRIME_SET) {
     const pc = n % COLS;
     const pr = Math.floor(n / COLS);
-    for (let dr = -2; dr <= 2; dr++) {
-      for (let dc = -2; dc <= 2; dc++) {
-        const c = pc + dc;
-        const r = pr + dr;
-        if (c >= 0 && c < COLS && r >= 0 && r < ROWS) {
-          s.add(`${c},${r}`);
-        }
-      }
+    if (pc >= 0 && pc < COLS && pr >= 0 && pr < ROWS) {
+      s.add(`${pc},${pr}`);
     }
   }
   return s;
@@ -123,7 +168,7 @@ const Maze = () => {
   const camRef = useRef({ x: 0, y: 0 });
 
   const heldKeysRef = useRef<Set<string>>(new Set());
-  const keyFrameCounter = useRef(0);
+  const lastMoveTimeRef = useRef(0);
 
   const [pulse, setPulse] = useState(1);
 
@@ -135,11 +180,14 @@ const Maze = () => {
   };
 
   const tryMove = (dc: number, dr: number) => {
+    const now = Date.now();
+    if (now - lastMoveTimeRef.current < 300) return;
     const cur = posRef.current;
     const nc = Math.max(0, Math.min(COLS - 1, cur.col + dc));
     const nr = Math.max(0, Math.min(ROWS - 1, cur.row + dr));
     if (nc === cur.col && nr === cur.row) return;
     if (isWall(nc, nr)) return;
+    lastMoveTimeRef.current = now;
 
     const newPos = { col: nc, row: nr };
     posRef.current = newPos;
@@ -201,24 +249,19 @@ const Maze = () => {
     let raf = 0;
     let pulseT = 0;
     const tick = () => {
-      // movement throttle (every 8 frames ~ 7Hz)
-      keyFrameCounter.current += 1;
-      if (keyFrameCounter.current >= 8) {
-        keyFrameCounter.current = 0;
-        const k = heldKeysRef.current;
-        let dc = 0;
-        let dr = 0;
-        if (k.has('ArrowLeft')) dc -= 1;
-        if (k.has('ArrowRight')) dc += 1;
-        if (k.has('ArrowUp')) dr -= 1;
-        if (k.has('ArrowDown')) dr += 1;
-        if (dc !== 0 || dr !== 0) {
-          // prefer single-axis move per tick to keep grid clean
-          if (dc !== 0 && dr !== 0) {
-            tryMove(dc, 0);
-          } else {
-            tryMove(dc, dr);
-          }
+      // held-key movement (cooldown-gated inside tryMove)
+      const k = heldKeysRef.current;
+      let dc = 0;
+      let dr = 0;
+      if (k.has('ArrowLeft')) dc -= 1;
+      if (k.has('ArrowRight')) dc += 1;
+      if (k.has('ArrowUp')) dr -= 1;
+      if (k.has('ArrowDown')) dr += 1;
+      if (dc !== 0 || dr !== 0) {
+        if (dc !== 0 && dr !== 0) {
+          tryMove(dc, 0);
+        } else {
+          tryMove(dc, dr);
         }
       }
 
@@ -312,33 +355,19 @@ const Maze = () => {
             key={`t-${i}`}
             style={{
               position: 'absolute',
-              left: t.col * CELL + CELL / 2 - 2,
-              top: t.row * CELL + CELL / 2 - 2,
-              width: 4,
-              height: 4,
+              left: t.col * CELL + CELL / 2 - 2.5,
+              top: t.row * CELL + CELL / 2 - 2.5,
+              width: 5,
+              height: 5,
               borderRadius: '50%',
-              background: 'rgba(91,79,212,0.4)',
+              background: 'rgba(91,79,212,0.65)',
               pointerEvents: 'none',
             }}
           />
         ))}
 
-        {/* fragments */}
-        {FRAGMENTS.filter((f) => !collected.has(f.prime)).map((f) => (
-          <div
-            key={`f-${f.prime}`}
-            style={{
-              position: 'absolute',
-              left: f.col * CELL + CELL / 2 - 3,
-              top: f.row * CELL + CELL / 2 - 3,
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: 'rgba(200,150,58,0.4)',
-              boxShadow: '0 0 6px rgba(200,150,58,0.4)',
-            }}
-          />
-        ))}
+        {/* fragments — invisible until walked into */}
+
 
         {/* golden door */}
         <div
@@ -366,7 +395,7 @@ const Maze = () => {
           background: '#5b4fd4',
           boxShadow: '0 0 8px rgba(91,79,212,0.8)',
           transform: `scale(${pulse})`,
-          zIndex: 5,
+          zIndex: 60,
           pointerEvents: 'none',
         }}
       />
@@ -377,9 +406,9 @@ const Maze = () => {
           position: 'fixed',
           inset: 0,
           background:
-            'radial-gradient(circle 380px at 50% 50%, transparent 320px, rgba(4,4,10,0.7) 360px, rgba(4,4,10,1) 400px)',
+            'radial-gradient(circle 380px at 50vw calc(50vh - 40px), transparent 0px, transparent 300px, rgba(4,4,10,0.85) 360px, rgba(4,4,10,1) 400px)',
           pointerEvents: 'none',
-          zIndex: 10,
+          zIndex: 50,
         }}
       />
 

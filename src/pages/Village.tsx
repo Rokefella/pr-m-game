@@ -588,6 +588,21 @@ const Village = () => {
         setEyePupil(eyePupilRef.current);
       }
 
+      // Eye proximity whisper
+      if (edist <= EYE_RADIUS) {
+        if (!eyeTriggeredRef.current) {
+          eyeTriggeredRef.current = true;
+          const idx = eyeMessageIndexRef.current;
+          const msg = EYE_MESSAGES[idx];
+          eyeMessageIndexRef.current = (idx + 1) % EYE_MESSAGES.length;
+          setEyeMessage(msg);
+          if (eyeTimer.current) window.clearTimeout(eyeTimer.current);
+          eyeTimer.current = window.setTimeout(() => setEyeMessage(null), 3000);
+        }
+      } else {
+        eyeTriggeredRef.current = false;
+      }
+
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);

@@ -149,8 +149,12 @@ const ShadowRealm = () => {
   const lastMoveAtRef = useRef(Date.now());
 
   const [view, setView] = useState({ w: 390, h: 800 });
+  const [screenCenter, setScreenCenter] = useState({ x: 0, y: 0 });
   useEffect(() => {
-    const u = () => setView({ w: window.innerWidth, h: window.innerHeight });
+    const u = () => {
+      setView({ w: window.innerWidth, h: window.innerHeight });
+      setScreenCenter({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+    };
     u();
     window.addEventListener('resize', u);
     return () => window.removeEventListener('resize', u);
@@ -263,21 +267,18 @@ const ShadowRealm = () => {
       return;
     }
 
-    // Obstacles
-    for (const o of OBSTACLES) {
+    // Whisper-trigger Type B buildings (no collision blocking — free exploration)
+    for (const [rect, msg] of WHISPER_BY_RECT) {
       if (
-        nx >= o.x - 2 && nx <= o.x + o.w + 2 &&
-        ny >= o.y - 2 && ny <= o.y + o.h + 2
+        nx >= rect.x - 2 && nx <= rect.x + rect.w + 2 &&
+        ny >= rect.y - 2 && ny <= rect.y + rect.h + 2
       ) {
-        const msg = WHISPER_BY_RECT.get(o);
-        if (msg) {
-          if (lastWhisperKeyRef.current !== o.id) {
-            lastWhisperKeyRef.current = o.id;
-            showWhisper(msg, 3000);
-            window.setTimeout(() => { lastWhisperKeyRef.current = null; }, 3500);
-          }
+        if (lastWhisperKeyRef.current !== rect.id) {
+          lastWhisperKeyRef.current = rect.id;
+          showWhisper(msg, 3000);
+          window.setTimeout(() => { lastWhisperKeyRef.current = null; }, 3500);
         }
-        return;
+        break;
       }
     }
 
@@ -365,6 +366,19 @@ const ShadowRealm = () => {
   }, [view]);
 
   const dpadMove = (dc: number, dr: number) => move(dc * STEP, dr * STEP);
+  const dpadIntervalRef = useRef<number | null>(null);
+  const startDpadHold = (dc: number, dr: number) => {
+    dpadMove(dc, dr);
+    if (dpadIntervalRef.current) window.clearInterval(dpadIntervalRef.current);
+    dpadIntervalRef.current = window.setInterval(() => dpadMove(dc, dr), 150);
+  };
+  const stopDpadHold = () => {
+    if (dpadIntervalRef.current) {
+      window.clearInterval(dpadIntervalRef.current);
+      dpadIntervalRef.current = null;
+    }
+  };
+  useEffect(() => () => { if (dpadIntervalRef.current) window.clearInterval(dpadIntervalRef.current); }, []);
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#04040a', overflow: 'hidden' }}>
@@ -544,13 +558,14 @@ const ShadowRealm = () => {
         />
       </div>
 
-      {/* THE EYE — fixed to screen */}
+      {/* THE EYE — fixed to screen, outside map transform */}
       <svg
-        width={view.w}
-        height={view.h}
         style={{
           position: 'fixed',
-          inset: 0,
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
           pointerEvents: 'none',
           zIndex: 30,
           opacity: eyeOp,
@@ -559,8 +574,8 @@ const ShadowRealm = () => {
         }}
       >
         <ellipse
-          cx={view.w / 2}
-          cy={view.h / 2}
+          cx={screenCenter.x}
+          cy={screenCenter.y}
           rx={110}
           ry={68}
           stroke="rgba(34,197,94,0.15)"
@@ -569,8 +584,8 @@ const ShadowRealm = () => {
           style={{ animation: 'shadowGlowRing 3s ease-in-out infinite' }}
         />
         <ellipse
-          cx={view.w / 2}
-          cy={view.h / 2}
+          cx={screenCenter.x}
+          cy={screenCenter.y}
           rx={100}
           ry={60}
           stroke="rgba(34,197,94,0.6)"
@@ -578,8 +593,8 @@ const ShadowRealm = () => {
           fill="none"
         />
         <circle
-          cx={view.w / 2 + eyePupil.x}
-          cy={view.h / 2 + eyePupil.y}
+          cx={screenCenter.x + eyePupil.x}
+          cy={screenCenter.y + eyePupil.y}
           r={18}
           fill="#16a34a"
         />
@@ -648,7 +663,10 @@ const ShadowRealm = () => {
         ].map((b, i) => (
           <button
             key={i}
-            onPointerDown={(e) => { e.preventDefault(); dpadMove(b.dc, b.dr); }}
+            onPointerDown={(e) => { e.preventDefault(); startDpadHold(b.dc, b.dr); }}
+            onPointerUp={stopDpadHold}
+            onPointerLeave={stopDpadHold}
+            onPointerCancel={stopDpadHold}
             style={{
               position: 'absolute',
               top: b.top,

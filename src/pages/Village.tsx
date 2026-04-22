@@ -185,19 +185,33 @@ const generateBuildings = () => {
 const { B: TYPE_B, C: TYPE_C, RIM: TYPE_RIM } = generateBuildings();
 const OBSTACLES: Rect[] = [...TYPE_B, ...TYPE_C, ...TYPE_RIM];
 
-// Compute valid spawn point on outermost ring
+// Compute valid spawn point — inside outermost ellipse, not overlapping buildings
 const computeSpawn = (): { x: number; y: number } => {
-  for (let i = 0; i < 50; i++) {
+  for (let i = 0; i < 100; i++) {
+    // Spawn somewhere between OUTER ring and 85% of outermost (well inside boundary)
     const theta = Math.random() * Math.PI * 2;
-    const x = CX + OUTERMOST_RX * Math.cos(theta);
-    const y = CY + OUTERMOST_RY * Math.sin(theta);
+    const t = 0.55 + Math.random() * 0.3; // 55%..85% out from center
+    let x = CX + OUTERMOST_RX * t * Math.cos(theta);
+    let y = CY + OUTERMOST_RY * t * Math.sin(theta);
+
+    // Ensure inside outermost ellipse (scale to 85% if outside)
+    const nx = (x - CX) / OUTERMOST_RX;
+    const ny = (y - CY) / OUTERMOST_RY;
+    if (nx * nx + ny * ny > 1) {
+      const mag = Math.sqrt(nx * nx + ny * ny);
+      x = CX + (x - CX) * (0.85 / mag);
+      y = CY + (y - CY) * (0.85 / mag);
+    }
+
     const playerRect = { x: x - 4, y: y - 4, w: 8, h: 8 };
     let collides = false;
     for (const o of OBSTACLES) {
-      if (rectsOverlap(playerRect, o, 8)) { collides = true; break; }
+      if (rectsOverlap(playerRect, o, 10)) { collides = true; break; }
     }
-    for (const a of TYPE_A) {
-      if (rectsOverlap(playerRect, a, 8)) { collides = true; break; }
+    if (!collides) {
+      for (const a of TYPE_A) {
+        if (rectsOverlap(playerRect, a, 10)) { collides = true; break; }
+      }
     }
     if (!collides) return { x, y };
   }

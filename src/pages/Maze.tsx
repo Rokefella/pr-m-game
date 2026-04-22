@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 
+// TODO production: initialize from player's accumulated real walking steps via HealthKit/Health Connect
+// TODO production: restore steps daily from pedometer sync, not hardcoded 100
+// Testing value: 100 steps
+const INITIAL_STEPS = 100;
+
 const COLS = 30;
 const ROWS = 30;
 const CELL = 40;
@@ -166,16 +171,13 @@ const Maze = () => {
   const [pos, setPos] = useState<Cell>({ col: 15, row: 15 });
   const posRef = useRef<Cell>({ col: 15, row: 15 });
 
-  const [trail, setTrail] = useState<Cell[]>([]);
-  const trailRef = useRef<Cell[]>([]);
-
   const eggsTriggeredRef = useRef<Set<string>>(new Set());
 
   const [collected, setCollected] = useState<Set<number>>(new Set());
   const collectedRef = useRef<Set<number>>(new Set());
 
-  const [steps, setSteps] = useState(0);
-  const stepsRef = useRef(0);
+  const [stepsRemaining, setStepsRemaining] = useState(INITIAL_STEPS);
+  const stepsRemainingRef = useRef(INITIAL_STEPS);
 
   const [whisper, setWhisper] = useState<string | null>(null);
   const [whisperColor, setWhisperColor] = useState<string>('rgba(160,140,200,0.85)');
@@ -210,7 +212,8 @@ const Maze = () => {
   const tryMove = (dc: number, dr: number) => {
     const now = Date.now();
     // TODO: restore to 200ms for production
-    if (now - lastMoveTimeRef.current < 50) return;
+    if (now - lastMoveTimeRef.current < 150) return;
+    if (stepsRemainingRef.current <= 0) return;
     // Clamp to max 1 cell per axis per call — never allow multi-cell jumps
     const sdc = dc === 0 ? 0 : dc > 0 ? 1 : -1;
     const sdr = dr === 0 ? 0 : dr > 0 ? 1 : -1;
@@ -221,15 +224,11 @@ const Maze = () => {
     if (isWall(nc, nr)) return;
     lastMoveTimeRef.current = now;
 
-    // trail — push PREVIOUS cell before updating, so trail is always behind player
-    trailRef.current = [...trailRef.current, { col: cur.col, row: cur.row }];
-    setTrail(trailRef.current);
-
     const newPos = { col: nc, row: nr };
     posRef.current = newPos;
     setPos(newPos);
-    stepsRef.current += 1;
-    setSteps(stepsRef.current);
+    stepsRemainingRef.current -= 1;
+    setStepsRemaining(stepsRemainingRef.current);
 
     // fragment check
     const fragIdx = FRAGMENTS.findIndex((f) => f.col === nc && f.row === nr);
@@ -443,55 +442,6 @@ const Maze = () => {
         />
       </div>
 
-      {/* TRAIL (screen-fixed SVG) */}
-      {(() => {
-        const cx = window.innerWidth / 2;
-        const cy = window.innerHeight / 2 - 40;
-        const screenPts = trail
-          .map((t) => ({
-            x: t.col * CELL + CELL / 2 + camRef.current.x,
-            y: t.row * CELL + CELL / 2 + camRef.current.y,
-          }))
-          .filter((p) => Math.hypot(p.x - cx, p.y - cy) <= VIS_RADIUS);
-        if (screenPts.length < 2) return null;
-        const head = screenPts[screenPts.length - 1];
-        const tail = screenPts[0];
-        return (
-          <svg
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              pointerEvents: 'none',
-              zIndex: 40,
-            }}
-          >
-            <defs>
-              <linearGradient
-                id="mazeTrailGrad"
-                gradientUnits="userSpaceOnUse"
-                x1={head.x}
-                y1={head.y}
-                x2={tail.x}
-                y2={tail.y}
-              >
-                <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="#5b4fd4" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <polyline
-              points={screenPts.map((p) => `${p.x},${p.y}`).join(' ')}
-              fill="none"
-              stroke="url(#mazeTrailGrad)"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        );
-      })()}
 
       {/* Keyframes */}
       <style>{`
@@ -579,6 +529,27 @@ const Maze = () => {
         </p>
       )}
 
+      {/* NO STEPS MESSAGE */}
+      {stepsRemaining === 0 && (
+        <p
+          className="font-fell italic"
+          style={{
+            position: 'fixed',
+            top: '20%',
+            left: 0,
+            right: 0,
+            textAlign: 'center',
+            fontSize: 16,
+            color: 'rgba(160,140,200,0.6)',
+            margin: 0,
+            zIndex: 30,
+            pointerEvents: 'none',
+          }}
+        >
+          You have no steps remaining. Walk to continue.
+        </p>
+      )}
+
       {/* RETURN */}
       <button
         className="font-cinzel"
@@ -662,7 +633,7 @@ const Maze = () => {
           zIndex: 60,
         }}
       >
-        <span style={{ color: '#e0ddd5' }}>MAZE STEPS {steps}</span>
+        <span style={{ color: stepsRemaining === 0 ? 'rgba(200,80,80,0.9)' : stepsRemaining <= 20 ? 'rgba(200,150,58,0.9)' : '#e0ddd5' }}>STEPS {stepsRemaining}</span>
         <span style={{ color: '#c8963a' }}>FRAGMENTS {collected.size}/5</span>
         <span style={{ color: '#5b4fd4' }}>LEVEL 01</span>
       </div>

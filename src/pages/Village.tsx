@@ -431,6 +431,7 @@ const Village = () => {
     return () => {
       if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
       if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
+      if (eyeTimer.current) window.clearTimeout(eyeTimer.current);
     };
   }, []);
 

@@ -196,6 +196,14 @@ const Maze = () => {
 
   const [activeFragment, setActiveFragment] = useState<{ prime: number; index: number } | null>(null);
 
+  // TODO production: load from Supabase player record
+  const [credits, setCredits] = useState(50);
+  const [exchangeOpen, setExchangeOpen] = useState(false);
+  const [selectedCredits, setSelectedCredits] = useState(1);
+  const [exchangeError, setExchangeError] = useState(false);
+  const exchangeOpenRef = useRef(false);
+  useEffect(() => { exchangeOpenRef.current = exchangeOpen; }, [exchangeOpen]);
+
   // Visibility upgrade levels (1=120px, 2=200px, 3=280px, 4=400px)
   const [visibilityLevel] = useState(1);
   const VIS_RADIUS = visibilityLevel === 1 ? 120 : visibilityLevel === 2 ? 200 : visibilityLevel === 3 ? 280 : 400;

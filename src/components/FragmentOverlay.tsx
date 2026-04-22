@@ -125,15 +125,23 @@ const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => 
     ctx.textBaseline = 'middle';
     ctx.fillText(String(prime), 300, 420);
 
-    // player avatar at (300, 560): glow arc + circle r=16
-    ctx.fillStyle = 'rgba(91,79,212,0.6)';
+    // player avatar at (300, 560): outer ring + filled circle
+    ctx.strokeStyle = 'rgba(91,79,212,0.4)';
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.arc(300, 560, 28, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.arc(300, 560, 22, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.fillStyle = '#5b4fd4';
     ctx.beginPath();
     ctx.arc(300, 560, 16, 0, Math.PI * 2);
     ctx.fill();
+
+    // registration label below avatar
+    ctx.fillStyle = 'rgba(160,140,200,0.4)';
+    ctx.font = '12px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('#0001', 300, 590);
 
     // PRÆM at bottom
     ctx.fillStyle = 'rgba(160,140,200,0.4)';
@@ -158,14 +166,23 @@ const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => 
       cx += widths[i] + spacing;
     }
 
-    canvas.toBlob((blob) => {
-      if (!blob || !anchorRef.current) return;
-      const url = URL.createObjectURL(blob);
-      anchorRef.current.href = url;
-      anchorRef.current.download = `praem-fragment-${prime}.png`;
-      anchorRef.current.click();
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    }, 'image/png');
+    // Save to localStorage instead of downloading
+    try {
+      const dataUrl = canvas.toDataURL('image/png');
+      localStorage.setItem(`praem_fragment_${prime}`, dataUrl);
+      const meta = {
+        prime,
+        collectedAt: Date.now(),
+        registrationNumber: '0001',
+        level: 1,
+      };
+      localStorage.setItem(`praem_fragment_${prime}_meta`, JSON.stringify(meta));
+      setSavedMsg(true);
+      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = window.setTimeout(() => setSavedMsg(false), 1500);
+    } catch (err) {
+      console.error('Failed to save fragment to backpack', err);
+    }
   };
 
   return (

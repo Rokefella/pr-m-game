@@ -246,24 +246,19 @@ const Maze = () => {
     let raf = 0;
     let pulseT = 0;
     const tick = () => {
-      // movement throttle (every 8 frames ~ 7Hz)
-      keyFrameCounter.current += 1;
-      if (keyFrameCounter.current >= 8) {
-        keyFrameCounter.current = 0;
-        const k = heldKeysRef.current;
-        let dc = 0;
-        let dr = 0;
-        if (k.has('ArrowLeft')) dc -= 1;
-        if (k.has('ArrowRight')) dc += 1;
-        if (k.has('ArrowUp')) dr -= 1;
-        if (k.has('ArrowDown')) dr += 1;
-        if (dc !== 0 || dr !== 0) {
-          // prefer single-axis move per tick to keep grid clean
-          if (dc !== 0 && dr !== 0) {
-            tryMove(dc, 0);
-          } else {
-            tryMove(dc, dr);
-          }
+      // held-key movement (cooldown-gated inside tryMove)
+      const k = heldKeysRef.current;
+      let dc = 0;
+      let dr = 0;
+      if (k.has('ArrowLeft')) dc -= 1;
+      if (k.has('ArrowRight')) dc += 1;
+      if (k.has('ArrowUp')) dr -= 1;
+      if (k.has('ArrowDown')) dr += 1;
+      if (dc !== 0 || dr !== 0) {
+        if (dc !== 0 && dr !== 0) {
+          tryMove(dc, 0);
+        } else {
+          tryMove(dc, dr);
         }
       }
 

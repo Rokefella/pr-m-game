@@ -199,6 +199,20 @@ const generateBuildings = () => {
 const { B: TYPE_B, C: TYPE_C, RIM: TYPE_RIM } = generateBuildings();
 const OBSTACLES: Rect[] = [...TYPE_B, ...TYPE_C, ...TYPE_RIM];
 
+// Map each whisper point to its nearest obstacle (by center distance)
+const WHISPER_BY_RECT = new Map<Rect, string>();
+for (const wp of WHISPER_POINTS) {
+  let best: Rect | null = null;
+  let bestD = Infinity;
+  for (const o of OBSTACLES) {
+    const cx = o.x + o.w / 2;
+    const cy = o.y + o.h / 2;
+    const d = (cx - wp.p[0]) ** 2 + (cy - wp.p[1]) ** 2;
+    if (d < bestD) { bestD = d; best = o; }
+  }
+  if (best && !WHISPER_BY_RECT.has(best)) WHISPER_BY_RECT.set(best, wp.msg);
+}
+
 // Compute valid spawn point — inside outermost ellipse, not overlapping buildings
 const computeSpawn = (): { x: number; y: number } => {
   for (let i = 0; i < 100; i++) {

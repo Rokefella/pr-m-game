@@ -222,6 +222,7 @@ const Maze = () => {
     // TODO: restore to 200ms for production
     if (now - lastMoveTimeRef.current < 150) return;
     if (stepsRemainingRef.current <= 0) return;
+    if (exchangeOpenRef.current) return;
     // Clamp to max 1 cell per axis per call — never allow multi-cell jumps
     const sdc = dc === 0 ? 0 : dc > 0 ? 1 : -1;
     const sdr = dr === 0 ? 0 : dr > 0 ? 1 : -1;

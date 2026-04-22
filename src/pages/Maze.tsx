@@ -303,18 +303,11 @@ const Maze = () => {
       if (k.has('ArrowUp')) dr -= 1;
       if (k.has('ArrowDown')) dr += 1;
       if (dc !== 0 || dr !== 0) {
-        // try combined diagonal first; if blocked, fall back to single-axis
-        if (dc !== 0 && dr !== 0) {
-          const cur = posRef.current;
-          if (!isWall(cur.col + dc, cur.row + dr)) {
-            tryMove(dc, dr);
-          } else {
-            tryMove(dc, 0);
-            tryMove(0, dr);
-          }
-        } else {
-          tryMove(dc, dr);
-        }
+        // Process axes independently so diagonals slide along walls
+        // instead of clipping through corners. Each tryMove is gated by
+        // its own cooldown and clamped to exactly 1 cell per axis.
+        if (dc !== 0) tryMove(dc, 0);
+        if (dr !== 0) tryMove(0, dr);
       }
 
       // camera follows player

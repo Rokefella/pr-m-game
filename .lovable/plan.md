@@ -1,75 +1,60 @@
 
 
-## Village.tsx — 8 Fixes + Global Font
+## Rebuild ShadowRealm.tsx as a recolored Village clone
 
-### FIX 1 — Global font +1px (`src/index.css`)
-Add to the `body` rule inside `@layer base`:
-```css
-body {
-  @apply bg-background text-foreground;
-  font-family: 'IM Fell English', serif;
-  font-size: 17px;
-}
-```
+Replace `src/pages/ShadowRealm.tsx` entirely with an exact duplicate of `src/pages/Village.tsx`, then apply scoped content/color/behavior swaps. No other files change.
 
-### FIX 2 — Building visibility (`src/pages/Village.tsx`)
-- Type B: `border: 1px solid rgba(100,80,160,0.45)`, `background: rgba(100,80,160,0.12)`
-- Type C: `border: 0.5px solid rgba(100,80,160,0.25)`, `background: rgba(100,80,160,0.07)`
-- Type A unchanged.
+### Steps
 
-### FIX 4 — Larger map (do before regenerating buildings)
-- `MAP_W=1600`, `MAP_H=1000`, `CX=800`, `CY=500`
-- `OUTER_RX=680, OUTER_RY=380` · `MIDDLE_RX=440, MIDDLE_RY=240` · `INNER_RX=200, INNER_RY=100`
-- Type A repositioned on new ellipses:
-  - `89` (middle-upper): `x=755, y=240, w=90, h=70`
-  - `23` (inner-left): `x=520, y=475, w=70, h=50`
-  - `47` (middle-right-lower): `x=1150, y=560, w=70, h=50`
-- Camera clamp uses new `MAP_W/MAP_H`.
+1. **Duplicate** the full current contents of `src/pages/Village.tsx` into `src/pages/ShadowRealm.tsx`. Rename the component export to `ShadowRealm`.
 
-### FIX 3 — Denser buildings (50 B + 120 C)
-Replace both arrays with deterministic angle-sweep generators evaluated **once at module load** (`const TYPE_B = (() => { ... })()`). All values literal-equivalent (no per-render randomness; use a seeded LCG so jitter is stable):
+2. **Color swaps** (global find/replace within the file):
+   - `rgba(100,80,160,*)` → `rgba(20,120,50,*)`
+   - `rgba(91,79,212,*)` → `rgba(34,197,94,*)`
+   - `#5b4fd4` → `#22c55e`
+   - `rgba(169,140,255,*)` → `rgba(34,197,94,*)`
+   - `rgba(160,140,200,*)` → `rgba(120,200,140,*)`
+   - `#4a9eff` (Building 23) → `rgba(34,197,94,0.8)`
+   - `#1d9e75` (Building 47) → `rgba(22,163,74,0.8)`
+   - `#c8963a` (Building 89) → `#f97316`
 
-- **Type B (50)**: 36 around middle ring (every 10°) + 14 around inner ring (every ~25°).
-  For each angle θ: base point on ellipse, jitter ±6px, size 35–55 × 25–45. Skip any candidate whose rect overlaps a Type A rect (with 4px padding) or a previously placed B rect (with 18px street gap) — re-roll jitter up to 4 times, otherwise drop and continue. Target gap between adjacent B rects: 15–25px.
-- **Type C (120)**: 72 around outer ring (every 5°) + 30 between outer/middle (two intermediate ellipses at 0.85× and 0.7× outer) + 18 between middle/inner. Sizes 20–40 × 15–30. Same overlap rules with 12px street gap, padded against A and B.
-- Inner pupil (within `INNER_RX × INNER_RY`) stays empty.
-- Generator uses a fixed seed → identical map every session.
+3. **Building 89 — level exit**:
+   - Label/border/text color stay `#f97316` after the swap.
+   - On player collision, replace the `navigate('/door')` (or equivalent) call with the level-up sequence:
+     ```
+     const cur = Number(localStorage.getItem('praem_level') || '1');
+     const next = cur + 1;
+     localStorage.setItem('praem_level', String(next));
+     localStorage.setItem('praem_levelup_pending', 'true');
+     localStorage.setItem('praem_levelup_newlevel', String(next));
+     setFadeOut(true);
+     setTimeout(() => navigate('/village'), 800);
+     ```
+   - Reuse Village's existing fade-out overlay pattern; if absent, add a simple black fixed overlay animated to opacity 1 over 800ms.
 
-### FIX 5 — Ring ellipse outlines
-Three absolutely positioned divs inside the map div, behind buildings (`zIndex: 1`), `border-radius: 50%`, no fill:
-- Outer: `left=CX-OUTER_RX, top=CY-OUTER_RY, w=2*OUTER_RX, h=2*OUTER_RY`, `border: 0.5px solid rgba(100,80,160,0.06)`
-- Middle: same pattern with middle radii, opacity `0.08`
-- Inner: replaces the existing pupil outline, opacity `0.10`
+4. **Building 23 & 47 whispers**: change message from "Not yet." to **"Not in this realm."** Keep all other whisper logic intact.
 
-### FIX 6 — Arrow-key movement
-`useEffect` adds a `window` `keydown` listener. Map `ArrowUp/Down/Left/Right` to `move(0,-STEP) / (0,STEP) / (-STEP,0) / (STEP,0)`, `e.preventDefault()` on match. Cleanup on unmount. Reuses the same `move()` function as the D-pad → identical collision, trail, camera, and feedback behavior.
+5. **Eye**: keep Village's eye implementation, size, tracking, idle drift untouched aside from the color swap (`#5b4fd4` → `#22c55e`, pupil fill becomes `#16a34a` where applicable). Replace the eye's spoken lines array with exactly:
+   1. "You found the other side."
+   2. "The entity knows you are here."
+   3. "Come back on the 23rd."
+   4. "You have always been here."
 
-### FIX 8 — Solid building obstacles
-Build `OBSTACLES = [...TYPE_A, ...TYPE_B, ...TYPE_C]` once.
-Modify `move(dx, dy)`:
-1. Compute candidate `(nx, ny)` clamped to map bounds.
-2. Check player-point against every obstacle rect inflated by 2px padding. If any hit → **cancel move** (return previous state, no trail push, no step).
-3. If clear → push prev to trail, update player, then run Type A collision (89 → navigate, 23/47 → "Not yet.").
+6. **Entity quote** (top banner): change `"Another one enters?"` → `"You are inside it now."`
 
-Note: Type A buildings remain non-enterable; touching them is detected by walking adjacent to them and the candidate rect intersecting (2px pad means players stop at the wall, which still counts as contact for response). To preserve A responses, run the A-rect contact check using the **candidate** point against A rects without the 2px pad **before** the obstacle block — if it would land inside A, treat it as contact (trigger response) and cancel the positional move. This way you can't enter an A building but bumping into it still fires the message / navigation.
+7. **HUD bar**:
+   - Left column: `"SHADOW"` in `rgba(34,197,94,0.6)`. Remove the steps element entirely from the left column.
+   - Center: `"FRAGMENTS 5/5"` in `#f97316`.
+   - Right: `"LEVEL {currentLevel}"` in `rgba(34,197,94,0.7)`.
+   - Read `currentLevel` on mount: `Number(localStorage.getItem('praem_level') || '1')` into state.
 
-Initial player spawn already sits on the outer ellipse, outside all buildings — no spawn collision possible.
+8. **Movement — remove step gating**:
+   - Delete `stepsRemaining` state, its initialization, the "tap to exchange" hint, the credits-exchange panel, and any movement guard that checks `stepsRemaining`.
+   - Movement is unconditionally allowed (free exploration). All other movement code (target/lerp refs, d-pad hold-repeat, arrow keys, diagonal normalization, STEP=12) stays identical to Village.
 
-### FIX 7 — Smooth camera (lerp via rAF)
-- New refs: `cameraRef = { x, y }` (current camera, initialized to clamped target for initial player position) and `rafRef`.
-- New state: `camera: { x, y }` for rendering.
-- `useEffect` starts a single `requestAnimationFrame` loop:
-  ```
-  const targetX = clamp(view.w/2 - player.x, view.w - MAP_W, 0)
-  const targetY = clamp(view.h/2 - player.y, view.h - MAP_H, 0)
-  cameraRef.x += (targetX - cameraRef.x) * 0.12
-  cameraRef.y += (targetY - cameraRef.y) * 0.12
-  setCamera({ x: cameraRef.x, y: cameraRef.y })
-  ```
-  Loop runs every frame; when distance < 0.5px on both axes, snap and skip `setCamera` to avoid wasted renders (still keep rAF scheduled so next move resumes smoothly).
-- Effect deps: `[player, view]`. Cleanup cancels the rAF.
-- Map div uses `transform: translate(${camera.x}px, ${camera.y}px)` (no CSS transition — the lerp itself is the smoothing).
+9. **No other changes**: map size, building positions, camera lerp, d-pad layout, forest, atmosphere text, entry sequence, and eye mechanics remain exactly as in Village.
 
-### Out of scope
-No changes to `Door.tsx`, `App.tsx`, `ProfileSetup.tsx`, `EntityQuestions.tsx`, `Index.tsx`, or any other file. HUD, entity quote, D-pad layout, trail cap (50), and Type A visuals are unchanged.
+### Files
+- Rewrite: `src/pages/ShadowRealm.tsx`
+- No other files modified. Route `/shadow` in `App.tsx` already points here.
 

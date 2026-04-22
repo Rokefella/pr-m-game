@@ -136,6 +136,7 @@ const FRAGMENTS: Array<Cell & { prime: number; line: string }> = [
 ];
 
 const DOOR: Cell = { col: 27, row: 27 };
+const CREDIT_DOOR: Cell = { col: 5, row: 25 };
 
 const QUOTES = [
   'Navigate.',

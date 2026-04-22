@@ -545,13 +545,14 @@ const ShadowRealm = () => {
         />
       </div>
 
-      {/* THE EYE — fixed to screen */}
+      {/* THE EYE — fixed to screen, outside map transform */}
       <svg
-        width={view.w}
-        height={view.h}
         style={{
           position: 'fixed',
-          inset: 0,
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
           pointerEvents: 'none',
           zIndex: 30,
           opacity: eyeOp,
@@ -560,8 +561,8 @@ const ShadowRealm = () => {
         }}
       >
         <ellipse
-          cx={view.w / 2}
-          cy={view.h / 2}
+          cx={screenCenter.x}
+          cy={screenCenter.y}
           rx={110}
           ry={68}
           stroke="rgba(34,197,94,0.15)"
@@ -570,8 +571,8 @@ const ShadowRealm = () => {
           style={{ animation: 'shadowGlowRing 3s ease-in-out infinite' }}
         />
         <ellipse
-          cx={view.w / 2}
-          cy={view.h / 2}
+          cx={screenCenter.x}
+          cy={screenCenter.y}
           rx={100}
           ry={60}
           stroke="rgba(34,197,94,0.6)"
@@ -579,8 +580,8 @@ const ShadowRealm = () => {
           fill="none"
         />
         <circle
-          cx={view.w / 2 + eyePupil.x}
-          cy={view.h / 2 + eyePupil.y}
+          cx={screenCenter.x + eyePupil.x}
+          cy={screenCenter.y + eyePupil.y}
           r={18}
           fill="#16a34a"
         />

@@ -171,9 +171,15 @@ const ShadowRealm = () => {
     return () => window.removeEventListener('resize', u);
   }, []);
 
-  // Camera
-  const cameraRef = useRef({ x: 0, y: 0 });
-  const [camera, setCamera] = useState({ x: 0, y: 0 });
+  // Camera — initialized to center on spawn
+  const cameraRef = useRef({
+    x: (typeof window !== 'undefined' ? window.innerWidth / 2 : 195) - SPAWN.x,
+    y: (typeof window !== 'undefined' ? window.innerHeight / 2 : 400) - SPAWN.y,
+  });
+  const [camera, setCamera] = useState({
+    x: cameraRef.current.x,
+    y: cameraRef.current.y,
+  });
 
   // Level
   const [currentLevel, setCurrentLevel] = useState(1);

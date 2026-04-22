@@ -322,7 +322,7 @@ const Village = () => {
       }
     }
 
-    // Obstacles (B + C + RIM) with 2px padding — also check whisper trigger on Type B
+    // Obstacles (B + C + RIM) with 2px padding — also check whisper trigger on any whispered building
     for (const o of OBSTACLES) {
       if (
         nx >= o.x - 2 &&
@@ -330,12 +330,12 @@ const Village = () => {
         ny >= o.y - 2 &&
         ny <= o.y + o.h + 2
       ) {
-        // Whisper check: is this a Type B with a whisper index?
-        const bIdx = TYPE_B.indexOf(o);
-        if (bIdx !== -1 && WHISPERS[bIdx] !== undefined) {
-          if (lastWhisperIdxRef.current !== bIdx) {
-            lastWhisperIdxRef.current = bIdx;
-            setWhisper(WHISPERS[bIdx]);
+        const msg = WHISPER_BY_RECT.get(o);
+        if (msg !== undefined) {
+          const oIdx = OBSTACLES.indexOf(o);
+          if (lastWhisperIdxRef.current !== oIdx) {
+            lastWhisperIdxRef.current = oIdx;
+            setWhisper(msg);
             if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
             whisperTimer.current = window.setTimeout(() => {
               setWhisper(null);

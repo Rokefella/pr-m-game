@@ -267,21 +267,18 @@ const ShadowRealm = () => {
       return;
     }
 
-    // Obstacles
-    for (const o of OBSTACLES) {
+    // Whisper-trigger Type B buildings (no collision blocking — free exploration)
+    for (const [rect, msg] of WHISPER_BY_RECT) {
       if (
-        nx >= o.x - 2 && nx <= o.x + o.w + 2 &&
-        ny >= o.y - 2 && ny <= o.y + o.h + 2
+        nx >= rect.x - 2 && nx <= rect.x + rect.w + 2 &&
+        ny >= rect.y - 2 && ny <= rect.y + rect.h + 2
       ) {
-        const msg = WHISPER_BY_RECT.get(o);
-        if (msg) {
-          if (lastWhisperKeyRef.current !== o.id) {
-            lastWhisperKeyRef.current = o.id;
-            showWhisper(msg, 3000);
-            window.setTimeout(() => { lastWhisperKeyRef.current = null; }, 3500);
-          }
+        if (lastWhisperKeyRef.current !== rect.id) {
+          lastWhisperKeyRef.current = rect.id;
+          showWhisper(msg, 3000);
+          window.setTimeout(() => { lastWhisperKeyRef.current = null; }, 3500);
         }
-        return;
+        break;
       }
     }
 

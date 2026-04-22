@@ -467,6 +467,7 @@ const Maze = () => {
           0%, 100% { box-shadow: 0 0 8px rgba(59,130,246,0.5); }
           50% { box-shadow: 0 0 20px rgba(59,130,246,0.9); }
         }
+        @keyframes mazePanelSlide { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}</style>
 
       {/* PLAYER (fixed center) */}

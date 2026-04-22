@@ -442,55 +442,6 @@ const Maze = () => {
         />
       </div>
 
-      {/* TRAIL (screen-fixed SVG) */}
-      {(() => {
-        const cx = window.innerWidth / 2;
-        const cy = window.innerHeight / 2 - 40;
-        const screenPts = trail
-          .map((t) => ({
-            x: t.col * CELL + CELL / 2 + camRef.current.x,
-            y: t.row * CELL + CELL / 2 + camRef.current.y,
-          }))
-          .filter((p) => Math.hypot(p.x - cx, p.y - cy) <= VIS_RADIUS);
-        if (screenPts.length < 2) return null;
-        const head = screenPts[screenPts.length - 1];
-        const tail = screenPts[0];
-        return (
-          <svg
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              width: '100vw',
-              height: '100vh',
-              pointerEvents: 'none',
-              zIndex: 40,
-            }}
-          >
-            <defs>
-              <linearGradient
-                id="mazeTrailGrad"
-                gradientUnits="userSpaceOnUse"
-                x1={head.x}
-                y1={head.y}
-                x2={tail.x}
-                y2={tail.y}
-              >
-                <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0.8} />
-                <stop offset="100%" stopColor="#5b4fd4" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <polyline
-              points={screenPts.map((p) => `${p.x},${p.y}`).join(' ')}
-              fill="none"
-              stroke="url(#mazeTrailGrad)"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        );
-      })()}
 
       {/* Keyframes */}
       <style>{`
@@ -661,7 +612,7 @@ const Maze = () => {
           zIndex: 60,
         }}
       >
-        <span style={{ color: '#e0ddd5' }}>MAZE STEPS {steps}</span>
+        <span style={{ color: stepsRemaining === 0 ? 'rgba(200,80,80,0.9)' : stepsRemaining <= 20 ? 'rgba(200,150,58,0.9)' : '#e0ddd5' }}>STEPS {stepsRemaining}</span>
         <span style={{ color: '#c8963a' }}>FRAGMENTS {collected.size}/5</span>
         <span style={{ color: '#5b4fd4' }}>LEVEL 01</span>
       </div>

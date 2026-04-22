@@ -445,6 +445,7 @@ const ShadowRealm = () => {
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
   const [shadowFadeOut, setShadowFadeOut] = useState(false);
+  const [exitConfirm, setExitConfirm] = useState<{ levelUp: boolean; nextLevel: number } | null>(null);
 
   useEffect(() => {
     const lv = Number(localStorage.getItem('praem_level') || '1');
@@ -478,24 +479,24 @@ const ShadowRealm = () => {
     };
   }, []);
 
+  const performExit = (levelUp: boolean, nextLevel: number) => {
+    if (levelUp) {
+      localStorage.setItem('praem_level', String(nextLevel));
+      localStorage.setItem('praem_levelup_pending', 'true');
+      localStorage.setItem('praem_levelup_newlevel', String(nextLevel));
+      localStorage.removeItem('praem_maze_completed_level');
+    }
+    setShadowFadeOut(true);
+    window.setTimeout(() => navigate('/village'), 800);
+  };
+
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
-      if (!navigatedRef.current) {
-        navigatedRef.current = true;
+      if (!navigatedRef.current && !exitConfirm) {
         const cur = Number(localStorage.getItem('praem_level') || '1');
         const completed = Number(localStorage.getItem('praem_maze_completed_level') || '0');
-        if (completed === cur) {
-          const next = cur + 1;
-          localStorage.setItem('praem_level', String(next));
-          localStorage.setItem('praem_levelup_pending', 'true');
-          localStorage.setItem('praem_levelup_newlevel', String(next));
-          localStorage.removeItem('praem_maze_completed_level');
-          setShadowFadeOut(true);
-          window.setTimeout(() => navigate('/village'), 800);
-        } else {
-          setShadowFadeOut(true);
-          window.setTimeout(() => navigate('/village'), 800);
-        }
+        const levelUp = completed === cur;
+        setExitConfirm({ levelUp, nextLevel: cur + 1 });
       }
       return true;
     }
@@ -1205,7 +1206,96 @@ const ShadowRealm = () => {
         />
       )}
 
-      <style>{`@keyframes shadowFadeOut { from { opacity: 0 } to { opacity: 1 } }`}</style>
+      <style>{`@keyframes shadowFadeOut { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes exitConfirmFade { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes exitEyeFade { from { opacity: 0 } to { opacity: 1 } }
+      `}</style>
+
+      {/* EXIT CONFIRMATION OVERLAY */}
+      {exitConfirm && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(4,4,10,0.92)',
+            zIndex: 100,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            opacity: 0,
+            animation: 'exitConfirmFade 400ms ease-out forwards',
+          }}
+        >
+          <svg
+            width={56}
+            height={32}
+            viewBox="-28 -16 56 32"
+            style={{ opacity: 0, animation: 'exitEyeFade 500ms ease-out 100ms forwards' }}
+          >
+            <ellipse cx={0} cy={0} rx={24} ry={14} stroke="rgba(249,115,22,0.5)" strokeWidth={1} fill="none" />
+            <circle cx={0} cy={0} r={4} fill="#f97316" />
+          </svg>
+          <p
+            className="font-fell italic"
+            style={{ marginTop: 20, fontSize: 18, color: 'rgba(120,200,140,0.8)', textAlign: 'center', maxWidth: '85vw' }}
+          >
+            You are leaving the Shadow Realm.
+          </p>
+          <p
+            className="font-fell italic"
+            style={{ marginTop: 10, fontSize: 13, color: 'rgba(120,200,140,0.4)', textAlign: 'center', maxWidth: '85vw' }}
+          >
+            You cannot return without navigating the maze again.
+          </p>
+          {exitConfirm.levelUp && (
+            <p
+              className="font-cinzel"
+              style={{ marginTop: 16, fontSize: 12, color: '#f97316', letterSpacing: '0.2em', textAlign: 'center' }}
+            >
+              YOU WILL ADVANCE TO LEVEL {exitConfirm.nextLevel}.
+            </p>
+          )}
+          <div style={{ marginTop: 28, display: 'flex', gap: 16 }}>
+            <button
+              className="font-cinzel"
+              onClick={() => {
+                if (navigatedRef.current) return;
+                navigatedRef.current = true;
+                const { levelUp, nextLevel } = exitConfirm;
+                setExitConfirm(null);
+                performExit(levelUp, nextLevel);
+              }}
+              style={{
+                fontSize: 11,
+                letterSpacing: '0.28em',
+                background: '#f97316',
+                color: '#04040a',
+                padding: '10px 24px',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              LEAVE
+            </button>
+            <button
+              className="font-cinzel"
+              onClick={() => setExitConfirm(null)}
+              style={{
+                fontSize: 11,
+                letterSpacing: '0.28em',
+                background: 'transparent',
+                border: '0.5px solid rgba(120,200,140,0.3)',
+                color: 'rgba(120,200,140,0.5)',
+                padding: '10px 24px',
+                cursor: 'pointer',
+              }}
+            >
+              STAY
+            </button>
+          </div>
+        </div>
+      )}
 
             {/* LEVEL UP OVERLAY */}
       {levelUpOverlay && (

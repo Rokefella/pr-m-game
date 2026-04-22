@@ -233,6 +233,7 @@ const Maze = () => {
     if (nc === CREDIT_DOOR.col && nr === CREDIT_DOOR.row) {
       showWhisper('A game exists here. Not yet open.', 'rgba(59,130,246,0.8)', 2500);
     }
+  };
 
   // keyboard listeners
   useEffect(() => {

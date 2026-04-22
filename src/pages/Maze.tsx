@@ -80,17 +80,26 @@ const OPEN_SET: Set<string> = (() => {
   return s;
 })();
 
+// ---- Special block cells (sit inside walls but enterable) ----
+const SPECIAL_CELLS: Set<string> = new Set([
+  '8,4', '22,4', '4,20', '24,20', '14,6', // fragments
+  '28,28', // golden door
+  '2,14',  // credit door
+]);
+
 const isWall = (c: number, r: number) => {
   if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return true;
+  if (SPECIAL_CELLS.has(`${c},${r}`)) return false;
   return !OPEN_SET.has(`${c},${r}`);
 };
 
-// Wall cells (for rendering) — every in-bounds cell that is not open
+// Wall cells (for rendering) — every in-bounds cell that is not open and not special
 const WALL_SET: Set<string> = (() => {
   const s = new Set<string>();
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      if (!OPEN_SET.has(`${c},${r}`)) s.add(`${c},${r}`);
+      const k = `${c},${r}`;
+      if (!OPEN_SET.has(k) && !SPECIAL_CELLS.has(k)) s.add(k);
     }
   }
   return s;

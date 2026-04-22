@@ -557,25 +557,29 @@ const ShadowRealm = () => {
           />
         </div>
 
-        {/* Player dot (on map) */}
-        <div
-          style={{
-            position: 'absolute',
-            left: player.x - 4,
-            top: player.y - 4,
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            background: '#22c55e',
-            boxShadow: '0 0 10px rgba(34,197,94,0.9)',
-            animation: 'shadowDotPulse 1.5s ease-in-out infinite',
-            pointerEvents: 'none',
-            zIndex: 5,
-          }}
-        />
       </div>
 
+      {/* Player dot — fixed to screen center, sibling of map div */}
+      <div
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          width: 8,
+          height: 8,
+          marginLeft: -4,
+          marginTop: -4,
+          borderRadius: '50%',
+          background: '#22c55e',
+          boxShadow: '0 0 10px rgba(34,197,94,0.9)',
+          animation: 'shadowDotPulse 1.5s ease-in-out infinite',
+          pointerEvents: 'none',
+          zIndex: 40,
+        }}
+      />
+
       {/* THE EYE — fixed to screen, outside map transform */}
+      {/* EYE MUST REMAIN OUTSIDE MAP DIV — DO NOT MOVE INSIDE MAP TRANSFORM */}
       <svg
         style={{
           position: 'fixed',

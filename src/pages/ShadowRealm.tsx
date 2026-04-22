@@ -141,10 +141,21 @@ const ShadowRealm = () => {
   const navigate = useNavigate();
   const navigatedRef = useRef(false);
 
-  // Player at map center
-  const [player, setPlayer] = useState({ x: CX, y: CY });
-  const playerRef = useRef({ x: CX, y: CY });
-  const playerTargetRef = useRef({ x: CX, y: CY });
+  // Player random spawn on inner area (not center, not edge)
+  const spawnRef = useRef<{ x: number; y: number } | null>(null);
+  if (!spawnRef.current) {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 300 + Math.random() * 400;
+    spawnRef.current = {
+      x: CX + Math.cos(angle) * radius,
+      y: CY + Math.sin(angle) * radius,
+    };
+  }
+  const SPAWN = spawnRef.current;
+
+  const [player, setPlayer] = useState({ x: SPAWN.x, y: SPAWN.y });
+  const playerRef = useRef({ x: SPAWN.x, y: SPAWN.y });
+  const playerTargetRef = useRef({ x: SPAWN.x, y: SPAWN.y });
   const velocityRef = useRef({ x: 0, y: 0 });
   const lastMoveAtRef = useRef(Date.now());
 

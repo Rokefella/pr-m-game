@@ -22,6 +22,20 @@ const A_47 = { id: 47 as const, x: 1580, y: 780, w: 70, h: 50, color: '#1d9e75',
 const A_89 = { id: 89 as const, x: 1055, y: 440, w: 90, h: 70, color: '#c8963a', bg: 'rgba(200,150,58,0.06)', label: 14 };
 const TYPE_A = [A_23, A_47, A_89];
 
+// Easter egg whispers — keyed by Type B index
+const WHISPERS: Record<number, string> = {
+  0: 'The mathematics knew you were coming.',
+  7: 'She left something here.',
+  12: 'Junction 89 is closer than you think.',
+  18: 'You have been here before.',
+  23: 'The spiral does not forget.',
+  29: 'Something emerged here.',
+  35: 'Count the doors.',
+  41: '89 is not the end.',
+  46: 'The order was never real.',
+  49: 'This is not the door through which I came in.',
+};
+
 // ---------- Helpers ----------
 const rectsOverlap = (
   a: { x: number; y: number; w: number; h: number },

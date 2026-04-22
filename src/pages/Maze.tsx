@@ -668,6 +668,15 @@ const Maze = () => {
         <span style={{ color: '#c8963a' }}>FRAGMENTS {collected.size}/5</span>
         <span style={{ color: '#5b4fd4' }}>LEVEL 01</span>
       </div>
+
+      {/* FRAGMENT OVERLAY */}
+      {activeFragment && (
+        <FragmentOverlay
+          prime={activeFragment.prime}
+          index={activeFragment.index}
+          onContinue={() => setActiveFragment(null)}
+        />
+      )}
     </div>
   );
 };

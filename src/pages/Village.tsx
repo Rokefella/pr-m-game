@@ -537,7 +537,27 @@ const Village = () => {
   // Player lerp loop — visual chases target at 0.18/frame
   useEffect(() => {
     let raf = 0;
+    let keyFrameCounter = 0;
     const loop = () => {
+      // Held-keys movement — process every 4 frames (~15Hz) for consistent speed
+      keyFrameCounter++;
+      if (keyFrameCounter >= 4) {
+        keyFrameCounter = 0;
+        const held = heldKeysRef.current;
+        let kdx = 0, kdy = 0;
+        if (held.has('ArrowLeft')) kdx -= STEP;
+        if (held.has('ArrowRight')) kdx += STEP;
+        if (held.has('ArrowUp')) kdy -= STEP;
+        if (held.has('ArrowDown')) kdy += STEP;
+        if (kdx !== 0 && kdy !== 0) {
+          kdx *= 0.707;
+          kdy *= 0.707;
+        }
+        if (kdx !== 0 || kdy !== 0) {
+          move(kdx, kdy);
+        }
+      }
+
       const target = playerTargetRef.current;
       const cur = playerRef.current;
       const dx = target.x - cur.x;

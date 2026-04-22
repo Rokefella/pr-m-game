@@ -22,6 +22,8 @@ const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => 
   const [showPrime, setShowPrime] = useState(false);
   const [showButtons, setShowButtons] = useState(false);
   const [fadingOut, setFadingOut] = useState(false);
+  const [savedMsg, setSavedMsg] = useState(false);
+  const savedTimerRef = useRef<number | null>(null);
   const anchorRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {

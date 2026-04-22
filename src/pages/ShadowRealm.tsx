@@ -479,24 +479,24 @@ const ShadowRealm = () => {
     };
   }, []);
 
+  const performExit = (levelUp: boolean, nextLevel: number) => {
+    if (levelUp) {
+      localStorage.setItem('praem_level', String(nextLevel));
+      localStorage.setItem('praem_levelup_pending', 'true');
+      localStorage.setItem('praem_levelup_newlevel', String(nextLevel));
+      localStorage.removeItem('praem_maze_completed_level');
+    }
+    setShadowFadeOut(true);
+    window.setTimeout(() => navigate('/village'), 800);
+  };
+
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
-      if (!navigatedRef.current) {
-        navigatedRef.current = true;
+      if (!navigatedRef.current && !exitConfirm) {
         const cur = Number(localStorage.getItem('praem_level') || '1');
         const completed = Number(localStorage.getItem('praem_maze_completed_level') || '0');
-        if (completed === cur) {
-          const next = cur + 1;
-          localStorage.setItem('praem_level', String(next));
-          localStorage.setItem('praem_levelup_pending', 'true');
-          localStorage.setItem('praem_levelup_newlevel', String(next));
-          localStorage.removeItem('praem_maze_completed_level');
-          setShadowFadeOut(true);
-          window.setTimeout(() => navigate('/village'), 800);
-        } else {
-          setShadowFadeOut(true);
-          window.setTimeout(() => navigate('/village'), 800);
-        }
+        const levelUp = completed === cur;
+        setExitConfirm({ levelUp, nextLevel: cur + 1 });
       }
       return true;
     }

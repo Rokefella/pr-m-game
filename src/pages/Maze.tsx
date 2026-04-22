@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 
+// TODO production: initialize from player's accumulated real walking steps via HealthKit/Health Connect
+// TODO production: restore steps daily from pedometer sync, not hardcoded 100
+// Testing value: 100 steps
+const INITIAL_STEPS = 100;
+
 const COLS = 30;
 const ROWS = 30;
 const CELL = 40;
@@ -166,16 +171,13 @@ const Maze = () => {
   const [pos, setPos] = useState<Cell>({ col: 15, row: 15 });
   const posRef = useRef<Cell>({ col: 15, row: 15 });
 
-  const [trail, setTrail] = useState<Cell[]>([]);
-  const trailRef = useRef<Cell[]>([]);
-
   const eggsTriggeredRef = useRef<Set<string>>(new Set());
 
   const [collected, setCollected] = useState<Set<number>>(new Set());
   const collectedRef = useRef<Set<number>>(new Set());
 
-  const [steps, setSteps] = useState(0);
-  const stepsRef = useRef(0);
+  const [stepsRemaining, setStepsRemaining] = useState(INITIAL_STEPS);
+  const stepsRemainingRef = useRef(INITIAL_STEPS);
 
   const [whisper, setWhisper] = useState<string | null>(null);
   const [whisperColor, setWhisperColor] = useState<string>('rgba(160,140,200,0.85)');
@@ -210,7 +212,8 @@ const Maze = () => {
   const tryMove = (dc: number, dr: number) => {
     const now = Date.now();
     // TODO: restore to 200ms for production
-    if (now - lastMoveTimeRef.current < 50) return;
+    if (now - lastMoveTimeRef.current < 150) return;
+    if (stepsRemainingRef.current <= 0) return;
     // Clamp to max 1 cell per axis per call — never allow multi-cell jumps
     const sdc = dc === 0 ? 0 : dc > 0 ? 1 : -1;
     const sdr = dr === 0 ? 0 : dr > 0 ? 1 : -1;
@@ -221,15 +224,11 @@ const Maze = () => {
     if (isWall(nc, nr)) return;
     lastMoveTimeRef.current = now;
 
-    // trail — push PREVIOUS cell before updating, so trail is always behind player
-    trailRef.current = [...trailRef.current, { col: cur.col, row: cur.row }];
-    setTrail(trailRef.current);
-
     const newPos = { col: nc, row: nr };
     posRef.current = newPos;
     setPos(newPos);
-    stepsRef.current += 1;
-    setSteps(stepsRef.current);
+    stepsRemainingRef.current -= 1;
+    setStepsRemaining(stepsRemainingRef.current);
 
     // fragment check
     const fragIdx = FRAGMENTS.findIndex((f) => f.col === nc && f.row === nr);

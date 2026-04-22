@@ -255,7 +255,9 @@ const Maze = () => {
         showWhisper('The way opens.', '#c8963a', 2000);
         window.setTimeout(() => navigate('/shadow'), 2000);
       } else {
-        showWhisper('You are not ready.', 'rgba(160,140,200,0.6)', 2000);
+        const remaining = 5 - collectedRef.current.size;
+        const msg = remaining === 1 ? 'One fragment remains.' : `${remaining} fragments remain.`;
+        showWhisper(`${msg} The door does not open.`, 'rgba(200,150,58,0.7)', 2500);
       }
     }
 

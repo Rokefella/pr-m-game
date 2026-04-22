@@ -268,6 +268,7 @@ const Village = () => {
   useEffect(() => {
     return () => {
       if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
+      if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
     };
   }, []);
 

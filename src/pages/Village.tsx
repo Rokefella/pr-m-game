@@ -450,6 +450,15 @@ const Village = () => {
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
   const [levelUpHandled, setLevelUpHandled] = useState(false);
+  const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
+  const [username, setUsername] = useState<string>('');
+  const [unlockedTitles, setUnlockedTitles] = useState<string[]>(['Wanderer']);
+  const [stepsRemaining, setStepsRemaining] = useState<number>(0);
+  const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
+  const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];
 
   useEffect(() => {
     if (!user) return;
@@ -461,6 +470,12 @@ const Village = () => {
       setCurrentTitle(row.title);
       setOverlaySelectedTitle(row.title);
       setRegistrationNumber(row.registration_number);
+      setAuraColor(row.aura_color || '#5b4fd4');
+      setUsername(row.username || '');
+      setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : ['Wanderer']);
+      setStepsRemaining(row.steps_remaining);
+      setTotalMazeSteps(row.total_maze_steps);
+      setTotalMazeTime(row.total_maze_time);
 
       if (row.levelup_pending && !levelUpHandled) {
         const newLv = row.levelup_newlevel ?? row.level;
@@ -1020,8 +1035,8 @@ const Village = () => {
                 x2={player.x}
                 y2={player.y}
               >
-                <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0} />
-                <stop offset="100%" stopColor="#5b4fd4" stopOpacity={0.8} />
+                <stop offset="0%" stopColor={auraColor} stopOpacity={0} />
+                <stop offset="100%" stopColor={auraColor} stopOpacity={0.8} />
               </linearGradient>
             </defs>
             <polyline
@@ -1044,8 +1059,8 @@ const Village = () => {
             width: 8,
             height: 8,
             borderRadius: '50%',
-            background: '#5b4fd4',
-            boxShadow: '0 0 8px rgba(91,79,212,0.8)',
+            background: auraColor,
+            boxShadow: `0 0 8px ${auraColor}`,
             animation: 'villageIdle 1.5s ease-in-out infinite',
             pointerEvents: 'none',
             zIndex: 5,
@@ -1186,10 +1201,12 @@ const Village = () => {
         </span>
       </div>
 
-      {/* Registration number — top-right */}
+      {/* Registration number — top-right (tap to open profile) */}
       {registrationNumber !== null && (
-        <div
+        <button
+          type="button"
           className="font-mono"
+          onClick={() => setProfileOpen(true)}
           style={{
             position: 'fixed',
             top: 12,
@@ -1198,10 +1215,198 @@ const Village = () => {
             letterSpacing: '0.22em',
             color: 'rgba(160,140,200,0.7)',
             zIndex: 15,
-            pointerEvents: 'none',
+            background: 'transparent',
+            border: 'none',
+            padding: 4,
+            cursor: 'pointer',
           }}
         >
           #{String(registrationNumber).padStart(4, '0')}
+        </button>
+      )}
+
+      {/* PROFILE POPUP */}
+      {profileOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(4,4,10,0.96)',
+            zIndex: 200,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            padding: '60px 20px 40px',
+            overflowY: 'auto',
+            animation: 'villageProfileFade 400ms ease-out',
+          }}
+        >
+          <style>{`
+            @keyframes villageProfileFade { from { opacity: 0 } to { opacity: 1 } }
+          `}</style>
+
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={() => setProfileOpen(false)}
+            aria-label="Close profile"
+            style={{
+              position: 'absolute',
+              top: 14,
+              right: 16,
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(160,140,200,0.4)',
+              fontSize: 28,
+              lineHeight: 1,
+              cursor: 'pointer',
+              padding: 4,
+            }}
+          >
+            ×
+          </button>
+
+          {/* Avatar */}
+          <div
+            style={{
+              width: 48,
+              height: 48,
+              borderRadius: '50%',
+              background: auraColor,
+              boxShadow: `0 0 20px ${auraColor}99`,
+              marginTop: 8,
+            }}
+          />
+          <div
+            className="font-cinzel"
+            style={{ marginTop: 12, fontSize: 14, color: 'rgba(160,140,200,0.7)' }}
+          >
+            {username || '—'}
+          </div>
+          <div
+            className="font-fell italic"
+            style={{ marginTop: 4, fontSize: 13, color: 'rgba(160,140,200,0.5)' }}
+          >
+            {currentTitle}
+          </div>
+
+          {/* Aura color selector */}
+          <div
+            className="font-cinzel"
+            style={{
+              marginTop: 20,
+              fontSize: 9,
+              color: 'rgba(160,140,200,0.4)',
+              letterSpacing: '0.2em',
+            }}
+          >
+            CHOOSE YOUR COLOUR
+          </div>
+          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
+            {AURA_COLORS.map((c) => {
+              const selected = c === auraColor;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={async () => {
+                    setAuraColor(c);
+                    if (user) {
+                      await supabase.from('users').update({ aura_color: c }).eq('id', user.id);
+                    }
+                  }}
+                  aria-label={`Aura ${c}`}
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    background: c,
+                    border: selected ? '1.5px solid white' : '1.5px solid transparent',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                />
+              );
+            })}
+          </div>
+
+          {/* Title selector */}
+          <div
+            className="font-cinzel"
+            style={{
+              marginTop: 24,
+              fontSize: 9,
+              color: 'rgba(160,140,200,0.4)',
+              letterSpacing: '0.2em',
+            }}
+          >
+            YOUR TITLES
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 10, justifyContent: 'center', maxWidth: 360 }}>
+            {unlockedTitles.map((t) => {
+              const active = t === currentTitle;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={async () => {
+                    setCurrentTitle(t);
+                    if (user) {
+                      await supabase.from('users').update({ title: t }).eq('id', user.id);
+                    }
+                  }}
+                  className="font-cinzel"
+                  style={{
+                    fontSize: 10,
+                    letterSpacing: '0.18em',
+                    padding: '6px 12px',
+                    background: 'transparent',
+                    border: active ? '0.5px solid #c8963a' : '0.5px solid rgba(160,140,200,0.2)',
+                    color: active ? '#c8963a' : 'rgba(160,140,200,0.5)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Stats */}
+          <div style={{ display: 'flex', gap: 32, marginTop: 24, justifyContent: 'center' }}>
+            {[
+              { label: 'STEPS REMAINING', value: String(stepsRemaining) },
+              { label: 'TOTAL STEPS', value: String(totalMazeSteps) },
+              { label: 'TIME IN MAZE', value: `${totalMazeTime} min` },
+            ].map((s) => (
+              <div key={s.label} style={{ textAlign: 'center' }}>
+                <div
+                  className="font-mono"
+                  style={{ fontSize: 8, color: 'rgba(160,140,200,0.4)', letterSpacing: '0.18em' }}
+                >
+                  {s.label}
+                </div>
+                <div className="font-mono" style={{ fontSize: 14, color: '#e0ddd5', marginTop: 4 }}>
+                  {s.value}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Registration */}
+          <div
+            className="font-mono"
+            style={{
+              marginTop: 'auto',
+              paddingTop: 32,
+              fontSize: 9,
+              color: 'rgba(160,140,200,0.2)',
+              textAlign: 'center',
+            }}
+          >
+            #{String(registrationNumber ?? 0).padStart(4, '0')}
+          </div>
         </div>
       )}
 

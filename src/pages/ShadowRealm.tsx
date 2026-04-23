@@ -1411,7 +1411,7 @@ const ShadowRealm = () => {
                   className="font-cinzel"
                   onClick={() => {
                     setOverlaySelectedTitle(t);
-                    localStorage.setItem('praem_title', t);
+                    if (user) updateUser(user.id, { title: t });
                     setCurrentTitle(t);
                   }}
                   style={{
@@ -1434,10 +1434,13 @@ const ShadowRealm = () => {
           <button
             className="font-cinzel"
             onClick={() => {
-              localStorage.setItem('praem_title', overlaySelectedTitle);
-              localStorage.removeItem('praem_levelup_pending');
-              localStorage.removeItem('praem_levelup_newlevel');
+              if (user) updateUser(user.id, {
+                title: overlaySelectedTitle,
+                levelup_pending: false,
+                levelup_newlevel: null,
+              });
               setCurrentLevel(levelUpOverlay.newLevel);
+              currentLevelRef.current = levelUpOverlay.newLevel;
               setLevelUpOverlay(null);
             }}
             style={{

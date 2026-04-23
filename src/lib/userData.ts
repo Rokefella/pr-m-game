@@ -12,6 +12,7 @@ export type UserRow = {
   levelup_pending: boolean
   levelup_newlevel: number | null
   maze_completed_level: number
+  registration_number: number
 }
 
 const DEFAULTS: Omit<UserRow, 'id'> = {
@@ -25,6 +26,7 @@ const DEFAULTS: Omit<UserRow, 'id'> = {
   levelup_pending: false,
   levelup_newlevel: null,
   maze_completed_level: 0,
+  registration_number: 0,
 }
 
 export async function fetchOrCreateUser(userId: string): Promise<UserRow> {

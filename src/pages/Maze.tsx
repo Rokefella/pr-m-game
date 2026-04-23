@@ -208,6 +208,7 @@ const Maze = () => {
   const [currentLevel, setCurrentLevel] = useState(1);
   const [credits, setCredits] = useState(50);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
+  const registrationNumberRef = useRef<number>(0);
   const currentLevelRef = useRef(1);
 
   useEffect(() => {
@@ -220,12 +221,28 @@ const Maze = () => {
       currentLevelRef.current = row.level;
       setCredits(row.credits);
       setRegistrationNumber(row.registration_number);
+      registrationNumberRef.current = row.registration_number;
       // Steps are initialized from row.steps_remaining; fall back to INITIAL_STEPS if zero
       const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;
       stepsRemainingRef.current = startSteps;
       setStepsRemaining(startSteps);
       if (row.steps_remaining <= 0) {
         updateUser(user.id, { steps_remaining: INITIAL_STEPS });
+      }
+
+      // Load already-collected fragments for this level so re-entry preserves progress
+      const { data: existing, error: fragErr } = await supabase
+        .from('fragments')
+        .select('prime_number')
+        .eq('user_id', user.id)
+        .eq('level', row.level);
+      if (cancelled) return;
+      if (fragErr) {
+        console.error('Failed to load fragments', fragErr);
+      } else if (existing) {
+        const next = new Set<number>(existing.map((r) => r.prime_number));
+        collectedRef.current = next;
+        setCollected(next);
       }
     })();
     return () => { cancelled = true; };
@@ -283,6 +300,22 @@ const Maze = () => {
         collectedRef.current = next;
         setCollected(next);
         setActiveFragment({ prime: frag.prime, index: fragIdx });
+
+        // Persist fragment to Supabase backpack
+        if (user) {
+          const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
+          supabase
+            .from('fragments')
+            .insert({
+              user_id: user.id,
+              prime_number: frag.prime,
+              level: currentLevelRef.current,
+              image_data: imageData,
+            })
+            .then(({ error }) => {
+              if (error) console.error('Failed to save fragment', error);
+            });
+        }
       }
     }
 

@@ -1206,6 +1206,25 @@ const ShadowRealm = () => {
         </span>
       </div>
 
+      {/* Registration number — top-right */}
+      {registrationNumber !== null && (
+        <div
+          className="font-mono"
+          style={{
+            position: 'fixed',
+            top: 12,
+            right: 14,
+            fontSize: 10,
+            letterSpacing: '0.22em',
+            color: 'rgba(34,197,94,0.7)',
+            zIndex: 15,
+            pointerEvents: 'none',
+          }}
+        >
+          #{String(registrationNumber).padStart(4, '0')}
+        </div>
+      )}
+
       {/* Shadow Realm fade-out on level exit */}
       {shadowFadeOut && (
         <div

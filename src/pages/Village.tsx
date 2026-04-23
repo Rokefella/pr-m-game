@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
@@ -390,6 +392,7 @@ const computeSpawn = (): { x: number; y: number } => {
 
 const Village = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const navigatedRef = useRef(false);
   const feedbackTimer = useRef<number | null>(null);
   const trailIdRef = useRef(0);
@@ -446,27 +449,30 @@ const Village = () => {
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
 
   useEffect(() => {
-    const lv = Number(localStorage.getItem('praem_level') || '1');
-    const tt = localStorage.getItem('praem_title') || 'Wanderer';
-    setCurrentLevel(lv);
-    setCurrentTitle(tt);
-    setOverlaySelectedTitle(tt);
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const row = await fetchOrCreateUser(user.id);
+      if (cancelled) return;
+      setCurrentLevel(row.level);
+      setCurrentTitle(row.title);
+      setOverlaySelectedTitle(row.title);
 
-    // Check for pending level-up
-    const pending = localStorage.getItem('praem_levelup_pending');
-    if (pending === 'true') {
-      const newLv = Number(localStorage.getItem('praem_levelup_newlevel') || String(lv));
-      const newTitle = TITLES_BY_LEVEL[newLv] || 'Wanderer';
-      window.setTimeout(() => {
-        setLevelUpOverlay({ newLevel: newLv });
-        setOverlaySelectedTitle(newTitle);
-        // Save the newly unlocked title as current
-        localStorage.setItem('praem_title', newTitle);
-        setCurrentTitle(newTitle);
-      }, 2000);
-    }
+      if (row.levelup_pending) {
+        const newLv = row.levelup_newlevel ?? row.level;
+        const newTitle = TITLES_BY_LEVEL[newLv] || 'Wanderer';
+        window.setTimeout(() => {
+          if (cancelled) return;
+          setLevelUpOverlay({ newLevel: newLv });
+          setOverlaySelectedTitle(newTitle);
+          updateUser(user.id, { title: newTitle });
+          setCurrentTitle(newTitle);
+        }, 2000);
+      }
+    })();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
 
   useEffect(() => {
@@ -1277,7 +1283,7 @@ const Village = () => {
                   className="font-cinzel"
                   onClick={() => {
                     setOverlaySelectedTitle(t);
-                    localStorage.setItem('praem_title', t);
+                    if (user) updateUser(user.id, { title: t });
                     setCurrentTitle(t);
                   }}
                   style={{
@@ -1300,9 +1306,12 @@ const Village = () => {
           <button
             className="font-cinzel"
             onClick={() => {
-              localStorage.setItem('praem_title', overlaySelectedTitle);
-              localStorage.removeItem('praem_levelup_pending');
-              localStorage.removeItem('praem_levelup_newlevel');
+              if (user) updateUser(user.id, {
+                title: overlaySelectedTitle,
+                levelup_pending: false,
+                levelup_newlevel: null,
+                level: levelUpOverlay.newLevel,
+              });
               setCurrentLevel(levelUpOverlay.newLevel);
               setLevelUpOverlay(null);
             }}

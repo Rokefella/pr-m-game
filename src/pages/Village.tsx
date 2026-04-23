@@ -462,7 +462,7 @@ const Village = () => {
       setOverlaySelectedTitle(row.title);
       setRegistrationNumber(row.registration_number);
 
-      if (row.levelup_pending) {
+      if (row.levelup_pending && !levelUpHandled) {
         const newLv = row.levelup_newlevel ?? row.level;
         const newTitle = TITLES_BY_LEVEL[newLv] || 'Wanderer';
         window.setTimeout(() => {

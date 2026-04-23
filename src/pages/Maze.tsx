@@ -267,6 +267,7 @@ const Maze = () => {
     setPos(newPos);
     stepsRemainingRef.current -= 1;
     setStepsRemaining(stepsRemainingRef.current);
+    if (user) updateUser(user.id, { steps_remaining: stepsRemainingRef.current });
 
     // fragment check
     const fragIdx = FRAGMENTS.findIndex((f) => f.col === nc && f.row === nr);
@@ -293,7 +294,7 @@ const Maze = () => {
     if (nc === DOOR.col && nr === DOOR.row) {
       if (collectedRef.current.size >= 5) {
         showWhisper('The way opens.', '#c8963a', 2000);
-        localStorage.setItem('praem_maze_completed_level', String(currentLevel));
+        if (user) updateUser(user.id, { maze_completed_level: currentLevelRef.current });
         window.setTimeout(() => navigate('/shadow'), 2000);
       } else {
         const remaining = 5 - collectedRef.current.size;

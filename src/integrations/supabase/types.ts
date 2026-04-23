@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      users: {
+        Row: {
+          aura_color: string | null
+          created_at: string
+          credits: number
+          entity_answer: string | null
+          id: string
+          level: number
+          levelup_newlevel: number | null
+          levelup_pending: boolean
+          maze_completed_level: number
+          steps_remaining: number
+          title: string
+          updated_at: string
+          username: string | null
+        }
+        Insert: {
+          aura_color?: string | null
+          created_at?: string
+          credits?: number
+          entity_answer?: string | null
+          id: string
+          level?: number
+          levelup_newlevel?: number | null
+          levelup_pending?: boolean
+          maze_completed_level?: number
+          steps_remaining?: number
+          title?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Update: {
+          aura_color?: string | null
+          created_at?: string
+          credits?: number
+          entity_answer?: string | null
+          id?: string
+          level?: number
+          levelup_newlevel?: number | null
+          levelup_pending?: boolean
+          maze_completed_level?: number
+          steps_remaining?: number
+          title?: string
+          updated_at?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -508,8 +508,8 @@ const ShadowRealm = () => {
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
       if (!navigatedRef.current && !exitConfirm) {
-        const cur = currentLevelRef.current;
-        const completed = mazeCompletedLevelRef.current;
+        const cur = Number(currentLevelRef.current);
+        const completed = Number(mazeCompletedLevelRef.current);
         const levelUp = completed === cur;
         setExitConfirm({ levelUp, nextLevel: cur + 1 });
       }

@@ -25,6 +25,7 @@ export type Database = {
           levelup_newlevel: number | null
           levelup_pending: boolean
           maze_completed_level: number
+          registration_number: number
           steps_remaining: number
           title: string
           updated_at: string
@@ -40,6 +41,7 @@ export type Database = {
           levelup_newlevel?: number | null
           levelup_pending?: boolean
           maze_completed_level?: number
+          registration_number?: number
           steps_remaining?: number
           title?: string
           updated_at?: string
@@ -55,6 +57,7 @@ export type Database = {
           levelup_newlevel?: number | null
           levelup_pending?: boolean
           maze_completed_level?: number
+          registration_number?: number
           steps_remaining?: number
           title?: string
           updated_at?: string

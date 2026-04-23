@@ -1,11 +1,25 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { updateUser } from '@/lib/userData';
 
 const AURA_COLORS = ['#2a2a32', '#1a2a4a', '#1a3a2a', '#3a1a1a', '#2a1a4a'];
 
 const ProfileSetup = () => {
   const [selectedAura, setSelectedAura] = useState(4);
+  const [username, setUsername] = useState('');
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleEnter = async () => {
+    if (user) {
+      await updateUser(user.id, {
+        username: username.trim() || null,
+        aura_color: AURA_COLORS[selectedAura],
+      });
+    }
+    navigate('/village');
+  };
 
   return (
     <div
@@ -70,6 +84,8 @@ const ProfileSetup = () => {
         </label>
         <input
           type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           placeholder="choose a name for this dimension"
           className="font-mono w-full placeholder:text-[#5a5855]"
           style={{
@@ -171,7 +187,7 @@ const ProfileSetup = () => {
 
       {/* CTA */}
       <button
-        onClick={() => navigate('/village')}
+        onClick={handleEnter}
         className="font-cinzel w-full"
         style={{
           marginTop: 'auto',

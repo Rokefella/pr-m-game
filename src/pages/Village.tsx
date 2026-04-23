@@ -445,6 +445,7 @@ const Village = () => {
   };
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentTitle, setCurrentTitle] = useState('Wanderer');
+  const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
 
@@ -457,6 +458,7 @@ const Village = () => {
       setCurrentLevel(row.level);
       setCurrentTitle(row.title);
       setOverlaySelectedTitle(row.title);
+      setRegistrationNumber(row.registration_number);
 
       if (row.levelup_pending) {
         const newLv = row.levelup_newlevel ?? row.level;

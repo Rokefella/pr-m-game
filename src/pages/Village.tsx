@@ -449,6 +449,7 @@ const Village = () => {
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
+  const [levelUpHandled, setLevelUpHandled] = useState(false);
 
   useEffect(() => {
     if (!user) return;

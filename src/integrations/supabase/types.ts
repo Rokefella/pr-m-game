@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      fragments: {
+        Row: {
+          created_at: string
+          id: string
+          image_data: string | null
+          level: number
+          prime_number: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_data?: string | null
+          level: number
+          prime_number: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_data?: string | null
+          level?: number
+          prime_number?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           aura_color: string | null

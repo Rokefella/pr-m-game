@@ -17,7 +17,6 @@ const LINES: Record<number, string> = {
 
 const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: FragmentOverlayProps) => {
   const regLabel = `#${String(registrationNumber).padStart(4, '0')}`;
-  const regDigits = String(registrationNumber).padStart(4, '0');
   const fullLine = LINES[index] ?? `${prime}.`;
   const [bgOpacity, setBgOpacity] = useState(0);
   const [eyeRy, setEyeRy] = useState(2);
@@ -82,110 +81,11 @@ const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: Fragm
   };
 
   const handleCapture = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 600;
-    canvas.height = 800;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // bg
-    ctx.fillStyle = '#04040a';
-    ctx.fillRect(0, 0, 600, 800);
-
-    // grid
-    ctx.strokeStyle = 'rgba(100,80,160,0.1)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x <= 600; x += 30) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, 800);
-      ctx.stroke();
-    }
-    for (let y = 0; y <= 800; y += 30) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(600, y);
-      ctx.stroke();
-    }
-
-    // eye oval at (300, 280) rx=80 ry=48
-    ctx.strokeStyle = 'rgba(160,140,200,0.5)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.ellipse(300, 280, 80, 48, 0, 0, Math.PI * 2);
-    ctx.stroke();
-
-    // pupil r=10
-    ctx.fillStyle = '#5b4fd4';
-    ctx.beginPath();
-    ctx.arc(300, 280, 10, 0, Math.PI * 2);
-    ctx.fill();
-
-    // prime number at (300, 420) cinzel 96px gold
-    ctx.fillStyle = '#c8963a';
-    ctx.font = '96px Cinzel, serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(String(prime), 300, 420);
-
-    // player avatar at (300, 560): outer ring + filled circle
-    ctx.strokeStyle = 'rgba(91,79,212,0.4)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(300, 560, 22, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.fillStyle = '#5b4fd4';
-    ctx.beginPath();
-    ctx.arc(300, 560, 16, 0, Math.PI * 2);
-    ctx.fill();
-
-    // registration label below avatar
-    ctx.fillStyle = 'rgba(160,140,200,0.4)';
-    ctx.font = '12px monospace';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(regLabel, 300, 590);
-
-    // PRÆM at bottom
-    ctx.fillStyle = 'rgba(160,140,200,0.4)';
-    ctx.font = '14px Cinzel, serif';
-    ctx.textAlign = 'center';
-    // simulate letter-spacing 0.3em
-    const label = 'PRÆM';
-    const spacing = 14 * 0.3;
-    let totalWidth = 0;
-    const widths: number[] = [];
-    for (const ch of label) {
-      const w = ctx.measureText(ch).width;
-      widths.push(w);
-      totalWidth += w;
-    }
-    totalWidth += spacing * (label.length - 1);
-    let cx = 300 - totalWidth / 2;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    for (let i = 0; i < label.length; i++) {
-      ctx.fillText(label[i], cx, 740);
-      cx += widths[i] + spacing;
-    }
-
-    // Save to localStorage instead of downloading
-    try {
-      const dataUrl = canvas.toDataURL('image/png');
-      localStorage.setItem(`praem_fragment_${prime}`, dataUrl);
-      const meta = {
-        prime,
-        collectedAt: Date.now(),
-        registrationNumber: regDigits,
-        level: 1,
-      };
-      localStorage.setItem(`praem_fragment_${prime}_meta`, JSON.stringify(meta));
-      setSavedMsg(true);
-      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
-      savedTimerRef.current = window.setTimeout(() => setSavedMsg(false), 1500);
-    } catch (err) {
-      console.error('Failed to save fragment to backpack', err);
-    }
+    // Fragment is already persisted to the backpack (Supabase) on collection.
+    // This button just confirms it to the player.
+    setSavedMsg(true);
+    if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = window.setTimeout(() => setSavedMsg(false), 1500);
   };
 
   return (

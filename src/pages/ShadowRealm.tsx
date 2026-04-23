@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
+import { supabase } from '@/lib/supabase';
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
@@ -492,14 +493,16 @@ const ShadowRealm = () => {
     };
   }, []);
 
-  const performExit = (levelUp: boolean, nextLevel: number) => {
+  const performExit = async (levelUp: boolean, nextLevel: number) => {
     if (levelUp && user) {
-      updateUser(user.id, {
-        level: nextLevel,
-        levelup_pending: true,
-        levelup_newlevel: nextLevel,
-        maze_completed_level: 0,
-      });
+      await supabase
+        .from('users')
+        .update({ level: nextLevel, maze_completed_level: 0 })
+        .eq('id', user.id);
+      await supabase
+        .from('users')
+        .update({ levelup_pending: true, levelup_newlevel: nextLevel })
+        .eq('id', user.id);
     }
     setShadowFadeOut(true);
     window.setTimeout(() => navigate('/village'), 800);

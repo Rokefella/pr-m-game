@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
+import { supabase } from '@/lib/supabase';
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
@@ -1326,13 +1327,18 @@ const Village = () => {
 
           <button
             className="font-cinzel"
-            onClick={() => {
-              if (user) updateUser(user.id, {
-                title: overlaySelectedTitle,
-                levelup_pending: false,
-                levelup_newlevel: null,
-                level: levelUpOverlay.newLevel,
-              });
+            onClick={async () => {
+              if (user) {
+                await supabase
+                  .from('users')
+                  .update({
+                    title: overlaySelectedTitle,
+                    levelup_pending: false,
+                    levelup_newlevel: 0,
+                    level: levelUpOverlay.newLevel,
+                  })
+                  .eq('id', user.id);
+              }
               setCurrentLevel(levelUpOverlay.newLevel);
               setLevelUpOverlay(null);
             }}

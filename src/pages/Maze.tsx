@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
+import { useAuth } from '@/context/AuthContext';
+import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 
 // TODO production: initialize from player's accumulated real walking steps via HealthKit/Health Connect
 // TODO production: restore steps daily from pedometer sync, not hardcoded 100
@@ -170,6 +172,7 @@ const QUOTES = [
 
 const Maze = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [pos, setPos] = useState<Cell>({ col: 15, row: 15 });
   const posRef = useRef<Cell>({ col: 15, row: 15 });
@@ -199,15 +202,31 @@ const Maze = () => {
 
   const [activeFragment, setActiveFragment] = useState<{ prime: number; index: number } | null>(null);
 
-  // Current level (read from localStorage)
+  // Current level + credits + steps (loaded from Supabase)
   const [currentLevel, setCurrentLevel] = useState(1);
-  useEffect(() => {
-    const lv = Number(localStorage.getItem('praem_level') || '1');
-    setCurrentLevel(lv);
-  }, []);
-
-  // TODO production: load from Supabase player record
   const [credits, setCredits] = useState(50);
+  const currentLevelRef = useRef(1);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const row = await fetchOrCreateUser(user.id);
+      if (cancelled) return;
+      setCurrentLevel(row.level);
+      currentLevelRef.current = row.level;
+      setCredits(row.credits);
+      // Steps are initialized from row.steps_remaining; fall back to INITIAL_STEPS if zero
+      const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;
+      stepsRemainingRef.current = startSteps;
+      setStepsRemaining(startSteps);
+      if (row.steps_remaining <= 0) {
+        updateUser(user.id, { steps_remaining: INITIAL_STEPS });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
+
   const [exchangeOpen, setExchangeOpen] = useState(false);
   const [selectedCredits, setSelectedCredits] = useState(1);
   const [exchangeError, setExchangeError] = useState(false);

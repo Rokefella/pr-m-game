@@ -1035,8 +1035,8 @@ const Village = () => {
                 x2={player.x}
                 y2={player.y}
               >
-                <stop offset="0%" stopColor="#5b4fd4" stopOpacity={0} />
-                <stop offset="100%" stopColor="#5b4fd4" stopOpacity={0.8} />
+                <stop offset="0%" stopColor={auraColor} stopOpacity={0} />
+                <stop offset="100%" stopColor={auraColor} stopOpacity={0.8} />
               </linearGradient>
             </defs>
             <polyline
@@ -1059,8 +1059,8 @@ const Village = () => {
             width: 8,
             height: 8,
             borderRadius: '50%',
-            background: '#5b4fd4',
-            boxShadow: '0 0 8px rgba(91,79,212,0.8)',
+            background: auraColor,
+            boxShadow: `0 0 8px ${auraColor}`,
             animation: 'villageIdle 1.5s ease-in-out infinite',
             pointerEvents: 'none',
             zIndex: 5,

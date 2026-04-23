@@ -17,7 +17,6 @@ const LINES: Record<number, string> = {
 
 const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: FragmentOverlayProps) => {
   const regLabel = `#${String(registrationNumber).padStart(4, '0')}`;
-  const regDigits = String(registrationNumber).padStart(4, '0');
   const fullLine = LINES[index] ?? `${prime}.`;
   const [bgOpacity, setBgOpacity] = useState(0);
   const [eyeRy, setEyeRy] = useState(2);

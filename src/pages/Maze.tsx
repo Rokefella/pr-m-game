@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
+import { supabase } from '@/lib/supabase';
+import { generateFragmentImage } from '@/lib/fragmentImage';
 
 // TODO production: initialize from player's accumulated real walking steps via HealthKit/Health Connect
 // TODO production: restore steps daily from pedometer sync, not hardcoded 100

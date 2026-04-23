@@ -55,6 +55,9 @@ export type Database = {
           registration_number: number
           steps_remaining: number
           title: string
+          total_maze_steps: number
+          total_maze_time: number
+          unlocked_titles: string[]
           updated_at: string
           username: string | null
         }
@@ -71,6 +74,9 @@ export type Database = {
           registration_number?: number
           steps_remaining?: number
           title?: string
+          total_maze_steps?: number
+          total_maze_time?: number
+          unlocked_titles?: string[]
           updated_at?: string
           username?: string | null
         }
@@ -87,6 +93,9 @@ export type Database = {
           registration_number?: number
           steps_remaining?: number
           title?: string
+          total_maze_steps?: number
+          total_maze_time?: number
+          unlocked_titles?: string[]
           updated_at?: string
           username?: string | null
         }

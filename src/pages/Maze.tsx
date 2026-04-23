@@ -812,10 +812,15 @@ const Maze = () => {
                       window.setTimeout(() => { setExchangeOpen(false); setExchangeError(false); }, 2000);
                       return;
                     }
-                    setCredits((c) => c - selectedCredits);
+                    const newCredits = credits - selectedCredits;
+                    setCredits(newCredits);
                     const gained = selectedCredits * 100;
                     stepsRemainingRef.current += gained;
                     setStepsRemaining(stepsRemainingRef.current);
+                    if (user) updateUser(user.id, {
+                      credits: newCredits,
+                      steps_remaining: stepsRemainingRef.current,
+                    });
                     setExchangeOpen(false);
                   }}
                   style={{

@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
@@ -390,6 +392,7 @@ const computeSpawn = (): { x: number; y: number } => {
 
 const ShadowRealm = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const navigatedRef = useRef(false);
   const feedbackTimer = useRef<number | null>(null);
   const trailIdRef = useRef(0);
@@ -447,28 +450,36 @@ const ShadowRealm = () => {
   const [shadowFadeOut, setShadowFadeOut] = useState(false);
   const [exitConfirm, setExitConfirm] = useState<{ levelUp: boolean; nextLevel: number } | null>(null);
 
-  useEffect(() => {
-    const lv = Number(localStorage.getItem('praem_level') || '1');
-    const tt = localStorage.getItem('praem_title') || 'Wanderer';
-    setCurrentLevel(lv);
-    setCurrentTitle(tt);
-    setOverlaySelectedTitle(tt);
+  const currentLevelRef = useRef(1);
+  const mazeCompletedLevelRef = useRef(0);
 
-    // Check for pending level-up
-    const pending = localStorage.getItem('praem_levelup_pending');
-    if (pending === 'true') {
-      const newLv = Number(localStorage.getItem('praem_levelup_newlevel') || String(lv));
-      const newTitle = TITLES_BY_LEVEL[newLv] || 'Wanderer';
-      window.setTimeout(() => {
-        setLevelUpOverlay({ newLevel: newLv });
-        setOverlaySelectedTitle(newTitle);
-        // Save the newly unlocked title as current
-        localStorage.setItem('praem_title', newTitle);
-        setCurrentTitle(newTitle);
-      }, 2000);
-    }
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const row = await fetchOrCreateUser(user.id);
+      if (cancelled) return;
+      setCurrentLevel(row.level);
+      currentLevelRef.current = row.level;
+      mazeCompletedLevelRef.current = row.maze_completed_level;
+      setCurrentTitle(row.title);
+      setOverlaySelectedTitle(row.title);
+
+      if (row.levelup_pending) {
+        const newLv = row.levelup_newlevel ?? row.level;
+        const newTitle = TITLES_BY_LEVEL[newLv] || 'Wanderer';
+        window.setTimeout(() => {
+          if (cancelled) return;
+          setLevelUpOverlay({ newLevel: newLv });
+          setOverlaySelectedTitle(newTitle);
+          updateUser(user.id, { title: newTitle });
+          setCurrentTitle(newTitle);
+        }, 2000);
+      }
+    })();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
 
   useEffect(() => {
@@ -480,11 +491,13 @@ const ShadowRealm = () => {
   }, []);
 
   const performExit = (levelUp: boolean, nextLevel: number) => {
-    if (levelUp) {
-      localStorage.setItem('praem_level', String(nextLevel));
-      localStorage.setItem('praem_levelup_pending', 'true');
-      localStorage.setItem('praem_levelup_newlevel', String(nextLevel));
-      localStorage.removeItem('praem_maze_completed_level');
+    if (levelUp && user) {
+      updateUser(user.id, {
+        level: nextLevel,
+        levelup_pending: true,
+        levelup_newlevel: nextLevel,
+        maze_completed_level: 0,
+      });
     }
     setShadowFadeOut(true);
     window.setTimeout(() => navigate('/village'), 800);
@@ -493,8 +506,8 @@ const ShadowRealm = () => {
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
       if (!navigatedRef.current && !exitConfirm) {
-        const cur = Number(localStorage.getItem('praem_level') || '1');
-        const completed = Number(localStorage.getItem('praem_maze_completed_level') || '0');
+        const cur = currentLevelRef.current;
+        const completed = mazeCompletedLevelRef.current;
         const levelUp = completed === cur;
         setExitConfirm({ levelUp, nextLevel: cur + 1 });
       }

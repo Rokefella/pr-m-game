@@ -470,6 +470,12 @@ const Village = () => {
       setCurrentTitle(row.title);
       setOverlaySelectedTitle(row.title);
       setRegistrationNumber(row.registration_number);
+      setAuraColor(row.aura_color || '#5b4fd4');
+      setUsername(row.username || '');
+      setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : ['Wanderer']);
+      setStepsRemaining(row.steps_remaining);
+      setTotalMazeSteps(row.total_maze_steps);
+      setTotalMazeTime(row.total_maze_time);
 
       if (row.levelup_pending && !levelUpHandled) {
         const newLv = row.levelup_newlevel ?? row.level;

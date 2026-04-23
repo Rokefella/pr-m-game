@@ -449,6 +449,7 @@ const Village = () => {
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
+  const [levelUpHandled, setLevelUpHandled] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -461,7 +462,7 @@ const Village = () => {
       setOverlaySelectedTitle(row.title);
       setRegistrationNumber(row.registration_number);
 
-      if (row.levelup_pending) {
+      if (row.levelup_pending && !levelUpHandled) {
         const newLv = row.levelup_newlevel ?? row.level;
         const newTitle = TITLES_BY_LEVEL[newLv] || 'Wanderer';
         window.setTimeout(() => {
@@ -1328,6 +1329,8 @@ const Village = () => {
           <button
             className="font-cinzel"
             onClick={async () => {
+              setLevelUpHandled(true);
+              const newLv = levelUpOverlay.newLevel;
               if (user) {
                 await supabase
                   .from('users')
@@ -1335,11 +1338,11 @@ const Village = () => {
                     title: overlaySelectedTitle,
                     levelup_pending: false,
                     levelup_newlevel: 0,
-                    level: levelUpOverlay.newLevel,
+                    level: newLv,
                   })
                   .eq('id', user.id);
               }
-              setCurrentLevel(levelUpOverlay.newLevel);
+              setCurrentLevel(newLv);
               setLevelUpOverlay(null);
             }}
             style={{

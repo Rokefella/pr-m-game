@@ -1329,6 +1329,8 @@ const Village = () => {
           <button
             className="font-cinzel"
             onClick={async () => {
+              setLevelUpHandled(true);
+              const newLv = levelUpOverlay.newLevel;
               if (user) {
                 await supabase
                   .from('users')
@@ -1336,11 +1338,11 @@ const Village = () => {
                     title: overlaySelectedTitle,
                     levelup_pending: false,
                     levelup_newlevel: 0,
-                    level: levelUpOverlay.newLevel,
+                    level: newLv,
                   })
                   .eq('id', user.id);
               }
-              setCurrentLevel(levelUpOverlay.newLevel);
+              setCurrentLevel(newLv);
               setLevelUpOverlay(null);
             }}
             style={{

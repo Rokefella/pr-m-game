@@ -331,8 +331,15 @@ const Maze = () => {
     if (nc === DOOR.col && nr === DOOR.row) {
       if (collectedRef.current.size >= 5) {
         showWhisper('The way opens.', '#c8963a', 2000);
-        if (user) updateUser(user.id, { maze_completed_level: currentLevelRef.current });
-        window.setTimeout(() => navigate('/shadow'), 2000);
+        (async () => {
+          if (user) {
+            await supabase
+              .from('users')
+              .update({ maze_completed_level: currentLevelRef.current })
+              .eq('id', user.id);
+          }
+          window.setTimeout(() => navigate('/shadow'), 2000);
+        })();
       } else {
         const remaining = 5 - collectedRef.current.size;
         const msg = remaining === 1 ? 'One fragment remains.' : `${remaining} fragments remain.`;

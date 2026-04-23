@@ -205,6 +205,7 @@ const Maze = () => {
   // Current level + credits + steps (loaded from Supabase)
   const [currentLevel, setCurrentLevel] = useState(1);
   const [credits, setCredits] = useState(50);
+  const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const currentLevelRef = useRef(1);
 
   useEffect(() => {
@@ -216,6 +217,7 @@ const Maze = () => {
       setCurrentLevel(row.level);
       currentLevelRef.current = row.level;
       setCredits(row.credits);
+      setRegistrationNumber(row.registration_number);
       // Steps are initialized from row.steps_remaining; fall back to INITIAL_STEPS if zero
       const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;
       stepsRemainingRef.current = startSteps;
@@ -846,6 +848,7 @@ const Maze = () => {
         <FragmentOverlay
           prime={activeFragment.prime}
           index={activeFragment.index}
+          registrationNumber={registrationNumber ?? 0}
           onContinue={() => setActiveFragment(null)}
         />
       )}

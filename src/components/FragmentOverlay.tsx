@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 interface FragmentOverlayProps {
   prime: number;
   index: number;
+  registrationNumber: number;
   onContinue: () => void;
 }
 
@@ -14,7 +15,9 @@ const LINES: Record<number, string> = {
   4: '211. The junction remembers every visitor.',
 };
 
-const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => {
+const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: FragmentOverlayProps) => {
+  const regLabel = `#${String(registrationNumber).padStart(4, '0')}`;
+  const regDigits = String(registrationNumber).padStart(4, '0');
   const fullLine = LINES[index] ?? `${prime}.`;
   const [bgOpacity, setBgOpacity] = useState(0);
   const [eyeRy, setEyeRy] = useState(2);
@@ -141,7 +144,7 @@ const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => 
     ctx.font = '12px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('#0001', 300, 590);
+    ctx.fillText(regLabel, 300, 590);
 
     // PRÆM at bottom
     ctx.fillStyle = 'rgba(160,140,200,0.4)';
@@ -173,7 +176,7 @@ const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => 
       const meta = {
         prime,
         collectedAt: Date.now(),
-        registrationNumber: '0001',
+        registrationNumber: regDigits,
         level: 1,
       };
       localStorage.setItem(`praem_fragment_${prime}_meta`, JSON.stringify(meta));
@@ -274,7 +277,7 @@ const FragmentOverlay = ({ prime, index, onContinue }: FragmentOverlayProps) => 
             className="font-mono"
             style={{ fontSize: 11, color: 'rgba(160,140,200,0.4)' }}
           >
-            #0001
+            {regLabel}
           </div>
         </div>
       )}

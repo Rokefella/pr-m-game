@@ -445,6 +445,7 @@ const Village = () => {
   };
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentTitle, setCurrentTitle] = useState('Wanderer');
+  const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
 
@@ -457,6 +458,7 @@ const Village = () => {
       setCurrentLevel(row.level);
       setCurrentTitle(row.title);
       setOverlaySelectedTitle(row.title);
+      setRegistrationNumber(row.registration_number);
 
       if (row.levelup_pending) {
         const newLv = row.levelup_newlevel ?? row.level;
@@ -1181,6 +1183,25 @@ const Village = () => {
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
       </div>
+
+      {/* Registration number — top-right */}
+      {registrationNumber !== null && (
+        <div
+          className="font-mono"
+          style={{
+            position: 'fixed',
+            top: 12,
+            right: 14,
+            fontSize: 10,
+            letterSpacing: '0.22em',
+            color: 'rgba(160,140,200,0.7)',
+            zIndex: 15,
+            pointerEvents: 'none',
+          }}
+        >
+          #{String(registrationNumber).padStart(4, '0')}
+        </div>
+      )}
 
       {/* LEVEL UP OVERLAY */}
       {levelUpOverlay && (

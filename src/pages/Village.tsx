@@ -450,6 +450,15 @@ const Village = () => {
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
   const [levelUpHandled, setLevelUpHandled] = useState(false);
+  const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
+  const [username, setUsername] = useState<string>('');
+  const [unlockedTitles, setUnlockedTitles] = useState<string[]>(['Wanderer']);
+  const [stepsRemaining, setStepsRemaining] = useState<number>(0);
+  const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
+  const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];
 
   useEffect(() => {
     if (!user) return;

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+// player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restUpdate } from '@/lib/supabaseRest';
 
@@ -393,7 +393,15 @@ const computeSpawn = (): { x: number; y: number } => {
 
 const ShadowRealm = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const user = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    let id = window.localStorage.getItem('praem_player_id');
+    if (!id) {
+      id = crypto.randomUUID();
+      window.localStorage.setItem('praem_player_id', id);
+    }
+    return { id };
+  }, []);
   const navigatedRef = useRef(false);
   const feedbackTimer = useRef<number | null>(null);
   const trailIdRef = useRef(0);

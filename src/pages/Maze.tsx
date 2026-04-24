@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
-import { useAuth } from '@/context/AuthContext';
+// player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restInsert, restUpdate } from '@/lib/supabaseRest';
 import { generateFragmentImage } from '@/lib/fragmentImage';
@@ -174,7 +174,15 @@ const QUOTES = [
 
 const Maze = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const user = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    let id = window.localStorage.getItem('praem_player_id');
+    if (!id) {
+      id = crypto.randomUUID();
+      window.localStorage.setItem('praem_player_id', id);
+    }
+    return { id };
+  }, []);
 
   const [pos, setPos] = useState<Cell>({ col: 15, row: 15 });
   const posRef = useRef<Cell>({ col: 15, row: 15 });

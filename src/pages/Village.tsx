@@ -464,7 +464,9 @@ const Village = () => {
     if (!user) return;
     let cancelled = false;
     (async () => {
+      console.log('[Village] playerId from auth/localStorage:', user.id, 'localStorage:', localStorage.getItem('praem_player_id'));
       const row = await fetchOrCreateUser(user.id);
+      console.log('[Village] user row:', row);
       if (cancelled) return;
       setCurrentLevel(row.level);
       setCurrentTitle(row.title);
@@ -1202,28 +1204,26 @@ const Village = () => {
       </div>
 
       {/* Registration number — top-right (tap to open profile) */}
-      {registrationNumber !== null && (
-        <button
-          type="button"
-          className="font-mono"
-          onClick={() => setProfileOpen(true)}
-          style={{
-            position: 'fixed',
-            top: 12,
-            right: 14,
-            fontSize: 10,
-            letterSpacing: '0.22em',
-            color: 'rgba(160,140,200,0.7)',
-            zIndex: 15,
-            background: 'transparent',
-            border: 'none',
-            padding: 4,
-            cursor: 'pointer',
-          }}
-        >
-          #{String(registrationNumber).padStart(4, '0')}
-        </button>
-      )}
+      <button
+        type="button"
+        className="font-mono"
+        onClick={() => setProfileOpen(true)}
+        style={{
+          position: 'fixed',
+          top: 12,
+          right: 14,
+          fontSize: 10,
+          letterSpacing: '0.22em',
+          color: 'rgba(160,140,200,0.7)',
+          zIndex: 15,
+          background: 'transparent',
+          border: 'none',
+          padding: 4,
+          cursor: 'pointer',
+        }}
+      >
+        #{registrationNumber !== null ? String(registrationNumber).padStart(4, '0') : '????'}
+      </button>
 
       {/* PROFILE POPUP */}
       {profileOpen && (

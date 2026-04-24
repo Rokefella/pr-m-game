@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { restInsert } from '@/lib/supabaseRest';
 
 const AURA_COLORS = ['#2a2a32', '#1a2a4a', '#1a3a2a', '#3a1a1a', '#2a1a4a'];
 
@@ -21,7 +21,17 @@ const ProfileSetup = () => {
 
     setSaving(true);
 
-    const response = await fetch('https://jngofylkynipsnzyyzdq.supabase.co/rest/v1/users', {
+    const result = await restInsert('users', {
+      id: playerId,
+      username: username.trim() || 'Anonymous',
+      entity_answer: localStorage.getItem('praem_entity_answer'),
+      aura_color: AURA_COLORS[selectedAura],
+    });
+
+    console.error('DIRECT REST RESULT:', JSON.stringify(result));
+
+    navigate('/village');
+  };
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

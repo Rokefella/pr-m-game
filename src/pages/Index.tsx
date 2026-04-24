@@ -82,61 +82,23 @@ const Index = () => {
 
       {/* Center Content */}
       <div className="relative z-10 flex flex-col items-center">
-        {/* Sigil Grid */}
-        <div
-          className="grid"
-          style={{
-            gridTemplateColumns: 'repeat(5, 10px)',
-            gap: '4px',
-          }}
-        >
-          {SIGIL_PATTERN.flat().map((type, i) => {
-            if (type === 'filled') {
-              const delay = FILLED_DELAYS[filledIndex % FILLED_DELAYS.length];
-              filledIndex++;
-              return (
-                <div
-                  key={i}
-                  className="rounded-full"
-                  style={{
-                    width: 10,
-                    height: 10,
-                    backgroundColor: '#e0ddd5',
-                    opacity: 0.65,
-                    boxShadow: '0 0 5px rgba(224,221,213,0.3)',
-                    animation: `sigil-pulse 3s ease-in-out ${delay}s infinite`,
-                  }}
-                />
-              );
-            }
-            if (type === 'dim') {
-              return (
-                <div
-                  key={i}
-                  className="rounded-full"
-                  style={{
-                    width: 10,
-                    height: 10,
-                    backgroundColor: '#e0ddd5',
-                    opacity: 0.12,
-                  }}
-                />
-              );
-            }
-            return (
-              <div
-                key={i}
-                className="rounded-full"
-                style={{
-                  width: 10,
-                  height: 10,
-                  backgroundColor: 'transparent',
-                  border: '0.5px solid rgba(224,221,213,0.07)',
-                }}
-              />
-            );
-          })}
-        </div>
+        {/* Eye Sigil */}
+        <svg width="80" height="50" viewBox="0 0 110 68" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="55" cy="34" rx="52" ry="31" stroke="rgba(91,79,212,0.1)" strokeWidth="9" />
+          <ellipse cx="55" cy="34" rx="51" ry="30" stroke="rgba(255,255,255,0.82)" strokeWidth="0.8" />
+          <circle cx="55" cy="34" r="13" stroke="rgba(255,255,255,0.4)" strokeWidth="0.6" fill="none" />
+          <circle cx="55" cy="34" r="9" fill="rgba(91,79,212,0.2)" />
+          <circle cx="55" cy="34" r="6" fill="#5b4fd4" />
+          <circle cx="55" cy="34" r="2.5" fill="rgba(255,255,255,0.55)" />
+          <line x1="3" y1="34" x2="11" y2="34" stroke="rgba(255,255,255,0.38)" strokeWidth="0.8" />
+          <line x1="99" y1="34" x2="107" y2="34" stroke="rgba(255,255,255,0.38)" strokeWidth="0.8" />
+          <line x1="55" y1="3" x2="55" y2="11" stroke="rgba(255,255,255,0.38)" strokeWidth="0.8" />
+          <line x1="55" y1="57" x2="55" y2="65" stroke="rgba(255,255,255,0.38)" strokeWidth="0.8" />
+          <line x1="15" y1="11" x2="20" y2="16" stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" />
+          <line x1="90" y1="11" x2="85" y2="16" stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" />
+          <line x1="15" y1="57" x2="20" y2="52" stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" />
+          <line x1="90" y1="57" x2="85" y2="52" stroke="rgba(255,255,255,0.12)" strokeWidth="0.5" />
+        </svg>
 
         {/* Wordmark */}
         <h1

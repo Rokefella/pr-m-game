@@ -1279,13 +1279,17 @@ const Village = () => {
             }}
           />
           <div
-            className="font-cinzel"
-            style={{ marginTop: 12, fontSize: 14, color: 'rgba(160,140,200,0.7)' }}
+            className="font-cinzel text-center"
+            style={{
+              marginTop: 12,
+              fontSize: 16,
+              color: username ? 'rgba(160,140,200,0.9)' : 'rgba(160,140,200,0.3)',
+            }}
           >
-            {username || '—'}
+            {username || 'Anonymous'}
           </div>
           <div
-            className="font-fell italic"
+            className="font-fell italic text-center"
             style={{ marginTop: 4, fontSize: 13, color: 'rgba(160,140,200,0.5)' }}
           >
             {currentTitle}

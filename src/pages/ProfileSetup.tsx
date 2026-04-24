@@ -1,22 +1,35 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { updateUser } from '@/lib/userData';
+import { supabase } from '@/integrations/supabase/client';
 
 const AURA_COLORS = ['#2a2a32', '#1a2a4a', '#1a3a2a', '#3a1a1a', '#2a1a4a'];
 
 const ProfileSetup = () => {
   const [selectedAura, setSelectedAura] = useState(4);
   const [username, setUsername] = useState('');
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
 
   const handleEnter = async () => {
-    if (user) {
-      await updateUser(user.id, {
+    if (saving) return;
+    setSaving(true);
+    const playerId = localStorage.getItem('praem_player_id');
+    if (!playerId) {
+      console.error('[ProfileSetup] no praem_player_id in localStorage');
+      setSaving(false);
+      return;
+    }
+    const { error } = await supabase
+      .from('users')
+      .upsert({
+        id: playerId,
         username: username.trim() || null,
         aura_color: AURA_COLORS[selectedAura],
       });
+    if (error) {
+      console.error('[ProfileSetup] upsert failed', error);
+      setSaving(false);
+      return;
     }
     navigate('/village');
   };

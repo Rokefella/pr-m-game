@@ -19,28 +19,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!mounted) return
       setUser(session?.user ?? null)
+      setLoading(false)
     })
 
-    const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
+    supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return
-
-      if (session?.user) {
-        setUser(session.user)
-        setLoading(false)
-      } else {
-        const { data, error } = await supabase.auth.signInAnonymously()
-        if (!mounted) return
-        if (error) {
-          console.error('Anonymous sign-in failed:', error)
-        } else {
-          setUser(data.user ?? null)
-        }
-        setLoading(false)
-      }
-    }
-
-    init()
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
 
     return () => {
       mounted = false

@@ -464,6 +464,7 @@ const Village = () => {
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);
   const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(14);
   const [profileOpen, setProfileOpen] = useState(false);
 
   const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];

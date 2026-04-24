@@ -34,6 +34,7 @@ const DEFAULTS: Omit<UserRow, 'id'> = {
   unlocked_titles: ['Wanderer'],
   total_maze_steps: 0,
   total_maze_time: 0,
+  first_launch_at: new Date().toISOString(),
 }
 
 export async function fetchOrCreateUser(userId: string): Promise<UserRow> {

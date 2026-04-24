@@ -1437,7 +1437,8 @@ const Village = () => {
               padding: 0,
               fontSize: 9,
               letterSpacing: '0.2em',
-              color: 'rgba(160,140,200,0.2)',
+              color: 'rgba(91,79,212,0.6)',
+              textShadow: '0 0 8px rgba(91,79,212,0.4)',
               cursor: 'pointer',
               textAlign: 'center',
             }}

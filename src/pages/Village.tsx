@@ -1542,15 +1542,17 @@ const Village = () => {
               setLevelUpHandled(true);
               const newLv = levelUpOverlay.newLevel;
               if (user) {
-                await supabase
-                  .from('users')
-                  .update({
+                await restUpdate(
+                  'users',
+                  {
                     title: overlaySelectedTitle,
                     levelup_pending: false,
                     levelup_newlevel: 0,
                     level: newLv,
-                  })
-                  .eq('id', user.id);
+                  },
+                  'id',
+                  user.id,
+                );
               }
               setCurrentLevel(newLv);
               setLevelUpOverlay(null);

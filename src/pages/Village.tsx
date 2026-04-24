@@ -1409,6 +1409,41 @@ const Village = () => {
           >
             #{String(registrationNumber ?? 0).padStart(4, '0')}
           </div>
+
+          {/* Sign out */}
+          <button
+            onClick={async () => {
+              if (!signOutConfirm) {
+                setSignOutConfirm(true);
+                if (signOutTimerRef.current) window.clearTimeout(signOutTimerRef.current);
+                signOutTimerRef.current = window.setTimeout(() => {
+                  setSignOutConfirm(false);
+                  signOutTimerRef.current = null;
+                }, 3000);
+                return;
+              }
+              if (signOutTimerRef.current) {
+                window.clearTimeout(signOutTimerRef.current);
+                signOutTimerRef.current = null;
+              }
+              await supabase.auth.signOut();
+              navigate('/email-entry');
+            }}
+            className="font-cinzel"
+            style={{
+              marginTop: 16,
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              fontSize: 9,
+              letterSpacing: '0.2em',
+              color: 'rgba(160,140,200,0.2)',
+              cursor: 'pointer',
+              textAlign: 'center',
+            }}
+          >
+            {signOutConfirm ? 'ARE YOU SURE?' : 'LEAVE THIS WORLD'}
+          </button>
         </div>
       )}
 

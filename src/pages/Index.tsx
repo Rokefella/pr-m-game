@@ -30,11 +30,7 @@ const Index = () => {
   const { user, loading } = useAuth();
 
   const handleEnter = async () => {
-    if (loading) return;
-    if (!user) {
-      navigate('/email-entry');
-      return;
-    }
+    if (loading || !user) return;
     const { data } = await supabase
       .from('users')
       .select('entity_answer, username')

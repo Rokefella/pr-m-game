@@ -379,6 +379,7 @@ const Maze = () => {
     return () => { cancelled = true; };
   }, [user]);
 
+  const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [exchangeOpen, setExchangeOpen] = useState(false);
   const [selectedCredits, setSelectedCredits] = useState(1);
   const [exchangeError, setExchangeError] = useState(false);

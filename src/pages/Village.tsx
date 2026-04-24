@@ -1225,6 +1225,27 @@ const Village = () => {
         </span>
       </div>
 
+      {/* Trial countdown — appears just above HUD when ≤3 days remain */}
+      {trialDaysRemaining > 0 && trialDaysRemaining <= 3 && (
+        <div
+          className="font-mono"
+          style={{
+            position: 'absolute',
+            bottom: 38,
+            left: 0,
+            right: 0,
+            textAlign: 'center',
+            fontSize: 8,
+            letterSpacing: '0.18em',
+            color: 'rgba(200,150,58,0.5)',
+            zIndex: 12,
+            pointerEvents: 'none',
+          }}
+        >
+          Trial ends in {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'}
+        </div>
+      )}
+
       {/* Registration number — top-right (tap to open profile) */}
       <button
         type="button"

@@ -19,51 +19,26 @@ const ProfileSetup = () => {
       localStorage.setItem('praem_player_id', playerId);
     }
 
-    const enteredUsername = username.trim() || null;
-
-    console.error('PLAYER ID:', playerId);
-    console.error('USERNAME:', enteredUsername);
-
     setSaving(true);
 
-    const selectedAuraColor = AURA_COLORS[selectedAura];
-    const selectedEntityAnswer = localStorage.getItem('praem_entity_answer');
-
-    const { data: existing, error: selectError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', playerId)
-      .maybeSingle();
-
-    console.error('EXISTING ROW:', existing, 'SELECT ERROR:', selectError);
-
-    if (existing) {
-      const { error: updateError } = await supabase
-        .from('users')
-        .update({
-          username: enteredUsername,
-          entity_answer: selectedEntityAnswer,
-          aura_color: selectedAuraColor,
-        })
-        .eq('id', playerId);
-      console.error('UPDATE ERROR:', updateError);
-      if (updateError) {
-        setSaving(false);
-        return;
-      }
-    } else {
-      const { error: insertError } = await supabase.from('users').insert({
+    const response = await fetch('https://jngofylkynipsnzyyzdq.supabase.co/rest/v1/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify({
         id: playerId,
-        username: enteredUsername,
-        entity_answer: selectedEntityAnswer,
-        aura_color: selectedAuraColor,
-      });
-      console.error('INSERT ERROR:', insertError);
-      if (insertError) {
-        setSaving(false);
-        return;
-      }
-    }
+        username: username.trim() || 'Anonymous',
+        entity_answer: localStorage.getItem('praem_entity_answer'),
+        aura_color: AURA_COLORS[selectedAura],
+      }),
+    });
+
+    const result = await response.json();
+    console.error('DIRECT REST RESULT:', JSON.stringify(result));
 
     navigate('/village');
   };

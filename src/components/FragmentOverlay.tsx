@@ -13,6 +13,8 @@ const LINES: Record<number, string> = {
   2: '89. You are inside the instrument now.',
   3: '139. She left this for someone like you.',
   4: '211. The junction remembers every visitor.',
+  5: '257. You have gone further than most.',
+  6: '293. Almost. The door is close.',
 };
 
 const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: FragmentOverlayProps) => {

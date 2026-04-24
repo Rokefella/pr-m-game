@@ -1,168 +1,224 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
-// player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restInsert, restUpdate } from '@/lib/supabaseRest';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 
-// TODO production: initialize from player's accumulated real walking steps via HealthKit/Health Connect
-// TODO production: restore steps daily from pedometer sync, not hardcoded 100
-// Testing value: 100 steps
 const INITIAL_STEPS = 100;
-
-// TODO: load level-specific maze layout from Supabase based on currentLevel
-
-
-const COLS = 30;
-const ROWS = 30;
 const CELL = 40;
-const MAP_W = COLS * CELL;
-const MAP_H = ROWS * CELL;
 
 type Cell = { col: number; row: number };
+type FragmentDef = Cell & { prime: number };
+type EggDef = Cell & { line: string };
 
-// ---- Walls ----
-// ---- Open corridor cells (carved passages, 1 cell wide) ----
-const OPEN_SET: Set<string> = (() => {
-  const s = new Set<string>();
-  const open = (c: number, r: number) => {
-    if (c > 0 && c < COLS - 1 && r > 0 && r < ROWS - 1) s.add(`${c},${r}`);
-  };
-  const hLine = (c: number, r: number, len: number) => {
-    for (let i = 0; i < len; i++) open(c + i, r);
-  };
-  const vLine = (c: number, r: number, len: number) => {
-    for (let i = 0; i < len; i++) open(c, r + i);
-  };
-
-  // Spine running through center
-  hLine(1, 15, 28);
-  vLine(15, 1, 28);
-
-  // Branches off the horizontal spine
-  vLine(3, 1, 15);
-  vLine(7, 5, 11);
-  vLine(11, 1, 15);
-  vLine(19, 1, 15);
-  vLine(23, 5, 11);
-  vLine(27, 1, 15);
-
-  vLine(3, 15, 14);
-  vLine(7, 15, 11);
-  vLine(11, 15, 14);
-  vLine(19, 15, 14);
-  vLine(23, 15, 11);
-  vLine(27, 15, 14);
-
-  // Cross-corridors off the vertical spine
-  hLine(1, 3, 28);
-  hLine(1, 7, 14);
-  hLine(15, 7, 14);
-  hLine(1, 11, 28);
-  hLine(1, 19, 28);
-  hLine(1, 23, 14);
-  hLine(15, 23, 14);
-  hLine(1, 27, 28);
-
-  // Path to fragments
-  hLine(5, 5, 7);
-  vLine(5, 1, 8);
-  hLine(20, 8, 5);
-  vLine(24, 3, 8);
-  hLine(5, 22, 6);
-  vLine(8, 19, 6);
-  hLine(18, 24, 6);
-  vLine(22, 19, 8);
-  hLine(13, 8, 5);
-
-  // Path to door
-  hLine(23, 27, 5);
-  vLine(27, 23, 6);
-
-  // Some dead-end stubs for complexity
-  hLine(5, 9, 3);
-  hLine(13, 13, 4);
-  vLine(9, 17, 3);
-  hLine(17, 17, 3);
-  vLine(13, 25, 3);
-  hLine(21, 13, 3);
-  vLine(25, 9, 4);
-  hLine(9, 25, 3);
-
-  return s;
-})();
-
-// ---- Special block cells (sit inside walls but enterable) ----
-const SPECIAL_CELLS: Set<string> = new Set([
-  '8,4', '22,4', '4,20', '24,20', '14,6', // fragments
-  '28,28', // golden door
-  '2,14',  // credit door
-]);
-
-const isWall = (c: number, r: number) => {
-  if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return true;
-  if (SPECIAL_CELLS.has(`${c},${r}`)) return false;
-  return !OPEN_SET.has(`${c},${r}`);
+type LevelConfig = {
+  cols: number;
+  rows: number;
+  spawn: Cell;
+  openSet: Set<string>;
+  specialSet: Set<string>;
+  fragments: FragmentDef[];
+  door: Cell;
+  creditDoors: Cell[];
+  eggs: EggDef[];
+  alexandra?: Cell;
+  claire?: Cell;
+  fragmentsRequired: number;
 };
 
-// Wall cells (for rendering) — every in-bounds cell that is not open and not special
-const WALL_SET: Set<string> = (() => {
-  const s = new Set<string>();
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      const k = `${c},${r}`;
-      if (!OPEN_SET.has(k) && !SPECIAL_CELLS.has(k)) s.add(k);
-    }
+// =================== LEVEL 1 ===================
+const buildLevel1 = (): LevelConfig => {
+  const COLS = 30;
+  const ROWS = 30;
+  const open = new Set<string>();
+  const carve = (c: number, r: number) => {
+    if (c > 0 && c < COLS - 1 && r > 0 && r < ROWS - 1) open.add(`${c},${r}`);
+  };
+  const hLine = (c: number, r: number, len: number) => {
+    for (let i = 0; i < len; i++) carve(c + i, r);
+  };
+  const vLine = (c: number, r: number, len: number) => {
+    for (let i = 0; i < len; i++) carve(c, r + i);
+  };
+
+  hLine(1, 15, 28);
+  vLine(15, 1, 28);
+  vLine(3, 1, 15); vLine(7, 5, 11); vLine(11, 1, 15); vLine(19, 1, 15); vLine(23, 5, 11); vLine(27, 1, 15);
+  vLine(3, 15, 14); vLine(7, 15, 11); vLine(11, 15, 14); vLine(19, 15, 14); vLine(23, 15, 11); vLine(27, 15, 14);
+  hLine(1, 3, 28); hLine(1, 7, 14); hLine(15, 7, 14); hLine(1, 11, 28); hLine(1, 19, 28); hLine(1, 23, 14); hLine(15, 23, 14); hLine(1, 27, 28);
+  hLine(5, 5, 7); vLine(5, 1, 8); hLine(20, 8, 5); vLine(24, 3, 8); hLine(5, 22, 6); vLine(8, 19, 6); hLine(18, 24, 6); vLine(22, 19, 8); hLine(13, 8, 5);
+  hLine(23, 27, 5); vLine(27, 23, 6);
+  hLine(5, 9, 3); hLine(13, 13, 4); vLine(9, 17, 3); hLine(17, 17, 3); vLine(13, 25, 3); hLine(21, 13, 3); vLine(25, 9, 4); hLine(9, 25, 3);
+
+  const fragments: FragmentDef[] = [
+    { col: 8, row: 4, prime: 23 },
+    { col: 22, row: 4, prime: 47 },
+    { col: 4, row: 20, prime: 89 },
+    { col: 24, row: 20, prime: 139 },
+    { col: 14, row: 6, prime: 211 },
+  ];
+  const door: Cell = { col: 28, row: 28 };
+  const creditDoors: Cell[] = [{ col: 2, row: 14 }];
+  const special = new Set<string>();
+  fragments.forEach((f) => special.add(`${f.col},${f.row}`));
+  special.add(`${door.col},${door.row}`);
+  creditDoors.forEach((d) => special.add(`${d.col},${d.row}`));
+
+  const eggs: EggDef[] = [
+    { col: 10, row: 26, line: 'The corner holds the answer.' },
+    { col: 26, row: 10, line: 'Walk toward the darkness.' },
+    { col: 26, row: 26, line: 'You are close. Keep going.' },
+    { col: 20, row: 20, line: 'The gold waits at the edge.' },
+  ];
+
+  return {
+    cols: COLS, rows: ROWS,
+    spawn: { col: 15, row: 15 },
+    openSet: open, specialSet: special,
+    fragments, door, creditDoors, eggs,
+    fragmentsRequired: 5,
+  };
+};
+
+// =================== LEVEL 2 ===================
+const buildLevel2 = (): LevelConfig => {
+  const COLS = 150;
+  const ROWS = 150;
+  // Start with everything open inside the border
+  const open = new Set<string>();
+  for (let r = 1; r < ROWS - 1; r++) {
+    for (let c = 1; c < COLS - 1; c++) open.add(`${c},${r}`);
   }
-  return s;
-})();
 
-// ---- Primes ----
-const PRIME_SET: Set<number> = (() => {
-  const max = COLS * ROWS;
-  const sieve = new Array(max).fill(true);
-  sieve[0] = sieve[1] = false;
-  for (let i = 2; i * i < max; i++) {
-    if (sieve[i]) for (let j = i * i; j < max; j += i) sieve[j] = false;
+  const wall = (c: number, r: number) => {
+    if (c <= 0 || c >= COLS - 1 || r <= 0 || r >= ROWS - 1) return;
+    open.delete(`${c},${r}`);
+  };
+  const hWall = (c: number, r: number, len: number) => {
+    for (let i = 0; i < len; i++) wall(c + i, r);
+  };
+  const vWall = (c: number, r: number, len: number) => {
+    for (let i = 0; i < len; i++) wall(c, r + i);
+  };
+
+  // Deterministic pseudo-random based on seed
+  let seed = 1337;
+  const rand = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+  const ri = (min: number, max: number) => Math.floor(rand() * (max - min + 1)) + min;
+
+  // Zone 1 — Open city (rows 0-74, cols 0-74) — wider corridors
+  for (let i = 0; i < 6; i++) {
+    const r = ri(5, 70);
+    const c = ri(2, 60);
+    hWall(c, r, ri(8, 12));
   }
-  const set = new Set<number>();
-  for (let i = 2; i < max; i++) if (sieve[i]) set.add(i);
-  return set;
-})();
-
-const PRIME_BUBBLE_CELLS: Set<string> = (() => {
-  const s = new Set<string>();
-  for (const n of PRIME_SET) {
-    const pc = n % COLS;
-    const pr = Math.floor(n / COLS);
-    if (pc >= 0 && pc < COLS && pr >= 0 && pr < ROWS) {
-      s.add(`${pc},${pr}`);
-    }
+  for (let i = 0; i < 6; i++) {
+    const c = ri(5, 70);
+    const r = ri(2, 60);
+    vWall(c, r, ri(8, 12));
   }
-  return s;
-})();
 
-const inPrimeBubble = (c: number, r: number) => PRIME_BUBBLE_CELLS.has(`${c},${r}`);
+  // Zone 2 — Labyrinth (rows 0-74, cols 75-149) — tight
+  for (let i = 0; i < 20; i++) {
+    const r = ri(2, 72);
+    const c = ri(76, 142);
+    hWall(c, r, ri(4, 8));
+  }
+  for (let i = 0; i < 20; i++) {
+    const c = ri(76, 147);
+    const r = ri(2, 70);
+    vWall(c, r, ri(4, 8));
+  }
 
-// ---- Fragments ----
-const FRAGMENTS: Array<Cell & { prime: number; line: string }> = [
-  { col: 8, row: 4, prime: 23, line: 'Fragment 23. It has been waiting.' },
-  { col: 22, row: 4, prime: 47, line: 'Fragment 47. It has been waiting.' },
-  { col: 4, row: 20, prime: 89, line: 'Fragment 89. It has been waiting.' },
-  { col: 24, row: 20, prime: 139, line: 'Fragment 139. It has been waiting.' },
-  { col: 14, row: 6, prime: 211, line: 'Fragment 211. It has been waiting.' },
-];
+  // Zone 3 — Mixed center (rows 50-100, cols 20-130)
+  for (let i = 0; i < 10; i++) {
+    const r = ri(50, 98);
+    const c = ri(20, 120);
+    hWall(c, r, ri(3, 15));
+  }
+  for (let i = 0; i < 10; i++) {
+    const c = ri(20, 128);
+    const r = ri(50, 90);
+    vWall(c, r, ri(3, 15));
+  }
 
-const DOOR: Cell = { col: 28, row: 28 };
-const CREDIT_DOOR: Cell = { col: 2, row: 14 };
+  // Zone 4 — Deep labyrinth (rows 100-149, cols 0-149) — densest
+  for (let i = 0; i < 30; i++) {
+    const r = ri(100, 147);
+    const c = ri(2, 142);
+    hWall(c, r, ri(3, 8));
+  }
+  for (let i = 0; i < 30; i++) {
+    const c = ri(2, 147);
+    const r = ri(100, 145);
+    vWall(c, r, ri(3, 8));
+  }
 
-const EASTER_EGGS: Array<Cell & { line: string }> = [
-  { col: 10, row: 26, line: 'The corner holds the answer.' },
-  { col: 26, row: 10, line: 'Walk toward the darkness.' },
-  { col: 26, row: 26, line: 'You are close. Keep going.' },
-  { col: 20, row: 20, line: 'The gold waits at the edge.' },
-];
+  const fragments: FragmentDef[] = [
+    { col: 15, row: 20, prime: 23 },
+    { col: 110, row: 15, prime: 47 },
+    { col: 35, row: 65, prime: 89 },
+    { col: 120, row: 60, prime: 139 },
+    { col: 20, row: 120, prime: 211 },
+    { col: 95, row: 130, prime: 257 },
+    { col: 135, row: 140, prime: 293 },
+  ];
+  const door: Cell = { col: 145, row: 145 };
+  const creditDoors: Cell[] = [
+    { col: 140, row: 20 },
+    { col: 10, row: 110 },
+  ];
+  const alexandra: Cell = { col: 55, row: 72 };
+  const claire: Cell = { col: 120, row: 125 };
+
+  // Carve guaranteed paths to ensure reachability — open every fragment cell, door, credit doors,
+  // characters, eggs and a clear corridor connecting spawn → through each zone.
+  const ensureOpen = (c: number, r: number) => {
+    if (c > 0 && c < COLS - 1 && r > 0 && r < ROWS - 1) open.add(`${c},${r}`);
+  };
+  // Corridors: row 5 across, col 5 down, row 75 across, col 75 down, row 145 across
+  for (let c = 1; c < COLS - 1; c++) { ensureOpen(c, 5); ensureOpen(c, 75); ensureOpen(c, 145); }
+  for (let r = 1; r < ROWS - 1; r++) { ensureOpen(5, r); ensureOpen(75, r); ensureOpen(145, r); }
+  // Extra connectors into deep labyrinth
+  for (let r = 75; r < 149; r++) ensureOpen(20, r);
+  for (let r = 75; r < 149; r++) ensureOpen(120, r);
+  for (let c = 5; c < 145; c++) ensureOpen(c, 110);
+  for (let c = 5; c < 145; c++) ensureOpen(c, 130);
+
+  // Make sure spawn and all key points are open
+  ensureOpen(5, 5);
+  fragments.forEach((f) => ensureOpen(f.col, f.row));
+  ensureOpen(door.col, door.row);
+  creditDoors.forEach((d) => ensureOpen(d.col, d.row));
+  ensureOpen(alexandra.col, alexandra.row);
+  ensureOpen(claire.col, claire.row);
+
+  const eggs: EggDef[] = [
+    { col: 30, row: 90, line: 'She went deeper. Follow the orange corridor.' },
+    { col: 80, row: 100, line: 'The mathematics took her to the far corner.' },
+    { col: 100, row: 110, line: 'You are getting closer. Do not lose the path.' },
+    { col: 115, row: 120, line: 'She is near. She cannot find the way out alone.' },
+  ];
+  eggs.forEach((e) => ensureOpen(e.col, e.row));
+
+  const special = new Set<string>();
+  fragments.forEach((f) => special.add(`${f.col},${f.row}`));
+  special.add(`${door.col},${door.row}`);
+  creditDoors.forEach((d) => special.add(`${d.col},${d.row}`));
+
+  return {
+    cols: COLS, rows: ROWS,
+    spawn: { col: 5, row: 5 },
+    openSet: open, specialSet: special,
+    fragments, door, creditDoors, eggs,
+    alexandra, claire,
+    fragmentsRequired: 7,
+  };
+};
 
 const QUOTES = [
   'Navigate.',
@@ -184,11 +240,44 @@ const Maze = () => {
     return { id };
   }, []);
 
-  const [pos, setPos] = useState<Cell>({ col: 15, row: 15 });
-  const posRef = useRef<Cell>({ col: 15, row: 15 });
+  const [currentLevel, setCurrentLevel] = useState(1);
+  const currentLevelRef = useRef(1);
+  const [levelLoaded, setLevelLoaded] = useState(false);
+  const [credits, setCredits] = useState(50);
+  const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
+  const registrationNumberRef = useRef(0);
+
+  // Level config + derived sets — rebuilt only when currentLevel changes
+  const config = useMemo<LevelConfig | null>(() => {
+    if (currentLevel === 1) return buildLevel1();
+    if (currentLevel === 2) return buildLevel2();
+    return null;
+  }, [currentLevel]);
+
+  const wallSet = useMemo(() => {
+    if (!config) return new Set<string>();
+    const s = new Set<string>();
+    for (let r = 0; r < config.rows; r++) {
+      for (let c = 0; c < config.cols; c++) {
+        const k = `${c},${r}`;
+        if (!config.openSet.has(k) && !config.specialSet.has(k)) s.add(k);
+      }
+    }
+    return s;
+  }, [config]);
+
+  const isWall = (c: number, r: number) => {
+    if (!config) return true;
+    if (c < 0 || c >= config.cols || r < 0 || r >= config.rows) return true;
+    if (config.specialSet.has(`${c},${r}`)) return false;
+    return !config.openSet.has(`${c},${r}`);
+  };
+
+  const [pos, setPos] = useState<Cell>({ col: 0, row: 0 });
+  const posRef = useRef<Cell>({ col: 0, row: 0 });
+  const prevPosRef = useRef<Cell>({ col: 0, row: 0 });
 
   const eggsTriggeredRef = useRef<Set<string>>(new Set());
-
   const [collected, setCollected] = useState<Set<number>>(new Set());
   const collectedRef = useRef<Set<number>>(new Set());
 
@@ -200,24 +289,51 @@ const Maze = () => {
   const whisperTimer = useRef<number | null>(null);
 
   const [quoteIdx, setQuoteIdx] = useState(0);
-
-  // camera
   const [cam, setCam] = useState({ x: 0, y: 0 });
   const camRef = useRef({ x: 0, y: 0 });
-
   const heldKeysRef = useRef<Set<string>>(new Set());
   const lastMoveTimeRef = useRef(0);
-
-  const [pulse, setPulse] = useState(1);
-
+  const moveCountRef = useRef(0);
   const [activeFragment, setActiveFragment] = useState<{ prime: number; index: number } | null>(null);
 
-  // Current level + credits + steps (loaded from Supabase)
-  const [currentLevel, setCurrentLevel] = useState(1);
-  const [credits, setCredits] = useState(50);
-  const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
-  const registrationNumberRef = useRef<number>(0);
-  const currentLevelRef = useRef(1);
+  // Alexandra / Claire state
+  const [alexandraFound, setAlexandraFound] = useState(false);
+  const alexandraFoundRef = useRef(false);
+  const [alexandraVisible, setAlexandraVisible] = useState(true);
+  const [whisperIndex, setWhisperIndex] = useState(0);
+  const whisperIndexRef = useRef(0);
+  const [claireFound, setClaireFound] = useState(false);
+  const claireFoundRef = useRef(false);
+  const [claireFollowing, setClaireFollowing] = useState(false);
+  const claireFollowingRef = useRef(false);
+  const [claireVisible, setClaireVisible] = useState(true);
+  const [clairePos, setClairePos] = useState<Cell>({ col: 0, row: 0 });
+  const clairePosRef = useRef<Cell>({ col: 0, row: 0 });
+  const reunionDoneRef = useRef(false);
+
+  // Init position when config arrives
+  useEffect(() => {
+    if (!config) return;
+    posRef.current = { ...config.spawn };
+    prevPosRef.current = { ...config.spawn };
+    setPos({ ...config.spawn });
+    if (config.claire) {
+      clairePosRef.current = { ...config.claire };
+      setClairePos({ ...config.claire });
+    }
+    // reset character state per level
+    alexandraFoundRef.current = false;
+    setAlexandraFound(false);
+    setAlexandraVisible(true);
+    whisperIndexRef.current = 0;
+    setWhisperIndex(0);
+    claireFoundRef.current = false;
+    setClaireFound(false);
+    claireFollowingRef.current = false;
+    setClaireFollowing(false);
+    setClaireVisible(true);
+    reunionDoneRef.current = false;
+  }, [config]);
 
   useEffect(() => {
     if (!user) return;
@@ -230,7 +346,6 @@ const Maze = () => {
       setCredits(row.credits);
       setRegistrationNumber(row.registration_number);
       registrationNumberRef.current = row.registration_number;
-      // Steps are initialized from row.steps_remaining; fall back to INITIAL_STEPS if zero
       const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;
       stepsRemainingRef.current = startSteps;
       setStepsRemaining(startSteps);
@@ -238,7 +353,6 @@ const Maze = () => {
         updateUser(user.id, { steps_remaining: INITIAL_STEPS });
       }
 
-      // Load already-collected fragments for this level so re-entry preserves progress
       try {
         const fragRes = await fetch(
           `https://jngofylkynipsnzyyzdq.supabase.co/rest/v1/fragments?user_id=eq.${user.id}&level=eq.${row.level}&select=prime_number`,
@@ -260,6 +374,7 @@ const Maze = () => {
       } catch (e) {
         console.error('Failed to load fragments', e);
       }
+      setLevelLoaded(true);
     })();
     return () => { cancelled = true; };
   }, [user]);
@@ -270,9 +385,7 @@ const Maze = () => {
   const exchangeOpenRef = useRef(false);
   useEffect(() => { exchangeOpenRef.current = exchangeOpen; }, [exchangeOpen]);
 
-  // Visibility upgrade levels (1=120px, 2=200px, 3=280px, 4=400px)
-  const [visibilityLevel] = useState(1);
-  const VIS_RADIUS = visibilityLevel === 1 ? 120 : visibilityLevel === 2 ? 200 : visibilityLevel === 3 ? 280 : 400;
+  const VIS_RADIUS = 120;
   const VIS_INNER = Math.round(VIS_RADIUS * 0.75);
   const VIS_MID = Math.round(VIS_RADIUS * 0.9);
 
@@ -283,22 +396,59 @@ const Maze = () => {
     whisperTimer.current = window.setTimeout(() => setWhisper(null), dur);
   };
 
+  // Move Claire one step toward target if possible
+  const stepClaireToward = (target: Cell) => {
+    if (!config) return;
+    const cp = clairePosRef.current;
+    const dc = target.col - cp.col;
+    const dr = target.row - cp.row;
+    const sdc = dc === 0 ? 0 : dc > 0 ? 1 : -1;
+    const sdr = dr === 0 ? 0 : dr > 0 ? 1 : -1;
+    // Try horizontal first, then vertical, else stay
+    const tryStep = (nc: number, nr: number) => {
+      if (nc === cp.col && nr === cp.row) return false;
+      if (isWall(nc, nr)) return false;
+      clairePosRef.current = { col: nc, row: nr };
+      setClairePos({ col: nc, row: nr });
+      return true;
+    };
+    if (sdc !== 0 && tryStep(cp.col + sdc, cp.row)) return;
+    if (sdr !== 0 && tryStep(cp.col, cp.row + sdr)) return;
+  };
+
+  const triggerReunion = () => {
+    if (reunionDoneRef.current) return;
+    reunionDoneRef.current = true;
+    showWhisper('She came back.', '#c8963a', 3000);
+    const newCredits = credits + 50;
+    setCredits(newCredits);
+    if (user) updateUser(user.id, { credits: newCredits });
+    setAlexandraVisible(false);
+    setClaireVisible(false);
+    alexandraFoundRef.current = false;
+    setAlexandraFound(false);
+    claireFoundRef.current = false;
+    setClaireFound(false);
+    claireFollowingRef.current = false;
+    setClaireFollowing(false);
+  };
+
   const tryMove = (dc: number, dr: number) => {
+    if (!config) return;
     const now = Date.now();
-    // TODO: restore to 200ms for production
     if (now - lastMoveTimeRef.current < 150) return;
     if (stepsRemainingRef.current <= 0) return;
     if (exchangeOpenRef.current) return;
-    // Clamp to max 1 cell per axis per call — never allow multi-cell jumps
     const sdc = dc === 0 ? 0 : dc > 0 ? 1 : -1;
     const sdr = dr === 0 ? 0 : dr > 0 ? 1 : -1;
     const cur = posRef.current;
-    const nc = Math.max(0, Math.min(COLS - 1, cur.col + sdc));
-    const nr = Math.max(0, Math.min(ROWS - 1, cur.row + sdr));
+    const nc = Math.max(0, Math.min(config.cols - 1, cur.col + sdc));
+    const nr = Math.max(0, Math.min(config.rows - 1, cur.row + sdr));
     if (nc === cur.col && nr === cur.row) return;
     if (isWall(nc, nr)) return;
     lastMoveTimeRef.current = now;
 
+    prevPosRef.current = { ...cur };
     const newPos = { col: nc, row: nr };
     posRef.current = newPos;
     setPos(newPos);
@@ -306,10 +456,67 @@ const Maze = () => {
     setStepsRemaining(stepsRemainingRef.current);
     if (user) updateUser(user.id, { steps_remaining: stepsRemainingRef.current });
 
+    moveCountRef.current += 1;
+
+    // Claire follows: every 3 player moves, step toward player's previous position
+    if (claireFollowingRef.current && moveCountRef.current % 3 === 0) {
+      stepClaireToward(prevPosRef.current);
+    }
+
+    // Reunion check
+    if (
+      claireFollowingRef.current &&
+      config.alexandra &&
+      !reunionDoneRef.current
+    ) {
+      const cp = clairePosRef.current;
+      const a = config.alexandra;
+      const dist = Math.max(Math.abs(cp.col - a.col), Math.abs(cp.row - a.row));
+      if (dist <= 3) triggerReunion();
+    }
+
+    // Alexandra contact (within 2 cells)
+    if (config.alexandra && alexandraVisible && !reunionDoneRef.current) {
+      const a = config.alexandra;
+      const d = Math.max(Math.abs(nc - a.col), Math.abs(nr - a.row));
+      if (d <= 2) {
+        if (!claireFoundRef.current) {
+          if (!alexandraFoundRef.current) {
+            alexandraFoundRef.current = true;
+            setAlexandraFound(true);
+          }
+          const lines = [
+            'You found me. She went further in. I cannot follow.',
+            'Claire. My daughter. She followed the mathematics.',
+            'Bring her back. Please.',
+          ];
+          const idx = Math.min(whisperIndexRef.current, 2);
+          showWhisper(lines[idx], '#c8963a', 3000);
+          whisperIndexRef.current = Math.min(whisperIndexRef.current + 1, 2);
+          setWhisperIndex(whisperIndexRef.current);
+        } else if (claireFollowingRef.current) {
+          showWhisper('She is with you. Bring her here.', '#c8963a', 3000);
+        }
+      }
+    }
+
+    // Claire contact (within 2 cells)
+    if (config.claire && claireVisible && !claireFoundRef.current && alexandraFoundRef.current) {
+      const cp = clairePosRef.current;
+      const d = Math.max(Math.abs(nc - cp.col), Math.abs(nr - cp.row));
+      if (d <= 2) {
+        claireFoundRef.current = true;
+        setClaireFound(true);
+        claireFollowingRef.current = true;
+        setClaireFollowing(true);
+        showWhisper('Are you real? Can you take me back?', '#f97316', 3000);
+      }
+    }
+
     // fragment check
-    const fragIdx = FRAGMENTS.findIndex((f) => f.col === nc && f.row === nr);
+    const fragIdx = config.fragments.findIndex((f) => f.col === nc && f.row === nr);
     if (fragIdx !== -1) {
-      const frag = FRAGMENTS[fragIdx];
+      const frag = config.fragments[fragIdx];
       if (!collectedRef.current.has(frag.prime)) {
         const next = new Set(collectedRef.current);
         next.add(frag.prime);
@@ -317,7 +524,6 @@ const Maze = () => {
         setCollected(next);
         setActiveFragment({ prime: frag.prime, index: fragIdx });
 
-        // Persist fragment to Supabase backpack
         if (user) {
           const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
           restInsert('fragments', {
@@ -332,15 +538,16 @@ const Maze = () => {
 
     // easter egg check
     const eggKey = `${nc},${nr}`;
-    const egg = EASTER_EGGS.find((e) => e.col === nc && e.row === nr);
+    const egg = config.eggs.find((e) => e.col === nc && e.row === nr);
     if (egg && !eggsTriggeredRef.current.has(eggKey)) {
       eggsTriggeredRef.current.add(eggKey);
       showWhisper(egg.line, 'rgba(160,140,200,0.85)', 2500);
     }
 
     // door check
-    if (nc === DOOR.col && nr === DOOR.row) {
-      if (collectedRef.current.size >= 5) {
+    if (nc === config.door.col && nr === config.door.row) {
+      const required = config.fragmentsRequired;
+      if (collectedRef.current.size >= required) {
         showWhisper('The way opens.', '#c8963a', 2000);
         (async () => {
           if (user) {
@@ -354,29 +561,25 @@ const Maze = () => {
           window.setTimeout(() => navigate('/shadow'), 2000);
         })();
       } else {
-        const remaining = 5 - collectedRef.current.size;
-        const msg = remaining === 1 ? 'One fragment remains.' : `${remaining} fragments remain.`;
-        showWhisper(`${msg} The door does not open.`, 'rgba(200,150,58,0.7)', 2500);
+        const remaining = required - collectedRef.current.size;
+        const msg = remaining === 1 ? '1 fragment remains' : `${remaining} fragments remain`;
+        showWhisper(`${msg}. The door does not open.`, 'rgba(200,150,58,0.7)', 2500);
       }
     }
 
-    // credit-game door
-    if (nc === CREDIT_DOOR.col && nr === CREDIT_DOOR.row) {
+    // credit-game doors
+    if (config.creditDoors.some((d) => d.col === nc && d.row === nr)) {
       showWhisper('A game exists here. Not yet open.', 'rgba(59,130,246,0.8)', 2500);
     }
   };
 
-  // keyboard listeners
+  // keyboard
   useEffect(() => {
     const onDown = (e: KeyboardEvent) => {
-      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-        e.preventDefault();
-      }
+      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) e.preventDefault();
       heldKeysRef.current.add(e.key);
     };
-    const onUp = (e: KeyboardEvent) => {
-      heldKeysRef.current.delete(e.key);
-    };
+    const onUp = (e: KeyboardEvent) => { heldKeysRef.current.delete(e.key); };
     window.addEventListener('keydown', onDown);
     window.addEventListener('keyup', onUp);
     return () => {
@@ -385,28 +588,21 @@ const Maze = () => {
     };
   }, []);
 
-  // rAF loop: camera + held-key movement + pulse
+  // rAF loop
+  const [pulse, setPulse] = useState(1);
   useEffect(() => {
     let raf = 0;
     let pulseT = 0;
     const tick = () => {
-      // held-key movement (cooldown-gated inside tryMove)
       const k = heldKeysRef.current;
-      let dc = 0;
-      let dr = 0;
+      let dc = 0, dr = 0;
       if (k.has('ArrowLeft')) dc -= 1;
       if (k.has('ArrowRight')) dc += 1;
       if (k.has('ArrowUp')) dr -= 1;
       if (k.has('ArrowDown')) dr += 1;
-      if (dc !== 0 || dr !== 0) {
-        // Process axes independently so diagonals slide along walls
-        // instead of clipping through corners. Each tryMove is gated by
-        // its own cooldown and clamped to exactly 1 cell per axis.
-        if (dc !== 0) tryMove(dc, 0);
-        if (dr !== 0) tryMove(0, dr);
-      }
+      if (dc !== 0) tryMove(dc, 0);
+      if (dr !== 0) tryMove(0, dr);
 
-      // camera follows player
       const targetX = window.innerWidth / 2 - (posRef.current.col * CELL + CELL / 2);
       const targetY = window.innerHeight / 2 - (posRef.current.row * CELL + CELL / 2);
       camRef.current = {
@@ -415,7 +611,6 @@ const Maze = () => {
       };
       setCam({ x: camRef.current.x, y: camRef.current.y });
 
-      // pulse
       pulseT += 1 / 60;
       const p = 1 + Math.sin((pulseT / 1.5) * Math.PI * 2) * 0.075 + 0.075;
       setPulse(p);
@@ -427,29 +622,53 @@ const Maze = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // quote rotation
   useEffect(() => {
-    const id = window.setInterval(() => {
-      setQuoteIdx((i) => (i + 1) % QUOTES.length);
-    }, 90000);
+    const id = window.setInterval(() => setQuoteIdx((i) => (i + 1) % QUOTES.length), 90000);
     return () => window.clearInterval(id);
   }, []);
 
   const dpadMove = (dc: number, dr: number) => tryMove(dc, dr);
 
-  const playerScreenX = window.innerWidth / 2;
-  const playerScreenY = window.innerHeight / 2;
+  const playerScreenX = typeof window !== 'undefined' ? window.innerWidth / 2 : 0;
+  const playerScreenY = typeof window !== 'undefined' ? window.innerHeight / 2 : 0;
+
+  // Level 3+ placeholder
+  if (levelLoaded && currentLevel >= 3) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#04040a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+        <p className="font-fell italic" style={{ fontSize: 18, color: 'rgba(160,140,200,0.7)', textAlign: 'center', maxWidth: '80vw' }}>
+          The next level is not yet open.
+        </p>
+        <button
+          className="font-cinzel"
+          onClick={() => navigate('/village')}
+          style={{
+            background: 'transparent', border: '0.5px solid rgba(160,140,200,0.4)',
+            color: 'rgba(160,140,200,0.7)', padding: '10px 24px', fontSize: 11,
+            letterSpacing: '0.28em', cursor: 'pointer',
+          }}
+        >
+          RETURN
+        </button>
+      </div>
+    );
+  }
+
+  if (!config) {
+    return <div style={{ position: 'fixed', inset: 0, background: '#04040a' }} />;
+  }
+
+  const MAP_W = config.cols * CELL;
+  const MAP_H = config.rows * CELL;
+
+  // Cull walls outside camera view for performance (Level 2 = 22500 cells)
+  const viewLeft = -cam.x - 100;
+  const viewTop = -cam.y - 100;
+  const viewRight = -cam.x + window.innerWidth + 100;
+  const viewBottom = -cam.y + window.innerHeight + 100;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: '#04040a',
-        overflow: 'hidden',
-      }}
-    >
-      {/* MAP */}
+    <div style={{ position: 'fixed', inset: 0, background: '#04040a', overflow: 'hidden' }}>
       <div
         style={{
           position: 'absolute',
@@ -459,7 +678,6 @@ const Maze = () => {
           willChange: 'transform',
         }}
       >
-        {/* grid lines */}
         <div
           style={{
             position: 'absolute',
@@ -471,16 +689,18 @@ const Maze = () => {
           }}
         />
 
-        {/* walls */}
-        {Array.from(WALL_SET).map((key) => {
+        {Array.from(wallSet).map((key) => {
           const [c, r] = key.split(',').map(Number);
+          const x = c * CELL;
+          const y = r * CELL;
+          if (x + CELL < viewLeft || x > viewRight || y + CELL < viewTop || y > viewBottom) return null;
           return (
             <div
               key={`w-${key}`}
               style={{
                 position: 'absolute',
-                left: c * CELL,
-                top: r * CELL,
+                left: x,
+                top: y,
                 width: CELL,
                 height: CELL,
                 background: 'rgba(100,80,160,0.18)',
@@ -490,8 +710,7 @@ const Maze = () => {
           );
         })}
 
-        {/* fragment blocks — purple pulse, hidden once collected */}
-        {FRAGMENTS.filter((f) => !collected.has(f.prime)).map((f) => (
+        {config.fragments.filter((f) => !collected.has(f.prime)).map((f) => (
           <div
             key={`frag-${f.prime}`}
             style={{
@@ -508,12 +727,11 @@ const Maze = () => {
           />
         ))}
 
-        {/* golden door — gold pulse */}
         <div
           style={{
             position: 'absolute',
-            left: DOOR.col * CELL,
-            top: DOOR.row * CELL,
+            left: config.door.col * CELL,
+            top: config.door.row * CELL,
             width: CELL,
             height: CELL,
             background: 'rgba(200,150,58,0.12)',
@@ -523,24 +741,60 @@ const Maze = () => {
           }}
         />
 
-        {/* credit-game door — blue pulse */}
-        <div
-          style={{
-            position: 'absolute',
-            left: CREDIT_DOOR.col * CELL,
-            top: CREDIT_DOOR.row * CELL,
-            width: CELL,
-            height: CELL,
-            background: 'rgba(59,130,246,0.12)',
-            border: '1px solid #3b82f6',
-            animation: 'mazeBluePulse 1.5s ease-in-out infinite',
-            pointerEvents: 'none',
-          }}
-        />
+        {config.creditDoors.map((d, i) => (
+          <div
+            key={`cd-${i}`}
+            style={{
+              position: 'absolute',
+              left: d.col * CELL,
+              top: d.row * CELL,
+              width: CELL,
+              height: CELL,
+              background: 'rgba(59,130,246,0.12)',
+              border: '1px solid #3b82f6',
+              animation: 'mazeBluePulse 1.5s ease-in-out infinite',
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
+
+        {/* Alexandra — gold dot */}
+        {config.alexandra && alexandraVisible && (
+          <div
+            style={{
+              position: 'absolute',
+              left: config.alexandra.col * CELL + CELL / 2 - 4,
+              top: config.alexandra.row * CELL + CELL / 2 - 4,
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: '#c8963a',
+              boxShadow: '0 0 8px rgba(200,150,58,0.8)',
+              animation: 'mazeDotPulse 1.5s ease-in-out infinite',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+
+        {/* Claire — orange dot at her own position */}
+        {config.claire && claireVisible && (
+          <div
+            style={{
+              position: 'absolute',
+              left: clairePos.col * CELL + CELL / 2 - 4,
+              top: clairePos.row * CELL + CELL / 2 - 4,
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: '#f97316',
+              boxShadow: '0 0 8px rgba(249,115,22,0.8)',
+              animation: 'mazeDotPulse 1.5s ease-in-out infinite',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
       </div>
 
-
-      {/* Keyframes */}
       <style>{`
         @keyframes mazeDotPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
         @keyframes mazePurplePulse {
@@ -558,7 +812,6 @@ const Maze = () => {
         @keyframes mazePanelSlide { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}</style>
 
-      {/* PLAYER (fixed center) */}
       <div
         style={{
           position: 'fixed',
@@ -575,7 +828,6 @@ const Maze = () => {
         }}
       />
 
-      {/* VISIBILITY OVERLAY */}
       <div
         style={{
           position: 'fixed',
@@ -586,99 +838,57 @@ const Maze = () => {
         }}
       />
 
-      {/* ENTITY QUOTE */}
       <p
         className="font-fell italic"
         style={{
-          position: 'fixed',
-          top: 24,
-          left: 0,
-          right: 0,
-          textAlign: 'center',
-          fontSize: 14,
-          color: 'rgba(160,140,200,0.5)',
-          margin: 0,
-          zIndex: 20,
-          pointerEvents: 'none',
+          position: 'fixed', top: 24, left: 0, right: 0, textAlign: 'center',
+          fontSize: 14, color: 'rgba(160,140,200,0.5)', margin: 0, zIndex: 20, pointerEvents: 'none',
         }}
       >
         {QUOTES[quoteIdx]}
       </p>
 
-      {/* WHISPER */}
       {whisper && (
         <p
           className="font-fell italic"
           style={{
-            position: 'fixed',
-            top: '20%',
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-            fontSize: 20,
-            color: whisperColor,
-            textShadow: '0 0 12px rgba(91,79,212,0.6)',
-            margin: 0,
-            zIndex: 30,
-            pointerEvents: 'none',
+            position: 'fixed', top: '20%', left: 0, right: 0, textAlign: 'center',
+            fontSize: 20, color: whisperColor, textShadow: '0 0 12px rgba(91,79,212,0.6)',
+            margin: 0, zIndex: 30, pointerEvents: 'none',
           }}
         >
           {whisper}
         </p>
       )}
 
-      {/* NO STEPS MESSAGE */}
       {stepsRemaining === 0 && (
         <p
           className="font-fell italic"
           style={{
-            position: 'fixed',
-            top: '20%',
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-            fontSize: 16,
-            color: 'rgba(160,140,200,0.6)',
-            margin: 0,
-            zIndex: 30,
-            pointerEvents: 'none',
+            position: 'fixed', top: '20%', left: 0, right: 0, textAlign: 'center',
+            fontSize: 16, color: 'rgba(160,140,200,0.6)', margin: 0, zIndex: 30, pointerEvents: 'none',
           }}
         >
           You have no steps remaining. Walk to continue.
         </p>
       )}
 
-      {/* RETURN */}
       <button
         className="font-cinzel"
         onClick={() => navigate('/village')}
         style={{
-          position: 'fixed',
-          bottom: 110,
-          left: 16,
-          background: 'transparent',
-          border: 'none',
-          color: 'rgba(160,140,200,0.3)',
-          fontSize: 10,
-          letterSpacing: '0.2em',
-          cursor: 'pointer',
-          padding: 4,
-          zIndex: 25,
+          position: 'fixed', bottom: 110, left: 16, background: 'transparent', border: 'none',
+          color: 'rgba(160,140,200,0.3)', fontSize: 10, letterSpacing: '0.2em', cursor: 'pointer',
+          padding: 4, zIndex: 25,
         }}
       >
         RETURN
       </button>
 
-      {/* D-PAD */}
       <div
         style={{
-          position: 'fixed',
-          bottom: 120,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: 120,
-          height: 120,
-          zIndex: 55,
+          position: 'fixed', bottom: 120, left: '50%', transform: 'translateX(-50%)',
+          width: 120, height: 120, zIndex: 55,
         }}
       >
         {[
@@ -689,22 +899,11 @@ const Maze = () => {
         ].map((b, i) => (
           <button
             key={i}
-            onPointerDown={(e) => {
-              e.preventDefault();
-              dpadMove(b.dc, b.dr);
-            }}
+            onPointerDown={(e) => { e.preventDefault(); dpadMove(b.dc, b.dr); }}
             style={{
-              position: 'absolute',
-              top: b.top,
-              left: b.left,
-              width: 40,
-              height: 40,
-              background: 'rgba(20,18,30,0.7)',
-              border: '1px solid rgba(100,80,160,0.4)',
-              color: 'rgba(160,140,200,0.7)',
-              fontSize: 14,
-              cursor: 'pointer',
-              padding: 0,
+              position: 'absolute', top: b.top, left: b.left, width: 40, height: 40,
+              background: 'rgba(20,18,30,0.7)', border: '1px solid rgba(100,80,160,0.4)',
+              color: 'rgba(160,140,200,0.7)', fontSize: 14, cursor: 'pointer', padding: 0,
             }}
           >
             {b.label}
@@ -712,34 +911,20 @@ const Maze = () => {
         ))}
       </div>
 
-      {/* HUD */}
       <div
         className="font-mono"
         style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'rgba(4,4,10,0.92)',
-          borderTop: '0.5px solid rgba(169,140,255,0.3)',
-          padding: '10px 14px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: 9,
-          letterSpacing: '0.18em',
-          zIndex: 60,
+          position: 'fixed', bottom: 0, left: 0, right: 0,
+          background: 'rgba(4,4,10,0.92)', borderTop: '0.5px solid rgba(169,140,255,0.3)',
+          padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          fontSize: 9, letterSpacing: '0.18em', zIndex: 60,
         }}
       >
         <span
           onClick={() => { setExchangeError(false); setSelectedCredits(1); setExchangeOpen(true); }}
           style={{
             color: stepsRemaining === 0 ? 'rgba(200,80,80,0.9)' : stepsRemaining <= 20 ? 'rgba(200,150,58,0.9)' : '#e0ddd5',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            gap: 2,
+            cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2,
           }}
         >
           <span>STEPS {stepsRemaining}</span>
@@ -747,37 +932,27 @@ const Maze = () => {
             <span style={{ color: 'rgba(160,140,200,0.4)', fontSize: 8, letterSpacing: '0.15em' }}>tap to exchange</span>
           )}
         </span>
-        <span style={{ color: '#c8963a' }}>CREDITS {credits}</span>
+        {currentLevel === 2 ? (
+          <span style={{ color: '#c8963a' }}>FRAGMENTS {collected.size}/{config.fragmentsRequired}</span>
+        ) : (
+          <span style={{ color: '#c8963a' }}>CREDITS {credits}</span>
+        )}
         <span style={{ color: '#5b4fd4' }}>LEVEL {String(currentLevel).padStart(2, '0')}</span>
       </div>
 
-      {/* EXCHANGE PANEL */}
       {exchangeOpen && (
         <div
           style={{
-            position: 'fixed',
-            left: 0,
-            right: 0,
-            bottom: 36,
-            height: 220,
-            background: 'rgba(4,4,10,0.97)',
-            borderTop: '1px solid rgba(100,80,160,0.4)',
-            zIndex: 70,
-            animation: 'mazePanelSlide 280ms ease-out',
+            position: 'fixed', left: 0, right: 0, bottom: 36, height: 220,
+            background: 'rgba(4,4,10,0.97)', borderTop: '1px solid rgba(100,80,160,0.4)',
+            zIndex: 70, animation: 'mazePanelSlide 280ms ease-out',
           }}
         >
           <button
             onClick={() => setExchangeOpen(false)}
             style={{
-              position: 'absolute',
-              top: 8,
-              right: 12,
-              background: 'transparent',
-              border: 'none',
-              color: 'rgba(160,140,200,0.4)',
-              fontSize: 18,
-              cursor: 'pointer',
-              padding: 4,
+              position: 'absolute', top: 8, right: 12, background: 'transparent', border: 'none',
+              color: 'rgba(160,140,200,0.4)', fontSize: 18, cursor: 'pointer', padding: 4,
             }}
           >
             ×
@@ -787,14 +962,8 @@ const Maze = () => {
             <div
               className="font-fell italic"
               style={{
-                position: 'absolute',
-                top: '50%',
-                left: 0,
-                right: 0,
-                transform: 'translateY(-50%)',
-                textAlign: 'center',
-                fontSize: 16,
-                color: 'rgba(200,80,80,0.6)',
+                position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)',
+                textAlign: 'center', fontSize: 16, color: 'rgba(200,80,80,0.6)',
               }}
             >
               You have nothing left to give.
@@ -804,23 +973,15 @@ const Maze = () => {
               <div
                 className="font-cinzel"
                 style={{
-                  textAlign: 'center',
-                  paddingTop: 16,
-                  fontSize: 12,
-                  color: 'rgba(160,140,200,0.7)',
-                  letterSpacing: '0.2em',
+                  textAlign: 'center', paddingTop: 16, fontSize: 12,
+                  color: 'rgba(160,140,200,0.7)', letterSpacing: '0.2em',
                 }}
               >
                 Exchange Credits for Steps
               </div>
               <div
                 className="font-mono"
-                style={{
-                  textAlign: 'center',
-                  marginTop: 8,
-                  fontSize: 11,
-                  color: 'rgba(160,140,200,0.4)',
-                }}
+                style={{ textAlign: 'center', marginTop: 8, fontSize: 11, color: 'rgba(160,140,200,0.4)' }}
               >
                 1 CREDIT = 100 STEPS
               </div>
@@ -845,13 +1006,10 @@ const Maze = () => {
                       className="font-cinzel"
                       onClick={() => setSelectedCredits(n)}
                       style={{
-                        fontSize: 9,
-                        letterSpacing: '0.15em',
-                        padding: '8px 12px',
+                        fontSize: 9, letterSpacing: '0.15em', padding: '8px 12px',
                         border: `0.5px solid ${sel ? '#c8963a' : 'rgba(100,80,160,0.4)'}`,
                         background: 'rgba(100,80,160,0.08)',
-                        color: sel ? '#c8963a' : 'rgba(160,140,200,0.7)',
-                        cursor: 'pointer',
+                        color: sel ? '#c8963a' : 'rgba(160,140,200,0.7)', cursor: 'pointer',
                       }}
                     >
                       {n} CREDIT{n > 1 ? 'S' : ''} → {n * 100} STEPS
@@ -881,13 +1039,8 @@ const Maze = () => {
                     setExchangeOpen(false);
                   }}
                   style={{
-                    fontSize: 11,
-                    letterSpacing: '0.28em',
-                    background: '#c8963a',
-                    color: '#04040a',
-                    padding: '10px 32px',
-                    border: 'none',
-                    cursor: 'pointer',
+                    fontSize: 11, letterSpacing: '0.28em', background: '#c8963a',
+                    color: '#04040a', padding: '10px 32px', border: 'none', cursor: 'pointer',
                   }}
                 >
                   CONFIRM
@@ -898,7 +1051,6 @@ const Maze = () => {
         </div>
       )}
 
-      {/* FRAGMENT OVERLAY */}
       {activeFragment && (
         <FragmentOverlay
           prime={activeFragment.prime}

@@ -1,44 +1,41 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import type { User } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import { createContext, useContext, useMemo, ReactNode } from 'react'
+
+interface PlayerUser {
+  id: string
+}
 
 interface AuthContextValue {
-  user: User | null
+  user: PlayerUser | null
   loading: boolean
 }
 
-const AuthContext = createContext<AuthContextValue>({ user: null, loading: true })
+const STORAGE_KEY = 'praem_player_id'
+
+const getOrCreatePlayerId = (): string => {
+  if (typeof window === 'undefined') {
+    // SSR / non-browser fallback — should not happen in this app.
+    return '00000000-0000-0000-0000-000000000000'
+  }
+  let id = window.localStorage.getItem(STORAGE_KEY)
+  if (!id) {
+    id =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+    window.localStorage.setItem(STORAGE_KEY, id)
+  }
+  return id
+}
+
+const AuthContext = createContext<AuthContextValue>({ user: null, loading: false })
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let mounted = true
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!mounted) return
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    return () => {
-      mounted = false
-      listener.subscription.unsubscribe()
-    }
+  const value = useMemo<AuthContextValue>(() => {
+    const id = getOrCreatePlayerId()
+    return { user: { id }, loading: false }
   }, [])
 
-  return (
-    <AuthContext.Provider value={{ user, loading }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
 export const useAuth = () => useContext(AuthContext)

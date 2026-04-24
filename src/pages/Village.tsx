@@ -457,8 +457,6 @@ const Village = () => {
   const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [signOutConfirm, setSignOutConfirm] = useState(false);
-  const signOutTimerRef = useRef<number | null>(null);
 
   const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];
 
@@ -1410,41 +1408,6 @@ const Village = () => {
             #{String(registrationNumber ?? 0).padStart(4, '0')}
           </div>
 
-          {/* Sign out */}
-          <button
-            onClick={async () => {
-              if (!signOutConfirm) {
-                setSignOutConfirm(true);
-                if (signOutTimerRef.current) window.clearTimeout(signOutTimerRef.current);
-                signOutTimerRef.current = window.setTimeout(() => {
-                  setSignOutConfirm(false);
-                  signOutTimerRef.current = null;
-                }, 3000);
-                return;
-              }
-              if (signOutTimerRef.current) {
-                window.clearTimeout(signOutTimerRef.current);
-                signOutTimerRef.current = null;
-              }
-              await supabase.auth.signOut();
-              navigate('/email-entry');
-            }}
-            className="font-cinzel"
-            style={{
-              marginTop: 16,
-              background: 'transparent',
-              border: 'none',
-              padding: 0,
-              fontSize: 9,
-              letterSpacing: '0.2em',
-              color: 'rgba(91,79,212,0.9)',
-              textShadow: '0 0 12px rgba(91,79,212,0.8)',
-              cursor: 'pointer',
-              textAlign: 'center',
-            }}
-          >
-            {signOutConfirm ? 'ARE YOU SURE?' : 'LEAVE THIS WORLD'}
-          </button>
         </div>
       )}
 

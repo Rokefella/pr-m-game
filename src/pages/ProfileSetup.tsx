@@ -12,6 +12,12 @@ const ProfileSetup = () => {
 
   const handleEnter = async () => {
     if (saving) return;
+
+    const enteredUsername = username.trim() || null;
+
+    console.error('PLAYER ID:', localStorage.getItem('praem_player_id'));
+    console.error('USERNAME:', enteredUsername);
+
     setSaving(true);
 
     let playerId = localStorage.getItem('praem_player_id');
@@ -20,31 +26,43 @@ const ProfileSetup = () => {
       localStorage.setItem('praem_player_id', playerId);
     }
 
-    const enteredUsername = username.trim() || null;
     const selectedAuraColor = AURA_COLORS[selectedAura];
     const selectedEntityAnswer = localStorage.getItem('praem_entity_answer');
 
-    const payload = {
-      id: playerId,
-      username: enteredUsername,
-      entity_answer: selectedEntityAnswer,
-      aura_color: selectedAuraColor,
-      title: 'Wanderer',
-      level: 1,
-      credits: 50,
-      steps_remaining: 100,
-    };
+    const { data: existing, error: selectError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', playerId)
+      .maybeSingle();
 
-    console.log('[ProfileSetup] playerId:', playerId);
-    console.log('[ProfileSetup] saving payload:', payload);
+    console.error('EXISTING ROW:', existing, 'SELECT ERROR:', selectError);
 
-    const response = await supabase.from('users').upsert(payload).select().maybeSingle();
-    console.log('[ProfileSetup] supabase response:', response);
-
-    if (response.error) {
-      console.error('[ProfileSetup] upsert failed', response.error);
-      setSaving(false);
-      return;
+    if (existing) {
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({
+          username: enteredUsername,
+          entity_answer: selectedEntityAnswer,
+          aura_color: selectedAuraColor,
+        })
+        .eq('id', playerId);
+      console.error('UPDATE ERROR:', updateError);
+      if (updateError) {
+        setSaving(false);
+        return;
+      }
+    } else {
+      const { error: insertError } = await supabase.from('users').insert({
+        id: playerId,
+        username: enteredUsername,
+        entity_answer: selectedEntityAnswer,
+        aura_color: selectedAuraColor,
+      });
+      console.error('INSERT ERROR:', insertError);
+      if (insertError) {
+        setSaving(false);
+        return;
+      }
     }
 
     navigate('/village');

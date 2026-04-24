@@ -11,6 +11,7 @@ import Village from "./pages/Village.tsx";
 import Door from "./pages/Door.tsx";
 import Maze from "./pages/Maze.tsx";
 import ShadowRealm from "./pages/ShadowRealm.tsx";
+import Paywall from "./pages/Paywall.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();

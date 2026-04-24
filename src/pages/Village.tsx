@@ -464,6 +464,7 @@ const Village = () => {
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);
   const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(14);
   const [profileOpen, setProfileOpen] = useState(false);
 
   const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];
@@ -486,6 +487,19 @@ const Village = () => {
       setStepsRemaining(row.steps_remaining);
       setTotalMazeSteps(row.total_maze_steps);
       setTotalMazeTime(row.total_maze_time);
+
+      // Trial check (14 days from first_launch_at)
+      if (row.first_launch_at) {
+        const daysSince = Math.floor(
+          (Date.now() - new Date(row.first_launch_at).getTime()) / (1000 * 60 * 60 * 24),
+        );
+        const remaining = Math.max(0, 14 - daysSince);
+        setTrialDaysRemaining(remaining);
+        if (remaining === 0) {
+          navigate('/paywall');
+          return;
+        }
+      }
 
       if (row.levelup_pending && !levelUpHandled) {
         const newLv = row.levelup_newlevel ?? row.level;
@@ -1210,6 +1224,27 @@ const Village = () => {
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
       </div>
+
+      {/* Trial countdown — appears just above HUD when ≤3 days remain */}
+      {trialDaysRemaining > 0 && trialDaysRemaining <= 3 && (
+        <div
+          className="font-mono"
+          style={{
+            position: 'absolute',
+            bottom: 38,
+            left: 0,
+            right: 0,
+            textAlign: 'center',
+            fontSize: 8,
+            letterSpacing: '0.18em',
+            color: 'rgba(200,150,58,0.5)',
+            zIndex: 12,
+            pointerEvents: 'none',
+          }}
+        >
+          Trial ends in {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'}
+        </div>
+      )}
 
       {/* Registration number — top-right (tap to open profile) */}
       <button

@@ -1,0 +1,1 @@
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS first_launch_at timestamptz NOT NULL DEFAULT now();

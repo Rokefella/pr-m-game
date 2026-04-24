@@ -11,6 +11,7 @@ import Village from "./pages/Village.tsx";
 import Door from "./pages/Door.tsx";
 import Maze from "./pages/Maze.tsx";
 import ShadowRealm from "./pages/ShadowRealm.tsx";
+import Paywall from "./pages/Paywall.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/door" element={<Door />} />
             <Route path="/maze" element={<Maze />} />
             <Route path="/shadow" element={<ShadowRealm />} />
+            <Route path="/paywall" element={<Paywall />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { restInsert, restSelect, restUpdate } from './supabaseRest'
 
 export type UserRow = {
   id: string
@@ -38,48 +38,32 @@ const DEFAULTS: Omit<UserRow, 'id'> = {
 export async function fetchOrCreateUser(userId: string): Promise<UserRow> {
   console.log('[fetchOrCreateUser] playerId:', userId)
 
-  const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle()
-
-  if (error) console.error('[fetchOrCreateUser] select error', error)
-  if (data) {
-    console.log('[fetchOrCreateUser] existing row:', data)
-    return data as UserRow
+  const existing = await restSelect('users', 'id', userId)
+  if (Array.isArray(existing) && existing.length > 0) {
+    console.log('[fetchOrCreateUser] existing row:', existing[0])
+    return existing[0] as UserRow
   }
 
-  const { data: upserted, error: upsertErr } = await supabase
-    .from('users')
-    .upsert({ id: userId })
-    .select('*')
-    .maybeSingle()
-
-  if (upsertErr) console.error('[fetchOrCreateUser] upsert error', upsertErr)
-  if (upserted) {
-    console.log('[fetchOrCreateUser] upserted row:', upserted)
-    return upserted as UserRow
+  const inserted = await restInsert('users', { id: userId })
+  if (Array.isArray(inserted) && inserted.length > 0) {
+    console.log('[fetchOrCreateUser] inserted row:', inserted[0])
+    return inserted[0] as UserRow
   }
 
-  // Last-resort refetch
-  const { data: refetch, error: refetchErr } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .maybeSingle()
-  if (refetchErr) console.error('[fetchOrCreateUser] refetch error', refetchErr)
-  console.log('[fetchOrCreateUser] refetch result:', refetch)
-  if (refetch) return refetch as UserRow
-  throw upsertErr ?? new Error('Failed to create or fetch user row')
+  const refetch = await restSelect('users', 'id', userId)
+  if (Array.isArray(refetch) && refetch.length > 0) return refetch[0] as UserRow
+
+  throw new Error('Failed to create or fetch user row')
 }
 
 export async function updateUser(
   userId: string,
   patch: Partial<Omit<UserRow, 'id'>>,
 ): Promise<void> {
-  const { error } = await supabase.from('users').update(patch).eq('id', userId)
-  if (error) console.error('updateUser failed', error, patch)
+  const result = await restUpdate('users', patch, 'id', userId)
+  if (result && (result as { error?: unknown }).error) {
+    console.error('updateUser failed', result, patch)
+  }
 }
 
 export { DEFAULTS as USER_DEFAULTS }

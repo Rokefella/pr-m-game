@@ -36,32 +36,42 @@ const DEFAULTS: Omit<UserRow, 'id'> = {
 }
 
 export async function fetchOrCreateUser(userId: string): Promise<UserRow> {
+  console.log('[fetchOrCreateUser] playerId:', userId)
+
   const { data, error } = await supabase
     .from('users')
     .select('*')
     .eq('id', userId)
     .maybeSingle()
 
-  if (error) throw error
-  if (data) return data as UserRow
-
-  const { data: inserted, error: insertErr } = await supabase
-    .from('users')
-    .insert({ id: userId })
-    .select('*')
-    .single()
-
-  if (insertErr) {
-    // Row may have been created concurrently by trigger — refetch.
-    const { data: refetch } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle()
-    if (refetch) return refetch as UserRow
-    throw insertErr
+  if (error) console.error('[fetchOrCreateUser] select error', error)
+  if (data) {
+    console.log('[fetchOrCreateUser] existing row:', data)
+    return data as UserRow
   }
-  return inserted as UserRow
+
+  const { data: upserted, error: upsertErr } = await supabase
+    .from('users')
+    .upsert({ id: userId })
+    .select('*')
+    .maybeSingle()
+
+  if (upsertErr) console.error('[fetchOrCreateUser] upsert error', upsertErr)
+  if (upserted) {
+    console.log('[fetchOrCreateUser] upserted row:', upserted)
+    return upserted as UserRow
+  }
+
+  // Last-resort refetch
+  const { data: refetch, error: refetchErr } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle()
+  if (refetchErr) console.error('[fetchOrCreateUser] refetch error', refetchErr)
+  console.log('[fetchOrCreateUser] refetch result:', refetch)
+  if (refetch) return refetch as UserRow
+  throw upsertErr ?? new Error('Failed to create or fetch user row')
 }
 
 export async function updateUser(

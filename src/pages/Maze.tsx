@@ -886,6 +886,57 @@ const Maze = () => {
         RETURN
       </button>
 
+      <button
+        className="font-cinzel"
+        onClick={() => setExitConfirmOpen(true)}
+        style={{
+          position: 'fixed', bottom: 56, left: 16, background: 'transparent', border: 'none',
+          color: 'rgba(160,140,200,0.4)', fontSize: 9, letterSpacing: '0.2em', cursor: 'pointer',
+          padding: 4, zIndex: 65,
+        }}
+      >
+        EXIT MAZE
+      </button>
+
+      {exitConfirmOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(4,4,10,0.92)', zIndex: 200,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28,
+          }}
+        >
+          <div
+            className="font-fell italic"
+            style={{ fontSize: 16, color: 'rgba(160,140,200,0.7)', textAlign: 'center', maxWidth: '85vw' }}
+          >
+            Leave the maze? Your progress is saved.
+          </div>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <button
+              className="font-cinzel"
+              onClick={() => navigate('/village')}
+              style={{
+                fontSize: 11, letterSpacing: '0.2em', background: '#5b4fd4', color: 'white',
+                border: 'none', padding: '10px 24px', cursor: 'pointer',
+              }}
+            >
+              LEAVE
+            </button>
+            <button
+              className="font-cinzel"
+              onClick={() => setExitConfirmOpen(false)}
+              style={{
+                fontSize: 11, letterSpacing: '0.2em', background: 'transparent',
+                border: '0.5px solid rgba(160,140,200,0.3)', color: 'rgba(160,140,200,0.5)',
+                padding: '10px 24px', cursor: 'pointer',
+              }}
+            >
+              STAY
+            </button>
+          </div>
+        </div>
+      )}
+
       <div
         style={{
           position: 'fixed', bottom: 120, left: '50%', transform: 'translateX(-50%)',

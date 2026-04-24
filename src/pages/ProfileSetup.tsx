@@ -32,26 +32,6 @@ const ProfileSetup = () => {
 
     navigate('/village');
   };
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
-        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
-        'Prefer': 'return=representation',
-      },
-      body: JSON.stringify({
-        id: playerId,
-        username: username.trim() || 'Anonymous',
-        entity_answer: localStorage.getItem('praem_entity_answer'),
-        aura_color: AURA_COLORS[selectedAura],
-      }),
-    });
-
-    const result = await response.json();
-    console.error('DIRECT REST RESULT:', JSON.stringify(result));
-
-    navigate('/village');
-  };
 
   return (
     <div

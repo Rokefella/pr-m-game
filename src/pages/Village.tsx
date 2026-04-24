@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
-import { supabase } from '@/lib/supabase';
+import { restUpdate } from '@/lib/supabaseRest';
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
@@ -1317,7 +1317,7 @@ const Village = () => {
                   onClick={async () => {
                     setAuraColor(c);
                     if (user) {
-                      await supabase.from('users').update({ aura_color: c }).eq('id', user.id);
+                      await restUpdate('users', { aura_color: c }, 'id', user.id);
                     }
                   }}
                   aria-label={`Aura ${c}`}
@@ -1357,7 +1357,7 @@ const Village = () => {
                   onClick={async () => {
                     setCurrentTitle(t);
                     if (user) {
-                      await supabase.from('users').update({ title: t }).eq('id', user.id);
+                      await restUpdate('users', { title: t }, 'id', user.id);
                     }
                   }}
                   className="font-cinzel"

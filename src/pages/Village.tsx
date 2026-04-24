@@ -488,6 +488,19 @@ const Village = () => {
       setTotalMazeSteps(row.total_maze_steps);
       setTotalMazeTime(row.total_maze_time);
 
+      // Trial check (14 days from first_launch_at)
+      if (row.first_launch_at) {
+        const daysSince = Math.floor(
+          (Date.now() - new Date(row.first_launch_at).getTime()) / (1000 * 60 * 60 * 24),
+        );
+        const remaining = Math.max(0, 14 - daysSince);
+        setTrialDaysRemaining(remaining);
+        if (remaining === 0) {
+          navigate('/paywall');
+          return;
+        }
+      }
+
       if (row.levelup_pending && !levelUpHandled) {
         const newLv = row.levelup_newlevel ?? row.level;
         const newTitle = TITLES_BY_LEVEL[newLv] || 'Wanderer';

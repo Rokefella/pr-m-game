@@ -31,6 +31,7 @@ const App = () => (
             <Route path="/door" element={<Door />} />
             <Route path="/maze" element={<Maze />} />
             <Route path="/shadow" element={<ShadowRealm />} />
+            <Route path="/paywall" element={<Paywall />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

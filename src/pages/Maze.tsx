@@ -312,17 +312,12 @@ const Maze = () => {
         // Persist fragment to Supabase backpack
         if (user) {
           const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
-          supabase
-            .from('fragments')
-            .insert({
-              user_id: user.id,
-              prime_number: frag.prime,
-              level: currentLevelRef.current,
-              image_data: imageData,
-            })
-            .then(({ error }) => {
-              if (error) console.error('Failed to save fragment', error);
-            });
+          restInsert('fragments', {
+            user_id: user.id,
+            prime_number: frag.prime,
+            level: currentLevelRef.current,
+            image_data: imageData,
+          }).catch((error) => console.error('Failed to save fragment', error));
         }
       }
     }
@@ -341,10 +336,12 @@ const Maze = () => {
         showWhisper('The way opens.', '#c8963a', 2000);
         (async () => {
           if (user) {
-            await supabase
-              .from('users')
-              .update({ maze_completed_level: currentLevelRef.current })
-              .eq('id', user.id);
+            await restUpdate(
+              'users',
+              { maze_completed_level: currentLevelRef.current },
+              'id',
+              user.id,
+            );
           }
           window.setTimeout(() => navigate('/shadow'), 2000);
         })();

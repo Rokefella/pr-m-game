@@ -13,24 +13,40 @@ const ProfileSetup = () => {
   const handleEnter = async () => {
     if (saving) return;
     setSaving(true);
-    const playerId = localStorage.getItem('praem_player_id');
+
+    let playerId = localStorage.getItem('praem_player_id');
     if (!playerId) {
-      console.error('[ProfileSetup] no praem_player_id in localStorage');
+      playerId = crypto.randomUUID();
+      localStorage.setItem('praem_player_id', playerId);
+    }
+
+    const enteredUsername = username.trim() || null;
+    const selectedAuraColor = AURA_COLORS[selectedAura];
+    const selectedEntityAnswer = localStorage.getItem('praem_entity_answer');
+
+    const payload = {
+      id: playerId,
+      username: enteredUsername,
+      entity_answer: selectedEntityAnswer,
+      aura_color: selectedAuraColor,
+      title: 'Wanderer',
+      level: 1,
+      credits: 50,
+      steps_remaining: 100,
+    };
+
+    console.log('[ProfileSetup] playerId:', playerId);
+    console.log('[ProfileSetup] saving payload:', payload);
+
+    const response = await supabase.from('users').upsert(payload).select().maybeSingle();
+    console.log('[ProfileSetup] supabase response:', response);
+
+    if (response.error) {
+      console.error('[ProfileSetup] upsert failed', response.error);
       setSaving(false);
       return;
     }
-    const { error } = await supabase
-      .from('users')
-      .upsert({
-        id: playerId,
-        username: username.trim() || null,
-        aura_color: AURA_COLORS[selectedAura],
-      });
-    if (error) {
-      console.error('[ProfileSetup] upsert failed', error);
-      setSaving(false);
-      return;
-    }
+
     navigate('/village');
   };
 

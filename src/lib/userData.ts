@@ -16,6 +16,7 @@ export type UserRow = {
   unlocked_titles: string[]
   total_maze_steps: number
   total_maze_time: number
+  first_launch_at: string
 }
 
 const DEFAULTS: Omit<UserRow, 'id'> = {

@@ -13,18 +13,18 @@ const ProfileSetup = () => {
   const handleEnter = async () => {
     if (saving) return;
 
-    const enteredUsername = username.trim() || null;
-
-    console.error('PLAYER ID:', localStorage.getItem('praem_player_id'));
-    console.error('USERNAME:', enteredUsername);
-
-    setSaving(true);
-
     let playerId = localStorage.getItem('praem_player_id');
     if (!playerId) {
       playerId = crypto.randomUUID();
       localStorage.setItem('praem_player_id', playerId);
     }
+
+    const enteredUsername = username.trim() || null;
+
+    console.error('PLAYER ID:', playerId);
+    console.error('USERNAME:', enteredUsername);
+
+    setSaving(true);
 
     const selectedAuraColor = AURA_COLORS[selectedAura];
     const selectedEntityAnswer = localStorage.getItem('praem_entity_answer');

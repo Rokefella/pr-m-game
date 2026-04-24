@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
-import { supabase } from '@/lib/supabase';
+import { restInsert, restUpdate } from '@/lib/supabaseRest';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 
 // TODO production: initialize from player's accumulated real walking steps via HealthKit/Health Connect
@@ -231,18 +231,26 @@ const Maze = () => {
       }
 
       // Load already-collected fragments for this level so re-entry preserves progress
-      const { data: existing, error: fragErr } = await supabase
-        .from('fragments')
-        .select('prime_number')
-        .eq('user_id', user.id)
-        .eq('level', row.level);
-      if (cancelled) return;
-      if (fragErr) {
-        console.error('Failed to load fragments', fragErr);
-      } else if (existing) {
-        const next = new Set<number>(existing.map((r) => r.prime_number));
-        collectedRef.current = next;
-        setCollected(next);
+      try {
+        const fragRes = await fetch(
+          `https://jngofylkynipsnzyyzdq.supabase.co/rest/v1/fragments?user_id=eq.${user.id}&level=eq.${row.level}&select=prime_number`,
+          {
+            headers: {
+              apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
+              Authorization:
+                'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
+            },
+          },
+        );
+        const existing = (await fragRes.json()) as Array<{ prime_number: number }>;
+        if (cancelled) return;
+        if (Array.isArray(existing)) {
+          const next = new Set<number>(existing.map((r) => r.prime_number));
+          collectedRef.current = next;
+          setCollected(next);
+        }
+      } catch (e) {
+        console.error('Failed to load fragments', e);
       }
     })();
     return () => { cancelled = true; };

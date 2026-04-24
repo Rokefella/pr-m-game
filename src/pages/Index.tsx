@@ -22,9 +22,31 @@ const STARS = [
 ];
 
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/lib/supabase';
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
+
+  const handleEnter = async () => {
+    if (loading) return;
+    if (!user) {
+      navigate('/email-entry');
+      return;
+    }
+    const { data } = await supabase
+      .from('users')
+      .select('entity_answer, username')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (!data || (!data.entity_answer && !data.username)) {
+      navigate('/entity-questions');
+    } else {
+      navigate('/village');
+    }
+  };
+
   let filledIndex = 0;
 
   return (
@@ -130,7 +152,7 @@ const Index = () => {
 
         {/* Enter Button */}
         <button
-          onClick={() => navigate('/entity-questions')}
+          onClick={handleEnter}
           className="font-fell italic"
           style={{
             fontSize: 13,

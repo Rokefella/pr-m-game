@@ -47,6 +47,7 @@ export type Database = {
           created_at: string
           credits: number
           entity_answer: string | null
+          first_launch_at: string
           id: string
           level: number
           levelup_newlevel: number | null
@@ -66,6 +67,7 @@ export type Database = {
           created_at?: string
           credits?: number
           entity_answer?: string | null
+          first_launch_at?: string
           id: string
           level?: number
           levelup_newlevel?: number | null
@@ -85,6 +87,7 @@ export type Database = {
           created_at?: string
           credits?: number
           entity_answer?: string | null
+          first_launch_at?: string
           id?: string
           level?: number
           levelup_newlevel?: number | null

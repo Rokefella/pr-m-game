@@ -254,7 +254,11 @@ const Maze = () => {
     return !config.openSet.has(`${c},${r}`);
   };
 
-  const [pos, setPos] = useState<Cell>({ col: 0, row: 0 });
+  useEffect(() => {
+    console.log('L2 wall count:', LEVEL2_WALLS.length);
+  }, []);
+
+
   const posRef = useRef<Cell>({ col: 0, row: 0 });
   const prevPosRef = useRef<Cell>({ col: 0, row: 0 });
 

@@ -3,6 +3,22 @@ import { useNavigate } from 'react-router-dom';
 // player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restUpdate } from '@/lib/supabaseRest';
+import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
+
+// Shadow Realm Merchant
+const SHADOW_MERCHANT = { x: 600, y: 400 };
+const SHADOW_MERCHANT_LINES = [
+  'The other side has its own economy.',
+  'You came far. I noticed.',
+  'Credits spend the same here.',
+];
+const MEMORY_FRAGMENTS = [
+  'She found coordinate 89 on a Tuesday. She did not go home that night.',
+  'The instrument was never designed to open. It opened anyway.',
+  'Claire was eleven when she first saw the spiral. She asked what it was for.',
+  "Alexandra's last log entry: The mathematics is aware of us.",
+  'The door was not in the original schematics.',
+];
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };

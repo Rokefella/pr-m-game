@@ -677,9 +677,8 @@ const Maze = () => {
                 top: y,
                 width: CELL,
                 height: CELL,
-                // TODO: remove debug before production — red tint to verify wall render matches collision
-                background: 'rgba(255,0,0,0.2)',
-                border: '0.5px solid rgba(100,80,160,0.5)',
+                background: '#0a0a12',
+                border: '0.5px solid rgba(100,80,160,0.35)',
               }}
             />
           );

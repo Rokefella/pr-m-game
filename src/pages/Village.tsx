@@ -1099,8 +1099,12 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '0.5px solid rgba(100,80,160,0.45)',
-              background: 'rgba(100,80,160,0.12)',
+              background: 'linear-gradient(135deg, rgba(130,110,200,0.132) 0%, rgba(100,80,160,0.084) 60%, rgba(50,30,90,0.15) 100%)',
+              borderTop: '1px solid rgba(140,120,220,0.33)',
+              borderLeft: '1px solid rgba(130,110,200,0.27)',
+              borderBottom: '0.5px solid rgba(20,10,50,0.54)',
+              borderRight: '0.5px solid rgba(30,15,70,0.48)',
+              boxShadow: 'inset -3px -3px 8px rgba(0,0,0,0.21), inset 1px 1px 4px rgba(140,120,220,0.048)',
               zIndex: 1,
             }}
           />

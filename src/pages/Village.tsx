@@ -1140,6 +1140,26 @@ const Village = () => {
           </svg>
         )}
 
+        {/* Villagers */}
+        {villagers.map((v) => (
+          <div
+            key={`villager-${v.id}`}
+            style={{
+              position: 'absolute',
+              left: v.x - 3,
+              top: v.y - 3,
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.7)',
+              boxShadow: '0 0 6px rgba(255,255,255,0.4)',
+              transition: 'left 1500ms ease-in-out, top 1500ms ease-in-out',
+              pointerEvents: 'none',
+              zIndex: 4,
+            }}
+          />
+        ))}
+
         {/* Player dot */}
         <div
           style={{

@@ -1217,6 +1217,9 @@ const Village = () => {
           />
         ))}
 
+        {/* Merchant character */}
+        <MerchantCharacter x={MERCHANT.x} y={MERCHANT.y} palette="green" />
+
         {/* Player dot */}
         <div
           style={{

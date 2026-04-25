@@ -3,6 +3,15 @@ import { useNavigate } from 'react-router-dom';
 // player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restUpdate } from '@/lib/supabaseRest';
+import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
+
+// Village Merchant
+const MERCHANT = { x: 48 * 40, y: 55 * 40 };
+const MERCHANT_LINES = [
+  'You need more steps. I have them.',
+  "The fragments don't find themselves.",
+  'What you lack, I carry.',
+];
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };

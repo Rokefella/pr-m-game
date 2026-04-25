@@ -258,6 +258,16 @@ const Maze = () => {
     console.log('L2 wall count:', LEVEL2_WALLS.length);
   }, []);
 
+  useEffect(() => {
+    if (currentLevel === 2) {
+      console.log('L2 wall count:', LEVEL2_WALLS.length);
+      console.log('L2 wallSet size:', wallSet.size);
+      if (LEVEL2_WALLS.length !== wallSet.size) {
+        console.warn('L2 MISMATCH: LEVEL2_WALLS and wallSet differ — construction bug.');
+      }
+    }
+  }, [currentLevel, wallSet]);
+
 
   const [pos, setPos] = useState<Cell>({ col: 0, row: 0 });
   const posRef = useRef<Cell>({ col: 0, row: 0 });

@@ -5,7 +5,8 @@ import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restInsert, restUpdate } from '@/lib/supabaseRest';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 
-const INITIAL_STEPS = 100;
+// TODO: restore to real walking steps via HealthKit for production.
+const INITIAL_STEPS = 1000;
 const CELL = 40;
 
 type Cell = { col: number; row: number };

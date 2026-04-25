@@ -476,6 +476,47 @@ const Village = () => {
   const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(14);
   const [profileOpen, setProfileOpen] = useState(false);
 
+  // Villagers — patrol around their base on independent timers
+  type Villager = { id: number; x: number; y: number; baseX: number; baseY: number; whisper: string };
+  const [villagers, setVillagers] = useState<Villager[]>(() =>
+    VILLAGERS_DATA.map((v) => ({
+      id: v.id,
+      x: v.col * 40,
+      y: v.row * 40,
+      baseX: v.col * 40,
+      baseY: v.row * 40,
+      whisper: v.whisper,
+    })),
+  );
+  const villagersRef = useRef<Villager[]>(villagers);
+  useEffect(() => { villagersRef.current = villagers; }, [villagers]);
+  const lastVillagerWhisperRef = useRef<Map<number, number>>(new Map());
+  const [villagerWhisper, setVillagerWhisper] = useState<string | null>(null);
+  const villagerWhisperTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    const timers: number[] = [];
+    VILLAGERS_DATA.forEach((v) => {
+      const baseX = v.col * 40;
+      const baseY = v.row * 40;
+      const corners: Array<[number, number]> = [
+        [baseX, baseY],
+        [baseX + 40, baseY],
+        [baseX, baseY + 40],
+        [baseX + 40, baseY + 40],
+      ];
+      const interval = 10000 + Math.random() * 10000;
+      const id = window.setInterval(() => {
+        const [nx, ny] = corners[Math.floor(Math.random() * corners.length)];
+        setVillagers((prev) =>
+          prev.map((p) => (p.id === v.id ? { ...p, x: nx, y: ny } : p)),
+        );
+      }, interval);
+      timers.push(id);
+    });
+    return () => { timers.forEach((t) => window.clearInterval(t)); };
+  }, []);
+
   const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];
 
   useEffect(() => {

@@ -220,8 +220,10 @@ const Maze = () => {
   const currentLevelRef = useRef(1);
   const [levelLoaded, setLevelLoaded] = useState(false);
   const [credits, setCredits] = useState(50);
+  const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationNumberRef = useRef(0);
+  const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
 
   // Level config + derived sets — rebuilt only when currentLevel changes
   const config = useMemo<LevelConfig | null>(() => {

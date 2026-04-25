@@ -322,6 +322,7 @@ const Maze = () => {
       setCurrentLevel(row.level);
       currentLevelRef.current = row.level;
       setCredits(row.credits);
+      if (row.aura_color) setAuraColor(row.aura_color);
       setRegistrationNumber(row.registration_number);
       registrationNumberRef.current = row.registration_number;
       const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;

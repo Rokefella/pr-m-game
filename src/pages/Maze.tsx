@@ -880,14 +880,14 @@ const Maze = () => {
             className="font-fell italic"
             style={{ fontSize: 16, color: 'rgba(160,140,200,0.7)', textAlign: 'center', maxWidth: '85vw' }}
           >
-            Leave the maze? Your progress is saved.
+            Leave the maze? All progress will be lost.
           </div>
           <div style={{ display: 'flex', gap: 16 }}>
             <button
               className="font-cinzel"
               onClick={() => navigate('/village')}
               style={{
-                fontSize: 11, letterSpacing: '0.2em', background: '#5b4fd4', color: 'white',
+                fontSize: 11, letterSpacing: '0.2em', background: 'rgba(200,80,80,0.9)', color: 'white',
                 border: 'none', padding: '10px 24px', cursor: 'pointer',
               }}
             >

@@ -132,12 +132,14 @@ const buildLevel2Walls = (): Cell[] => {
   return walls;
 };
 
+// Module-level single source of truth for Level 2 walls — used for both rendering and collision.
+const LEVEL2_WALLS: Cell[] = buildLevel2Walls();
+
 const buildLevel2 = (): LevelConfig => {
   const COLS = 150;
   const ROWS = 150;
 
-  const wallList = buildLevel2Walls();
-  const wallKeys = new Set(wallList.map((w) => `${w.col},${w.row}`));
+  const wallKeys = new Set(LEVEL2_WALLS.map((w) => `${w.col},${w.row}`));
 
   const fragments: FragmentDef[] = [
     { col: 15, row: 20, prime: 23 },
@@ -232,6 +234,7 @@ const Maze = () => {
     return null;
   }, [currentLevel]);
 
+  // wallSet built from same LEVEL2_WALLS array as rendering — single source of truth.
   const wallSet = useMemo(() => {
     if (!config) return new Set<string>();
     const s = new Set<string>();
@@ -250,6 +253,11 @@ const Maze = () => {
     if (config.specialSet.has(`${c},${r}`)) return false;
     return !config.openSet.has(`${c},${r}`);
   };
+
+  useEffect(() => {
+    console.log('L2 wall count:', LEVEL2_WALLS.length);
+  }, []);
+
 
   const [pos, setPos] = useState<Cell>({ col: 0, row: 0 });
   const posRef = useRef<Cell>({ col: 0, row: 0 });
@@ -675,9 +683,8 @@ const Maze = () => {
                 top: y,
                 width: CELL,
                 height: CELL,
-                // TODO: remove debug before production — red tint to verify wall render matches collision
-                background: 'rgba(255,0,0,0.2)',
-                border: '0.5px solid rgba(100,80,160,0.5)',
+                background: '#0a0a12',
+                border: '0.5px solid rgba(100,80,160,0.35)',
               }}
             />
           );

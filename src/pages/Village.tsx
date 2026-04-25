@@ -499,6 +499,9 @@ const Village = () => {
   useEffect(() => {
     const timers: number[] = [];
     VILLAGERS_DATA.forEach((v) => {
+      console.log('Villager', v.id, 'at map px:', v.col * 40, v.row * 40, '(MAP_W:', MAP_W, 'MAP_H:', MAP_H, ')');
+    });
+    VILLAGERS_DATA.forEach((v) => {
       const baseX = v.col * 40;
       const baseY = v.row * 40;
       const corners: Array<[number, number]> = [

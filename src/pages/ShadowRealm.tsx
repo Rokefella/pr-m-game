@@ -454,6 +454,7 @@ const ShadowRealm = () => {
   };
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentTitle, setCurrentTitle] = useState('Wanderer');
+  const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
@@ -474,6 +475,7 @@ const ShadowRealm = () => {
       mazeCompletedLevelRef.current = row.maze_completed_level;
       setCurrentTitle(row.title);
       setOverlaySelectedTitle(row.title);
+      if (row.aura_color) setAuraColor(row.aura_color);
       setRegistrationNumber(row.registration_number);
 
       if (row.levelup_pending) {
@@ -1069,8 +1071,8 @@ const ShadowRealm = () => {
             width: 8,
             height: 8,
             borderRadius: '50%',
-            background: '#22c55e',
-            boxShadow: '0 0 8px rgba(34,197,94,0.8)',
+            background: auraColor,
+            boxShadow: `0 0 8px ${auraColor}80`,
             animation: 'villageIdle 1.5s ease-in-out infinite',
             pointerEvents: 'none',
             zIndex: 5,

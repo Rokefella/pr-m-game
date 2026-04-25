@@ -5,7 +5,8 @@ import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restInsert, restUpdate } from '@/lib/supabaseRest';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 
-const INITIAL_STEPS = 100;
+// TODO: restore to real walking steps via HealthKit for production.
+const INITIAL_STEPS = 1000;
 const CELL = 40;
 
 type Cell = { col: number; row: number };
@@ -82,81 +83,61 @@ const buildLevel1 = (): LevelConfig => {
 };
 
 // =================== LEVEL 2 ===================
+// Single source of truth: explicit list of wall cells. Used for BOTH render and collision.
+const buildLevel2Walls = (): Cell[] => {
+  const COLS = 150;
+  const ROWS = 150;
+  const walls: Cell[] = [];
+  const seen = new Set<string>();
+  const add = (c: number, r: number) => {
+    const k = `${c},${r}`;
+    if (seen.has(k)) return;
+    seen.add(k);
+    walls.push({ col: c, row: r });
+  };
+
+  // Outer border
+  for (let c = 0; c < COLS; c++) { add(c, 0); add(c, ROWS - 1); }
+  for (let r = 0; r < ROWS; r++) { add(0, r); add(COLS - 1, r); }
+
+  // Helper: add a horizontal segment from c1..c2 inclusive, leaving 2-cell gaps every 5 cells.
+  const hSeg = (c1: number, c2: number, r: number) => {
+    for (let c = c1; c <= c2; c++) {
+      // gap window: positions where (c - c1) % 5 in {3,4} → skip (creates 2-cell passage every 5)
+      const m = (c - c1) % 5;
+      if (m === 3 || m === 4) continue;
+      add(c, r);
+    }
+  };
+  const vSeg = (c: number, r1: number, r2: number) => {
+    for (let r = r1; r <= r2; r++) {
+      const m = (r - r1) % 5;
+      if (m === 3 || m === 4) continue;
+      add(c, r);
+    }
+  };
+
+  const hRows = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140];
+  const hSpans: Array<[number, number]> = [[10, 30], [50, 70], [80, 100], [110, 130]];
+  for (const r of hRows) {
+    for (const [c1, c2] of hSpans) hSeg(c1, c2, r);
+  }
+
+  const vCols = [20, 40, 60, 80, 100, 120, 140];
+  const vSpans: Array<[number, number]> = [[10, 30], [50, 70], [90, 110], [120, 140]];
+  for (const c of vCols) {
+    for (const [r1, r2] of vSpans) vSeg(c, r1, r2);
+  }
+
+  return walls;
+};
+
 const buildLevel2 = (): LevelConfig => {
   const COLS = 150;
   const ROWS = 150;
-  // Start with everything open inside the border
-  const open = new Set<string>();
-  for (let r = 1; r < ROWS - 1; r++) {
-    for (let c = 1; c < COLS - 1; c++) open.add(`${c},${r}`);
-  }
 
-  const wall = (c: number, r: number) => {
-    if (c <= 0 || c >= COLS - 1 || r <= 0 || r >= ROWS - 1) return;
-    open.delete(`${c},${r}`);
-  };
-  const hWall = (c: number, r: number, len: number) => {
-    for (let i = 0; i < len; i++) wall(c + i, r);
-  };
-  const vWall = (c: number, r: number, len: number) => {
-    for (let i = 0; i < len; i++) wall(c, r + i);
-  };
-
-  // Deterministic pseudo-random based on seed
-  let seed = 1337;
-  const rand = () => {
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed / 233280;
-  };
-  const ri = (min: number, max: number) => Math.floor(rand() * (max - min + 1)) + min;
-
-  // Zone 1 — Open city (rows 0-74, cols 0-74) — wider corridors
-  for (let i = 0; i < 6; i++) {
-    const r = ri(5, 70);
-    const c = ri(2, 60);
-    hWall(c, r, ri(8, 12));
-  }
-  for (let i = 0; i < 6; i++) {
-    const c = ri(5, 70);
-    const r = ri(2, 60);
-    vWall(c, r, ri(8, 12));
-  }
-
-  // Zone 2 — Labyrinth (rows 0-74, cols 75-149) — tight
-  for (let i = 0; i < 20; i++) {
-    const r = ri(2, 72);
-    const c = ri(76, 142);
-    hWall(c, r, ri(4, 8));
-  }
-  for (let i = 0; i < 20; i++) {
-    const c = ri(76, 147);
-    const r = ri(2, 70);
-    vWall(c, r, ri(4, 8));
-  }
-
-  // Zone 3 — Mixed center (rows 50-100, cols 20-130)
-  for (let i = 0; i < 10; i++) {
-    const r = ri(50, 98);
-    const c = ri(20, 120);
-    hWall(c, r, ri(3, 15));
-  }
-  for (let i = 0; i < 10; i++) {
-    const c = ri(20, 128);
-    const r = ri(50, 90);
-    vWall(c, r, ri(3, 15));
-  }
-
-  // Zone 4 — Deep labyrinth (rows 100-149, cols 0-149) — densest
-  for (let i = 0; i < 30; i++) {
-    const r = ri(100, 147);
-    const c = ri(2, 142);
-    hWall(c, r, ri(3, 8));
-  }
-  for (let i = 0; i < 30; i++) {
-    const c = ri(2, 147);
-    const r = ri(100, 145);
-    vWall(c, r, ri(3, 8));
-  }
+  const wallList = buildLevel2Walls();
+  const wallKeys = new Set(wallList.map((w) => `${w.col},${w.row}`));
 
   const fragments: FragmentDef[] = [
     { col: 15, row: 20, prime: 23 },
@@ -174,36 +155,31 @@ const buildLevel2 = (): LevelConfig => {
   ];
   const alexandra: Cell = { col: 55, row: 72 };
   const claire: Cell = { col: 120, row: 125 };
-
-  // Carve guaranteed paths to ensure reachability — open every fragment cell, door, credit doors,
-  // characters, eggs and a clear corridor connecting spawn → through each zone.
-  const ensureOpen = (c: number, r: number) => {
-    if (c > 0 && c < COLS - 1 && r > 0 && r < ROWS - 1) open.add(`${c},${r}`);
-  };
-  // Corridors: row 5 across, col 5 down, row 75 across, col 75 down, row 145 across
-  for (let c = 1; c < COLS - 1; c++) { ensureOpen(c, 5); ensureOpen(c, 75); ensureOpen(c, 145); }
-  for (let r = 1; r < ROWS - 1; r++) { ensureOpen(5, r); ensureOpen(75, r); ensureOpen(145, r); }
-  // Extra connectors into deep labyrinth
-  for (let r = 75; r < 149; r++) ensureOpen(20, r);
-  for (let r = 75; r < 149; r++) ensureOpen(120, r);
-  for (let c = 5; c < 145; c++) ensureOpen(c, 110);
-  for (let c = 5; c < 145; c++) ensureOpen(c, 130);
-
-  // Make sure spawn and all key points are open
-  ensureOpen(5, 5);
-  fragments.forEach((f) => ensureOpen(f.col, f.row));
-  ensureOpen(door.col, door.row);
-  creditDoors.forEach((d) => ensureOpen(d.col, d.row));
-  ensureOpen(alexandra.col, alexandra.row);
-  ensureOpen(claire.col, claire.row);
-
   const eggs: EggDef[] = [
     { col: 30, row: 90, line: 'She went deeper. Follow the orange corridor.' },
     { col: 80, row: 100, line: 'The mathematics took her to the far corner.' },
     { col: 100, row: 110, line: 'You are getting closer. Do not lose the path.' },
     { col: 115, row: 120, line: 'She is near. She cannot find the way out alone.' },
   ];
-  eggs.forEach((e) => ensureOpen(e.col, e.row));
+
+  // Carve walls out of any key gameplay cell so they remain reachable.
+  const carve = (c: number, r: number) => { wallKeys.delete(`${c},${r}`); };
+  carve(5, 5);
+  fragments.forEach((f) => carve(f.col, f.row));
+  carve(door.col, door.row);
+  creditDoors.forEach((d) => carve(d.col, d.row));
+  carve(alexandra.col, alexandra.row);
+  carve(claire.col, claire.row);
+  eggs.forEach((e) => carve(e.col, e.row));
+
+  // openSet = every cell NOT in wallKeys (within border)
+  const open = new Set<string>();
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const k = `${c},${r}`;
+      if (!wallKeys.has(k)) open.add(k);
+    }
+  }
 
   const special = new Set<string>();
   fragments.forEach((f) => special.add(`${f.col},${f.row}`));
@@ -244,8 +220,10 @@ const Maze = () => {
   const currentLevelRef = useRef(1);
   const [levelLoaded, setLevelLoaded] = useState(false);
   const [credits, setCredits] = useState(50);
+  const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationNumberRef = useRef(0);
+  const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
 
   // Level config + derived sets — rebuilt only when currentLevel changes
   const config = useMemo<LevelConfig | null>(() => {
@@ -344,6 +322,7 @@ const Maze = () => {
       setCurrentLevel(row.level);
       currentLevelRef.current = row.level;
       setCredits(row.credits);
+      if (row.aura_color) setAuraColor(row.aura_color);
       setRegistrationNumber(row.registration_number);
       registrationNumberRef.current = row.registration_number;
       const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;
@@ -549,22 +528,14 @@ const Maze = () => {
     if (nc === config.door.col && nr === config.door.row) {
       const required = config.fragmentsRequired;
       if (collectedRef.current.size >= required) {
-        showWhisper('The way opens.', '#c8963a', 2000);
-        (async () => {
-          if (user) {
-            await restUpdate(
-              'users',
-              { maze_completed_level: currentLevelRef.current },
-              'id',
-              user.id,
-            );
-          }
-          window.setTimeout(() => navigate('/shadow'), 2000);
-        })();
+        // Show confirmation overlay instead of immediate navigation
+        setDoorConfirmOpen(true);
       } else {
         const remaining = required - collectedRef.current.size;
-        const msg = remaining === 1 ? '1 fragment remains' : `${remaining} fragments remain`;
-        showWhisper(`${msg}. The door does not open.`, 'rgba(200,150,58,0.7)', 2500);
+        const msg = remaining === 1
+          ? 'One fragment remains. The door does not open.'
+          : `${remaining} fragments remain. The door does not open.`;
+        showWhisper(msg, 'rgba(200,150,58,0.7)', 2500);
       }
     }
 
@@ -704,7 +675,8 @@ const Maze = () => {
                 top: y,
                 width: CELL,
                 height: CELL,
-                background: 'rgba(100,80,160,0.18)',
+                // TODO: remove debug before production — red tint to verify wall render matches collision
+                background: 'rgba(255,0,0,0.2)',
                 border: '0.5px solid rgba(100,80,160,0.5)',
               }}
             />
@@ -811,6 +783,7 @@ const Maze = () => {
           50% { box-shadow: 0 0 20px rgba(59,130,246,0.9); }
         }
         @keyframes mazePanelSlide { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes mazeDoorFade { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
 
       <div
@@ -821,8 +794,8 @@ const Maze = () => {
           width: 8,
           height: 8,
           borderRadius: '50%',
-          background: '#5b4fd4',
-          boxShadow: '0 0 8px rgba(91,79,212,0.8)',
+          background: auraColor,
+          boxShadow: `0 0 8px ${auraColor}80`,
           animation: 'mazeDotPulse 1.5s ease-in-out infinite',
           zIndex: 60,
           pointerEvents: 'none',
@@ -909,14 +882,14 @@ const Maze = () => {
             className="font-fell italic"
             style={{ fontSize: 16, color: 'rgba(160,140,200,0.7)', textAlign: 'center', maxWidth: '85vw' }}
           >
-            Leave the maze? Your progress is saved.
+            Leave the maze? All progress will be lost.
           </div>
           <div style={{ display: 'flex', gap: 16 }}>
             <button
               className="font-cinzel"
               onClick={() => navigate('/village')}
               style={{
-                fontSize: 11, letterSpacing: '0.2em', background: '#5b4fd4', color: 'white',
+                fontSize: 11, letterSpacing: '0.2em', background: 'rgba(200,80,80,0.9)', color: 'white',
                 border: 'none', padding: '10px 24px', cursor: 'pointer',
               }}
             >
@@ -925,6 +898,72 @@ const Maze = () => {
             <button
               className="font-cinzel"
               onClick={() => setExitConfirmOpen(false)}
+              style={{
+                fontSize: 11, letterSpacing: '0.2em', background: 'transparent',
+                border: '0.5px solid rgba(160,140,200,0.3)', color: 'rgba(160,140,200,0.5)',
+                padding: '10px 24px', cursor: 'pointer',
+              }}
+            >
+              STAY
+            </button>
+          </div>
+        </div>
+      )}
+
+      {doorConfirmOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(4,4,10,0.96)', zIndex: 100,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            animation: 'mazeDoorFade 600ms ease-in',
+          }}
+        >
+          <svg width={80} height={48} viewBox="-40 -24 80 48">
+            <ellipse cx={0} cy={0} rx={32} ry={19} stroke="rgba(200,150,58,0.5)" strokeWidth={1} fill="none" />
+            <circle cx={0} cy={0} r={5} fill="#c8963a" />
+          </svg>
+          <div
+            className="font-fell italic"
+            style={{ marginTop: 20, fontSize: 22, color: '#c8963a', textAlign: 'center', maxWidth: '85vw' }}
+          >
+            The way opens.
+          </div>
+          <div
+            className="font-fell italic"
+            style={{ marginTop: 10, fontSize: 14, color: 'rgba(160,140,200,0.5)', textAlign: 'center', maxWidth: '85vw' }}
+          >
+            Are you ready to leave the maze? Unfinished paths will remain.
+          </div>
+          <div
+            className="font-cinzel"
+            style={{ marginTop: 16, fontSize: 11, color: 'rgba(200,150,58,0.4)', letterSpacing: '0.2em', textAlign: 'center' }}
+          >
+            All {config.fragmentsRequired} fragments collected.
+          </div>
+          <div style={{ display: 'flex', gap: 16, marginTop: 28 }}>
+            <button
+              className="font-cinzel"
+              onClick={async () => {
+                if (user) {
+                  await restUpdate(
+                    'users',
+                    { maze_completed_level: currentLevelRef.current },
+                    'id',
+                    user.id,
+                  );
+                }
+                navigate('/shadow');
+              }}
+              style={{
+                fontSize: 11, letterSpacing: '0.2em', background: '#c8963a', color: '#04040a',
+                border: 'none', padding: '10px 24px', cursor: 'pointer',
+              }}
+            >
+              ENTER
+            </button>
+            <button
+              className="font-cinzel"
+              onClick={() => setDoorConfirmOpen(false)}
               style={{
                 fontSize: 11, letterSpacing: '0.2em', background: 'transparent',
                 border: '0.5px solid rgba(160,140,200,0.3)', color: 'rgba(160,140,200,0.5)',

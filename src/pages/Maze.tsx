@@ -694,7 +694,10 @@ const Maze = () => {
                 width: CELL,
                 height: CELL,
                 background: '#0a0a12',
-                border: '0.5px solid rgba(100,80,160,0.35)',
+                border: '1px solid #1a1a2e',
+                boxSizing: 'border-box',
+                zIndex: 2,
+                opacity: 1,
               }}
             />
           );

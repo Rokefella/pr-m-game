@@ -6,7 +6,9 @@ import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
 
 // Village Merchant
-const MERCHANT = { x: 48 * 40, y: 55 * 40 };
+// Village Merchant — clamped inside MAP_W×MAP_H (2200×1400)
+// Original spec col=48,row=55 → (1920,2200); row 55 is below the map, so y is clamped into the visible lower city band.
+const MERCHANT = { x: 48 * 40, y: Math.min(55 * 40, 1200) };
 const MERCHANT_LINES = [
   'You need more steps. I have them.',
   "The fragments don't find themselves.",

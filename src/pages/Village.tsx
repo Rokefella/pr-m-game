@@ -1142,19 +1142,19 @@ const Village = () => {
           </svg>
         )}
 
-        {/* Villagers */}
+        {/* Villagers — rendered inside map div, positioned in map pixel coords */}
         {villagers.map((v) => (
           <div
             key={`villager-${v.id}`}
             style={{
               position: 'absolute',
-              left: v.x - 3,
-              top: v.y - 3,
+              left: v.x,
+              top: v.y,
               width: 6,
               height: 6,
               borderRadius: '50%',
-              background: 'rgba(255,255,255,0.7)',
-              boxShadow: '0 0 6px rgba(255,255,255,0.4)',
+              background: 'rgba(255,255,255,0.8)',
+              boxShadow: '0 0 8px rgba(255,255,255,0.5)',
               transition: 'left 1500ms ease-in-out, top 1500ms ease-in-out',
               pointerEvents: 'none',
               zIndex: 4,

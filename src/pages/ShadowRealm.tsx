@@ -1147,6 +1147,9 @@ const ShadowRealm = () => {
           </svg>
         )}
 
+        {/* Merchant character */}
+        <MerchantCharacter x={SHADOW_MERCHANT.x} y={SHADOW_MERCHANT.y} palette="orange" />
+
         {/* Player dot */}
         <div
           style={{

@@ -766,43 +766,85 @@ const ShadowRealm = () => {
     touchAction: 'none',
   };
 
-  const renderTypeA = (b: typeof A_23 | typeof A_47 | typeof A_89, pulsing: boolean) => (
-    <div
-      key={`a-${b.id}`}
-      style={{
-        position: 'absolute',
-        left: b.x,
-        top: b.y,
-        width: b.w,
-        height: b.h,
-        border: `1px solid ${b.color}`,
-        background: b.bg,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        animation: pulsing ? 'villagePulse 2s ease-in-out infinite' : undefined,
-        zIndex: 3,
-      }}
-    >
-      <span className="font-mono" style={{ fontSize: b.label, color: b.color }}>
-        {b.id}
-      </span>
-      {(b.id === 23 || b.id === 47) && feedback.id === b.id && (
-        <p
-          className="font-fell italic"
-          style={{
-            fontSize: 10,
-            color: 'rgba(120,200,140,0.5)',
-            marginTop: 4,
-            animation: 'villageNotYet 1.5s ease-out forwards',
-          }}
-        >
-          Not in this realm.
-        </p>
-      )}
-    </div>
-  );
+  // Per-Type-A depth styling for ShadowRealm (green palette + orange return)
+  const TYPE_A_DEPTH: Record<number, {
+    gradient: string;
+    borderTop: string;
+    borderLeft: string;
+    borderBottom: string;
+    borderRight: string;
+    boxShadow: string;
+  }> = {
+    23: {
+      gradient: 'linear-gradient(135deg, rgba(34,197,94,0.22) 0%, rgba(34,197,94,0.14) 60%, rgba(10,60,30,0.25) 100%)',
+      borderTop: '1px solid rgba(34,197,94,0.55)',
+      borderLeft: '1px solid rgba(34,197,94,0.45)',
+      borderBottom: '0.5px solid rgba(5,20,10,0.9)',
+      borderRight: '0.5px solid rgba(8,25,15,0.8)',
+      boxShadow: 'inset -3px -3px 8px rgba(0,0,0,0.35), inset 1px 1px 4px rgba(34,197,94,0.08)',
+    },
+    47: {
+      gradient: 'linear-gradient(135deg, rgba(34,197,94,0.22) 0%, rgba(34,197,94,0.14) 60%, rgba(10,60,30,0.25) 100%)',
+      borderTop: '1px solid rgba(34,197,94,0.55)',
+      borderLeft: '1px solid rgba(34,197,94,0.45)',
+      borderBottom: '0.5px solid rgba(5,20,10,0.9)',
+      borderRight: '0.5px solid rgba(8,25,15,0.8)',
+      boxShadow: 'inset -3px -3px 8px rgba(0,0,0,0.35), inset 1px 1px 4px rgba(34,197,94,0.08)',
+    },
+    89: {
+      gradient: 'linear-gradient(135deg, rgba(249,115,22,0.22) 0%, rgba(249,115,22,0.14) 60%, rgba(80,30,5,0.25) 100%)',
+      borderTop: '1px solid rgba(249,115,22,0.55)',
+      borderLeft: '1px solid rgba(249,115,22,0.45)',
+      borderBottom: '0.5px solid rgba(40,15,5,0.9)',
+      borderRight: '0.5px solid rgba(40,15,5,0.8)',
+      boxShadow: 'inset -3px -3px 8px rgba(0,0,0,0.35), inset 1px 1px 4px rgba(249,115,22,0.08)',
+    },
+  };
+
+  const renderTypeA = (b: typeof A_23 | typeof A_47 | typeof A_89, pulsing: boolean) => {
+    const d = TYPE_A_DEPTH[b.id];
+    return (
+      <div
+        key={`a-${b.id}`}
+        style={{
+          position: 'absolute',
+          left: b.x,
+          top: b.y,
+          width: b.w,
+          height: b.h,
+          background: d.gradient,
+          borderTop: d.borderTop,
+          borderLeft: d.borderLeft,
+          borderBottom: d.borderBottom,
+          borderRight: d.borderRight,
+          boxShadow: d.boxShadow,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: pulsing ? 'villagePulse 2s ease-in-out infinite' : undefined,
+          zIndex: 3,
+        }}
+      >
+        <span className="font-mono" style={{ fontSize: b.label, color: b.color }}>
+          {b.id}
+        </span>
+        {(b.id === 23 || b.id === 47) && feedback.id === b.id && (
+          <p
+            className="font-fell italic"
+            style={{
+              fontSize: 10,
+              color: 'rgba(120,200,140,0.5)',
+              marginTop: 4,
+              animation: 'villageNotYet 1.5s ease-out forwards',
+            }}
+          >
+            Not in this realm.
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -996,8 +1038,12 @@ const ShadowRealm = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '0.5px solid rgba(20,120,50,0.45)',
-              background: 'rgba(20,120,50,0.12)',
+              background: 'linear-gradient(135deg, rgba(34,197,94,0.108) 0%, rgba(20,120,50,0.072) 60%, rgba(5,40,15,0.132) 100%)',
+              borderTop: '1px solid rgba(34,197,94,0.30)',
+              borderLeft: '1px solid rgba(34,197,94,0.24)',
+              borderBottom: '0.5px solid rgba(5,20,10,0.54)',
+              borderRight: '0.5px solid rgba(8,25,15,0.48)',
+              boxShadow: 'inset -3px -3px 8px rgba(0,0,0,0.21), inset 1px 1px 4px rgba(34,197,94,0.036)',
               zIndex: 1,
             }}
           />
@@ -1013,8 +1059,12 @@ const ShadowRealm = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '1px solid rgba(20,120,50,0.7)',
-              background: 'rgba(20,120,50,0.20)',
+              background: 'linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(20,120,50,0.12) 60%, rgba(5,40,15,0.22) 100%)',
+              borderTop: '1px solid rgba(34,197,94,0.50)',
+              borderLeft: '1px solid rgba(34,197,94,0.40)',
+              borderBottom: '0.5px solid rgba(5,20,10,0.9)',
+              borderRight: '0.5px solid rgba(8,25,15,0.8)',
+              boxShadow: 'inset -3px -3px 8px rgba(0,0,0,0.35), inset 1px 1px 4px rgba(34,197,94,0.06)',
               zIndex: 2,
             }}
           />

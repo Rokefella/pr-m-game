@@ -849,43 +849,59 @@ const Village = () => {
     touchAction: 'none',
   };
 
-  const renderTypeA = (b: typeof A_23 | typeof A_47 | typeof A_89, pulsing: boolean) => (
-    <div
-      key={`a-${b.id}`}
-      style={{
-        position: 'absolute',
-        left: b.x,
-        top: b.y,
-        width: b.w,
-        height: b.h,
-        border: `1px solid ${b.color}`,
-        background: b.bg,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        animation: pulsing ? 'villagePulse 2s ease-in-out infinite' : undefined,
-        zIndex: 3,
-      }}
-    >
-      <span className="font-mono" style={{ fontSize: b.label, color: b.color }}>
-        {b.id}
-      </span>
-      {(b.id === 23 || b.id === 47) && feedback.id === b.id && (
-        <p
-          className="font-fell italic"
-          style={{
-            fontSize: 10,
-            color: 'rgba(160,140,200,0.5)',
-            marginTop: 4,
-            animation: 'villageNotYet 1.5s ease-out forwards',
-          }}
-        >
-          Not yet.
-        </p>
-      )}
-    </div>
-  );
+  // Per-Type-A depth styling: rgb tuple + darker shade tuple
+  const TYPE_A_DEPTH: Record<number, { rgb: [number, number, number]; dark: [number, number, number] }> = {
+    23: { rgb: [74, 158, 255], dark: [30, 60, 120] },
+    47: { rgb: [29, 158, 117], dark: [10, 60, 45] },
+    89: { rgb: [200, 150, 58], dark: [90, 60, 20] },
+  };
+
+  const renderTypeA = (b: typeof A_23 | typeof A_47 | typeof A_89, pulsing: boolean) => {
+    const d = TYPE_A_DEPTH[b.id];
+    const [r, g, bl] = d.rgb;
+    const [dr, dg, db] = d.dark;
+    return (
+      <div
+        key={`a-${b.id}`}
+        style={{
+          position: 'absolute',
+          left: b.x,
+          top: b.y,
+          width: b.w,
+          height: b.h,
+          background: `linear-gradient(135deg, rgba(${r},${g},${bl},0.22) 0%, rgba(${r},${g},${bl},0.14) 60%, rgba(${dr},${dg},${db},0.25) 100%)`,
+          borderTop: `1px solid rgba(${r},${g},${bl},0.55)`,
+          borderLeft: `1px solid rgba(${r},${g},${bl},0.45)`,
+          borderBottom: '0.5px solid rgba(20,10,50,0.9)',
+          borderRight: '0.5px solid rgba(30,15,70,0.8)',
+          boxShadow: `inset -3px -3px 8px rgba(0,0,0,0.35), inset 1px 1px 4px rgba(${r},${g},${bl},0.08)`,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: pulsing ? 'villagePulse 2s ease-in-out infinite' : undefined,
+          zIndex: 3,
+        }}
+      >
+        <span className="font-mono" style={{ fontSize: b.label, color: b.color }}>
+          {b.id}
+        </span>
+        {(b.id === 23 || b.id === 47) && feedback.id === b.id && (
+          <p
+            className="font-fell italic"
+            style={{
+              fontSize: 10,
+              color: 'rgba(160,140,200,0.5)',
+              marginTop: 4,
+              animation: 'villageNotYet 1.5s ease-out forwards',
+            }}
+          >
+            Not yet.
+          </p>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -994,8 +1010,12 @@ const Village = () => {
               top: f.y,
               width: f.w,
               height: f.h,
-              border: '0.5px solid rgba(40,100,60,0.25)',
-              background: 'rgba(30,80,50,0.10)',
+              background: 'linear-gradient(135deg, rgba(30,100,60,0.18) 0%, rgba(20,80,40,0.10) 60%, rgba(10,40,20,0.22) 100%)',
+              borderTop: '1px solid rgba(40,120,70,0.45)',
+              borderLeft: '1px solid rgba(35,110,60,0.35)',
+              borderBottom: '0.5px solid rgba(5,20,10,0.9)',
+              borderRight: '0.5px solid rgba(8,25,15,0.8)',
+              boxShadow: 'inset -2px -2px 6px rgba(0,0,0,0.3)',
               pointerEvents: 'none',
               zIndex: 1,
             }}
@@ -1079,8 +1099,12 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '0.5px solid rgba(100,80,160,0.45)',
-              background: 'rgba(100,80,160,0.12)',
+              background: 'linear-gradient(135deg, rgba(130,110,200,0.132) 0%, rgba(100,80,160,0.084) 60%, rgba(50,30,90,0.15) 100%)',
+              borderTop: '1px solid rgba(140,120,220,0.33)',
+              borderLeft: '1px solid rgba(130,110,200,0.27)',
+              borderBottom: '0.5px solid rgba(20,10,50,0.54)',
+              borderRight: '0.5px solid rgba(30,15,70,0.48)',
+              boxShadow: 'inset -3px -3px 8px rgba(0,0,0,0.21), inset 1px 1px 4px rgba(140,120,220,0.048)',
               zIndex: 1,
             }}
           />
@@ -1096,8 +1120,12 @@ const Village = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '1px solid rgba(100,80,160,0.7)',
-              background: 'rgba(100,80,160,0.20)',
+              background: 'linear-gradient(135deg, rgba(130,110,200,0.22) 0%, rgba(100,80,160,0.14) 60%, rgba(50,30,90,0.25) 100%)',
+              borderTop: '1px solid rgba(140,120,220,0.55)',
+              borderLeft: '1px solid rgba(130,110,200,0.45)',
+              borderBottom: '0.5px solid rgba(20,10,50,0.9)',
+              borderRight: '0.5px solid rgba(30,15,70,0.8)',
+              boxShadow: 'inset -3px -3px 8px rgba(0,0,0,0.35), inset 1px 1px 4px rgba(140,120,220,0.08)',
               zIndex: 2,
             }}
           />

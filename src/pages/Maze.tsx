@@ -132,12 +132,14 @@ const buildLevel2Walls = (): Cell[] => {
   return walls;
 };
 
+// Module-level single source of truth for Level 2 walls — used for both rendering and collision.
+const LEVEL2_WALLS: Cell[] = buildLevel2Walls();
+
 const buildLevel2 = (): LevelConfig => {
   const COLS = 150;
   const ROWS = 150;
 
-  const wallList = buildLevel2Walls();
-  const wallKeys = new Set(wallList.map((w) => `${w.col},${w.row}`));
+  const wallKeys = new Set(LEVEL2_WALLS.map((w) => `${w.col},${w.row}`));
 
   const fragments: FragmentDef[] = [
     { col: 15, row: 20, prime: 23 },

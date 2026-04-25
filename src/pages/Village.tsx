@@ -344,6 +344,15 @@ const EYE_MESSAGES = [
 ];
 const EYE_RADIUS = 80;
 
+// ---------- Villagers ----------
+const VILLAGERS_DATA = [
+  { id: 1, col: 45, row: 42, whisper: 'I stopped counting the days.' },
+  { id: 2, col: 62, row: 58, whisper: 'The 23rd comes whether you are ready or not.' },
+  { id: 3, col: 38, row: 71, whisper: 'I found a fragment once. I put it back.' },
+  { id: 4, col: 72, row: 44, whisper: 'She built this. We just live in it.' },
+  { id: 5, col: 55, row: 65, whisper: 'Junction 89. I have never been brave enough.' },
+];
+
 // Map each whisper point to its nearest obstacle (by center distance)
 const WHISPER_BY_RECT = new Map<Rect, string>();
 for (const wp of WHISPER_POINTS) {
@@ -466,6 +475,47 @@ const Village = () => {
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(14);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  // Villagers — patrol around their base on independent timers
+  type Villager = { id: number; x: number; y: number; baseX: number; baseY: number; whisper: string };
+  const [villagers, setVillagers] = useState<Villager[]>(() =>
+    VILLAGERS_DATA.map((v) => ({
+      id: v.id,
+      x: v.col * 40,
+      y: v.row * 40,
+      baseX: v.col * 40,
+      baseY: v.row * 40,
+      whisper: v.whisper,
+    })),
+  );
+  const villagersRef = useRef<Villager[]>(villagers);
+  useEffect(() => { villagersRef.current = villagers; }, [villagers]);
+  const lastVillagerWhisperRef = useRef<Map<number, number>>(new Map());
+  const [villagerWhisper, setVillagerWhisper] = useState<string | null>(null);
+  const villagerWhisperTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    const timers: number[] = [];
+    VILLAGERS_DATA.forEach((v) => {
+      const baseX = v.col * 40;
+      const baseY = v.row * 40;
+      const corners: Array<[number, number]> = [
+        [baseX, baseY],
+        [baseX + 40, baseY],
+        [baseX, baseY + 40],
+        [baseX + 40, baseY + 40],
+      ];
+      const interval = 10000 + Math.random() * 10000;
+      const id = window.setInterval(() => {
+        const [nx, ny] = corners[Math.floor(Math.random() * corners.length)];
+        setVillagers((prev) =>
+          prev.map((p) => (p.id === v.id ? { ...p, x: nx, y: ny } : p)),
+        );
+      }, interval);
+      timers.push(id);
+    });
+    return () => { timers.forEach((t) => window.clearInterval(t)); };
+  }, []);
 
   const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];
 
@@ -602,6 +652,22 @@ const Village = () => {
 
     // Commit target
     playerTargetRef.current = { x: fx, y: fy };
+
+    // Villager proximity whisper (within 30px), 10s cooldown per villager
+    const now = Date.now();
+    for (const v of villagersRef.current) {
+      const d = Math.hypot(fx - v.x, fy - v.y);
+      if (d <= 30) {
+        const last = lastVillagerWhisperRef.current.get(v.id) ?? 0;
+        if (now - last >= 10000) {
+          lastVillagerWhisperRef.current.set(v.id, now);
+          setVillagerWhisper(v.whisper);
+          if (villagerWhisperTimer.current) window.clearTimeout(villagerWhisperTimer.current);
+          villagerWhisperTimer.current = window.setTimeout(() => setVillagerWhisper(null), 2500);
+        }
+        break;
+      }
+    }
   };
 
   // Keyboard arrow keys — held-keys system for smooth diagonal movement
@@ -1074,6 +1140,26 @@ const Village = () => {
           </svg>
         )}
 
+        {/* Villagers */}
+        {villagers.map((v) => (
+          <div
+            key={`villager-${v.id}`}
+            style={{
+              position: 'absolute',
+              left: v.x - 3,
+              top: v.y - 3,
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.7)',
+              boxShadow: '0 0 6px rgba(255,255,255,0.4)',
+              transition: 'left 1500ms ease-in-out, top 1500ms ease-in-out',
+              pointerEvents: 'none',
+              zIndex: 4,
+            }}
+          />
+        ))}
+
         {/* Player dot */}
         <div
           style={{
@@ -1109,6 +1195,30 @@ const Village = () => {
       >
         Another one enters?
       </p>
+
+      {/* Villager whisper */}
+      {villagerWhisper && (
+        <p
+          key={`vw-${villagerWhisper}`}
+          className="font-fell italic"
+          style={{
+            position: 'fixed',
+            top: '18%',
+            left: 0,
+            width: '100vw',
+            textAlign: 'center',
+            fontSize: 20,
+            color: 'rgba(255,255,255,0.8)',
+            textShadow: '0 0 12px rgba(255,255,255,0.3)',
+            margin: 0,
+            zIndex: 50,
+            pointerEvents: 'none',
+            animation: 'villageNotYet 2.5s ease-out forwards',
+          }}
+        >
+          {villagerWhisper}
+        </p>
+      )}
 
       {/* Easter egg whisper */}
       {whisper && (

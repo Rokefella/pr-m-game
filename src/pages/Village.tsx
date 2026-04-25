@@ -652,6 +652,22 @@ const Village = () => {
 
     // Commit target
     playerTargetRef.current = { x: fx, y: fy };
+
+    // Villager proximity whisper (within 30px), 10s cooldown per villager
+    const now = Date.now();
+    for (const v of villagersRef.current) {
+      const d = Math.hypot(fx - v.x, fy - v.y);
+      if (d <= 30) {
+        const last = lastVillagerWhisperRef.current.get(v.id) ?? 0;
+        if (now - last >= 10000) {
+          lastVillagerWhisperRef.current.set(v.id, now);
+          setVillagerWhisper(v.whisper);
+          if (villagerWhisperTimer.current) window.clearTimeout(villagerWhisperTimer.current);
+          villagerWhisperTimer.current = window.setTimeout(() => setVillagerWhisper(null), 2500);
+        }
+        break;
+      }
+    }
   };
 
   // Keyboard arrow keys — held-keys system for smooth diagonal movement

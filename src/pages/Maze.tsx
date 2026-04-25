@@ -259,6 +259,7 @@ const Maze = () => {
   }, []);
 
 
+  const [pos, setPos] = useState<Cell>({ col: 0, row: 0 });
   const posRef = useRef<Cell>({ col: 0, row: 0 });
   const prevPosRef = useRef<Cell>({ col: 0, row: 0 });
 

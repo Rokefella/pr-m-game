@@ -940,6 +940,7 @@ const Village = () => {
         @keyframes villagePulse { 0%,100% { opacity:.4 } 50% { opacity:1 } }
         @keyframes villageIdle  { 0%,100% { transform: scale(1) } 50% { transform: scale(1.15) } }
         @keyframes villageNotYet { 0% { opacity:.6 } 80% { opacity:.6 } 100% { opacity:0 } }
+        @keyframes merchantSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
 
       {/* Map layer */}

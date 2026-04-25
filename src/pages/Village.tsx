@@ -345,12 +345,14 @@ const EYE_MESSAGES = [
 const EYE_RADIUS = 80;
 
 // ---------- Villagers ----------
+// Villager positions in grid cells (×40px). MAP is 2200×1400 so col<55, row<35.
+// Centered around city eye (CX≈1100, CY≈700) — inside navigable area.
 const VILLAGERS_DATA = [
-  { id: 1, col: 45, row: 42, whisper: 'I stopped counting the days.' },
-  { id: 2, col: 62, row: 58, whisper: 'The 23rd comes whether you are ready or not.' },
-  { id: 3, col: 38, row: 71, whisper: 'I found a fragment once. I put it back.' },
-  { id: 4, col: 72, row: 44, whisper: 'She built this. We just live in it.' },
-  { id: 5, col: 55, row: 65, whisper: 'Junction 89. I have never been brave enough.' },
+  { id: 1, col: 24, row: 15, whisper: 'I stopped counting the days.' },
+  { id: 2, col: 32, row: 20, whisper: 'The 23rd comes whether you are ready or not.' },
+  { id: 3, col: 21, row: 22, whisper: 'I found a fragment once. I put it back.' },
+  { id: 4, col: 35, row: 14, whisper: 'She built this. We just live in it.' },
+  { id: 5, col: 28, row: 23, whisper: 'Junction 89. I have never been brave enough.' },
 ];
 
 // Map each whisper point to its nearest obstacle (by center distance)
@@ -496,6 +498,9 @@ const Village = () => {
 
   useEffect(() => {
     const timers: number[] = [];
+    VILLAGERS_DATA.forEach((v) => {
+      console.log('Villager', v.id, 'at map px:', v.col * 40, v.row * 40, '(MAP_W:', MAP_W, 'MAP_H:', MAP_H, ')');
+    });
     VILLAGERS_DATA.forEach((v) => {
       const baseX = v.col * 40;
       const baseY = v.row * 40;
@@ -1140,19 +1145,19 @@ const Village = () => {
           </svg>
         )}
 
-        {/* Villagers */}
+        {/* Villagers — rendered inside map div, positioned in map pixel coords */}
         {villagers.map((v) => (
           <div
             key={`villager-${v.id}`}
             style={{
               position: 'absolute',
-              left: v.x - 3,
-              top: v.y - 3,
+              left: v.x,
+              top: v.y,
               width: 6,
               height: 6,
               borderRadius: '50%',
-              background: 'rgba(255,255,255,0.7)',
-              boxShadow: '0 0 6px rgba(255,255,255,0.4)',
+              background: 'rgba(255,255,255,0.8)',
+              boxShadow: '0 0 8px rgba(255,255,255,0.5)',
               transition: 'left 1500ms ease-in-out, top 1500ms ease-in-out',
               pointerEvents: 'none',
               zIndex: 4,

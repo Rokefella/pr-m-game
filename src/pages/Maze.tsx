@@ -234,6 +234,7 @@ const Maze = () => {
     return null;
   }, [currentLevel]);
 
+  // wallSet built from same LEVEL2_WALLS array as rendering — single source of truth.
   const wallSet = useMemo(() => {
     if (!config) return new Set<string>();
     const s = new Set<string>();

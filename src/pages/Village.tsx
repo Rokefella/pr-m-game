@@ -552,6 +552,7 @@ const Village = () => {
       setUsername(row.username || '');
       setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : ['Wanderer']);
       setStepsRemaining(row.steps_remaining);
+      setCredits(row.credits);
       setTotalMazeSteps(row.total_maze_steps);
       setTotalMazeTime(row.total_maze_time);
 

@@ -783,6 +783,7 @@ const Maze = () => {
           50% { box-shadow: 0 0 20px rgba(59,130,246,0.9); }
         }
         @keyframes mazePanelSlide { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes mazeDoorFade { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
 
       <div

@@ -345,12 +345,14 @@ const EYE_MESSAGES = [
 const EYE_RADIUS = 80;
 
 // ---------- Villagers ----------
+// Villager positions in grid cells (×40px). MAP is 2200×1400 so col<55, row<35.
+// Centered around city eye (CX≈1100, CY≈700) — inside navigable area.
 const VILLAGERS_DATA = [
-  { id: 1, col: 45, row: 42, whisper: 'I stopped counting the days.' },
-  { id: 2, col: 62, row: 58, whisper: 'The 23rd comes whether you are ready or not.' },
-  { id: 3, col: 38, row: 71, whisper: 'I found a fragment once. I put it back.' },
-  { id: 4, col: 72, row: 44, whisper: 'She built this. We just live in it.' },
-  { id: 5, col: 55, row: 65, whisper: 'Junction 89. I have never been brave enough.' },
+  { id: 1, col: 24, row: 15, whisper: 'I stopped counting the days.' },
+  { id: 2, col: 32, row: 20, whisper: 'The 23rd comes whether you are ready or not.' },
+  { id: 3, col: 21, row: 22, whisper: 'I found a fragment once. I put it back.' },
+  { id: 4, col: 35, row: 14, whisper: 'She built this. We just live in it.' },
+  { id: 5, col: 28, row: 23, whisper: 'Junction 89. I have never been brave enough.' },
 ];
 
 // Map each whisper point to its nearest obstacle (by center distance)

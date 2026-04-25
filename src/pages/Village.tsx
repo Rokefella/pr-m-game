@@ -1196,6 +1196,30 @@ const Village = () => {
         Another one enters?
       </p>
 
+      {/* Villager whisper */}
+      {villagerWhisper && (
+        <p
+          key={`vw-${villagerWhisper}`}
+          className="font-fell italic"
+          style={{
+            position: 'fixed',
+            top: '18%',
+            left: 0,
+            width: '100vw',
+            textAlign: 'center',
+            fontSize: 20,
+            color: 'rgba(255,255,255,0.8)',
+            textShadow: '0 0 12px rgba(255,255,255,0.3)',
+            margin: 0,
+            zIndex: 50,
+            pointerEvents: 'none',
+            animation: 'villageNotYet 2.5s ease-out forwards',
+          }}
+        >
+          {villagerWhisper}
+        </p>
+      )}
+
       {/* Easter egg whisper */}
       {whisper && (
         <p

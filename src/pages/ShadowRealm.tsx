@@ -614,6 +614,17 @@ const ShadowRealm = () => {
 
     // Commit target
     playerTargetRef.current = { x: fx, y: fy };
+
+    // Merchant proximity → open overlay (40px)
+    const dm = Math.hypot(fx - SHADOW_MERCHANT.x, fy - SHADOW_MERCHANT.y);
+    if (dm <= 40) {
+      if (!merchantTriggerLockRef.current) {
+        merchantTriggerLockRef.current = true;
+        setMerchantOpen(true);
+      }
+    } else {
+      merchantTriggerLockRef.current = false;
+    }
   };
 
   // Keyboard arrow keys — held-keys system for smooth diagonal movement

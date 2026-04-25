@@ -495,6 +495,8 @@ const ShadowRealm = () => {
       setCurrentLevel(row.level);
       currentLevelRef.current = row.level;
       mazeCompletedLevelRef.current = row.maze_completed_level;
+      setCredits(row.credits);
+      setStepsRemaining(row.steps_remaining);
       setCurrentTitle(row.title);
       setOverlaySelectedTitle(row.title);
       if (row.aura_color) setAuraColor(row.aura_color);

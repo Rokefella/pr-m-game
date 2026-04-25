@@ -3,6 +3,15 @@ import { useNavigate } from 'react-router-dom';
 // player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restUpdate } from '@/lib/supabaseRest';
+import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
+
+// Village Merchant
+const MERCHANT = { x: 48 * 40, y: 55 * 40 };
+const MERCHANT_LINES = [
+  'You need more steps. I have them.',
+  "The fragments don't find themselves.",
+  'What you lack, I carry.',
+];
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
@@ -477,6 +486,9 @@ const Village = () => {
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(14);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [credits, setCredits] = useState<number>(0);
+  const [merchantOpen, setMerchantOpen] = useState(false);
+  const merchantTriggerLockRef = useRef(false);
 
   // Villagers — patrol around their base on independent timers
   type Villager = { id: number; x: number; y: number; baseX: number; baseY: number; whisper: string };
@@ -540,6 +552,7 @@ const Village = () => {
       setUsername(row.username || '');
       setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : ['Wanderer']);
       setStepsRemaining(row.steps_remaining);
+      setCredits(row.credits);
       setTotalMazeSteps(row.total_maze_steps);
       setTotalMazeTime(row.total_maze_time);
 
@@ -672,6 +685,17 @@ const Village = () => {
         }
         break;
       }
+    }
+
+    // Merchant proximity → open overlay (40px)
+    const dm = Math.hypot(fx - MERCHANT.x, fy - MERCHANT.y);
+    if (dm <= 40) {
+      if (!merchantTriggerLockRef.current) {
+        merchantTriggerLockRef.current = true;
+        setMerchantOpen(true);
+      }
+    } else {
+      merchantTriggerLockRef.current = false;
     }
   };
 
@@ -1192,6 +1216,9 @@ const Village = () => {
             }}
           />
         ))}
+
+        {/* Merchant character */}
+        <MerchantCharacter x={MERCHANT.x} y={MERCHANT.y} palette="green" />
 
         {/* Player dot */}
         <div
@@ -1782,6 +1809,62 @@ const Village = () => {
         >
           {eyeMessage}
         </p>
+      )}
+
+      {/* Merchant overlay */}
+      {user && (
+        <MerchantOverlay
+          open={merchantOpen}
+          onClose={() => setMerchantOpen(false)}
+          palette="green"
+          title="The Merchant."
+          openingLines={MERCHANT_LINES}
+          userId={user.id}
+          credits={credits}
+          onCreditsChange={(n) => setCredits(n)}
+          items={(() => {
+            const list: MerchantItem[] = [
+              {
+                key: 'steps',
+                label: '500 Steps',
+                cost: 5,
+                onPurchase: () => {
+                  const next = stepsRemaining + 500;
+                  setStepsRemaining(next);
+                  updateUser(user.id, { steps_remaining: next });
+                },
+              },
+              {
+                key: 'visibility',
+                label: 'Visibility +2 cells (this run)',
+                cost: 20,
+              },
+            ];
+            if (currentLevel >= 5) {
+              list.push({
+                key: 'detector',
+                label: 'Fragment Detector (60 sec)',
+                cost: 50,
+              });
+            }
+            if (currentLevel >= 10) {
+              list.push({
+                key: 'primemap',
+                label: 'Prime Map (60 sec)',
+                cost: 100,
+              });
+            }
+            if (currentLevel >= 15) {
+              list.push({
+                key: 'pastmaze',
+                label: 'Past Maze Access',
+                cost: 200,
+                onPurchase: () => 'Available in the Shadow Realm.',
+              });
+            }
+            return list;
+          })()}
+        />
       )}
     </div>
   );

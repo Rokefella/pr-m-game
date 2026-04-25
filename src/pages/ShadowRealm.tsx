@@ -1038,8 +1038,12 @@ const ShadowRealm = () => {
               top: b.y,
               width: b.w,
               height: b.h,
-              border: '0.5px solid rgba(20,120,50,0.45)',
-              background: 'rgba(20,120,50,0.12)',
+              background: 'linear-gradient(135deg, rgba(34,197,94,0.108) 0%, rgba(20,120,50,0.072) 60%, rgba(5,40,15,0.132) 100%)',
+              borderTop: '1px solid rgba(34,197,94,0.30)',
+              borderLeft: '1px solid rgba(34,197,94,0.24)',
+              borderBottom: '0.5px solid rgba(5,20,10,0.54)',
+              borderRight: '0.5px solid rgba(8,25,15,0.48)',
+              boxShadow: 'inset -3px -3px 8px rgba(0,0,0,0.21), inset 1px 1px 4px rgba(34,197,94,0.036)',
               zIndex: 1,
             }}
           />

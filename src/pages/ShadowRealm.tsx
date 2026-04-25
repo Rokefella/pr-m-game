@@ -476,6 +476,12 @@ const ShadowRealm = () => {
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
   const [shadowFadeOut, setShadowFadeOut] = useState(false);
   const [exitConfirm, setExitConfirm] = useState<{ levelUp: boolean; nextLevel: number } | null>(null);
+  const [credits, setCredits] = useState<number>(0);
+  const [stepsRemaining, setStepsRemaining] = useState<number>(0);
+  const [merchantOpen, setMerchantOpen] = useState(false);
+  const merchantTriggerLockRef = useRef(false);
+  const [memoryText, setMemoryText] = useState<string | null>(null);
+  const memoryTimer = useRef<number | null>(null);
 
   const currentLevelRef = useRef(1);
   const mazeCompletedLevelRef = useRef(0);

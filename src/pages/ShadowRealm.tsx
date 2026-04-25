@@ -1599,6 +1599,95 @@ const ShadowRealm = () => {
           {eyeMessage}
         </p>
       )}
+
+      {/* Memory fragment lore overlay */}
+      {memoryText && (
+        <div
+          onClick={() => {
+            if (memoryTimer.current) window.clearTimeout(memoryTimer.current);
+            setMemoryText(null);
+          }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(4,4,10,0.92)',
+            zIndex: 160,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 32,
+            cursor: 'pointer',
+          }}
+        >
+          <p
+            className="font-fell italic"
+            style={{
+              fontSize: 18,
+              color: 'rgba(160,140,200,0.85)',
+              textAlign: 'center',
+              maxWidth: 480,
+              textShadow: '0 0 14px rgba(249,115,22,0.25)',
+            }}
+          >
+            {memoryText}
+          </p>
+        </div>
+      )}
+
+      {/* Merchant overlay */}
+      {user && (
+        <MerchantOverlay
+          open={merchantOpen}
+          onClose={() => setMerchantOpen(false)}
+          palette="orange"
+          title="The Merchant."
+          openingLines={SHADOW_MERCHANT_LINES}
+          userId={user.id}
+          credits={credits}
+          onCreditsChange={(n) => setCredits(n)}
+          items={(() => {
+            const list: MerchantItem[] = [
+              {
+                key: 'steps',
+                label: '500 Steps (for next maze run)',
+                cost: 5,
+                onPurchase: () => {
+                  const next = stepsRemaining + 500;
+                  setStepsRemaining(next);
+                  updateUser(user.id, { steps_remaining: next });
+                },
+              },
+              {
+                key: 'memory',
+                label: 'Memory Fragment',
+                cost: 30,
+                onPurchase: () => {
+                  const t = MEMORY_FRAGMENTS[Math.floor(Math.random() * MEMORY_FRAGMENTS.length)];
+                  setMemoryText(t);
+                  if (memoryTimer.current) window.clearTimeout(memoryTimer.current);
+                  memoryTimer.current = window.setTimeout(() => setMemoryText(null), 8000);
+                },
+              },
+              {
+                key: 'convergence',
+                label: 'Convergence Token',
+                cost: 500,
+                onPurchase: () => 'Reserved for the 23rd. Hold it until then.',
+              },
+            ];
+            if (currentLevel >= 15) {
+              const lvl = Math.max(1, mazeCompletedLevelRef.current - 1);
+              list.push({
+                key: 'pastmaze',
+                label: `Past Maze Access — Level ${lvl}`,
+                cost: 150,
+                onPurchase: () => 'Coming soon. The archive is being prepared.',
+              });
+            }
+            return list;
+          })()}
+        />
+      )}
     </div>
   );
 };

@@ -686,6 +686,17 @@ const Village = () => {
         break;
       }
     }
+
+    // Merchant proximity → open overlay (40px)
+    const dm = Math.hypot(fx - MERCHANT.x, fy - MERCHANT.y);
+    if (dm <= 40) {
+      if (!merchantTriggerLockRef.current) {
+        merchantTriggerLockRef.current = true;
+        setMerchantOpen(true);
+      }
+    } else {
+      merchantTriggerLockRef.current = false;
+    }
   };
 
   // Keyboard arrow keys — held-keys system for smooth diagonal movement

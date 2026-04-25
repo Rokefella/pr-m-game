@@ -486,6 +486,9 @@ const Village = () => {
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(14);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [credits, setCredits] = useState<number>(0);
+  const [merchantOpen, setMerchantOpen] = useState(false);
+  const merchantTriggerLockRef = useRef(false);
 
   // Villagers — patrol around their base on independent timers
   type Villager = { id: number; x: number; y: number; baseX: number; baseY: number; whisper: string };

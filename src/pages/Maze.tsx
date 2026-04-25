@@ -528,22 +528,14 @@ const Maze = () => {
     if (nc === config.door.col && nr === config.door.row) {
       const required = config.fragmentsRequired;
       if (collectedRef.current.size >= required) {
-        showWhisper('The way opens.', '#c8963a', 2000);
-        (async () => {
-          if (user) {
-            await restUpdate(
-              'users',
-              { maze_completed_level: currentLevelRef.current },
-              'id',
-              user.id,
-            );
-          }
-          window.setTimeout(() => navigate('/shadow'), 2000);
-        })();
+        // Show confirmation overlay instead of immediate navigation
+        setDoorConfirmOpen(true);
       } else {
         const remaining = required - collectedRef.current.size;
-        const msg = remaining === 1 ? '1 fragment remains' : `${remaining} fragments remain`;
-        showWhisper(`${msg}. The door does not open.`, 'rgba(200,150,58,0.7)', 2500);
+        const msg = remaining === 1
+          ? 'One fragment remains. The door does not open.'
+          : `${remaining} fragments remain. The door does not open.`;
+        showWhisper(msg, 'rgba(200,150,58,0.7)', 2500);
       }
     }
 

@@ -475,6 +475,7 @@ const ShadowRealm = () => {
       mazeCompletedLevelRef.current = row.maze_completed_level;
       setCurrentTitle(row.title);
       setOverlaySelectedTitle(row.title);
+      if (row.aura_color) setAuraColor(row.aura_color);
       setRegistrationNumber(row.registration_number);
 
       if (row.levelup_pending) {

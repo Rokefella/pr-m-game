@@ -1810,6 +1810,62 @@ const Village = () => {
           {eyeMessage}
         </p>
       )}
+
+      {/* Merchant overlay */}
+      {user && (
+        <MerchantOverlay
+          open={merchantOpen}
+          onClose={() => setMerchantOpen(false)}
+          palette="green"
+          title="The Merchant."
+          openingLines={MERCHANT_LINES}
+          userId={user.id}
+          credits={credits}
+          onCreditsChange={(n) => setCredits(n)}
+          items={(() => {
+            const list: MerchantItem[] = [
+              {
+                key: 'steps',
+                label: '500 Steps',
+                cost: 5,
+                onPurchase: () => {
+                  const next = stepsRemaining + 500;
+                  setStepsRemaining(next);
+                  updateUser(user.id, { steps_remaining: next });
+                },
+              },
+              {
+                key: 'visibility',
+                label: 'Visibility +2 cells (this run)',
+                cost: 20,
+              },
+            ];
+            if (currentLevel >= 5) {
+              list.push({
+                key: 'detector',
+                label: 'Fragment Detector (60 sec)',
+                cost: 50,
+              });
+            }
+            if (currentLevel >= 10) {
+              list.push({
+                key: 'primemap',
+                label: 'Prime Map (60 sec)',
+                cost: 100,
+              });
+            }
+            if (currentLevel >= 15) {
+              list.push({
+                key: 'pastmaze',
+                label: 'Past Maze Access',
+                cost: 200,
+                onPurchase: () => 'Available in the Shadow Realm.',
+              });
+            }
+            return list;
+          })()}
+        />
+      )}
     </div>
   );
 };

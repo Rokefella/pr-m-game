@@ -1554,6 +1554,47 @@ const Village = () => {
             })}
           </div>
 
+          {/* Maze wall mode toggle */}
+          <div
+            className="font-cinzel"
+            style={{
+              marginTop: 20,
+              fontSize: 9,
+              color: 'rgba(160,140,200,0.4)',
+              letterSpacing: '0.2em',
+            }}
+          >
+            MAZE WALLS
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            {(['solid', 'grid'] as const).map((mode) => {
+              const selected = mode === wallMode;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => {
+                    setWallMode(mode);
+                    localStorage.setItem('praem_wall_mode', mode);
+                    window.dispatchEvent(new Event('praem_wall_mode_change'));
+                  }}
+                  className="font-cinzel"
+                  style={{
+                    fontSize: 9,
+                    letterSpacing: '0.15em',
+                    padding: '5px 14px',
+                    cursor: 'pointer',
+                    background: selected ? 'rgba(200,150,58,0.08)' : 'transparent',
+                    border: selected ? '0.5px solid #c8963a' : '0.5px solid rgba(160,140,200,0.2)',
+                    color: selected ? '#c8963a' : 'rgba(160,140,200,0.4)',
+                  }}
+                >
+                  {mode.toUpperCase()}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Title selector */}
           <div
             className="font-cinzel"

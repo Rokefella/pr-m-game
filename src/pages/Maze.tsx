@@ -234,22 +234,18 @@ const Maze = () => {
     return null;
   }, [currentLevel]);
 
-  // wallSet built from same LEVEL2_WALLS array as rendering — single source of truth.
+  // wallSet built directly from LEVEL2_WALLS — single source of truth for L2 collision + rendering.
   const wallSet = useMemo(() => {
-    if (!config) return new Set<string>();
+    if (currentLevel !== 2) return new Set<string>();
     const s = new Set<string>();
-    for (let r = 0; r < config.rows; r++) {
-      for (let c = 0; c < config.cols; c++) {
-        const k = `${c},${r}`;
-        if (!config.openSet.has(k) && !config.specialSet.has(k)) s.add(k);
-      }
-    }
+    LEVEL2_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
     return s;
-  }, [config]);
+  }, [currentLevel]);
 
   const isWall = (c: number, r: number) => {
     if (!config) return true;
     if (c < 0 || c >= config.cols || r < 0 || r >= config.rows) return true;
+    if (currentLevel === 2) return wallSet.has(`${c},${r}`);
     if (config.specialSet.has(`${c},${r}`)) return false;
     return !config.openSet.has(`${c},${r}`);
   };

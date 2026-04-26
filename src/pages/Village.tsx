@@ -487,6 +487,10 @@ const Village = () => {
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(14);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [wallMode, setWallMode] = useState<'solid' | 'grid'>(() => {
+    if (typeof window === 'undefined') return 'solid';
+    return (localStorage.getItem('praem_wall_mode') as 'solid' | 'grid') || 'solid';
+  });
   const [credits, setCredits] = useState<number>(0);
   const [merchantOpen, setMerchantOpen] = useState(false);
   const merchantTriggerLockRef = useRef(false);

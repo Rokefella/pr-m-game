@@ -338,13 +338,41 @@ const Maze = () => {
     return null;
   }, [currentLevel]);
 
-  // wallSet built directly from LEVEL2_WALLS — single source of truth for L2 collision + rendering.
+  // wallSet — single source of truth for collision + rendering, both levels.
   const wallSet = useMemo(() => {
-    if (currentLevel !== 2) return new Set<string>();
     const s = new Set<string>();
-    LEVEL2_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
+    if (!config) return s;
+    if (currentLevel === 2) {
+      LEVEL2_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
+      return s;
+    }
+    // Level 1: invert openSet to derive walls
+    for (let r = 0; r < config.rows; r++) {
+      for (let c = 0; c < config.cols; c++) {
+        const k = `${c},${r}`;
+        if (!config.openSet.has(k) && !config.specialSet.has(k)) s.add(k);
+      }
+    }
     return s;
-  }, [currentLevel]);
+  }, [config, currentLevel]);
+
+  // Wall visual mode (solid merged surfaces vs flat grid). Persisted via localStorage.
+  const [wallMode, setWallMode] = useState<'solid' | 'grid'>(() => {
+    if (typeof window === 'undefined') return 'solid';
+    return (localStorage.getItem('praem_wall_mode') as 'solid' | 'grid') || 'solid';
+  });
+  useEffect(() => {
+    const onStorage = () => {
+      const v = (localStorage.getItem('praem_wall_mode') as 'solid' | 'grid') || 'solid';
+      setWallMode(v);
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('praem_wall_mode_change', onStorage);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('praem_wall_mode_change', onStorage);
+    };
+  }, []);
 
   const isWall = (c: number, r: number) => {
     if (!config) return true;

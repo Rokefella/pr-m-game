@@ -135,6 +135,15 @@ const buildLevel2Walls = (): Cell[] => {
 // Module-level single source of truth for Level 2 walls — used for both rendering and collision.
 const LEVEL2_WALLS: Cell[] = buildLevel2Walls();
 
+// Cells that must always be passable in Level 2, even if LEVEL2_WALLS contains them.
+const LEVEL2_SPECIAL_CELLS = new Set<string>([
+  '15,20', '110,15', '35,65', '120,60', '20,120', '95,130', '135,140', // fragments
+  '145,145',           // golden door
+  '140,20', '10,110',  // credit doors
+  '55,72',             // Alexandra
+  '120,125',           // Claire
+]);
+
 const buildLevel2 = (): LevelConfig => {
   const COLS = 150;
   const ROWS = 150;

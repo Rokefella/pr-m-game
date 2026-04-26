@@ -1051,13 +1051,22 @@ const Maze = () => {
             <span style={{ color: 'rgba(160,140,200,0.4)', fontSize: 8, letterSpacing: '0.15em' }}>tap to exchange</span>
           )}
         </span>
-        {currentLevel === 2 ? (
-          <span style={{ color: '#c8963a' }}>FRAGMENTS {collected.size}/{config.fragmentsRequired}</span>
-        ) : (
-          <span style={{ color: '#c8963a' }}>CREDITS {credits}</span>
-        )}
+        <span style={{ color: '#c8963a' }}>CREDITS {credits}</span>
         <span style={{ color: '#5b4fd4' }}>LEVEL {String(currentLevel).padStart(2, '0')}</span>
       </div>
+
+      {currentLevel === 2 && (
+        <div
+          className="font-mono"
+          style={{
+            position: 'fixed', bottom: 40, left: 0, right: 0,
+            textAlign: 'center', fontSize: 8, letterSpacing: '0.18em',
+            color: 'rgba(160,140,200,0.4)', zIndex: 60, pointerEvents: 'none',
+          }}
+        >
+          FRAGMENTS {collected.size}/{config.fragmentsRequired}
+        </div>
+      )}
 
       {exchangeOpen && (
         <div

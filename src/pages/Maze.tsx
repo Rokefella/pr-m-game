@@ -254,7 +254,10 @@ const Maze = () => {
   const isWall = (c: number, r: number) => {
     if (!config) return true;
     if (c < 0 || c >= config.cols || r < 0 || r >= config.rows) return true;
-    if (currentLevel === 2) return wallSet.has(`${c},${r}`);
+    if (currentLevel === 2) {
+      if (LEVEL2_SPECIAL_CELLS.has(`${c},${r}`)) return false;
+      return wallSet.has(`${c},${r}`);
+    }
     if (config.specialSet.has(`${c},${r}`)) return false;
     return !config.openSet.has(`${c},${r}`);
   };

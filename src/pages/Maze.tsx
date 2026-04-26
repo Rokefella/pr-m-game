@@ -797,6 +797,7 @@ const Maze = () => {
           height: MAP_H,
           transform: `translate(${cam.x}px, ${cam.y}px)`,
           willChange: 'transform',
+          background: 'rgba(4,4,10,0.3)',
         }}
       >
         <div

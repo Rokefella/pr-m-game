@@ -338,13 +338,41 @@ const Maze = () => {
     return null;
   }, [currentLevel]);
 
-  // wallSet built directly from LEVEL2_WALLS — single source of truth for L2 collision + rendering.
+  // wallSet — single source of truth for collision + rendering, both levels.
   const wallSet = useMemo(() => {
-    if (currentLevel !== 2) return new Set<string>();
     const s = new Set<string>();
-    LEVEL2_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
+    if (!config) return s;
+    if (currentLevel === 2) {
+      LEVEL2_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
+      return s;
+    }
+    // Level 1: invert openSet to derive walls
+    for (let r = 0; r < config.rows; r++) {
+      for (let c = 0; c < config.cols; c++) {
+        const k = `${c},${r}`;
+        if (!config.openSet.has(k) && !config.specialSet.has(k)) s.add(k);
+      }
+    }
     return s;
-  }, [currentLevel]);
+  }, [config, currentLevel]);
+
+  // Wall visual mode (solid merged surfaces vs flat grid). Persisted via localStorage.
+  const [wallMode, setWallMode] = useState<'solid' | 'grid'>(() => {
+    if (typeof window === 'undefined') return 'solid';
+    return (localStorage.getItem('praem_wall_mode') as 'solid' | 'grid') || 'solid';
+  });
+  useEffect(() => {
+    const onStorage = () => {
+      const v = (localStorage.getItem('praem_wall_mode') as 'solid' | 'grid') || 'solid';
+      setWallMode(v);
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('praem_wall_mode_change', onStorage);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('praem_wall_mode_change', onStorage);
+    };
+  }, []);
 
   const isWall = (c: number, r: number) => {
     if (!config) return true;
@@ -769,6 +797,7 @@ const Maze = () => {
           height: MAP_H,
           transform: `translate(${cam.x}px, ${cam.y}px)`,
           willChange: 'transform',
+          background: 'rgba(4,4,10,0.3)',
         }}
       >
         <div
@@ -787,20 +816,38 @@ const Maze = () => {
           const x = c * CELL;
           const y = r * CELL;
           if (x + CELL < viewLeft || x > viewRight || y + CELL < viewTop || y > viewBottom) return null;
+
+          if (wallMode === 'grid') {
+            return (
+              <div
+                key={`w-${key}`}
+                style={{
+                  position: 'absolute', left: x, top: y, width: CELL, height: CELL,
+                  background: '#0a0a12',
+                  border: '0.5px solid rgba(100,80,160,0.2)',
+                  boxSizing: 'border-box', zIndex: 2,
+                }}
+              />
+            );
+          }
+
+          // Solid mode: merge with neighbors by suppressing shared borders.
+          const nUp = wallSet.has(`${c},${r - 1}`);
+          const nDown = wallSet.has(`${c},${r + 1}`);
+          const nLeft = wallSet.has(`${c - 1},${r}`);
+          const nRight = wallSet.has(`${c + 1},${r}`);
           return (
             <div
               key={`w-${key}`}
               style={{
-                position: 'absolute',
-                left: x,
-                top: y,
-                width: CELL,
-                height: CELL,
-                background: '#0a0a12',
-                border: '1px solid #1a1a2e',
-                boxSizing: 'border-box',
-                zIndex: 2,
-                opacity: 1,
+                position: 'absolute', left: x, top: y, width: CELL, height: CELL,
+                background: 'linear-gradient(135deg, rgba(20,15,40,0.95) 0%, rgba(10,8,20,1) 100%)',
+                borderTop: nUp ? 'none' : '0.5px solid rgba(100,80,160,0.3)',
+                borderLeft: nLeft ? 'none' : '0.5px solid rgba(100,80,160,0.25)',
+                borderBottom: nDown ? 'none' : '0.5px solid rgba(40,20,80,0.8)',
+                borderRight: nRight ? 'none' : '0.5px solid rgba(40,20,80,0.7)',
+                boxShadow: 'inset 1px 1px 4px rgba(100,80,160,0.08), inset -2px -2px 6px rgba(0,0,0,0.5)',
+                boxSizing: 'border-box', zIndex: 2,
               }}
             />
           );

@@ -84,153 +84,49 @@ const buildLevel1 = (): LevelConfig => {
 
 // =================== LEVEL 2 ===================
 // Single source of truth: explicit list of wall cells. Used for BOTH render and collision.
-// Cells that must always be passable in Level 2, even if LEVEL2_WALLS contains them.
-const LEVEL2_SPECIAL_CELLS = new Set<string>([
-  '15,20', '110,15', '35,65', '120,60', '20,120', '95,130', '135,140', // fragments
-  '145,145',           // golden door
-  '140,20', '10,110',  // credit doors
-  '55,72',             // Alexandra
-  '120,125',           // Claire
-]);
-
-// Single source of truth: explicit list of wall cells. Used for BOTH render and collision.
 const buildLevel2Walls = (): Cell[] => {
   const COLS = 150;
   const ROWS = 150;
   const walls: Cell[] = [];
   const seen = new Set<string>();
-  const blocked = new Set<string>();
-
-  // Build a set of cells we MUST keep passable: special cells + a 1-cell cardinal halo
-  // around each (so the player can step onto them from any direction), plus carved corridors.
-  const protect = (c: number, r: number) => {
-    if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return;
-    blocked.add(`${c},${r}`);
-  };
-  for (const key of LEVEL2_SPECIAL_CELLS) {
-    const [c, r] = key.split(',').map(Number);
-    protect(c, r);
-    protect(c + 1, r); protect(c - 1, r);
-    protect(c, r + 1); protect(c, r - 1);
-  }
-
-  // Carve guaranteed corridors (3 cells wide) between zones / to special points.
-  const carveCorridorH = (c1: number, c2: number, r: number, w = 1) => {
-    const a = Math.min(c1, c2), b = Math.max(c1, c2);
-    for (let c = a; c <= b; c++) for (let dr = -w; dr <= w; dr++) protect(c, r + dr);
-  };
-  const carveCorridorV = (c: number, r1: number, r2: number, w = 1) => {
-    const a = Math.min(r1, r2), b = Math.max(r1, r2);
-    for (let r = a; r <= b; r++) for (let dc = -w; dc <= w; dc++) protect(c + dc, r);
-  };
-  // Spawn (5,5) → Zone 2 entrance
-  carveCorridorH(5, 78, 5);
-  carveCorridorV(78, 5, 40);
-  // Zone 1 → Zone 3
-  carveCorridorV(30, 5, 95);
-  carveCorridorH(0, 70, 95);
-  // Zone 3 → Zone 4
-  carveCorridorV(60, 95, 130);
-  carveCorridorH(20, 145, 130);
-  // Reach Alexandra (55,72)
-  carveCorridorH(30, 55, 72);
-  // Reach Claire (120,125) and golden door (145,145)
-  carveCorridorV(120, 110, 145);
-  carveCorridorH(120, 145, 145);
-  // Reach fragments
-  carveCorridorH(10, 20, 20);   // 15,20
-  carveCorridorH(105, 115, 15); // 110,15
-  carveCorridorH(30, 40, 65);   // 35,65
-  carveCorridorH(115, 125, 60); // 120,60
-  carveCorridorH(15, 25, 120);  // 20,120
-  carveCorridorH(90, 100, 130); // 95,130
-  carveCorridorH(130, 140, 140);// 135,140
-  // Reach credit doors
-  carveCorridorH(135, 145, 20); // 140,20
-  carveCorridorH(5, 15, 110);   // 10,110
-
   const add = (c: number, r: number) => {
-    if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return;
     const k = `${c},${r}`;
     if (seen.has(k)) return;
-    if (blocked.has(k)) return;
     seen.add(k);
     walls.push({ col: c, row: r });
   };
 
-  // Outer border (border cells are never special, safe to add)
+  // Outer border
   for (let c = 0; c < COLS; c++) { add(c, 0); add(c, ROWS - 1); }
   for (let r = 0; r < ROWS; r++) { add(0, r); add(COLS - 1, r); }
 
-  // ---- ZONE 1: Open city (cols 0-74, rows 0-74) ----
-  // Horizontal strips every 8 rows, three spans, with 2-cell gaps every 10 cols.
-  const z1Rows = [8, 16, 24, 32, 40, 48, 56, 64];
-  const z1HSpans: Array<[number, number]> = [[2, 22], [26, 46], [50, 70]];
-  for (const r of z1Rows) {
-    for (const [c1, c2] of z1HSpans) {
-      for (let c = c1; c <= c2; c++) {
-        if ((c - c1) % 10 >= 8) continue; // 2-cell gap each 10
-        add(c, r);
-      }
-    }
-  }
-  const z1Cols = [8, 16, 24, 32, 40, 48, 56, 64];
-  const z1VSpans: Array<[number, number]> = [[2, 22], [26, 46], [50, 70]];
-  for (const c of z1Cols) {
-    for (const [r1, r2] of z1VSpans) {
-      for (let r = r1; r <= r2; r++) {
-        if ((r - r1) % 10 >= 8) continue;
-        add(c, r);
-      }
-    }
-  }
-
-  // ---- ZONE 2: Labyrinth (cols 75-149, rows 0-74) ----
-  for (let r = 4; r <= 72; r += 4) {
-    for (let c = 76; c <= 148; c++) {
-      if ((c - 76) % 6 === 5) continue; // 1-cell gap every 6
-      add(c, r);
-    }
-  }
-  for (let c = 79; c <= 147; c += 4) {
-    for (let r = 1; r <= 73; r++) {
-      if ((r - 1) % 6 === 5) continue;
-      add(c, r);
-    }
-  }
-
-  // ---- ZONE 3: Mixed center (cols 0-149, rows 75-110) ----
-  const z3Rows = [80, 85, 90, 95, 100, 105];
-  z3Rows.forEach((r, i) => {
-    const odd = i % 2 === 0; // first considered "odd" → cols 0-60
-    const c1 = odd ? 1 : 70;
-    const c2 = odd ? 60 : 148;
+  // Helper: add a horizontal segment from c1..c2 inclusive, leaving 2-cell gaps every 5 cells.
+  const hSeg = (c1: number, c2: number, r: number) => {
     for (let c = c1; c <= c2; c++) {
-      if ((c - c1) % 8 >= 6) continue; // 2-cell gap every 8
+      // gap window: positions where (c - c1) % 5 in {3,4} → skip (creates 2-cell passage every 5)
+      const m = (c - c1) % 5;
+      if (m === 3 || m === 4) continue;
       add(c, r);
     }
-  });
-  const z3Cols = [20, 40, 60, 80, 100, 120, 140];
-  for (const c of z3Cols) {
-    for (let r = 76; r <= 109; r++) {
-      if ((r - 76) % 8 >= 6) continue;
+  };
+  const vSeg = (c: number, r1: number, r2: number) => {
+    for (let r = r1; r <= r2; r++) {
+      const m = (r - r1) % 5;
+      if (m === 3 || m === 4) continue;
       add(c, r);
     }
+  };
+
+  const hRows = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140];
+  const hSpans: Array<[number, number]> = [[10, 30], [50, 70], [80, 100], [110, 130]];
+  for (const r of hRows) {
+    for (const [c1, c2] of hSpans) hSeg(c1, c2, r);
   }
 
-  // ---- ZONE 4: Deep labyrinth (cols 0-149, rows 110-149) ----
-  const z4Rows = [113, 116, 119, 122, 125, 128, 131, 134, 137, 140, 143, 146];
-  for (const r of z4Rows) {
-    for (let c = 1; c <= 148; c++) {
-      if ((c - 1) % 4 === 3) continue; // 1-cell gap every 4
-      add(c, r);
-    }
-  }
-  for (let c = 3; c <= 147; c += 3) {
-    for (let r = 111; r <= 148; r++) {
-      if ((r - 111) % 4 === 3) continue;
-      add(c, r);
-    }
+  const vCols = [20, 40, 60, 80, 100, 120, 140];
+  const vSpans: Array<[number, number]> = [[10, 30], [50, 70], [90, 110], [120, 140]];
+  for (const c of vCols) {
+    for (const [r1, r2] of vSpans) vSeg(c, r1, r2);
   }
 
   return walls;
@@ -349,10 +245,7 @@ const Maze = () => {
   const isWall = (c: number, r: number) => {
     if (!config) return true;
     if (c < 0 || c >= config.cols || r < 0 || r >= config.rows) return true;
-    if (currentLevel === 2) {
-      if (LEVEL2_SPECIAL_CELLS.has(`${c},${r}`)) return false;
-      return wallSet.has(`${c},${r}`);
-    }
+    if (currentLevel === 2) return wallSet.has(`${c},${r}`);
     if (config.specialSet.has(`${c},${r}`)) return false;
     return !config.openSet.has(`${c},${r}`);
   };
@@ -1146,22 +1039,13 @@ const Maze = () => {
             <span style={{ color: 'rgba(160,140,200,0.4)', fontSize: 8, letterSpacing: '0.15em' }}>tap to exchange</span>
           )}
         </span>
-        <span style={{ color: '#c8963a' }}>CREDITS {credits}</span>
+        {currentLevel === 2 ? (
+          <span style={{ color: '#c8963a' }}>FRAGMENTS {collected.size}/{config.fragmentsRequired}</span>
+        ) : (
+          <span style={{ color: '#c8963a' }}>CREDITS {credits}</span>
+        )}
         <span style={{ color: '#5b4fd4' }}>LEVEL {String(currentLevel).padStart(2, '0')}</span>
       </div>
-
-      {currentLevel === 2 && (
-        <div
-          className="font-mono"
-          style={{
-            position: 'fixed', bottom: 40, left: 0, right: 0,
-            textAlign: 'center', fontSize: 8, letterSpacing: '0.18em',
-            color: 'rgba(160,140,200,0.4)', zIndex: 60, pointerEvents: 'none',
-          }}
-        >
-          FRAGMENTS {collected.size}/{config.fragmentsRequired}
-        </div>
-      )}
 
       {exchangeOpen && (
         <div

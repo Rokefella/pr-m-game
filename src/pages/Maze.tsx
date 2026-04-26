@@ -841,12 +841,12 @@ const Maze = () => {
               key={`w-${key}`}
               style={{
                 position: 'absolute', left: x, top: y, width: CELL, height: CELL,
-                background: 'linear-gradient(135deg, rgba(20,15,40,0.95) 0%, rgba(10,8,20,1) 100%)',
-                borderTop: nUp ? 'none' : '0.5px solid rgba(100,80,160,0.3)',
-                borderLeft: nLeft ? 'none' : '0.5px solid rgba(100,80,160,0.25)',
-                borderBottom: nDown ? 'none' : '0.5px solid rgba(40,20,80,0.8)',
-                borderRight: nRight ? 'none' : '0.5px solid rgba(40,20,80,0.7)',
-                boxShadow: 'inset 1px 1px 4px rgba(100,80,160,0.08), inset -2px -2px 6px rgba(0,0,0,0.5)',
+                background: 'linear-gradient(135deg, rgba(60,45,100,0.95) 0%, rgba(35,25,70,1) 100%)',
+                borderTop: nUp ? 'none' : '1px solid rgba(140,120,220,0.5)',
+                borderLeft: nLeft ? 'none' : '1px solid rgba(130,110,200,0.4)',
+                borderBottom: nDown ? 'none' : '0.5px solid rgba(80,50,150,0.9)',
+                borderRight: nRight ? 'none' : '0.5px solid rgba(80,50,150,0.8)',
+                boxShadow: 'inset 1px 1px 4px rgba(140,120,220,0.15), inset -2px -2px 8px rgba(0,0,0,0.4)',
                 boxSizing: 'border-box', zIndex: 2,
               }}
             />

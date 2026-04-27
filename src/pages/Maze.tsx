@@ -84,51 +84,102 @@ const buildLevel1 = (): LevelConfig => {
 
 // =================== LEVEL 2 ===================
 // Single source of truth: explicit list of wall cells. Used for BOTH render and collision.
+// Special cell positions — must NOT be walls. Kept in sync with buildLevel2() below.
+const LEVEL2_SPECIAL_POSITIONS: Array<[number, number]> = [
+  // fragments
+  [15, 20], [110, 15], [35, 65], [120, 60], [20, 120], [95, 130], [135, 140],
+  // golden door
+  [145, 145],
+  // credit doors
+  [140, 20], [10, 110],
+  // alexandra, claire
+  [55, 72], [120, 125],
+];
+
 const buildLevel2Walls = (): Cell[] => {
   const COLS = 150;
   const ROWS = 150;
+  const set = new Set<string>();
+
+  // STEP 1 — Outer border
+  for (let c = 0; c < COLS; c++) { set.add(`${c},0`); set.add(`${c},${ROWS - 1}`); }
+  for (let r = 0; r < ROWS; r++) { set.add(`0,${r}`); set.add(`${COLS - 1},${r}`); }
+
+  // STEP 2 — Fill all interior cells as walls
+  for (let c = 1; c <= 148; c++) {
+    for (let r = 1; r <= 148; r++) {
+      set.add(`${c},${r}`);
+    }
+  }
+
+  const carve = (c: number, r: number) => set.delete(`${c},${r}`);
+  const carveRect = (c1: number, c2: number, r1: number, r2: number) => {
+    for (let c = c1; c <= c2; c++) for (let r = r1; r <= r2; r++) carve(c, r);
+  };
+
+  // MAIN CROSS CORRIDORS
+  for (let c = 1; c <= 148; c++) { carve(c, 74); carve(c, 75); }
+  for (let r = 1; r <= 148; r++) { carve(74, r); carve(75, r); }
+
+  // TOWN SQUARE 12×12
+  carveRect(69, 80, 69, 80);
+
+  // HORIZONTAL CORRIDORS — top half
+  const hTopRows = [4, 12, 20, 28, 36, 44, 52, 60, 68];
+  for (const r of hTopRows) {
+    for (let c = 1; c <= 68; c++) carve(c, r);
+    for (let c = 81; c <= 148; c++) carve(c, r);
+  }
+  // HORIZONTAL CORRIDORS — bottom half
+  const hBotRows = [76, 84, 92, 100, 108, 116, 124, 132, 140, 148];
+  for (const r of hBotRows) {
+    for (let c = 1; c <= 68; c++) carve(c, r);
+    for (let c = 81; c <= 148; c++) carve(c, r);
+  }
+
+  // VERTICAL CORRIDORS — left half
+  const vLeftCols = [4, 12, 20, 28, 36, 44, 52, 60, 68];
+  for (const c of vLeftCols) {
+    for (let r = 1; r <= 68; r++) carve(c, r);
+    for (let r = 81; r <= 148; r++) carve(c, r);
+  }
+  // VERTICAL CORRIDORS — right half
+  const vRightCols = [76, 84, 92, 100, 108, 116, 124, 132, 140, 148];
+  for (const c of vRightCols) {
+    for (let r = 1; r <= 68; r++) carve(c, r);
+    for (let r = 81; r <= 148; r++) carve(c, r);
+  }
+
+  // APPROACH CORRIDORS TO TOWN SQUARE (2 cells wide)
+  carveRect(67, 68, 50, 68);
+  carveRect(67, 68, 81, 100);
+  carveRect(50, 68, 67, 68);
+  carveRect(81, 100, 67, 68);
+  carveRect(81, 82, 50, 68);
+  carveRect(81, 82, 81, 100);
+  carveRect(50, 68, 81, 82);
+  carveRect(81, 100, 81, 82);
+
+  // DEAD END BRANCHES
+  carveRect(1, 6, 4, 4);
+  carveRect(143, 148, 4, 4);
+  carveRect(4, 4, 1, 6);
+  carveRect(144, 144, 1, 6);
+  carveRect(1, 6, 68, 68);
+  carveRect(143, 148, 68, 68);
+  carveRect(4, 4, 143, 148);
+  carveRect(144, 144, 143, 148);
+  carveRect(94, 94, 128, 140);
+
+  // Ensure special cells are NEVER walls
+  for (const [c, r] of LEVEL2_SPECIAL_POSITIONS) set.delete(`${c},${r}`);
+
+  // Convert set → Cell[]
   const walls: Cell[] = [];
-  const seen = new Set<string>();
-  const add = (c: number, r: number) => {
-    const k = `${c},${r}`;
-    if (seen.has(k)) return;
-    seen.add(k);
-    walls.push({ col: c, row: r });
-  };
-
-  // Outer border
-  for (let c = 0; c < COLS; c++) { add(c, 0); add(c, ROWS - 1); }
-  for (let r = 0; r < ROWS; r++) { add(0, r); add(COLS - 1, r); }
-
-  // Helper: add a horizontal segment from c1..c2 inclusive, leaving 2-cell gaps every 5 cells.
-  const hSeg = (c1: number, c2: number, r: number) => {
-    for (let c = c1; c <= c2; c++) {
-      // gap window: positions where (c - c1) % 5 in {3,4} → skip (creates 2-cell passage every 5)
-      const m = (c - c1) % 5;
-      if (m === 3 || m === 4) continue;
-      add(c, r);
-    }
-  };
-  const vSeg = (c: number, r1: number, r2: number) => {
-    for (let r = r1; r <= r2; r++) {
-      const m = (r - r1) % 5;
-      if (m === 3 || m === 4) continue;
-      add(c, r);
-    }
-  };
-
-  const hRows = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140];
-  const hSpans: Array<[number, number]> = [[10, 30], [50, 70], [80, 100], [110, 130]];
-  for (const r of hRows) {
-    for (const [c1, c2] of hSpans) hSeg(c1, c2, r);
-  }
-
-  const vCols = [20, 40, 60, 80, 100, 120, 140];
-  const vSpans: Array<[number, number]> = [[10, 30], [50, 70], [90, 110], [120, 140]];
-  for (const c of vCols) {
-    for (const [r1, r2] of vSpans) vSeg(c, r1, r2);
-  }
-
+  set.forEach((k) => {
+    const [cs, rs] = k.split(',');
+    walls.push({ col: Number(cs), row: Number(rs) });
+  });
   return walls;
 };
 

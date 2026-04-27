@@ -85,16 +85,22 @@ const buildLevel1 = (): LevelConfig => {
 // =================== LEVEL 2 ===================
 // Single source of truth: explicit list of wall cells. Used for BOTH render and collision.
 // Special cell positions — must NOT be walls. Kept in sync with buildLevel2() below.
-const LEVEL2_SPECIAL_POSITIONS: Array<[number, number]> = [
-  // fragments
-  [15, 20], [110, 15], [35, 65], [120, 60], [20, 120], [95, 130], [135, 140],
-  // golden door
-  [145, 145],
-  // credit doors
-  [140, 20], [10, 110],
-  // alexandra, claire
-  [55, 72], [120, 125],
-];
+const LEVEL2_SPECIAL_POSITIONS: Array<[number, number]> = (() => {
+  const base: Array<[number, number]> = [
+    // fragments
+    [15, 20], [110, 15], [35, 65], [120, 60], [20, 120], [95, 130], [135, 140],
+    // golden door
+    [145, 145],
+    // credit doors
+    [140, 20], [10, 110],
+    // alexandra, claire
+    [55, 72], [120, 125],
+  ];
+  // Spawn corridors — guarantee path from spawn (5,5) into the maze
+  for (let r = 1; r <= 20; r++) base.push([5, r]);
+  for (let c = 1; c <= 20; c++) base.push([c, 5]);
+  return base;
+})();
 
 const buildLevel2Walls = (): Cell[] => {
   const COLS = 150;
@@ -377,6 +383,30 @@ const Maze = () => {
     setClaireVisible(true);
     reunionDoneRef.current = false;
   }, [config]);
+
+  // If player spawns ON an uncollected fragment, collect it immediately.
+  useEffect(() => {
+    if (!config || !levelLoaded) return;
+    const { col, row } = config.spawn;
+    const fragIdx = config.fragments.findIndex((f) => f.col === col && f.row === row);
+    if (fragIdx === -1) return;
+    const frag = config.fragments[fragIdx];
+    if (collectedRef.current.has(frag.prime)) return;
+    const next = new Set(collectedRef.current);
+    next.add(frag.prime);
+    collectedRef.current = next;
+    setCollected(next);
+    setActiveFragment({ prime: frag.prime, index: fragIdx });
+    if (user) {
+      const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
+      restInsert('fragments', {
+        user_id: user.id,
+        prime_number: frag.prime,
+        level: currentLevelRef.current,
+        image_data: imageData,
+      }).catch((error) => console.error('Failed to save fragment', error));
+    }
+  }, [config, levelLoaded, user]);
 
   useEffect(() => {
     if (!user) return;

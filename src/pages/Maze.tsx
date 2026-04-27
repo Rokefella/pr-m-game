@@ -384,6 +384,30 @@ const Maze = () => {
     reunionDoneRef.current = false;
   }, [config]);
 
+  // If player spawns ON an uncollected fragment, collect it immediately.
+  useEffect(() => {
+    if (!config || !levelLoaded) return;
+    const { col, row } = config.spawn;
+    const fragIdx = config.fragments.findIndex((f) => f.col === col && f.row === row);
+    if (fragIdx === -1) return;
+    const frag = config.fragments[fragIdx];
+    if (collectedRef.current.has(frag.prime)) return;
+    const next = new Set(collectedRef.current);
+    next.add(frag.prime);
+    collectedRef.current = next;
+    setCollected(next);
+    setActiveFragment({ prime: frag.prime, index: fragIdx });
+    if (user) {
+      const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
+      restInsert('fragments', {
+        user_id: user.id,
+        prime_number: frag.prime,
+        level: currentLevelRef.current,
+        image_data: imageData,
+      }).catch((error) => console.error('Failed to save fragment', error));
+    }
+  }, [config, levelLoaded, user]);
+
   useEffect(() => {
     if (!user) return;
     let cancelled = false;

@@ -659,10 +659,10 @@ const ShadowRealm = () => {
         keyFrameCounter = 0;
         const held = heldKeysRef.current;
         let kdx = 0, kdy = 0;
-        if (held.has('ArrowLeft')) kdx -= STEP;
-        if (held.has('ArrowRight')) kdx += STEP;
-        if (held.has('ArrowUp')) kdy -= STEP;
-        if (held.has('ArrowDown')) kdy += STEP;
+        if (held.has('ArrowLeft') || held.has('dpad--1-0')) kdx -= STEP;
+        if (held.has('ArrowRight') || held.has('dpad-1-0')) kdx += STEP;
+        if (held.has('ArrowUp') || held.has('dpad-0--1')) kdy -= STEP;
+        if (held.has('ArrowDown') || held.has('dpad-0-1')) kdy += STEP;
         if (kdx !== 0 && kdy !== 0) {
           kdx *= 0.707;
           kdy *= 0.707;

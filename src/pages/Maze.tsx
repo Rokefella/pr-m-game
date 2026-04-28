@@ -672,10 +672,10 @@ const Maze = () => {
     const tick = () => {
       const k = heldKeysRef.current;
       let dc = 0, dr = 0;
-      if (k.has('ArrowLeft')) dc -= 1;
-      if (k.has('ArrowRight')) dc += 1;
-      if (k.has('ArrowUp')) dr -= 1;
-      if (k.has('ArrowDown')) dr += 1;
+      if (k.has('ArrowLeft') || k.has('dpad--1-0')) dc -= 1;
+      if (k.has('ArrowRight') || k.has('dpad-1-0')) dc += 1;
+      if (k.has('ArrowUp') || k.has('dpad-0--1')) dr -= 1;
+      if (k.has('ArrowDown') || k.has('dpad-0-1')) dr += 1;
       if (dc !== 0) tryMove(dc, 0);
       if (dr !== 0) tryMove(0, dr);
 

@@ -872,6 +872,7 @@ const Village = () => {
     cursor: 'pointer',
     userSelect: 'none',
     WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
     touchAction: 'none',
   };
 

@@ -1089,23 +1089,30 @@ const Maze = () => {
         }}
       >
         {[
-          { dc: 0, dr: -1, top: 0, left: 40, label: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,2 13,12 1,12" fill="rgba(160,140,200,0.8)"/></svg> },
-          { dc: -1, dr: 0, top: 40, left: 0, label: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="2,7 12,1 12,13" fill="rgba(160,140,200,0.8)"/></svg> },
-          { dc: 1, dr: 0, top: 40, left: 80, label: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="12,7 2,1 2,13" fill="rgba(160,140,200,0.8)"/></svg> },
-          { dc: 0, dr: 1, top: 80, left: 40, label: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,12 13,2 1,2" fill="rgba(160,140,200,0.8)"/></svg> },
+          { dc: 0, dr: -1, top: 0, left: 40 },
+          { dc: -1, dr: 0, top: 40, left: 0 },
+          { dc: 1, dr: 0, top: 40, left: 80 },
+          { dc: 0, dr: 1, top: 80, left: 40 },
         ].map((b, i) => (
           <button
             key={i}
-            onPointerDown={(e) => { e.preventDefault(); dpadMove(b.dc, b.dr); }}
+            onPointerDown={(e) => { e.preventDefault(); heldKeysRef.current.add(`dpad-${b.dc}-${b.dr}`); }}
+            onPointerUp={(e) => { e.preventDefault(); heldKeysRef.current.delete(`dpad-${b.dc}-${b.dr}`); }}
+            onPointerLeave={(e) => { e.preventDefault(); heldKeysRef.current.delete(`dpad-${b.dc}-${b.dr}`); }}
+            onPointerCancel={(e) => { e.preventDefault(); heldKeysRef.current.delete(`dpad-${b.dc}-${b.dr}`); }}
             style={{
               position: 'absolute', top: b.top, left: b.left, width: 40, height: 40,
               background: 'rgba(20,18,30,0.7)', border: '1px solid rgba(100,80,160,0.4)',
-              color: 'rgba(160,140,200,0.7)', fontSize: 14, cursor: 'pointer', padding: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', touchAction: 'none',
+              cursor: 'pointer', padding: 0,
+              userSelect: 'none', WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none', touchAction: 'none',
             }}
           >
-            {b.label}
+            {i === 0 && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,2 13,12 1,12" fill="rgba(160,140,200,0.8)"/></svg>}
+            {i === 1 && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="2,7 12,1 12,13" fill="rgba(160,140,200,0.8)"/></svg>}
+            {i === 2 && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="12,7 2,1 2,13" fill="rgba(160,140,200,0.8)"/></svg>}
+            {i === 3 && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,12 13,2 1,2" fill="rgba(160,140,200,0.8)"/></svg>}
           </button>
         ))}
       </div>

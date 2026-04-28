@@ -738,10 +738,10 @@ const Maze = () => {
   const MAP_H = config.rows * CELL;
 
   // Cull walls outside camera view for performance (Level 2 = 22500 cells)
-  const viewLeft = -cam.x - 100;
-  const viewTop = -cam.y - 100;
-  const viewRight = -cam.x + window.innerWidth + 100;
-  const viewBottom = -cam.y + window.innerHeight + 100;
+  const viewLeft = -cam.x - 400;
+  const viewTop = -cam.y - 400;
+  const viewRight = -cam.x + window.innerWidth + 400;
+  const viewBottom = -cam.y + window.innerHeight + 400;
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#04040a', overflow: 'hidden' }}>

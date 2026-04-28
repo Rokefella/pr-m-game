@@ -653,9 +653,9 @@ const ShadowRealm = () => {
     let raf = 0;
     let keyFrameCounter = 0;
     const loop = () => {
-      // Held-keys movement — process every 4 frames (~15Hz) for consistent speed
+      // Held-keys movement — process every 2 frames (~30Hz) for responsive feel
       keyFrameCounter++;
-      if (keyFrameCounter >= 4) {
+      if (keyFrameCounter >= 2) {
         keyFrameCounter = 0;
         const held = heldKeysRef.current;
         let kdx = 0, kdy = 0;

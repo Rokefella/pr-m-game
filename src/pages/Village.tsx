@@ -732,10 +732,10 @@ const Village = () => {
         keyFrameCounter = 0;
         const held = heldKeysRef.current;
         let kdx = 0, kdy = 0;
-        if (held.has('ArrowLeft')) kdx -= STEP;
-        if (held.has('ArrowRight')) kdx += STEP;
-        if (held.has('ArrowUp')) kdy -= STEP;
-        if (held.has('ArrowDown')) kdy += STEP;
+        if (held.has('ArrowLeft') || held.has('dpad--1-0')) kdx -= STEP;
+        if (held.has('ArrowRight') || held.has('dpad-1-0')) kdx += STEP;
+        if (held.has('ArrowUp') || held.has('dpad-0--1')) kdy -= STEP;
+        if (held.has('ArrowDown') || held.has('dpad-0-1')) kdy += STEP;
         if (kdx !== 0 && kdy !== 0) {
           kdx *= 0.707;
           kdy *= 0.707;
@@ -871,7 +871,18 @@ const Village = () => {
     justifyContent: 'center',
     cursor: 'pointer',
     userSelect: 'none',
+    WebkitUserSelect: 'none',
     touchAction: 'none',
+  };
+
+  const dpadHandlers = (dc: number, dr: number) => {
+    const key = `dpad-${dc}-${dr}`;
+    return {
+      onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); heldKeysRef.current.add(key); },
+      onPointerUp: () => { heldKeysRef.current.delete(key); },
+      onPointerLeave: () => { heldKeysRef.current.delete(key); },
+      onPointerCancel: () => { heldKeysRef.current.delete(key); },
+    };
   };
 
   // Per-Type-A depth styling: rgb tuple + darker shade tuple
@@ -1324,10 +1335,7 @@ const Village = () => {
           role="button"
           aria-label="Up"
           style={dpadBtn}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            move(0, -STEP);
-          }}
+          {...dpadHandlers(0, -1)}
         >
           ▲
         </div>
@@ -1336,10 +1344,7 @@ const Village = () => {
           role="button"
           aria-label="Left"
           style={dpadBtn}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            move(-STEP, 0);
-          }}
+          {...dpadHandlers(-1, 0)}
         >
           ◄
         </div>
@@ -1348,10 +1353,7 @@ const Village = () => {
           role="button"
           aria-label="Right"
           style={dpadBtn}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            move(STEP, 0);
-          }}
+          {...dpadHandlers(1, 0)}
         >
           ►
         </div>
@@ -1360,10 +1362,7 @@ const Village = () => {
           role="button"
           aria-label="Down"
           style={dpadBtn}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            move(0, STEP);
-          }}
+          {...dpadHandlers(0, 1)}
         >
           ▼
         </div>

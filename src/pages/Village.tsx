@@ -1338,7 +1338,7 @@ const Village = () => {
           style={dpadBtn}
           {...dpadHandlers(0, -1)}
         >
-          ▲
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,2 13,12 1,12" fill="rgba(160,140,200,0.8)"/></svg>
         </div>
         <div />
         <div

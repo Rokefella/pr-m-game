@@ -1239,10 +1239,7 @@ const ShadowRealm = () => {
           role="button"
           aria-label="Up"
           style={dpadBtn}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            move(0, -STEP);
-          }}
+          {...dpadHandlers(0, -1)}
         >
           ▲
         </div>
@@ -1251,10 +1248,7 @@ const ShadowRealm = () => {
           role="button"
           aria-label="Left"
           style={dpadBtn}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            move(-STEP, 0);
-          }}
+          {...dpadHandlers(-1, 0)}
         >
           ◄
         </div>
@@ -1263,10 +1257,7 @@ const ShadowRealm = () => {
           role="button"
           aria-label="Right"
           style={dpadBtn}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            move(STEP, 0);
-          }}
+          {...dpadHandlers(1, 0)}
         >
           ►
         </div>
@@ -1275,10 +1266,7 @@ const ShadowRealm = () => {
           role="button"
           aria-label="Down"
           style={dpadBtn}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            move(0, STEP);
-          }}
+          {...dpadHandlers(0, 1)}
         >
           ▼
         </div>

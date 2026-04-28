@@ -798,7 +798,18 @@ const ShadowRealm = () => {
     justifyContent: 'center',
     cursor: 'pointer',
     userSelect: 'none',
+    WebkitUserSelect: 'none',
     touchAction: 'none',
+  };
+
+  const dpadHandlers = (dc: number, dr: number) => {
+    const key = `dpad-${dc}-${dr}`;
+    return {
+      onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); heldKeysRef.current.add(key); },
+      onPointerUp: () => { heldKeysRef.current.delete(key); },
+      onPointerLeave: () => { heldKeysRef.current.delete(key); },
+      onPointerCancel: () => { heldKeysRef.current.delete(key); },
+    };
   };
 
   // Per-Type-A depth styling for ShadowRealm (green palette + orange return)

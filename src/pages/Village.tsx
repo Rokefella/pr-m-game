@@ -872,6 +872,7 @@ const Village = () => {
     cursor: 'pointer',
     userSelect: 'none',
     WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
     touchAction: 'none',
   };
 
@@ -1337,7 +1338,7 @@ const Village = () => {
           style={dpadBtn}
           {...dpadHandlers(0, -1)}
         >
-          ▲
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,2 13,12 1,12" fill="rgba(160,140,200,0.8)"/></svg>
         </div>
         <div />
         <div
@@ -1346,7 +1347,7 @@ const Village = () => {
           style={dpadBtn}
           {...dpadHandlers(-1, 0)}
         >
-          ◄
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="2,7 12,1 12,13" fill="rgba(160,140,200,0.8)"/></svg>
         </div>
         <div />
         <div
@@ -1355,7 +1356,7 @@ const Village = () => {
           style={dpadBtn}
           {...dpadHandlers(1, 0)}
         >
-          ►
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="12,7 2,1 2,13" fill="rgba(160,140,200,0.8)"/></svg>
         </div>
         <div />
         <div
@@ -1364,7 +1365,7 @@ const Village = () => {
           style={dpadBtn}
           {...dpadHandlers(0, 1)}
         >
-          ▼
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,12 13,2 1,2" fill="rgba(160,140,200,0.8)"/></svg>
         </div>
         <div />
       </div>

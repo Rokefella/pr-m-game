@@ -1089,10 +1089,10 @@ const Maze = () => {
         }}
       >
         {[
-          { dc: 0, dr: -1, top: 0, left: 40, label: '▲' },
-          { dc: -1, dr: 0, top: 40, left: 0, label: '◀' },
-          { dc: 1, dr: 0, top: 40, left: 80, label: '▶' },
-          { dc: 0, dr: 1, top: 80, left: 40, label: '▼' },
+          { dc: 0, dr: -1, top: 0, left: 40, label: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,2 13,12 1,12" fill="rgba(160,140,200,0.8)"/></svg> },
+          { dc: -1, dr: 0, top: 40, left: 0, label: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="2,7 12,1 12,13" fill="rgba(160,140,200,0.8)"/></svg> },
+          { dc: 1, dr: 0, top: 40, left: 80, label: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="12,7 2,1 2,13" fill="rgba(160,140,200,0.8)"/></svg> },
+          { dc: 0, dr: 1, top: 80, left: 40, label: <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,12 13,2 1,2" fill="rgba(160,140,200,0.8)"/></svg> },
         ].map((b, i) => (
           <button
             key={i}
@@ -1101,6 +1101,8 @@ const Maze = () => {
               position: 'absolute', top: b.top, left: b.left, width: 40, height: 40,
               background: 'rgba(20,18,30,0.7)', border: '1px solid rgba(100,80,160,0.4)',
               color: 'rgba(160,140,200,0.7)', fontSize: 14, cursor: 'pointer', padding: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', touchAction: 'none',
             }}
           >
             {b.label}

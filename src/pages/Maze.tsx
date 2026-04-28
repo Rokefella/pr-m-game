@@ -29,28 +29,28 @@ type LevelConfig = {
 };
 
 // =================== LEVEL 1 ===================
+const LEVEL1_WALLS: Cell[] = (() => {
+  const walls: Cell[] = [];
+  const add = (c: number, r: number) => walls.push({ col: c, row: r });
+  const hWall = (c: number, r: number, len: number) => { for (let i = 0; i < len; i++) add(c + i, r); };
+  const vWall = (c: number, r: number, len: number) => { for (let i = 0; i < len; i++) add(c, r + i); };
+  // Outer border
+  for (let c = 0; c < 30; c++) { add(c, 0); add(c, 29); }
+  for (let r = 1; r < 29; r++) { add(0, r); add(29, r); }
+  // Internal walls
+  hWall(1, 7, 7);   hWall(10, 7, 5);  hWall(17, 7, 7);  hWall(22, 7, 7);
+  hWall(1, 14, 7);  hWall(10, 14, 5); hWall(17, 14, 7); hWall(22, 14, 7);
+  hWall(1, 21, 7);  hWall(10, 21, 5); hWall(17, 21, 7); hWall(22, 21, 7);
+  vWall(7, 1, 6);   vWall(7, 9, 5);   vWall(7, 16, 5);  vWall(7, 23, 6);
+  vWall(14, 1, 6);  vWall(14, 9, 5);  vWall(14, 16, 5); vWall(14, 23, 6);
+  vWall(21, 1, 6);  vWall(21, 9, 5);  vWall(21, 16, 5); vWall(21, 23, 6);
+  return walls;
+})();
+
 const buildLevel1 = (): LevelConfig => {
   const COLS = 30;
   const ROWS = 30;
-  const open = new Set<string>();
-  const carve = (c: number, r: number) => {
-    if (c > 0 && c < COLS - 1 && r > 0 && r < ROWS - 1) open.add(`${c},${r}`);
-  };
-  const hLine = (c: number, r: number, len: number) => {
-    for (let i = 0; i < len; i++) carve(c + i, r);
-  };
-  const vLine = (c: number, r: number, len: number) => {
-    for (let i = 0; i < len; i++) carve(c, r + i);
-  };
-
-  hLine(1, 15, 28);
-  vLine(15, 1, 28);
-  vLine(3, 1, 15); vLine(7, 5, 11); vLine(11, 1, 15); vLine(19, 1, 15); vLine(23, 5, 11); vLine(27, 1, 15);
-  vLine(3, 15, 14); vLine(7, 15, 11); vLine(11, 15, 14); vLine(19, 15, 14); vLine(23, 15, 11); vLine(27, 15, 14);
-  hLine(1, 3, 28); hLine(1, 7, 14); hLine(15, 7, 14); hLine(1, 11, 28); hLine(1, 19, 28); hLine(1, 23, 14); hLine(15, 23, 14); hLine(1, 27, 28);
-  hLine(5, 5, 7); vLine(5, 1, 8); hLine(20, 8, 5); vLine(24, 3, 8); hLine(5, 22, 6); vLine(8, 19, 6); hLine(18, 24, 6); vLine(22, 19, 8); hLine(13, 8, 5);
-  hLine(23, 27, 5); vLine(27, 23, 6);
-  hLine(5, 9, 3); hLine(13, 13, 4); vLine(9, 17, 3); hLine(17, 17, 3); vLine(13, 25, 3); hLine(21, 13, 3); vLine(25, 9, 4); hLine(9, 25, 3);
+  const wallKeys = new Set(LEVEL1_WALLS.map((w) => `${w.col},${w.row}`));
 
   const fragments: FragmentDef[] = [
     { col: 8, row: 4, prime: 23 },
@@ -61,17 +61,27 @@ const buildLevel1 = (): LevelConfig => {
   ];
   const door: Cell = { col: 28, row: 28 };
   const creditDoors: Cell[] = [{ col: 2, row: 14 }];
-  const special = new Set<string>();
-  fragments.forEach((f) => special.add(`${f.col},${f.row}`));
-  special.add(`${door.col},${door.row}`);
-  creditDoors.forEach((d) => special.add(`${d.col},${d.row}`));
-
   const eggs: EggDef[] = [
     { col: 10, row: 26, line: 'The corner holds the answer.' },
     { col: 26, row: 10, line: 'Walk toward the darkness.' },
     { col: 26, row: 26, line: 'You are close. Keep going.' },
     { col: 20, row: 20, line: 'The gold waits at the edge.' },
   ];
+
+  // Guarantee special cells are never walls
+  fragments.forEach((f) => wallKeys.delete(`${f.col},${f.row}`));
+  wallKeys.delete(`${door.col},${door.row}`);
+  creditDoors.forEach((d) => wallKeys.delete(`${d.col},${d.row}`));
+
+  const special = new Set<string>();
+  fragments.forEach((f) => special.add(`${f.col},${f.row}`));
+  special.add(`${door.col},${door.row}`);
+  creditDoors.forEach((d) => special.add(`${d.col},${d.row}`));
+
+  const open = new Set<string>();
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (!wallKeys.has(`${c},${r}`)) open.add(`${c},${r}`);
 
   return {
     cols: COLS, rows: ROWS,
@@ -293,18 +303,17 @@ const Maze = () => {
 
   // wallSet built directly from LEVEL2_WALLS — single source of truth for L2 collision + rendering.
   const wallSet = useMemo(() => {
-    if (currentLevel !== 2) return new Set<string>();
     const s = new Set<string>();
-    LEVEL2_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
+    if (currentLevel === 1) LEVEL1_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
+    if (currentLevel === 2) LEVEL2_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
     return s;
   }, [currentLevel]);
 
   const isWall = (c: number, r: number) => {
     if (!config) return true;
     if (c < 0 || c >= config.cols || r < 0 || r >= config.rows) return true;
-    if (currentLevel === 2) return wallSet.has(`${c},${r}`);
     if (config.specialSet.has(`${c},${r}`)) return false;
-    return !config.openSet.has(`${c},${r}`);
+    return wallSet.has(`${c},${r}`);
   };
 
   useEffect(() => {

@@ -799,6 +799,7 @@ const ShadowRealm = () => {
     cursor: 'pointer',
     userSelect: 'none',
     WebkitUserSelect: 'none',
+    WebkitTouchCallout: 'none',
     touchAction: 'none',
   };
 

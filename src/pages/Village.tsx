@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
+import PaywallOverlay from '@/components/PaywallOverlay';
 
 // Village Merchant
 // Village Merchant — TEMP: positioned at map center (col=27,row=17) for visibility testing
@@ -557,17 +558,13 @@ const Village = () => {
       setTotalMazeSteps(row.total_maze_steps);
       setTotalMazeTime(row.total_maze_time);
 
-      // Trial check (14 days from first_launch_at)
+      // Trial check (display only — paywall is gated by Bernard quest, not trial)
       if (row.first_launch_at) {
         const daysSince = Math.floor(
           (Date.now() - new Date(row.first_launch_at).getTime()) / (1000 * 60 * 60 * 24),
         );
         const remaining = Math.max(0, 14 - daysSince);
         setTrialDaysRemaining(remaining);
-        if (remaining === 0) {
-          navigate('/paywall');
-          return;
-        }
       }
 
       if (row.levelup_pending && !levelUpHandled) {

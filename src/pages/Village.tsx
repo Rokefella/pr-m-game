@@ -1512,7 +1512,7 @@ const Village = () => {
         <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: '#5b4fd4' }}>
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
-        <ProfileButton onClick={() => setProfileOpen(true)} />
+        <ProfileButton onClick={openProfile} />
       </div>
 
       {/* Trial countdown — appears just above HUD when ≤3 days remain */}
@@ -1540,7 +1540,7 @@ const Village = () => {
       <button
         type="button"
         className="font-mono"
-        onClick={() => setProfileOpen(true)}
+        onClick={openProfile}
         style={{
           position: 'fixed',
           top: 12,
@@ -1559,7 +1559,7 @@ const Village = () => {
       </button>
 
       {/* PROFILE POPUP */}
-      {profileOpen && (
+      {profileOpenDisplay && (
         <div
           style={{
             position: 'fixed',
@@ -1582,7 +1582,7 @@ const Village = () => {
           {/* Close button */}
           <button
             type="button"
-            onClick={() => setProfileOpen(false)}
+            onClick={closeProfile}
             aria-label="Close profile"
             style={{
               position: 'absolute',
@@ -2100,7 +2100,7 @@ const Village = () => {
         </div>
       )}
 
-      <ProfileOverlay isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} />
 
       {paywallOpen && (
         <PaywallOverlay

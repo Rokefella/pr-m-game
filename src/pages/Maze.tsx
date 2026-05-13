@@ -855,7 +855,20 @@ const Maze = () => {
               }}
             />
           );
-        })}
+
+        {currentLevel === 1 && LEVEL1_HINTS.map((h, i) => (
+          <div
+            key={`hint-${i}`}
+            style={{
+              position: 'absolute',
+              left: h.col * CELL, top: h.row * CELL,
+              width: CELL, height: CELL,
+              border: '1px solid rgba(200,150,58,0.4)',
+              boxSizing: 'border-box',
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
 
         {config.fragments.filter((f) => !collected.has(f.prime)).map((f) => (
           <div

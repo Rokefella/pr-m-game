@@ -9,6 +9,7 @@ import PaywallOverlay from '@/components/PaywallOverlay';
 // Village Merchant
 // Village Merchant — TEMP: positioned at map center (col=27,row=17) for visibility testing
 const MERCHANT = { x: 27 * 40, y: 17 * 40 };
+const BERNARD_VILLAGE = { x: 1100, y: 700 };
 const MERCHANT_LINES = [
   'You need more steps. I have them.',
   "The fragments don't find themselves.",
@@ -491,6 +492,39 @@ const Village = () => {
   const [credits, setCredits] = useState<number>(0);
   const [merchantOpen, setMerchantOpen] = useState(false);
   const merchantTriggerLockRef = useRef(false);
+
+  // Bernard quest state
+  const [bernardOpen, setBernardOpen] = useState(false);
+  const [bernardStage, setBernardStage] = useState<'00' | '01' | '02' | '06' | null>(null);
+  const bernardLockRef = useRef(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+
+  const openBernardDialog = () => {
+    if (typeof window === 'undefined') return;
+    const f00 = window.localStorage.getItem('praem_bernard_00') === 'true';
+    const f02 = window.localStorage.getItem('praem_bernard_02') === 'true';
+    const f05 = window.localStorage.getItem('praem_bernard_05') === 'true';
+    const f06 = window.localStorage.getItem('praem_bernard_06') === 'true';
+    let stage: '00' | '01' | '02' | '06' = '00';
+    if (f05 && !f06) stage = '06';
+    else if (f02) stage = '02';
+    else if (f00) stage = '01';
+    else stage = '00';
+    setBernardStage(stage);
+    setBernardOpen(true);
+  };
+
+  // Auto-trigger BERNARD_00 on first Village entry
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const had = window.localStorage.getItem('praem_bernard_00') === 'true';
+    if (had) return;
+    const t = window.setTimeout(() => {
+      setBernardStage('00');
+      setBernardOpen(true);
+    }, 2000);
+    return () => window.clearTimeout(t);
+  }, []);
 
   // Villagers — patrol around their base on independent timers
   type Villager = { id: number; x: number; y: number; baseX: number; baseY: number; whisper: string };

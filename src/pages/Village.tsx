@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 // player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
@@ -489,7 +489,10 @@ const Village = () => {
   const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(14);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const profileOpenRef = useRef(false);
+  const [profileOpenDisplay, setProfileOpenDisplay] = useState(false);
+  const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
+  const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
   const [credits, setCredits] = useState<number>(0);
   const [merchantOpen, setMerchantOpen] = useState(false);
   const merchantTriggerLockRef = useRef(false);
@@ -1509,7 +1512,7 @@ const Village = () => {
         <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: '#5b4fd4' }}>
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
-        <ProfileButton onClick={() => setProfileOpen(true)} />
+        <ProfileButton onClick={openProfile} />
       </div>
 
       {/* Trial countdown — appears just above HUD when ≤3 days remain */}
@@ -1537,7 +1540,7 @@ const Village = () => {
       <button
         type="button"
         className="font-mono"
-        onClick={() => setProfileOpen(true)}
+        onClick={openProfile}
         style={{
           position: 'fixed',
           top: 12,
@@ -1556,7 +1559,7 @@ const Village = () => {
       </button>
 
       {/* PROFILE POPUP */}
-      {profileOpen && (
+      {profileOpenDisplay && (
         <div
           style={{
             position: 'fixed',
@@ -1579,7 +1582,7 @@ const Village = () => {
           {/* Close button */}
           <button
             type="button"
-            onClick={() => setProfileOpen(false)}
+            onClick={closeProfile}
             aria-label="Close profile"
             style={{
               position: 'absolute',
@@ -2097,7 +2100,7 @@ const Village = () => {
         </div>
       )}
 
-      <ProfileOverlay isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} />
 
       {paywallOpen && (
         <PaywallOverlay

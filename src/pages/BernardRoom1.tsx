@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 
@@ -54,7 +54,10 @@ const BernardRoom1 = () => {
 
   const [nearBernard, setNearBernard] = useState(false);
   const [dialogOpen, setDialogOpen] = useState<DialogStage>(null);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const profileOpenRef = useRef(false);
+  const [profileOpenDisplay, setProfileOpenDisplay] = useState(false);
+  const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
+  const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
 
   // Mark room visited on mount → BERNARD_03
   useEffect(() => {
@@ -418,9 +421,9 @@ const BernardRoom1 = () => {
       {renderDialog()}
 
       <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 60 }}>
-        <ProfileButton onClick={() => setProfileOpen(true)} />
+        <ProfileButton onClick={openProfile} />
       </div>
-      <ProfileOverlay isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} />
     </div>
   );
 };

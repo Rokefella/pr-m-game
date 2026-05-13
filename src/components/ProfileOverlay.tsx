@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 type Props = {
   isOpen: boolean;
@@ -289,4 +289,4 @@ export const ProfileButton = ({ onClick }: { onClick: () => void }) => (
   </button>
 );
 
-export default ProfileOverlay;
+export default React.memo(ProfileOverlay, (prev, next) => prev.isOpen === next.isOpen);

@@ -499,7 +499,6 @@ const Village = () => {
   const [bernardStage, setBernardStage] = useState<'00' | '01' | '02' | '06' | null>(null);
   const bernardLockRef = useRef(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
 
   const openBernardDialog = () => {
     if (typeof window === 'undefined') return;

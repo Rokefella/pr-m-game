@@ -338,7 +338,7 @@ const Maze = () => {
   // wallSet built directly from LEVEL2_WALLS — single source of truth for L2 collision + rendering.
   const wallSet = useMemo(() => {
     const s = new Set<string>();
-    if (currentLevel === 1) LEVEL1_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
+    if (currentLevel === 1) LEVEL1_WALL_SET.forEach((k) => s.add(k));
     if (currentLevel === 2) LEVEL2_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
     return s;
   }, [currentLevel]);

@@ -663,6 +663,11 @@ const Maze = () => {
         setCollected(next);
         setActiveFragment({ prime: frag.prime, index: fragIdx });
 
+        // persist to localStorage for cross-screen quest tracking
+        try {
+          window.localStorage.setItem('praem_fragments', JSON.stringify(Array.from(next)));
+        } catch { /* ignore */ }
+
         if (user) {
           const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
           restInsert('fragments', {
@@ -686,11 +691,15 @@ const Maze = () => {
     // door check
     if (nc === config.door.col && nr === config.door.row) {
       const required = config.fragmentsRequired;
-      if (collectedRef.current.size >= required) {
-        // Show confirmation overlay instead of immediate navigation
+      let count = collectedRef.current.size;
+      try {
+        const stored = JSON.parse(window.localStorage.getItem('praem_fragments') || '[]') as number[];
+        if (Array.isArray(stored)) count = Math.max(count, stored.length);
+      } catch { /* ignore */ }
+      if (count >= required) {
         setDoorConfirmOpen(true);
       } else {
-        const remaining = required - collectedRef.current.size;
+        const remaining = required - count;
         const msg = remaining === 1
           ? 'One fragment remains. The door does not open.'
           : `${remaining} fragments remain. The door does not open.`;
@@ -698,9 +707,13 @@ const Maze = () => {
       }
     }
 
-    // credit-game doors
+    // blue door — Bernard's room (Level 1) / credit game (other levels)
     if (config.creditDoors.some((d) => d.col === nc && d.row === nr)) {
-      showWhisper('A game exists here. Not yet open.', 'rgba(59,130,246,0.8)', 2500);
+      if (currentLevelRef.current === 1) {
+        navigate('/bernard-room-1');
+      } else {
+        showWhisper('A game exists here. Not yet open.', 'rgba(59,130,246,0.8)', 2500);
+      }
     }
   };
 

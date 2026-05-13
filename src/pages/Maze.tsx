@@ -330,7 +330,10 @@ const Maze = () => {
   const registrationNumberRef = useRef(0);
   const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const profileOpenRef = useRef(false);
+  const [profileOpenDisplay, setProfileOpenDisplay] = useState(false);
+  const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
+  const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

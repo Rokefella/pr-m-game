@@ -421,9 +421,9 @@ const BernardRoom1 = () => {
       {renderDialog()}
 
       <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 60 }}>
-        <ProfileButton onClick={() => setProfileOpen(true)} />
+        <ProfileButton onClick={openProfile} />
       </div>
-      <ProfileOverlay isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} />
     </div>
   );
 };

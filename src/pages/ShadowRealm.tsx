@@ -487,6 +487,7 @@ const ShadowRealm = () => {
   const [credits, setCredits] = useState<number>(0);
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);
   const [merchantOpen, setMerchantOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const merchantTriggerLockRef = useRef(false);
   const [memoryText, setMemoryText] = useState<string | null>(null);
   const memoryTimer = useRef<number | null>(null);

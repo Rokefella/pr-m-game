@@ -1,134 +1,69 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
 };
 
-const TITLES_BY_LEVEL: Record<number, string> = {
-  1: 'Wanderer',
-  2: 'Seeker',
-  3: 'Initiate',
-};
-
-type Quest = {
-  key: string;
-  name: string;
-  giver: string;
-  status: string;
-  dimension: 'purple' | 'amber' | 'teal';
-};
-
-const dimensionColor = (d: Quest['dimension']) =>
-  d === 'purple' ? '#a98cff' : d === 'amber' ? '#c8943a' : '#1a9e7a';
-
-const readBool = (k: string) => typeof window !== 'undefined' && window.localStorage.getItem(k) === 'true';
-const readStr = (k: string) => (typeof window !== 'undefined' ? window.localStorage.getItem(k) : null);
-const readInt = (k: string, fallback = 0) => {
-  const v = readStr(k);
-  if (v === null) return fallback;
-  const n = parseInt(v, 10);
-  return Number.isNaN(n) ? fallback : n;
-};
-
-type DataShape = {
-  username: string;
-  reg: number;
-  level: number;
-  credits: number;
-  steps: number;
-  fragments: number;
-  title: string;
-  aura: string;
-  unlocked: string[];
-  active: Quest[];
-  completed: Quest[];
-  anyBernardFlag: boolean;
-};
-
-const readData = (): DataShape => {
-  const username = readStr('praem_username') || 'Wanderer';
-  const reg = readInt('praem_registration_number', 0);
-  const level = readInt('praem_level', 1);
-  const credits = readInt('praem_credits', 50);
-  const steps = readInt('praem_steps', 100);
-  const fragments = (() => {
-    try {
-      return (JSON.parse(readStr('praem_fragments') || '[]') as number[]).length;
-    } catch { return 0; }
-  })();
-  const title = readStr('praem_title') || TITLES_BY_LEVEL[level] || 'Wanderer';
-  const aura = readStr('praem_aura_color') || '#5b4fd4';
-  const unlocked = (() => {
-    try {
-      const arr = JSON.parse(readStr('praem_unlocked_titles') || '[]') as string[];
-      if (Array.isArray(arr) && arr.length) return arr;
-    } catch { /* ignore */ }
-    return [TITLES_BY_LEVEL[level] || 'Wanderer'];
-  })();
-
-  const f00 = readBool('praem_bernard_00');
-  const f01 = readBool('praem_bernard_01');
-  const f02 = readBool('praem_bernard_02');
-  const f03 = readBool('praem_bernard_03');
-  const f04 = readBool('praem_bernard_04');
-  const f05 = readBool('praem_bernard_05');
-  const f06 = readBool('praem_bernard_06');
-  const anyBernardFlag = f00 || f01 || f02 || f03 || f04 || f05 || f06;
-
-  const active: Quest[] = [];
-  if (f02 && !f03) active.push({ key: 'q-blue', name: 'Find the Blue Door', giver: 'Bernard', status: 'Find the blue door inside the Instrument', dimension: 'purple' });
-  if (f03 && !f04) active.push({ key: 'q-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Collect one fragment and return to Bernard in his room', dimension: 'purple' });
-  if (f04 && !f05) active.push({ key: 'q-gold', name: 'Find the golden door', giver: 'Bernard', status: 'Collect all 5 fragments and find the golden door', dimension: 'purple' });
-  if (f05 && !f06) active.push({ key: 'q-return', name: 'Return to Bernard', giver: 'Bernard', status: 'Return to Bernard in the Village square', dimension: 'purple' });
-
-  const completed: Quest[] = [];
-  if (f00) completed.push({ key: 'c-welcome', name: 'Welcome to the Village', giver: 'Bernard', status: 'Bernard welcomed you', dimension: 'purple' });
-  if (f01) completed.push({ key: 'c-feet', name: 'Find your feet', giver: 'Bernard', status: 'You found the three buildings', dimension: 'purple' });
-  if (f03) completed.push({ key: 'c-blue', name: 'Find the Blue Door', giver: 'Bernard', status: "You found Bernard's room", dimension: 'purple' });
-  if (f04) completed.push({ key: 'c-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Fragment collected. The instrument spoke.', dimension: 'purple' });
-  if (f06) completed.push({ key: 'c-return', name: 'The return', giver: 'Bernard', status: 'You completed Level 1', dimension: 'purple' });
-
-  return { username, reg, level, credits, steps, fragments, title, aura, unlocked, active, completed, anyBernardFlag };
-};
-
 const ProfileOverlay = ({ isOpen, onClose }: Props) => {
-  const [tab, setTab] = useState<'profile' | 'quests'>('profile');
-  const [data, setData] = useState<DataShape | null>(null);
-  const [leaveHover, setLeaveHover] = useState(false);
+  const [mainTab, setMainTab] = useState<'profile' | 'quests'>('profile');
+  const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
 
-  // Always default to profile tab on open
-  useEffect(() => {
-    if (isOpen) setTab('profile');
-  }, [isOpen]);
+  if (!isOpen) return null;
 
-  // Read storage fresh on each open
-  useEffect(() => {
-    if (!isOpen) return;
-    if (typeof window !== 'undefined') {
-      const praemKeys: Record<string, string | null> = {};
-      for (let i = 0; i < window.localStorage.length; i++) {
-        const k = window.localStorage.key(i);
-        if (k && k.startsWith('praem_')) praemKeys[k] = window.localStorage.getItem(k);
-      }
-      // eslint-disable-next-line no-console
-      console.log('[ProfileOverlay] praem_ keys on mount:', praemKeys);
-    }
-    setData(readData());
-  }, [isOpen]);
+  // Synchronous reads — no useEffect, no async
+  const username = localStorage.getItem('praem_username') || 'Wanderer';
+  const regNum = localStorage.getItem('praem_registration_number') || '0001';
+  const credits = localStorage.getItem('praem_credits') || '50';
+  const steps = localStorage.getItem('praem_steps') || '100';
+  const level = localStorage.getItem('praem_level') || '1';
+  const title = localStorage.getItem('praem_title') || 'Wanderer';
+  const fragmentsRaw = localStorage.getItem('praem_fragments');
+  let fragmentCount = 0;
+  try {
+    fragmentCount = fragmentsRaw ? (JSON.parse(fragmentsRaw) as unknown[]).length : 0;
+  } catch { fragmentCount = 0; }
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
+  const b00 = localStorage.getItem('praem_bernard_00') === 'true';
+  const b01 = localStorage.getItem('praem_bernard_01') === 'true';
+  const b02 = localStorage.getItem('praem_bernard_02') === 'true';
+  const b03 = localStorage.getItem('praem_bernard_03') === 'true';
+  const b04 = localStorage.getItem('praem_bernard_04') === 'true';
+  const b05 = localStorage.getItem('praem_bernard_05') === 'true';
+  const b06 = localStorage.getItem('praem_bernard_06') === 'true';
 
-  if (!isOpen || !data) return null;
+  type Quest = { key: string; name: string; giver: string; status: string };
 
-  const selectTitle = (t: string) => {
-    window.localStorage.setItem('praem_title', t);
-    setData(readData());
+  const activeQuests: Quest[] = [];
+  if (b02 && !b03) activeQuests.push({ key: 'a-blue', name: 'Find the Blue Door', giver: 'Bernard', status: 'Find the blue door inside the Instrument' });
+  if (b03 && !b04) activeQuests.push({ key: 'a-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Collect one fragment and return to Bernard' });
+  if (b04 && !b05) activeQuests.push({ key: 'a-gold', name: 'Find the golden door', giver: 'Bernard', status: 'Collect all 5 fragments and find the golden door' });
+  if (b05 && !b06) activeQuests.push({ key: 'a-return', name: 'Return to Bernard', giver: 'Bernard', status: 'Return to Bernard in the Village square' });
+
+  const completedQuests: Quest[] = [];
+  if (b00) completedQuests.push({ key: 'c-welcome', name: 'Welcome to the Village', giver: 'Bernard', status: 'Bernard welcomed you to the Village' });
+  if (b01) completedQuests.push({ key: 'c-feet', name: 'Find your feet', giver: 'Bernard', status: 'You found the three buildings' });
+  if (b03) completedQuests.push({ key: 'c-blue', name: 'Find the Blue Door', giver: 'Bernard', status: "You found Bernard's room" });
+  if (b04) completedQuests.push({ key: 'c-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Fragment collected. The instrument spoke.' });
+  if (b06) completedQuests.push({ key: 'c-return', name: 'The return', giver: 'Bernard', status: 'You completed Level 1' });
+
+  const cardStyle: React.CSSProperties = {
+    position: 'relative',
+    background: 'rgba(100,80,160,0.08)',
+    border: '0.5px solid rgba(100,80,160,0.3)',
+    borderRadius: 'var(--border-radius-md)',
+    padding: '10px 14px',
+    marginBottom: 8,
+  };
+
+  const questNameStyle: React.CSSProperties = {
+    margin: 0, fontSize: 13, color: 'rgba(200,185,255,0.95)', letterSpacing: '0.12em',
+  };
+  const giverStyle: React.CSSProperties = {
+    margin: '2px 0 0', fontSize: 12, color: 'rgba(160,140,200,0.7)',
+  };
+  const statusStyle: React.CSSProperties = {
+    margin: '4px 0 0', fontSize: 13, color: 'rgba(200,185,255,0.85)',
   };
 
   return (
@@ -148,31 +83,31 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
           pointerEvents: 'none',
         }}
       />
-      <div style={{ position: 'relative', maxWidth: 520, margin: '0 auto', padding: '24px 20px 120px' }}>
+      <div style={{ position: 'relative', maxWidth: 520, margin: '0 auto', padding: '24px 20px 140px' }}>
         {/* Header */}
-        <div className="font-mono" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: 'rgba(200,185,255,0.95)' }}>
-          <span>{data.username}</span>
-          <span>#{String(data.reg).padStart(4, '0')}</span>
+        <div className="font-mono" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: 'rgba(200,185,255,0.8)' }}>
+          <span>{username}</span>
+          <span>#{regNum}</span>
         </div>
 
-        {/* Tabs */}
+        {/* Main tabs */}
         <div style={{ display: 'flex', gap: 4, marginTop: 24, borderBottom: '0.5px solid rgba(100,80,160,0.2)' }}>
           {(['profile', 'quests'] as const).map((t) => {
-            const active = tab === t;
+            const active = mainTab === t;
             return (
               <button
                 key={t}
                 type="button"
-                onClick={() => setTab(t)}
+                onClick={() => setMainTab(t)}
                 className="font-cinzel"
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  borderBottom: active ? '1px solid #5b4fd4' : '1px solid transparent',
+                  borderBottom: active ? '1.5px solid #5b4fd4' : '1.5px solid transparent',
                   padding: '8px 20px',
                   fontSize: 13,
                   letterSpacing: '0.2em',
-                  color: active ? '#e0ddd5' : 'rgba(160,140,200,0.6)',
+                  color: active ? '#e0ddd5' : 'rgba(160,140,200,0.5)',
                   cursor: 'pointer',
                   marginBottom: -1,
                 }}
@@ -183,152 +118,109 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
           })}
         </div>
 
-        {/* Content */}
-        {tab === 'profile' && (
+        {/* PROFILE content */}
+        {mainTab === 'profile' && (
           <div style={{ marginTop: 8 }}>
-            <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 32, color: '#c8963a', margin: '24px 0 0' }}>
-              #{String(data.reg).padStart(4, '0')}
+            <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 36, color: '#c8963a', margin: '24px 0 0' }}>
+              #{regNum}
             </p>
-            <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 18, color: 'rgba(200,185,255,0.95)', margin: '8px 0 0', letterSpacing: '0.18em' }}>
-              LEVEL {data.level}
+            <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 18, color: 'rgba(200,185,255,0.9)', margin: '8px 0 0', letterSpacing: '0.18em' }}>
+              LEVEL {level}
             </p>
 
-            <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: 24, paddingTop: 16, borderTop: '0.5px solid rgba(100,80,160,0.2)', borderBottom: '0.5px solid rgba(100,80,160,0.2)', paddingBottom: 16 }}>
+            <div
+              style={{
+                display: 'flex', justifyContent: 'space-around',
+                marginTop: 24, paddingTop: 16, paddingBottom: 16,
+                borderTop: '0.5px solid rgba(100,80,160,0.2)',
+                borderBottom: '0.5px solid rgba(100,80,160,0.2)',
+              }}
+            >
               {[
-                { label: 'CREDITS', value: data.credits, color: '#c8963a' },
-                { label: 'STEPS', value: data.steps, color: '#e0ddd5' },
-                { label: 'FRAGMENTS', value: `${data.fragments}/5`, color: '#5b4fd4' },
+                { label: 'CREDITS', value: credits, color: '#c8963a' },
+                { label: 'STEPS', value: steps, color: '#e0ddd5' },
+                { label: 'FRAGMENTS', value: `${fragmentCount}/5`, color: '#5b4fd4' },
               ].map((s) => (
                 <div key={s.label} style={{ textAlign: 'center' }}>
-                  <div className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'rgba(160,140,200,0.9)' }}>{s.label}</div>
+                  <div className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'rgba(200,185,255,0.6)' }}>{s.label}</div>
                   <div className="font-mono" style={{ fontSize: 16, color: s.color, marginTop: 4 }}>{s.value}</div>
                 </div>
               ))}
             </div>
 
-            {/* Title */}
             <div style={{ marginTop: 24, textAlign: 'center' }}>
-              <div className="font-mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.9)' }}>TITLE</div>
-              <div className="font-cinzel" style={{ fontSize: 14, color: '#e0ddd5', marginTop: 4, letterSpacing: '0.2em' }}>
-                {data.title.toUpperCase()}
+              <div className="font-mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(200,185,255,0.6)' }}>TITLE</div>
+              <div className="font-cinzel" style={{ fontSize: 14, color: 'rgba(200,185,255,0.9)', marginTop: 6, letterSpacing: '0.2em' }}>
+                {title.toUpperCase()}
               </div>
-              {data.unlocked.length > 1 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginTop: 12 }}>
-                  {data.unlocked.map((t) => {
-                    const sel = t === data.title;
-                    return (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => selectTitle(t)}
-                        className="font-cinzel"
-                        style={{
-                          fontSize: 9, letterSpacing: '0.18em',
-                          padding: '6px 12px',
-                          background: sel ? 'rgba(91,79,212,0.15)' : 'transparent',
-                          border: `0.5px solid ${sel ? '#5b4fd4' : 'rgba(100,80,160,0.3)'}`,
-                          color: sel ? '#e0ddd5' : 'rgba(200,185,255,0.95)',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {t.toUpperCase()}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Aura */}
-            <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              <div className="font-mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.9)' }}>AURA</div>
-              <div
-                style={{
-                  width: 18, height: 18, borderRadius: '50%',
-                  background: data.aura,
-                  boxShadow: `0 0 10px ${data.aura}`,
-                }}
-              />
             </div>
           </div>
         )}
 
-        {tab === 'quests' && (
-          <div style={{ marginTop: 24 }}>
-            {!data.anyBernardFlag ? (
-              <div
-                style={{
-                  background: 'rgba(100,80,160,0.06)',
-                  border: '0.5px solid rgba(100,80,160,0.2)',
-                  padding: '24px 16px',
-                  textAlign: 'center',
-                }}
-              >
-                <p className="font-fell italic" style={{ margin: 0, fontSize: 14, color: 'rgba(200,185,255,0.9)' }}>
-                  Find Bernard in the Village to begin your journey.
-                </p>
-              </div>
-            ) : (
-              <>
-                <p className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(200,185,255,0.7)', margin: '0 0 8px' }}>
-                  ACTIVE
-                </p>
-                {data.active.length === 0 ? (
-                  <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 14, color: 'rgba(200,185,255,0.9)', margin: '24px 0' }}>
+        {/* QUESTS content */}
+        {mainTab === 'quests' && (
+          <div style={{ marginTop: 16 }}>
+            {/* Sub-tabs */}
+            <div style={{ display: 'flex', gap: 4, borderBottom: '0.5px solid rgba(100,80,160,0.15)' }}>
+              {(['active', 'completed'] as const).map((t) => {
+                const active = questTab === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setQuestTab(t)}
+                    className="font-cinzel"
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: active ? '1px solid #5b4fd4' : '1px solid transparent',
+                      padding: '6px 16px',
+                      fontSize: 11,
+                      letterSpacing: '0.2em',
+                      color: active ? '#e0ddd5' : 'rgba(160,140,200,0.4)',
+                      cursor: 'pointer',
+                      marginBottom: -1,
+                    }}
+                  >
+                    {t.toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+              {questTab === 'active' && (
+                activeQuests.length === 0 ? (
+                  <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 14, color: 'rgba(200,185,255,0.4)', margin: '32px 0' }}>
                     No active quests.
                   </p>
                 ) : (
-                  data.active.map((q) => (
-                    <div
-                      key={q.key}
-                      style={{
-                        position: 'relative',
-                        background: 'rgba(100,80,160,0.06)',
-                        border: '0.5px solid rgba(100,80,160,0.2)',
-                        padding: '10px 12px',
-                        marginBottom: 8,
-                      }}
-                    >
+                  activeQuests.map((q) => (
+                    <div key={q.key} style={cardStyle}>
                       <span
                         style={{
                           position: 'absolute', top: 12, right: 12,
                           width: 6, height: 6, borderRadius: '50%',
-                          background: dimensionColor(q.dimension),
-                          boxShadow: `0 0 6px ${dimensionColor(q.dimension)}`,
+                          background: '#5b4fd4',
+                          boxShadow: '0 0 6px #5b4fd4',
                         }}
                       />
-                      <p className="font-cinzel" style={{ margin: 0, fontSize: 14, letterSpacing: '0.15em', color: 'rgba(200,185,255,0.95)' }}>
-                        {q.name.toUpperCase()}
-                      </p>
-                      <p className="font-fell italic" style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(160,140,200,0.8)' }}>
-                        Given by {q.giver}
-                      </p>
-                      <p className="font-fell italic" style={{ margin: '6px 0 0', fontSize: 14, color: 'rgba(200,185,255,0.9)' }}>
-                        {q.status}
-                      </p>
+                      <p className="font-cinzel" style={questNameStyle}>{q.name.toUpperCase()}</p>
+                      <p className="font-fell italic" style={giverStyle}>Given by {q.giver}</p>
+                      <p className="font-fell italic" style={statusStyle}>{q.status}</p>
                     </div>
                   ))
-                )}
+                )
+              )}
 
-                <p className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(200,185,255,0.7)', margin: '24px 0 8px' }}>
-                  COMPLETED
-                </p>
-                {data.completed.length === 0 ? (
-                  <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 14, color: 'rgba(200,185,255,0.9)', margin: '24px 0' }}>
+              {questTab === 'completed' && (
+                completedQuests.length === 0 ? (
+                  <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 14, color: 'rgba(200,185,255,0.4)', margin: '32px 0' }}>
                     Nothing completed yet.
                   </p>
                 ) : (
-                  data.completed.map((q) => (
-                    <div
-                      key={q.key}
-                      style={{
-                        position: 'relative',
-                        background: 'rgba(100,80,160,0.04)',
-                        border: '0.5px solid rgba(100,80,160,0.2)',
-                        padding: '10px 12px',
-                        marginBottom: 8,
-                      }}
-                    >
+                  completedQuests.map((q) => (
+                    <div key={q.key} style={{ ...cardStyle, opacity: 0.5 }}>
                       <span
                         className="font-cinzel"
                         style={{
@@ -338,30 +230,22 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                       >
                         ✓
                       </span>
-                      <p className="font-cinzel" style={{ margin: 0, fontSize: 14, letterSpacing: '0.15em', color: 'rgba(200,185,255,0.95)' }}>
-                        {q.name.toUpperCase()}
-                      </p>
-                      <p className="font-fell italic" style={{ margin: '4px 0 0', fontSize: 13, color: 'rgba(160,140,200,0.8)' }}>
-                        Given by {q.giver}
-                      </p>
-                      <p className="font-fell italic" style={{ margin: '6px 0 0', fontSize: 14, color: 'rgba(200,185,255,0.9)' }}>
-                        {q.status}
-                      </p>
+                      <p className="font-cinzel" style={questNameStyle}>{q.name.toUpperCase()}</p>
+                      <p className="font-fell italic" style={giverStyle}>Given by {q.giver}</p>
+                      <p className="font-fell italic" style={statusStyle}>{q.status}</p>
                     </div>
                   ))
-                )}
-              </>
-            )}
+                )
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* LEAVE button — only way to close */}
+      {/* LEAVE button */}
       <button
         type="button"
         onClick={onClose}
-        onMouseEnter={() => setLeaveHover(true)}
-        onMouseLeave={() => setLeaveHover(false)}
         className="font-cinzel"
         style={{
           position: 'fixed',
@@ -370,9 +254,9 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
           transform: 'translateX(-50%)',
           fontSize: 14,
           letterSpacing: '0.25em',
-          color: leaveHover ? '#ffffff' : '#e0ddd5',
+          color: '#e0ddd5',
           padding: '12px 32px',
-          border: `0.5px solid ${leaveHover ? 'rgba(200,185,255,0.9)' : 'rgba(200,185,255,0.5)'}`,
+          border: '0.5px solid rgba(200,185,255,0.4)',
           background: 'transparent',
           cursor: 'pointer',
           zIndex: 160,

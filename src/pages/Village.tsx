@@ -496,20 +496,28 @@ const Village = () => {
 
   // Bernard quest state
   const [bernardOpen, setBernardOpen] = useState(false);
-  const [bernardStage, setBernardStage] = useState<'00' | '01' | '02' | '06' | null>(null);
+  const [bernardStage, setBernardStage] = useState<'00' | 'pretour' | '01' | '02' | '03' | '06' | null>(null);
   const bernardLockRef = useRef(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
 
   const openBernardDialog = () => {
     if (typeof window === 'undefined') return;
-    const f00 = window.localStorage.getItem('praem_bernard_00') === 'true';
-    const f02 = window.localStorage.getItem('praem_bernard_02') === 'true';
-    const f05 = window.localStorage.getItem('praem_bernard_05') === 'true';
-    const f06 = window.localStorage.getItem('praem_bernard_06') === 'true';
-    let stage: '00' | '01' | '02' | '06' = '00';
+    const ls = window.localStorage;
+    const f00 = ls.getItem('praem_bernard_00') === 'true';
+    const f01 = ls.getItem('praem_bernard_01') === 'true';
+    const f02 = ls.getItem('praem_bernard_02') === 'true';
+    const f03 = ls.getItem('praem_bernard_03') === 'true';
+    const f05 = ls.getItem('praem_bernard_05') === 'true';
+    const f06 = ls.getItem('praem_bernard_06') === 'true';
+    const t23 = ls.getItem('praem_touched_23') === 'true';
+    const t47 = ls.getItem('praem_touched_47') === 'true';
+    const t89 = ls.getItem('praem_touched_89') === 'true';
+    let stage: '00' | 'pretour' | '01' | '02' | '03' | '06' = '00';
     if (f05 && !f06) stage = '06';
+    else if (f03) stage = '03';
     else if (f02) stage = '02';
-    else if (f00) stage = '01';
+    else if (f00 && t23 && t47 && t89) stage = '01';
+    else if (f00) stage = 'pretour';
     else stage = '00';
     setBernardStage(stage);
     setBernardOpen(true);

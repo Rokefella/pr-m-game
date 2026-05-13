@@ -627,8 +627,20 @@ const Village = () => {
     };
   }, []);
 
+  const showLockWhisper = (msg: string) => {
+    setWhisper(msg);
+    if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
+    whisperTimer.current = window.setTimeout(() => setWhisper(null), 2000);
+  };
+
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
+      window.localStorage.setItem('praem_touched_89', 'true');
+      const unlocked = window.localStorage.getItem('praem_bernard_01') === 'true';
+      if (!unlocked) {
+        showLockWhisper('Not yet. Speak to Bernard first.');
+        return true;
+      }
       if (!navigatedRef.current) {
         navigatedRef.current = true;
         window.setTimeout(() => navigate('/door'), 600);
@@ -636,12 +648,24 @@ const Village = () => {
       return true;
     }
     if (inside(nx, ny, A_23)) {
+      window.localStorage.setItem('praem_touched_23', 'true');
+      const lv = parseInt(window.localStorage.getItem('praem_level') || '1', 10);
+      if (lv < 3) {
+        showLockWhisper('The Library opens later.');
+        return true;
+      }
       setFeedback({ id: 23 });
       if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
       feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);
       return true;
     }
     if (inside(nx, ny, A_47)) {
+      window.localStorage.setItem('praem_touched_47', 'true');
+      const lv = parseInt(window.localStorage.getItem('praem_level') || '1', 10);
+      if (lv < 3) {
+        showLockWhisper('The Exchange opens later.');
+        return true;
+      }
       setFeedback({ id: 47 });
       if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
       feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);

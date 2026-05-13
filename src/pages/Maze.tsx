@@ -328,6 +328,14 @@ const Maze = () => {
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationNumberRef = useRef(0);
   const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const subscribed = window.localStorage.getItem('praem_subscribed') === 'true';
+    const bernard06 = window.localStorage.getItem('praem_bernard_06') === 'true';
+    if (!subscribed && bernard06) setPaywallOpen(true);
+  }, []);
 
   // Level config + derived sets — rebuilt only when currentLevel changes
   const config = useMemo<LevelConfig | null>(() => {

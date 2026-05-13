@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
+import PaywallOverlay from '@/components/PaywallOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restInsert, restUpdate } from '@/lib/supabaseRest';
 import { generateFragmentImage } from '@/lib/fragmentImage';
@@ -28,69 +29,103 @@ type LevelConfig = {
   fragmentsRequired: number;
 };
 
-// =================== LEVEL 1 ===================
-const LEVEL1_WALLS: Cell[] = (() => {
-  const walls: Cell[] = [];
-  const add = (c: number, r: number) => walls.push({ col: c, row: r });
-  const hWall = (c: number, r: number, len: number) => { for (let i = 0; i < len; i++) add(c + i, r); };
-  const vWall = (c: number, r: number, len: number) => { for (let i = 0; i < len; i++) add(c, r + i); };
-  // Outer border
-  for (let c = 0; c < 30; c++) { add(c, 0); add(c, 29); }
-  for (let r = 1; r < 29; r++) { add(0, r); add(29, r); }
-  // Internal walls
-  hWall(1, 7, 7);   hWall(10, 7, 5);  hWall(17, 7, 7);  hWall(22, 7, 7);
-  hWall(1, 14, 7);  hWall(10, 14, 5); hWall(17, 14, 7); hWall(22, 14, 7);
-  hWall(1, 21, 7);  hWall(10, 21, 5); hWall(17, 21, 7); hWall(22, 21, 7);
-  vWall(7, 1, 6);   vWall(7, 9, 5);   vWall(7, 16, 5);  vWall(7, 23, 6);
-  vWall(14, 1, 6);  vWall(14, 9, 5);  vWall(14, 16, 5); vWall(14, 23, 6);
-  vWall(21, 1, 6);  vWall(21, 9, 5);  vWall(21, 16, 5); vWall(21, 23, 6);
-  return walls;
-})();
+// =================== LEVEL 1 — corrected corridor layout ===================
+const LEVEL1_HINTS: Cell[] = [
+  { col: 8, row: 26 },
+  { col: 24, row: 8 },
+  { col: 26, row: 22 },
+  { col: 14, row: 26 },
+];
 
 const buildLevel1 = (): LevelConfig => {
   const COLS = 30;
   const ROWS = 30;
-  const wallKeys = new Set(LEVEL1_WALLS.map((w) => `${w.col},${w.row}`));
+  const open = new Set<string>();
+  const carve = (c: number, r: number) => {
+    if (c >= 0 && c < COLS && r >= 0 && r < ROWS) open.add(`${c},${r}`);
+  };
+  const hCorr = (r: number, c1: number, c2: number) => { for (let c = c1; c <= c2; c++) carve(c, r); };
+  const vCorr = (c: number, r1: number, r2: number) => { for (let r = r1; r <= r2; r++) carve(c, r); };
+  const carveRect = (c1: number, c2: number, r1: number, r2: number) => {
+    for (let c = c1; c <= c2; c++) for (let r = r1; r <= r2; r++) carve(c, r);
+  };
+
+  // Horizontal corridors
+  hCorr(2, 1, 28);
+  hCorr(6, 1, 13); hCorr(6, 15, 28);
+  hCorr(8, 6, 22);
+  hCorr(10, 1, 13); hCorr(10, 15, 28);
+  hCorr(12, 8, 20);
+  hCorr(14, 1, 28);
+  hCorr(16, 8, 20);
+  hCorr(18, 1, 13); hCorr(18, 15, 28);
+  hCorr(20, 6, 22);
+  hCorr(24, 1, 28);
+  hCorr(26, 6, 10); hCorr(26, 12, 16); hCorr(26, 22, 26);
+  hCorr(27, 1, 28);
+
+  // Vertical corridors
+  vCorr(4, 2, 13);
+  vCorr(8, 6, 10); vCorr(8, 8, 20);
+  vCorr(10, 12, 16);
+  vCorr(12, 8, 20);
+  vCorr(14, 1, 28);
+  vCorr(15, 1, 3);
+  vCorr(16, 12, 16);
+  vCorr(18, 6, 10); vCorr(18, 8, 20);
+  vCorr(20, 12, 16);
+  vCorr(24, 2, 13); vCorr(24, 24, 28);
+  vCorr(25, 2, 6);
+  vCorr(28, 24, 28);
+
+  // Pockets
+  carveRect(1, 4, 3, 3);
+  carveRect(23, 27, 4, 4);
+  carveRect(1, 3, 14, 14);
+  carveRect(24, 28, 25, 25);
+  carveRect(1, 4, 24, 24);
+  carveRect(24, 28, 27, 27);
 
   const fragments: FragmentDef[] = [
-    { col: 8, row: 4, prime: 23 },
-    { col: 22, row: 4, prime: 47 },
-    { col: 4, row: 20, prime: 89 },
-    { col: 24, row: 20, prime: 139 },
-    { col: 14, row: 6, prime: 211 },
+    { col: 4, row: 3, prime: 23 },
+    { col: 25, row: 4, prime: 47 },
+    { col: 15, row: 2, prime: 89 },
+    { col: 3, row: 24, prime: 139 },
+    { col: 26, row: 25, prime: 211 },
   ];
-  const door: Cell = { col: 28, row: 28 };
+  const door: Cell = { col: 27, row: 27 };
   const creditDoors: Cell[] = [{ col: 2, row: 14 }];
-  const eggs: EggDef[] = [
-    { col: 10, row: 26, line: 'The corner holds the answer.' },
-    { col: 26, row: 10, line: 'Walk toward the darkness.' },
-    { col: 26, row: 26, line: 'You are close. Keep going.' },
-    { col: 20, row: 20, line: 'The gold waits at the edge.' },
-  ];
 
-  // Guarantee special cells are never walls
-  fragments.forEach((f) => wallKeys.delete(`${f.col},${f.row}`));
-  wallKeys.delete(`${door.col},${door.row}`);
-  creditDoors.forEach((d) => wallKeys.delete(`${d.col},${d.row}`));
+  // Force special cells open
+  fragments.forEach((f) => carve(f.col, f.row));
+  carve(door.col, door.row);
+  creditDoors.forEach((d) => carve(d.col, d.row));
+  LEVEL1_HINTS.forEach((h) => carve(h.col, h.row));
 
   const special = new Set<string>();
   fragments.forEach((f) => special.add(`${f.col},${f.row}`));
   special.add(`${door.col},${door.row}`);
   creditDoors.forEach((d) => special.add(`${d.col},${d.row}`));
-
-  const open = new Set<string>();
-  for (let r = 0; r < ROWS; r++)
-    for (let c = 0; c < COLS; c++)
-      if (!wallKeys.has(`${c},${r}`)) open.add(`${c},${r}`);
+  LEVEL1_HINTS.forEach((h) => special.add(`${h.col},${h.row}`));
 
   return {
     cols: COLS, rows: ROWS,
-    spawn: { col: 15, row: 15 },
+    spawn: { col: 14, row: 14 },
     openSet: open, specialSet: special,
-    fragments, door, creditDoors, eggs,
+    fragments, door, creditDoors, eggs: [],
     fragmentsRequired: 5,
   };
 };
+
+const LEVEL1_CONFIG_CACHED = buildLevel1();
+const LEVEL1_WALL_SET = (() => {
+  const s = new Set<string>();
+  for (let r = 0; r < 30; r++) for (let c = 0; c < 30; c++) {
+    const k = `${c},${r}`;
+    if (!LEVEL1_CONFIG_CACHED.openSet.has(k)) s.add(k);
+  }
+  return s;
+})();
 
 // =================== LEVEL 2 ===================
 // Single source of truth: explicit list of wall cells. Used for BOTH render and collision.
@@ -293,6 +328,14 @@ const Maze = () => {
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationNumberRef = useRef(0);
   const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const subscribed = window.localStorage.getItem('praem_subscribed') === 'true';
+    const bernard06 = window.localStorage.getItem('praem_bernard_06') === 'true';
+    if (!subscribed && bernard06) setPaywallOpen(true);
+  }, []);
 
   // Level config + derived sets — rebuilt only when currentLevel changes
   const config = useMemo<LevelConfig | null>(() => {
@@ -304,7 +347,7 @@ const Maze = () => {
   // wallSet built directly from LEVEL2_WALLS — single source of truth for L2 collision + rendering.
   const wallSet = useMemo(() => {
     const s = new Set<string>();
-    if (currentLevel === 1) LEVEL1_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
+    if (currentLevel === 1) LEVEL1_WALL_SET.forEach((k) => s.add(k));
     if (currentLevel === 2) LEVEL2_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
     return s;
   }, [currentLevel]);
@@ -372,9 +415,30 @@ const Maze = () => {
   // Init position when config arrives
   useEffect(() => {
     if (!config) return;
-    posRef.current = { ...config.spawn };
-    prevPosRef.current = { ...config.spawn };
-    setPos({ ...config.spawn });
+    let spawn = { ...config.spawn };
+    if (typeof window !== 'undefined') {
+      const rc = window.localStorage.getItem('praem_maze_return_col');
+      const rr = window.localStorage.getItem('praem_maze_return_row');
+      if (rc !== null && rr !== null) {
+        const c = parseInt(rc, 10);
+        const r = parseInt(rr, 10);
+        if (!Number.isNaN(c) && !Number.isNaN(r)) spawn = { col: c, row: r };
+        window.localStorage.removeItem('praem_maze_return_col');
+        window.localStorage.removeItem('praem_maze_return_row');
+      }
+      // load fragments from localStorage
+      try {
+        const stored = JSON.parse(window.localStorage.getItem('praem_fragments') || '[]') as number[];
+        if (Array.isArray(stored) && stored.length) {
+          const next = new Set<number>(stored);
+          collectedRef.current = next;
+          setCollected(next);
+        }
+      } catch { /* ignore */ }
+    }
+    posRef.current = { ...spawn };
+    prevPosRef.current = { ...spawn };
+    setPos({ ...spawn });
     if (config.claire) {
       clairePosRef.current = { ...config.claire };
       setClairePos({ ...config.claire });
@@ -608,6 +672,11 @@ const Maze = () => {
         setCollected(next);
         setActiveFragment({ prime: frag.prime, index: fragIdx });
 
+        // persist to localStorage for cross-screen quest tracking
+        try {
+          window.localStorage.setItem('praem_fragments', JSON.stringify(Array.from(next)));
+        } catch { /* ignore */ }
+
         if (user) {
           const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
           restInsert('fragments', {
@@ -631,11 +700,15 @@ const Maze = () => {
     // door check
     if (nc === config.door.col && nr === config.door.row) {
       const required = config.fragmentsRequired;
-      if (collectedRef.current.size >= required) {
-        // Show confirmation overlay instead of immediate navigation
+      let count = collectedRef.current.size;
+      try {
+        const stored = JSON.parse(window.localStorage.getItem('praem_fragments') || '[]') as number[];
+        if (Array.isArray(stored)) count = Math.max(count, stored.length);
+      } catch { /* ignore */ }
+      if (count >= required) {
         setDoorConfirmOpen(true);
       } else {
-        const remaining = required - collectedRef.current.size;
+        const remaining = required - count;
         const msg = remaining === 1
           ? 'One fragment remains. The door does not open.'
           : `${remaining} fragments remain. The door does not open.`;
@@ -643,9 +716,13 @@ const Maze = () => {
       }
     }
 
-    // credit-game doors
+    // blue door — Bernard's room (Level 1) / credit game (other levels)
     if (config.creditDoors.some((d) => d.col === nc && d.row === nr)) {
-      showWhisper('A game exists here. Not yet open.', 'rgba(59,130,246,0.8)', 2500);
+      if (currentLevelRef.current === 1) {
+        navigate('/bernard-room-1');
+      } else {
+        showWhisper('A game exists here. Not yet open.', 'rgba(59,130,246,0.8)', 2500);
+      }
     }
   };
 
@@ -788,6 +865,20 @@ const Maze = () => {
             />
           );
         })}
+
+        {currentLevel === 1 && LEVEL1_HINTS.map((h, i) => (
+          <div
+            key={`hint-${i}`}
+            style={{
+              position: 'absolute',
+              left: h.col * CELL, top: h.row * CELL,
+              width: CELL, height: CELL,
+              border: '1px solid rgba(200,150,58,0.4)',
+              boxSizing: 'border-box',
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
 
         {config.fragments.filter((f) => !collected.has(f.prime)).map((f) => (
           <div
@@ -1263,6 +1354,19 @@ const Maze = () => {
           index={activeFragment.index}
           registrationNumber={registrationNumber ?? 0}
           onContinue={() => setActiveFragment(null)}
+        />
+      )}
+
+      {paywallOpen && (
+        <PaywallOverlay
+          onContinue={() => {
+            window.localStorage.setItem('praem_subscribed', 'true');
+            setPaywallOpen(false);
+          }}
+          onDismiss={() => {
+            setPaywallOpen(false);
+            navigate('/village');
+          }}
         />
       )}
     </div>

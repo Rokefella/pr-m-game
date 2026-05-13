@@ -449,6 +449,13 @@ const ShadowRealm = () => {
 
   const [view, setView] = useState({ w: 390, h: 800 });
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('praem_shadow_visited', 'true');
+      window.localStorage.setItem('praem_bernard_05', 'true');
+    }
+  }, []);
+
+  useEffect(() => {
     const update = () => setView({ w: window.innerWidth, h: window.innerHeight });
     update();
     window.addEventListener('resize', update);

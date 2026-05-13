@@ -1240,7 +1240,7 @@ const Maze = () => {
           <span style={{ color: '#c8963a' }}>CREDITS {credits}</span>
         )}
         <span style={{ color: '#5b4fd4' }}>LEVEL {String(currentLevel).padStart(2, '0')}</span>
-        <ProfileButton onClick={() => setProfileOpen(true)} />
+        <ProfileButton onClick={openProfile} />
       </div>
 
       {exchangeOpen && (
@@ -1363,7 +1363,7 @@ const Maze = () => {
         />
       )}
 
-      <ProfileOverlay isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} />
 
       {paywallOpen && (
         <PaywallOverlay

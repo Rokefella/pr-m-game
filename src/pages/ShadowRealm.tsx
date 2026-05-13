@@ -1308,10 +1308,10 @@ const ShadowRealm = () => {
         <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'rgba(34,197,94,0.7)' }}>
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
-        <ProfileButton onClick={() => setProfileOpen(true)} />
+        <ProfileButton onClick={openProfile} />
       </div>
 
-      <ProfileOverlay isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} />
 
       {/* Registration number — top-right */}
       {registrationNumber !== null && (

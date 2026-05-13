@@ -54,7 +54,10 @@ const BernardRoom1 = () => {
 
   const [nearBernard, setNearBernard] = useState(false);
   const [dialogOpen, setDialogOpen] = useState<DialogStage>(null);
-  const [profileOpen, setProfileOpen] = useState(false);
+  const profileOpenRef = useRef(false);
+  const [profileOpenDisplay, setProfileOpenDisplay] = useState(false);
+  const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
+  const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
 
   // Mark room visited on mount → BERNARD_03
   useEffect(() => {

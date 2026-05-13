@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 
 const CELL = 56;
 const COLS = 10;

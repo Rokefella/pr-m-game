@@ -1276,6 +1276,45 @@ const Village = () => {
         {/* Merchant character */}
         <MerchantCharacter x={MERCHANT.x} y={MERCHANT.y} palette="green" />
 
+        {/* Bernard — gold dot in town square with bell-ring pulse */}
+        <div
+          style={{
+            position: 'absolute',
+            left: BERNARD_VILLAGE.x - 6,
+            top: BERNARD_VILLAGE.y - 6,
+            width: 12, height: 12, borderRadius: '50%',
+            background: '#c8963a',
+            boxShadow: '0 0 12px rgba(200,150,58,0.7)',
+            zIndex: 4,
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            left: BERNARD_VILLAGE.x - 6,
+            top: BERNARD_VILLAGE.y - 6,
+            width: 12, height: 12, borderRadius: '50%',
+            border: '1px solid rgba(200,150,58,0.6)',
+            animation: 'bernardBellRing 8s ease-out infinite',
+            pointerEvents: 'none',
+            zIndex: 4,
+          }}
+        />
+        <span
+          className="font-mono"
+          style={{
+            position: 'absolute',
+            left: BERNARD_VILLAGE.x - 4,
+            top: BERNARD_VILLAGE.y - 24,
+            fontSize: 11,
+            color: 'rgba(200,150,58,0.6)',
+            pointerEvents: 'none',
+            zIndex: 4,
+          }}
+        >
+          B
+        </span>
+
         {/* Player dot */}
         <div
           style={{

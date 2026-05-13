@@ -496,20 +496,28 @@ const Village = () => {
 
   // Bernard quest state
   const [bernardOpen, setBernardOpen] = useState(false);
-  const [bernardStage, setBernardStage] = useState<'00' | '01' | '02' | '06' | null>(null);
+  const [bernardStage, setBernardStage] = useState<'00' | 'pretour' | '01' | '02' | '03' | '06' | null>(null);
   const bernardLockRef = useRef(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
 
   const openBernardDialog = () => {
     if (typeof window === 'undefined') return;
-    const f00 = window.localStorage.getItem('praem_bernard_00') === 'true';
-    const f02 = window.localStorage.getItem('praem_bernard_02') === 'true';
-    const f05 = window.localStorage.getItem('praem_bernard_05') === 'true';
-    const f06 = window.localStorage.getItem('praem_bernard_06') === 'true';
-    let stage: '00' | '01' | '02' | '06' = '00';
+    const ls = window.localStorage;
+    const f00 = ls.getItem('praem_bernard_00') === 'true';
+    const f01 = ls.getItem('praem_bernard_01') === 'true';
+    const f02 = ls.getItem('praem_bernard_02') === 'true';
+    const f03 = ls.getItem('praem_bernard_03') === 'true';
+    const f05 = ls.getItem('praem_bernard_05') === 'true';
+    const f06 = ls.getItem('praem_bernard_06') === 'true';
+    const t23 = ls.getItem('praem_touched_23') === 'true';
+    const t47 = ls.getItem('praem_touched_47') === 'true';
+    const t89 = ls.getItem('praem_touched_89') === 'true';
+    let stage: '00' | 'pretour' | '01' | '02' | '03' | '06' = '00';
     if (f05 && !f06) stage = '06';
+    else if (f03) stage = '03';
     else if (f02) stage = '02';
-    else if (f00) stage = '01';
+    else if (f00 && t23 && t47 && t89) stage = '01';
+    else if (f00) stage = 'pretour';
     else stage = '00';
     setBernardStage(stage);
     setBernardOpen(true);
@@ -627,8 +635,20 @@ const Village = () => {
     };
   }, []);
 
+  const showLockWhisper = (msg: string) => {
+    setWhisper(msg);
+    if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
+    whisperTimer.current = window.setTimeout(() => setWhisper(null), 2000);
+  };
+
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
+      window.localStorage.setItem('praem_touched_89', 'true');
+      const unlocked = window.localStorage.getItem('praem_bernard_01') === 'true';
+      if (!unlocked) {
+        showLockWhisper('Not yet. Speak to Bernard first.');
+        return true;
+      }
       if (!navigatedRef.current) {
         navigatedRef.current = true;
         window.setTimeout(() => navigate('/door'), 600);
@@ -636,12 +656,24 @@ const Village = () => {
       return true;
     }
     if (inside(nx, ny, A_23)) {
+      window.localStorage.setItem('praem_touched_23', 'true');
+      const lv = parseInt(window.localStorage.getItem('praem_level') || '1', 10);
+      if (lv < 3) {
+        showLockWhisper('The Library opens later.');
+        return true;
+      }
       setFeedback({ id: 23 });
       if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
       feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);
       return true;
     }
     if (inside(nx, ny, A_47)) {
+      window.localStorage.setItem('praem_touched_47', 'true');
+      const lv = parseInt(window.localStorage.getItem('praem_level') || '1', 10);
+      if (lv < 3) {
+        showLockWhisper('The Exchange opens later.');
+        return true;
+      }
       setFeedback({ id: 47 });
       if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
       feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);
@@ -1977,8 +2009,10 @@ const Village = () => {
           </p>
           <p className="font-fell italic" style={{ color: 'rgba(160,140,200,0.85)', fontSize: 15, lineHeight: 1.6, margin: '12px 0 16px' }}>
             {bernardStage === '00' && 'Another one enters. I heard your bell before you did. Welcome. My name is Bernard. I have been here longer than I can remember. Look around you — three buildings, three numbers, one purpose. When you are ready, the tallest one will be waiting. I will be here when you return.'}
-            {bernardStage === '01' && 'You found them. 23. 47. 89. Three prime numbers. I will not tell you why those three. You will understand eventually. Building 89 — the tall one — that is your next step. Go through the door. Come back and tell me what you find.'}
-            {bernardStage === '02' && 'You came back. Good. But you have not found everything yet. There is a blue door somewhere in the instrument. Find it. I will see you on the other side.'}
+            {bernardStage === 'pretour' && 'Have a look around first. Three buildings — 23, 47, 89. Go and find them. Come back when you have stood at each one.'}
+            {bernardStage === '01' && 'You found them. Three buildings. Three prime numbers. I will not tell you why those three — you will understand eventually. Now — go through Building 89. Inside the Instrument there is a blue door. Find it. I will be on the other side. Do not come back here until you have found it.'}
+            {bernardStage === '02' && 'You have not found the blue door yet. It is inside the Instrument. Keep looking.'}
+            {bernardStage === '03' && 'Good. You found the room. Bernard will take care of you from here.'}
             {bernardStage === '06' && 'You went somewhere I have never been. You found what the instrument contains. You came back. I knew you would — I was a little worried. Well. I am always a little worried. That is the job. You have done something real today. Here — this is yours.'}
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -2006,9 +2040,10 @@ const Village = () => {
                 type="button"
                 className="font-cinzel"
                 onClick={() => {
+                  window.localStorage.setItem('praem_bernard_01', 'true');
                   window.localStorage.setItem('praem_bernard_02', 'true');
                   if (user) {
-                    const next = credits + 50;
+                    const next = credits + 30;
                     setCredits(next);
                     updateUser(user.id, { credits: next });
                   }
@@ -2020,7 +2055,7 @@ const Village = () => {
                   cursor: 'pointer',
                 }}
               >
-                I AM READY
+                I WILL FIND IT
               </button>
             )}
             {bernardStage === '06' && (

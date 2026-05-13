@@ -729,6 +729,17 @@ const Village = () => {
     } else {
       merchantTriggerLockRef.current = false;
     }
+
+    // Bernard proximity → open dialogue (40px)
+    const db = Math.hypot(fx - BERNARD_VILLAGE.x, fy - BERNARD_VILLAGE.y);
+    if (db <= 40) {
+      if (!bernardLockRef.current) {
+        bernardLockRef.current = true;
+        openBernardDialog();
+      }
+    } else {
+      bernardLockRef.current = false;
+    }
   };
 
   // Keyboard arrow keys — held-keys system for smooth diagonal movement

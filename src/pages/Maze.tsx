@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
+import PaywallOverlay from '@/components/PaywallOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restInsert, restUpdate } from '@/lib/supabaseRest';
 import { generateFragmentImage } from '@/lib/fragmentImage';

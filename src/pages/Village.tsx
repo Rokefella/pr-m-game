@@ -1949,6 +1949,126 @@ const Village = () => {
           })()}
         />
       )}
+
+      {/* Bernard bell-ring keyframe */}
+      <style>{`
+        @keyframes bernardBellRing {
+          0% { transform: scale(1); opacity: 1; }
+          80% { transform: scale(2.4); opacity: 0; }
+          100% { transform: scale(1); opacity: 0; }
+        }
+      `}</style>
+
+      {/* Bernard dialogue overlay */}
+      {bernardOpen && bernardStage && (
+        <div
+          style={{
+            position: 'fixed', left: 0, right: 0, bottom: 0,
+            background: 'rgba(4,4,10,0.85)',
+            borderTop: '1px solid rgba(200,150,58,0.35)',
+            padding: '20px 24px 28px', zIndex: 110,
+            maxHeight: '40vh', overflow: 'auto',
+          }}
+        >
+          <p className="font-cinzel" style={{ color: '#c8963a', fontSize: 14, letterSpacing: '0.2em', margin: 0 }}>
+            Bernard
+          </p>
+          <p className="font-fell italic" style={{ color: 'rgba(160,140,200,0.85)', fontSize: 15, lineHeight: 1.6, margin: '12px 0 16px' }}>
+            {bernardStage === '00' && 'Another one enters. I heard your bell before you did. Welcome. My name is Bernard. I have been here longer than I can remember. Look around you — three buildings, three numbers, one purpose. When you are ready, the tallest one will be waiting. I will be here when you return.'}
+            {bernardStage === '01' && 'You found them. 23. 47. 89. Three prime numbers. I will not tell you why those three. You will understand eventually. Building 89 — the tall one — that is your next step. Go through the door. Come back and tell me what you find.'}
+            {bernardStage === '02' && 'You came back. Good. But you have not found everything yet. There is a blue door somewhere in the instrument. Find it. I will see you on the other side.'}
+            {bernardStage === '06' && 'You went somewhere I have never been. You found what the instrument contains. You came back. I knew you would — I was a little worried. Well. I am always a little worried. That is the job. You have done something real today. Here — this is yours.'}
+          </p>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            {bernardStage === '00' && (
+              <button
+                type="button"
+                className="font-cinzel"
+                onClick={() => {
+                  window.localStorage.setItem('praem_bernard_00', 'true');
+                  const steps = parseInt(window.localStorage.getItem('praem_steps') || '0', 10) + 50;
+                  window.localStorage.setItem('praem_steps', String(steps));
+                  setBernardOpen(false);
+                }}
+                style={{
+                  background: 'rgba(169,140,255,0.15)', border: '0.5px solid rgba(169,140,255,0.4)',
+                  color: '#a98cff', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
+                  cursor: 'pointer', animation: 'bernardBellRing 2s ease-in-out infinite',
+                }}
+              >
+                CONTINUE
+              </button>
+            )}
+            {bernardStage === '01' && (
+              <button
+                type="button"
+                className="font-cinzel"
+                onClick={() => {
+                  window.localStorage.setItem('praem_bernard_02', 'true');
+                  if (user) {
+                    const next = credits + 50;
+                    setCredits(next);
+                    updateUser(user.id, { credits: next });
+                  }
+                  setBernardOpen(false);
+                }}
+                style={{
+                  background: 'rgba(169,140,255,0.15)', border: '0.5px solid rgba(169,140,255,0.4)',
+                  color: '#a98cff', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
+                  cursor: 'pointer',
+                }}
+              >
+                I AM READY
+              </button>
+            )}
+            {bernardStage === '06' && (
+              <button
+                type="button"
+                className="font-cinzel"
+                onClick={() => {
+                  window.localStorage.setItem('praem_bernard_06', 'true');
+                  if (user) {
+                    const next = credits + 500;
+                    setCredits(next);
+                    updateUser(user.id, { credits: next });
+                  }
+                  setBernardOpen(false);
+                  window.setTimeout(() => setPaywallOpen(true), 1500);
+                }}
+                style={{
+                  background: 'rgba(200,150,58,0.18)', border: '0.5px solid rgba(200,150,58,0.5)',
+                  color: '#c8963a', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
+                  cursor: 'pointer',
+                }}
+              >
+                THANK YOU BERNARD
+              </button>
+            )}
+            <button
+              type="button"
+              className="font-cinzel"
+              onClick={() => setBernardOpen(false)}
+              style={{
+                background: 'transparent', border: '0.5px solid rgba(160,140,200,0.3)',
+                color: 'rgba(160,140,200,0.5)', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
+                cursor: 'pointer',
+              }}
+            >
+              CLOSE
+            </button>
+          </div>
+        </div>
+      )}
+
+      {paywallOpen && (
+        <PaywallOverlay
+          onContinue={() => {
+            window.localStorage.setItem('praem_subscribed', 'true');
+            setPaywallOpen(false);
+          }}
+          onDismiss={() => setPaywallOpen(false)}
+        />
+      )}
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
+import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 
 // Shadow Realm Merchant
 const SHADOW_MERCHANT = { x: 600, y: 400 };
@@ -486,6 +487,7 @@ const ShadowRealm = () => {
   const [credits, setCredits] = useState<number>(0);
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);
   const [merchantOpen, setMerchantOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const merchantTriggerLockRef = useRef(false);
   const [memoryText, setMemoryText] = useState<string | null>(null);
   const memoryTimer = useRef<number | null>(null);
@@ -1306,7 +1308,10 @@ const ShadowRealm = () => {
         <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'rgba(34,197,94,0.7)' }}>
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
+        <ProfileButton onClick={() => setProfileOpen(true)} />
       </div>
+
+      <ProfileOverlay isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
 
       {/* Registration number — top-right */}
       {registrationNumber !== null && (

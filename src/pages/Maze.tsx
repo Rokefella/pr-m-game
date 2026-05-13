@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
+import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restInsert, restUpdate } from '@/lib/supabaseRest';
 import { generateFragmentImage } from '@/lib/fragmentImage';
@@ -329,6 +330,7 @@ const Maze = () => {
   const registrationNumberRef = useRef(0);
   const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1235,6 +1237,7 @@ const Maze = () => {
           <span style={{ color: '#c8963a' }}>CREDITS {credits}</span>
         )}
         <span style={{ color: '#5b4fd4' }}>LEVEL {String(currentLevel).padStart(2, '0')}</span>
+        <ProfileButton onClick={() => setProfileOpen(true)} />
       </div>
 
       {exchangeOpen && (
@@ -1356,6 +1359,8 @@ const Maze = () => {
           onContinue={() => setActiveFragment(null)}
         />
       )}
+
+      <ProfileOverlay isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
 
       {paywallOpen && (
         <PaywallOverlay

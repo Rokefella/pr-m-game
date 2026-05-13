@@ -855,6 +855,7 @@ const Maze = () => {
               }}
             />
           );
+        })}
 
         {currentLevel === 1 && LEVEL1_HINTS.map((h, i) => (
           <div

@@ -1356,6 +1356,19 @@ const Maze = () => {
           onContinue={() => setActiveFragment(null)}
         />
       )}
+
+      {paywallOpen && (
+        <PaywallOverlay
+          onContinue={() => {
+            window.localStorage.setItem('praem_subscribed', 'true');
+            setPaywallOpen(false);
+          }}
+          onDismiss={() => {
+            setPaywallOpen(false);
+            navigate('/village');
+          }}
+        />
+      )}
     </div>
   );
 };

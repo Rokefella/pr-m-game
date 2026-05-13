@@ -2011,7 +2011,7 @@ const Village = () => {
             {bernardStage === '00' && 'Another one enters. I heard your bell before you did. Welcome. My name is Bernard. I have been here longer than I can remember. Look around you — three buildings, three numbers, one purpose. When you are ready, the tallest one will be waiting. I will be here when you return.'}
             {bernardStage === 'pretour' && 'Have a look around first. Three buildings — 23, 47, 89. Go and find them. Come back when you have stood at each one.'}
             {bernardStage === '01' && 'Great! You found them. Enter The Instrument when you\'re ready. Find me behind the Blue Door.'}
-            {bernardStage === '02' && 'You have not found the blue door yet. It is inside the Instrument. Keep looking.'}
+            {bernardStage === '02' && 'Did I tell you that it\'s impossible to get back to reality before you find the Golden Door?'}
             {bernardStage === '03' && 'Good. You found the room. Bernard will take care of you from here.'}
             {bernardStage === '06' && 'You went somewhere I have never been. You found what the instrument contains. You came back. I knew you would — I was a little worried. Well. I am always a little worried. That is the job. You have done something real today. Here — this is yours.'}
           </p>

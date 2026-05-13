@@ -406,9 +406,30 @@ const Maze = () => {
   // Init position when config arrives
   useEffect(() => {
     if (!config) return;
-    posRef.current = { ...config.spawn };
-    prevPosRef.current = { ...config.spawn };
-    setPos({ ...config.spawn });
+    let spawn = { ...config.spawn };
+    if (typeof window !== 'undefined') {
+      const rc = window.localStorage.getItem('praem_maze_return_col');
+      const rr = window.localStorage.getItem('praem_maze_return_row');
+      if (rc !== null && rr !== null) {
+        const c = parseInt(rc, 10);
+        const r = parseInt(rr, 10);
+        if (!Number.isNaN(c) && !Number.isNaN(r)) spawn = { col: c, row: r };
+        window.localStorage.removeItem('praem_maze_return_col');
+        window.localStorage.removeItem('praem_maze_return_row');
+      }
+      // load fragments from localStorage
+      try {
+        const stored = JSON.parse(window.localStorage.getItem('praem_fragments') || '[]') as number[];
+        if (Array.isArray(stored) && stored.length) {
+          const next = new Set<number>(stored);
+          collectedRef.current = next;
+          setCollected(next);
+        }
+      } catch { /* ignore */ }
+    }
+    posRef.current = { ...spawn };
+    prevPosRef.current = { ...spawn };
+    setPos({ ...spawn });
     if (config.claire) {
       clairePosRef.current = { ...config.claire };
       setClairePos({ ...config.claire });

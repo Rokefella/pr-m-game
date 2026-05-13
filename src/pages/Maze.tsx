@@ -1360,6 +1360,8 @@ const Maze = () => {
         />
       )}
 
+      <ProfileOverlay isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+
       {paywallOpen && (
         <PaywallOverlay
           onContinue={() => {

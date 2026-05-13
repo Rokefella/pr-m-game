@@ -9,7 +9,7 @@ import PaywallOverlay from '@/components/PaywallOverlay';
 // Village Merchant
 // Village Merchant — TEMP: positioned at map center (col=27,row=17) for visibility testing
 const MERCHANT = { x: 27 * 40, y: 17 * 40 };
-const BERNARD_VILLAGE = { x: 1100, y: 700 };
+const BERNARD_VILLAGE = { x: 1244, y: 604 };
 const MERCHANT_LINES = [
   'You need more steps. I have them.',
   "The fragments don't find themselves.",

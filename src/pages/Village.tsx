@@ -2040,9 +2040,10 @@ const Village = () => {
                 type="button"
                 className="font-cinzel"
                 onClick={() => {
+                  window.localStorage.setItem('praem_bernard_01', 'true');
                   window.localStorage.setItem('praem_bernard_02', 'true');
                   if (user) {
-                    const next = credits + 50;
+                    const next = credits + 30;
                     setCredits(next);
                     updateUser(user.id, { credits: next });
                   }
@@ -2054,7 +2055,7 @@ const Village = () => {
                   cursor: 'pointer',
                 }}
               >
-                I AM READY
+                I WILL FIND IT
               </button>
             )}
             {bernardStage === '06' && (

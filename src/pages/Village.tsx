@@ -5,6 +5,7 @@ import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
+import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 
 // Village Merchant
 // Village Merchant — TEMP: positioned at map center (col=27,row=17) for visibility testing
@@ -498,6 +499,7 @@ const Village = () => {
   const [bernardStage, setBernardStage] = useState<'00' | '01' | '02' | '06' | null>(null);
   const bernardLockRef = useRef(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   const openBernardDialog = () => {
     if (typeof window === 'undefined') return;
@@ -1476,6 +1478,7 @@ const Village = () => {
         <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: '#5b4fd4' }}>
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
+        <ProfileButton onClick={() => setProfileOpen(true)} />
       </div>
 
       {/* Trial countdown — appears just above HUD when ≤3 days remain */}

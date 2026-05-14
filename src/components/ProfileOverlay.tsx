@@ -13,7 +13,15 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
 
   // Synchronous reads — no useEffect, no async
   const username = localStorage.getItem('praem_username') || 'Wanderer';
-  const regNum = localStorage.getItem('praem_registration_number') || '0001';
+  const storedReg = localStorage.getItem('praem_registration_number');
+  console.log('Registration number from localStorage:', storedReg);
+  let regNum: string;
+  if (storedReg && storedReg.trim() !== '') {
+    regNum = storedReg.padStart(4, '0');
+  } else {
+    const playerId = localStorage.getItem('praem_player_id');
+    regNum = playerId ? playerId.slice(-4).toUpperCase() : '????';
+  }
   const auraColor = localStorage.getItem('praem_aura_color') || '#5b4fd4';
   const credits = localStorage.getItem('praem_credits') || '50';
   const steps = localStorage.getItem('praem_steps') || '100';

@@ -1898,6 +1898,7 @@ const Village = () => {
                 }
                 setBernardOpen(false);
                 setEyeMessage('You are a Wanderer.');
+                window.setTimeout(() => setEyeMessage(null), 3000);
                 window.setTimeout(() => {
                   window.dispatchEvent(new CustomEvent('praem:open-paywall'));
                 }, 1500);

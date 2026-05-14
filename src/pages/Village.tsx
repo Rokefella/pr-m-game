@@ -6,6 +6,7 @@ import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
+import BernardDialogue from '@/components/BernardDialogue';
 
 // Village Merchant
 // Village Merchant — TEMP: positioned at map center (col=27,row=17) for visibility testing

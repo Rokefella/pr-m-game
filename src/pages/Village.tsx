@@ -626,7 +626,7 @@ const Village = () => {
       }
       setAuraColor(row.aura_color || '#5b4fd4');
       setUsername(row.username || '');
-      setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : ['Wanderer']);
+      setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : []);
       setStepsRemaining(row.steps_remaining);
       setCredits(row.credits);
       setTotalMazeSteps(row.total_maze_steps);

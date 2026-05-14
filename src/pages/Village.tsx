@@ -480,14 +480,14 @@ const Village = () => {
     10: 'First One Through',
   };
   const [currentLevel, setCurrentLevel] = useState(1);
-  const [currentTitle, setCurrentTitle] = useState('Wanderer');
+  const [currentTitle, setCurrentTitle] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
-  const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
+  const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('');
   const [levelUpHandled, setLevelUpHandled] = useState(false);
   const [auraColor, setAuraColor] = useState<string>(() => (typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4');
   const [username, setUsername] = useState<string>('');
-  const [unlockedTitles, setUnlockedTitles] = useState<string[]>(['Wanderer']);
+  const [unlockedTitles, setUnlockedTitles] = useState<string[]>([]);
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);
   const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);

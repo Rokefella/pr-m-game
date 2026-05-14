@@ -498,6 +498,9 @@ const Maze = () => {
       if (row.aura_color) setAuraColor(row.aura_color);
       setRegistrationNumber(row.registration_number);
       registrationNumberRef.current = row.registration_number;
+      if (row.registration_number != null) {
+        localStorage.setItem('praem_registration_number', String(row.registration_number).padStart(4, '0'));
+      }
       const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;
       stepsRemainingRef.current = startSteps;
       setStepsRemaining(startSteps);

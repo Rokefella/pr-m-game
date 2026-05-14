@@ -14,6 +14,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   // Synchronous reads — no useEffect, no async
   const username = localStorage.getItem('praem_username') || 'Wanderer';
   const regNum = localStorage.getItem('praem_registration_number') || '0001';
+  const auraColor = localStorage.getItem('praem_aura_color') || '#5b4fd4';
   const credits = localStorage.getItem('praem_credits') || '50';
   const steps = localStorage.getItem('praem_steps') || '100';
   const level = localStorage.getItem('praem_level') || '1';
@@ -153,6 +154,20 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
               <div className="font-cinzel" style={{ fontSize: 14, color: 'rgba(200,185,255,0.9)', marginTop: 6, letterSpacing: '0.2em' }}>
                 {title.toUpperCase()}
               </div>
+            </div>
+
+            <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              <div className="font-cinzel" style={{ fontSize: 9, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>
+                DIMENSION
+              </div>
+              <div
+                aria-label="Dimension"
+                style={{
+                  width: 12, height: 12, borderRadius: '50%',
+                  background: auraColor,
+                  boxShadow: `0 0 6px ${auraColor}99`,
+                }}
+              />
             </div>
           </div>
         )}

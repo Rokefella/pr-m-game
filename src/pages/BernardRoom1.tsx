@@ -367,8 +367,8 @@ const BernardRoom1 = () => {
             left: pos.col * CELL + CELL / 2 - 4,
             top: pos.row * CELL + CELL / 2 - 4,
             width: 8, height: 8, borderRadius: '50%',
-            background: '#5b4fd4',
-            boxShadow: '0 0 10px rgba(91,79,212,0.7)',
+            background: (typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4',
+            boxShadow: `0 0 10px ${((typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4')}b3`,
             transition: 'left 130ms linear, top 130ms linear',
           }}
         />

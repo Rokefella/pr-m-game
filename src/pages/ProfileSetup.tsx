@@ -2,13 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { restInsert } from '@/lib/supabaseRest';
 
-const AURA_COLORS = ['#2a2a32', '#1a2a4a', '#1a3a2a', '#3a1a1a', '#2a1a4a'];
-
 const ProfileSetup = () => {
-  const [selectedAura, setSelectedAura] = useState(4);
   const [username, setUsername] = useState('');
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const auraColor = (typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4';
 
   const handleEnter = async () => {
     if (saving) return;
@@ -25,7 +23,7 @@ const ProfileSetup = () => {
       id: playerId,
       username: username.trim() || 'Anonymous',
       entity_answer: localStorage.getItem('praem_entity_answer'),
-      aura_color: AURA_COLORS[selectedAura],
+      aura_color: auraColor,
     });
 
     console.error('DIRECT REST RESULT:', JSON.stringify(result));
@@ -123,38 +121,29 @@ const ProfileSetup = () => {
         </p>
       </div>
 
-      {/* Aura Colour */}
+      {/* Dimension */}
       <div style={{ marginTop: 14 }}>
-        <label
-          className="font-mono block"
+        <p
+          className="font-cinzel"
           style={{
-            fontSize: 8,
-            color: '#9a9890',
-            marginBottom: 6,
+            fontSize: 9,
+            color: 'rgba(160,140,200,0.4)',
+            letterSpacing: '0.2em',
+            marginBottom: 8,
           }}
         >
-          Aura colour
-        </label>
-        <div className="flex flex-row" style={{ gap: 7 }}>
-          {AURA_COLORS.map((color, i) => (
-            <button
-              key={color}
-              onClick={() => setSelectedAura(i)}
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: '50%',
-                background: color,
-                border:
-                  selectedAura === i
-                    ? '1.5px solid #a98cff'
-                    : '0.5px solid transparent',
-                cursor: 'pointer',
-                padding: 0,
-              }}
-            />
-          ))}
-        </div>
+          YOUR DIMENSION
+        </p>
+        <div
+          aria-label="Your dimension"
+          style={{
+            width: 16,
+            height: 16,
+            borderRadius: '50%',
+            background: auraColor,
+            boxShadow: `0 0 8px ${auraColor}80`,
+          }}
+        />
       </div>
 
       {/* Title Slot */}

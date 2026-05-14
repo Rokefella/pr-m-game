@@ -482,7 +482,7 @@ const Village = () => {
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
   const [levelUpHandled, setLevelUpHandled] = useState(false);
-  const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
+  const [auraColor, setAuraColor] = useState<string>(() => (typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4');
   const [username, setUsername] = useState<string>('');
   const [unlockedTitles, setUnlockedTitles] = useState<string[]>(['Wanderer']);
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);

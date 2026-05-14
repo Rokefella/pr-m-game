@@ -205,7 +205,7 @@ const BernardRoom1 = () => {
         {
           label: 'THANK YOU',
           onClick: () => {
-            localStorage.setItem('praem_bernard_04', 'true');
+            if (!setBernardFlag(4)) { setDialogOpen(null); return; }
             // award credits + steps via localStorage as additional pool the maze respects on next mount
             const credits = parseInt(localStorage.getItem('praem_credits') || '0', 10) + 150;
             localStorage.setItem('praem_credits', String(credits));

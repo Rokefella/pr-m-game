@@ -172,7 +172,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             <div style={{ marginTop: 24, textAlign: 'center' }}>
               <div className="font-mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(200,185,255,0.6)' }}>TITLE</div>
               <div className="font-cinzel" style={{ fontSize: 14, color: 'rgba(200,185,255,0.9)', marginTop: 6, letterSpacing: '0.2em' }}>
-                {title.toUpperCase()}
+                {title ? title.toUpperCase() : '—'}
               </div>
             </div>
 

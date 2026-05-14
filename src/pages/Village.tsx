@@ -1896,7 +1896,7 @@ const Village = () => {
               type="button"
               className="font-cinzel"
               onClick={() => {
-                window.localStorage.setItem('praem_bernard_06', 'true');
+                if (!setBernardFlag(6)) { setBernardOpen(false); return; }
                 if (user) {
                   const next = credits + 500;
                   setCredits(next);

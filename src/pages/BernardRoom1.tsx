@@ -156,8 +156,6 @@ const BernardRoom1 = () => {
 
   const nearBernardRef = useRef(false);
 
-  const lastDialogCloseRef = useRef(0);
-
   // Dialogue triggers when player adjacent — read flags fresh from localStorage
   useEffect(() => {
     if (!nearBernard) return;

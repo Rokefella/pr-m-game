@@ -521,13 +521,16 @@ const ShadowRealm = () => {
 
       if (row.levelup_pending) {
         const newLv = row.levelup_newlevel ?? row.level;
-        const newTitle = TITLES_BY_LEVEL[newLv] || 'Wanderer';
+        const b06 = window.localStorage.getItem('praem_bernard_06') === 'true';
+        const newTitle = b06 ? (TITLES_BY_LEVEL[newLv] || '') : '';
         window.setTimeout(() => {
           if (cancelled) return;
           setLevelUpOverlay({ newLevel: newLv });
           setOverlaySelectedTitle(newTitle);
-          updateUser(user.id, { title: newTitle });
-          setCurrentTitle(newTitle);
+          if (b06 && newTitle) {
+            updateUser(user.id, { title: newTitle });
+            setCurrentTitle(newTitle);
+          }
         }, 2000);
       }
     })();

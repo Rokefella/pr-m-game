@@ -1889,12 +1889,15 @@ const Village = () => {
               className="font-cinzel"
               onClick={() => {
                 if (!setBernardFlag(6)) { setBernardOpen(false); return; }
+                window.localStorage.setItem('praem_title', 'Wanderer');
+                window.localStorage.setItem('praem_titles_unlocked', JSON.stringify(['Wanderer']));
                 if (user) {
                   const next = credits + 500;
                   setCredits(next);
-                  updateUser(user.id, { credits: next });
+                  updateUser(user.id, { credits: next, title: 'Wanderer', unlocked_titles: ['Wanderer'] });
                 }
                 setBernardOpen(false);
+                setEyeMessage('You are a Wanderer.');
                 window.setTimeout(() => {
                   window.dispatchEvent(new CustomEvent('praem:open-paywall'));
                 }, 1500);

@@ -40,10 +40,15 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const b04 = localStorage.getItem('praem_bernard_04') === 'true';
   const b05 = localStorage.getItem('praem_bernard_05') === 'true';
   const b06 = localStorage.getItem('praem_bernard_06') === 'true';
+  const subscribed = localStorage.getItem('praem_subscribed') === 'true';
+  const subType = localStorage.getItem('praem_subscription_type') || '';
+  const alexandraQuest = localStorage.getItem('praem_quest_find_alexandra');
+  const alexandraActive = alexandraQuest === 'active';
 
-  type Quest = { key: string; name: string; giver: string; status: string };
+  type Quest = { key: string; name: string; giver: string; status: string; gold?: boolean };
 
   const activeQuests: Quest[] = [];
+  if (alexandraActive) activeQuests.push({ key: 'a-alexandra', name: 'Find Alexandra', giver: 'Bernard', status: 'She built the Instrument. She is still inside it. Find her.', gold: true });
   if (b02 && !b03) activeQuests.push({ key: 'a-blue', name: 'Find the Blue Door', giver: 'Bernard', status: 'Find the blue door inside the Instrument' });
   if (b03 && !b04) activeQuests.push({ key: 'a-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Collect one fragment and return to Bernard' });
   if (b04 && !b05) activeQuests.push({ key: 'a-gold', name: 'Find the golden door', giver: 'Bernard', status: 'Collect all 5 fragments and find the golden door' });

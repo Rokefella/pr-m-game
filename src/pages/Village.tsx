@@ -1447,16 +1447,6 @@ const Village = () => {
           B
         </span>
 
-        {/* Bernard's watching eye (small, gold) — above his position */}
-        <CharacterEye
-          cx={BERNARD_VILLAGE.x}
-          cy={BERNARD_VILLAGE.y - 40}
-          color="#c8963a"
-          size="small"
-          playerPosition={player}
-          proximityRadius={50}
-          zIndex={4}
-        />
 
         {/* Player dot */}
         <div

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
+import BernardDialogue from '@/components/BernardDialogue';
 
 const CELL = 56;
 const COLS = 10;

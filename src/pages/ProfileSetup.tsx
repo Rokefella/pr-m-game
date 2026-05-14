@@ -24,7 +24,6 @@ const ProfileSetup = () => {
       username: username.trim() || 'Anonymous',
       entity_answer: localStorage.getItem('praem_entity_answer'),
       aura_color: auraColor,
-      dimension: localStorage.getItem('praem_dimension'),
     });
 
     console.error('DIRECT REST RESULT:', JSON.stringify(result));

@@ -182,6 +182,30 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                 }}
               />
             </div>
+
+            <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center' }}>
+              {subscribed ? (
+                <span className="font-cinzel" style={{ fontSize: 10, letterSpacing: '0.22em', color: 'rgba(160,140,200,0.4)' }}>
+                  {(subType || 'monthly').toUpperCase()} MEMBER
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="font-cinzel"
+                  onClick={() => {
+                    onClose();
+                    window.dispatchEvent(new CustomEvent('praem:open-paywall'));
+                  }}
+                  style={{
+                    fontSize: 11, letterSpacing: '0.22em', color: '#c8963a',
+                    border: '0.5px solid #c8963a', background: 'transparent',
+                    padding: '8px 20px', cursor: 'pointer',
+                  }}
+                >
+                  SUBSCRIBE
+                </button>
+              )}
+            </div>
           </div>
         )}
 

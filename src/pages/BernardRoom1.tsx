@@ -68,6 +68,25 @@ const BernardRoom1 = () => {
     setDialogOpen(null);
   }, []);
 
+  // One-time whispers on session entry — show each sequentially then remove
+  const whispersShownRef = useRef(false);
+  const [visibleWhisper, setVisibleWhisper] = useState<number | null>(null);
+  const [whispersDone, setWhispersDone] = useState(false);
+  useEffect(() => {
+    if (whispersShownRef.current) return;
+    whispersShownRef.current = true;
+    const timeouts: number[] = [];
+    const schedule = (i: number, inAt: number, outAt: number) => {
+      timeouts.push(window.setTimeout(() => setVisibleWhisper(i), inAt));
+      timeouts.push(window.setTimeout(() => setVisibleWhisper(null), outAt));
+    };
+    schedule(0, 1000, 3000);
+    schedule(1, 3500, 5500);
+    schedule(2, 6000, 8000);
+    timeouts.push(window.setTimeout(() => setWhispersDone(true), 8200));
+    return () => { timeouts.forEach((t) => window.clearTimeout(t)); };
+  }, []);
+
   const tryMove = (dc: number, dr: number) => {
     const now = Date.now();
     if (now - lastMoveTimeRef.current < 130) return;

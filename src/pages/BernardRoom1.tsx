@@ -38,7 +38,7 @@ const isWall = (c: number, r: number) => {
   return false;
 };
 
-type DialogStage = 'intro' | 'whatToLook' | 'reportFragment' | null;
+type DialogStage = 'intro' | 'whatToLook' | 'fragmentQuest' | 'reportFragment' | 'goldenDoor' | 'returnToVillage' | 'complete' | null;
 
 const BernardRoom1 = () => {
   const navigate = useNavigate();

@@ -38,7 +38,7 @@ const isWall = (c: number, r: number) => {
   return false;
 };
 
-type DialogStage = 'intro' | 'whatToLook' | 'reportFragment' | null;
+type DialogStage = 'intro' | 'whatToLook' | 'fragmentQuest' | 'reportFragment' | 'goldenDoor' | 'returnToVillage' | 'complete' | null;
 
 const BernardRoom1 = () => {
   const navigate = useNavigate();
@@ -61,12 +61,10 @@ const BernardRoom1 = () => {
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
   const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
 
-  // Mark room visited on mount → BERNARD_03
-  useEffect(() => {
-    const had03 = localStorage.getItem('praem_bernard_03');
-    if (!had03) {
-      setBernardFlag(3);
-    }
+  const lastDialogCloseRef = useRef(0);
+  const closeDialog = useCallback(() => {
+    lastDialogCloseRef.current = Date.now();
+    setDialogOpen(null);
   }, []);
 
   const tryMove = (dc: number, dr: number) => {
@@ -158,18 +156,31 @@ const BernardRoom1 = () => {
 
   const nearBernardRef = useRef(false);
 
-  // Dialogue triggers when player adjacent
+  // Dialogue triggers when player adjacent — read flags fresh from localStorage
   useEffect(() => {
     if (!nearBernard) return;
+    if (dialogOpen) return;
+    if (Date.now() - lastDialogCloseRef.current < 3000) return;
     const dist = Math.max(Math.abs(pos.col - bernardCell.col), Math.abs(pos.row - bernardCell.row));
-    if (dist <= 1 && !dialogOpen) {
-      const had04 = localStorage.getItem('praem_bernard_04');
-      const fragments = JSON.parse(localStorage.getItem('praem_fragments') || '[]') as number[];
-      if (!had04 && fragments.length >= 1) {
-        setDialogOpen('reportFragment');
-      } else {
-        setDialogOpen('intro');
-      }
+    if (dist > 2) return;
+
+    const f03 = localStorage.getItem('praem_bernard_03') === 'true';
+    const f04 = localStorage.getItem('praem_bernard_04') === 'true';
+    const f05 = localStorage.getItem('praem_bernard_05') === 'true';
+    const f06 = localStorage.getItem('praem_bernard_06') === 'true';
+    const fragments = JSON.parse(localStorage.getItem('praem_fragments') || '[]') as number[];
+
+    if (!f03) {
+      setDialogOpen('intro');
+    } else if (!f04) {
+      if (fragments.length >= 1) setDialogOpen('reportFragment');
+      else setDialogOpen('fragmentQuest');
+    } else if (!f05) {
+      setDialogOpen('goldenDoor');
+    } else if (!f06) {
+      setDialogOpen('returnToVillage');
+    } else {
+      setDialogOpen('complete');
     }
   }, [pos, nearBernard, bernardCell, dialogOpen]);
 
@@ -193,28 +204,44 @@ const BernardRoom1 = () => {
     if (dialogOpen === 'intro') {
       body = 'There you are. I wondered when you would find this door. I am Bernard. You met me outside — yes, I am here too. The instrument has many rooms. This is mine. Sit with me a moment. Then I will tell you what to look for.';
       actions = [
-        { label: 'WHAT SHOULD I LOOK FOR?', onClick: () => setDialogOpen('whatToLook') },
-        { label: 'CLOSE', onClick: () => setDialogOpen(null) },
+        {
+          label: 'WHAT SHOULD I LOOK FOR?',
+          onClick: () => {
+            setBernardFlag(3);
+            setDialogOpen('whatToLook');
+          },
+        },
       ];
     } else if (dialogOpen === 'whatToLook') {
       body = 'Fragments. There are five of them hidden in the corridors. Each one is a prime number. You will know one when you find it — the instrument makes it known. Find one and come back to me.';
-      actions = [{ label: 'I WILL FIND THEM', onClick: () => setDialogOpen(null) }];
+      actions = [{ label: 'I WILL FIND THEM', onClick: closeDialog }];
+    } else if (dialogOpen === 'fragmentQuest') {
+      body = 'Find one fragment and return to me.';
+      actions = [{ label: 'CLOSE', onClick: closeDialog }];
     } else if (dialogOpen === 'reportFragment') {
       body = 'You found one. I can tell — you look different. They all look different after the first one. What did it say to you? Never mind — you do not have to answer that. Here. You earned this. Now — there are four more. And somewhere in the deep corridors there is a golden door. You need all five fragments before it will open. Find them. Find the door. Go through. Come back to me — not here. Outside. In the square. I will be waiting.';
       actions = [
         {
           label: 'THANK YOU',
           onClick: () => {
-            if (!setBernardFlag(4)) { setDialogOpen(null); return; }
-            // award credits + steps via localStorage as additional pool the maze respects on next mount
+            if (!setBernardFlag(4)) { closeDialog(); return; }
             const credits = parseInt(localStorage.getItem('praem_credits') || '0', 10) + 150;
             localStorage.setItem('praem_credits', String(credits));
             const steps = parseInt(localStorage.getItem('praem_steps') || '0', 10) + 200;
             localStorage.setItem('praem_steps', String(steps));
-            setDialogOpen(null);
+            closeDialog();
           },
         },
       ];
+    } else if (dialogOpen === 'goldenDoor') {
+      body = "Did I tell you that it's impossible to get back to reality before you find the Golden Door?";
+      actions = [{ label: 'CLOSE', onClick: closeDialog }];
+    } else if (dialogOpen === 'returnToVillage') {
+      body = 'You went through. Now go back to the Village. Find me in the square.';
+      actions = [{ label: 'CLOSE', onClick: closeDialog }];
+    } else if (dialogOpen === 'complete') {
+      body = 'You did it. Go. The Village is waiting.';
+      actions = [{ label: 'CLOSE', onClick: closeDialog }];
     }
 
     return (

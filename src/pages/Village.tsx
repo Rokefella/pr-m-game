@@ -596,6 +596,9 @@ const Village = () => {
       setCurrentTitle(row.title);
       setOverlaySelectedTitle(row.title);
       setRegistrationNumber(row.registration_number);
+      if (row.registration_number != null) {
+        localStorage.setItem('praem_registration_number', String(row.registration_number).padStart(4, '0'));
+      }
       setAuraColor(row.aura_color || '#5b4fd4');
       setUsername(row.username || '');
       setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : ['Wanderer']);

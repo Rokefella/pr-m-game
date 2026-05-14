@@ -542,9 +542,21 @@ const Village = () => {
     return () => window.clearTimeout(t);
   }, []);
 
-  // Listen for global "open paywall" event (dispatched from ProfileOverlay)
+  // Listen for global "open paywall" event (dispatched from ProfileOverlay or Bernard quest)
   useEffect(() => {
-    const handler = () => setPaywallOpen(true);
+    if (typeof window !== 'undefined') {
+      const allKeys = Object.keys(localStorage).filter(k => k.startsWith('praem_'));
+      console.log('Village mount — localStorage:', allKeys.map(k => k + '=' + localStorage.getItem(k)));
+    }
+    const handler = () => {
+      const subscribed = window.localStorage.getItem('praem_subscribed');
+      const bernard06 = window.localStorage.getItem('praem_bernard_06');
+      const profileComplete = window.localStorage.getItem('praem_profile_complete');
+      console.log('Paywall check — bernard_06:', bernard06, 'subscribed:', subscribed, 'profile_complete:', profileComplete);
+      if (subscribed !== 'true' && bernard06 === 'true' && profileComplete === 'true') {
+        setPaywallOpen(true);
+      }
+    };
     window.addEventListener('praem:open-paywall', handler);
     return () => window.removeEventListener('praem:open-paywall', handler);
   }, []);
@@ -1890,7 +1902,9 @@ const Village = () => {
                   updateUser(user.id, { credits: next });
                 }
                 setBernardOpen(false);
-                window.setTimeout(() => setPaywallOpen(true), 1500);
+                window.setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('praem:open-paywall'));
+                }, 1500);
               }}
               style={{
                 background: 'rgba(200,150,58,0.18)', border: '0.5px solid rgba(200,150,58,0.5)',

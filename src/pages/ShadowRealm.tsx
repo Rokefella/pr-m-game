@@ -5,6 +5,7 @@ import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
+import { setBernardFlag } from '@/lib/bernardFlags';
 
 // Shadow Realm Merchant
 const SHADOW_MERCHANT = { x: 600, y: 400 };
@@ -452,7 +453,7 @@ const ShadowRealm = () => {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('praem_shadow_visited', 'true');
-      window.localStorage.setItem('praem_bernard_05', 'true');
+      setBernardFlag(5);
     }
   }, []);
 

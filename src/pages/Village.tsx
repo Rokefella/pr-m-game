@@ -7,6 +7,7 @@ import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/compone
 import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import BernardDialogue from '@/components/BernardDialogue';
+import { setBernardFlag } from '@/lib/bernardFlags';
 
 // Village Merchant
 // Village Merchant — TEMP: positioned at map center (col=27,row=17) for visibility testing
@@ -1853,7 +1854,7 @@ const Village = () => {
               type="button"
               className="font-cinzel"
               onClick={() => {
-                window.localStorage.setItem('praem_bernard_00', 'true');
+                if (!setBernardFlag(0)) { setBernardOpen(false); return; }
                 const steps = parseInt(window.localStorage.getItem('praem_steps') || '0', 10) + 50;
                 window.localStorage.setItem('praem_steps', String(steps));
                 setBernardOpen(false);
@@ -1872,8 +1873,8 @@ const Village = () => {
               type="button"
               className="font-cinzel"
               onClick={() => {
-                window.localStorage.setItem('praem_bernard_01', 'true');
-                window.localStorage.setItem('praem_bernard_02', 'true');
+                if (!setBernardFlag(1)) { setBernardOpen(false); return; }
+                if (!setBernardFlag(2)) { setBernardOpen(false); return; }
                 if (user) {
                   const next = credits + 30;
                   setCredits(next);
@@ -1895,7 +1896,7 @@ const Village = () => {
               type="button"
               className="font-cinzel"
               onClick={() => {
-                window.localStorage.setItem('praem_bernard_06', 'true');
+                if (!setBernardFlag(6)) { setBernardOpen(false); return; }
                 if (user) {
                   const next = credits + 500;
                   setCredits(next);

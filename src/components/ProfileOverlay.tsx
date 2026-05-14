@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 type Props = {
   isOpen: boolean;
@@ -8,6 +8,12 @@ type Props = {
 const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const [mainTab, setMainTab] = useState<'profile' | 'quests'>('profile');
   const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
+
+  // Reset expanded groups whenever the overlay closes
+  useEffect(() => {
+    if (!isOpen) setOpenGroups(new Set());
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -241,71 +247,148 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             </div>
 
             <div style={{ marginTop: 16 }}>
-              {questTab === 'active' && (
-                activeQuests.length === 0 ? (
-                  <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 14, color: 'rgba(200,185,255,0.4)', margin: '32px 0' }}>
-                    No active quests.
-                  </p>
-                ) : (
-                  activeQuests.map((q) => (
-                    <div
-                      key={q.key}
-                      style={q.gold
-                        ? { ...cardStyle, background: 'rgba(200,150,58,0.06)', border: '0.5px solid rgba(200,150,58,0.3)' }
-                        : cardStyle}
-                    >
-                      {!q.gold && (
-                        <span
-                          style={{
-                            position: 'absolute', top: 12, right: 12,
-                            width: 6, height: 6, borderRadius: '50%',
-                            background: '#5b4fd4',
-                            boxShadow: '0 0 6px #5b4fd4',
-                          }}
-                        />
-                      )}
-                      <p
-                        className="font-cinzel"
-                        style={q.gold ? { ...questNameStyle, color: '#c8963a' } : questNameStyle}
-                      >
-                        {q.name.toUpperCase()}
-                      </p>
-                      <p
-                        className="font-fell italic"
-                        style={q.gold ? { ...giverStyle, color: 'rgba(160,140,200,0.6)' } : giverStyle}
-                      >
-                        Given by {q.giver}
-                      </p>
-                      <p className="font-fell italic" style={statusStyle}>{q.status}</p>
-                    </div>
-                  ))
-                )
-              )}
+              {(() => {
+                const list = questTab === 'active' ? activeQuests : completedQuests;
+                // Find Alexandra is rendered separately (active tab only)
+                const alexandra = questTab === 'active'
+                  ? list.find((q) => q.gold)
+                  : undefined;
+                const rest = list.filter((q) => !q.gold);
 
-              {questTab === 'completed' && (
-                completedQuests.length === 0 ? (
-                  <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 14, color: 'rgba(200,185,255,0.4)', margin: '32px 0' }}>
-                    Nothing completed yet.
-                  </p>
-                ) : (
-                  completedQuests.map((q) => (
-                    <div key={q.key} style={{ ...cardStyle, opacity: 0.5 }}>
+                // Group rest by giver (character)
+                const groups = new Map<string, Quest[]>();
+                rest.forEach((q) => {
+                  const arr = groups.get(q.giver) ?? [];
+                  arr.push(q);
+                  groups.set(q.giver, arr);
+                });
+                const groupNames = Array.from(groups.keys());
+
+                const toggleGroup = (name: string) => {
+                  setOpenGroups((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(name)) next.delete(name);
+                    else next.add(name);
+                    return next;
+                  });
+                };
+
+                const renderQuestCard = (q: Quest, completed: boolean) => (
+                  <div
+                    key={q.key}
+                    style={{ ...cardStyle, marginLeft: 12, ...(completed ? { opacity: 0.5 } : {}) }}
+                  >
+                    {completed ? (
                       <span
                         className="font-cinzel"
-                        style={{
-                          position: 'absolute', top: 8, right: 12,
-                          color: '#c8963a', fontSize: 14,
-                        }}
+                        style={{ position: 'absolute', top: 8, right: 12, color: '#c8963a', fontSize: 14 }}
                       >
                         ✓
                       </span>
-                      <p className="font-cinzel" style={questNameStyle}>{q.name.toUpperCase()}</p>
-                      <p className="font-fell italic" style={giverStyle}>Given by {q.giver}</p>
-                      <p className="font-fell italic" style={statusStyle}>{q.status}</p>
-                    </div>
-                  ))
-                )
-              )}
+                    ) : (
+                      <span
+                        style={{
+                          position: 'absolute', top: 12, right: 12,
+                          width: 6, height: 6, borderRadius: '50%',
+                          background: '#5b4fd4',
+                          boxShadow: '0 0 6px #5b4fd4',
+                        }}
+                      />
+                    )}
+                    <p className="font-cinzel" style={questNameStyle}>{q.name.toUpperCase()}</p>
+                    <p className="font-fell italic" style={giverStyle}>Given by {q.giver}</p>
+                    <p className="font-fell italic" style={statusStyle}>{q.status}</p>
+                  </div>
+                );
+
+                return (
+                  <>
+                    {alexandra && (
+                      <div
+                        style={{
+                          ...cardStyle,
+                          background: 'rgba(200,150,58,0.06)',
+                          border: '0.5px solid rgba(200,150,58,0.3)',
+                          marginBottom: 16,
+                        }}
+                      >
+                        <p
+                          className="font-cinzel"
+                          style={{ margin: 0, fontSize: 8, letterSpacing: '0.2em', color: 'rgba(200,150,58,0.4)' }}
+                        >
+                          PRIMARY QUEST
+                        </p>
+                        <p
+                          className="font-cinzel"
+                          style={{ ...questNameStyle, color: '#c8963a', marginTop: 4 }}
+                        >
+                          {alexandra.name.toUpperCase()}
+                        </p>
+                        <p
+                          className="font-fell italic"
+                          style={{ ...giverStyle, color: 'rgba(160,140,200,0.6)' }}
+                        >
+                          Given by {alexandra.giver}
+                        </p>
+                        <p className="font-fell italic" style={statusStyle}>{alexandra.status}</p>
+                      </div>
+                    )}
+
+                    {groupNames.length === 0 ? (
+                      <p
+                        className="font-fell italic"
+                        style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.4)', margin: '24px 0' }}
+                      >
+                        {questTab === 'active' ? 'No other active quests.' : 'Nothing completed yet.'}
+                      </p>
+                    ) : (
+                      groupNames.map((name) => {
+                        const expanded = openGroups.has(name);
+                        const items = groups.get(name)!;
+                        return (
+                          <div key={name} style={{ marginBottom: 10 }}>
+                            <button
+                              type="button"
+                              onClick={() => toggleGroup(name)}
+                              style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                background: 'rgba(100,80,160,0.06)',
+                                border: '0.5px solid rgba(100,80,160,0.15)',
+                                borderRadius: 'var(--border-radius-md)',
+                                padding: '10px 14px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <span
+                                className="font-cinzel"
+                                style={{ fontSize: 12, letterSpacing: '0.15em', color: 'rgba(200,185,255,0.9)' }}
+                              >
+                                {name.toUpperCase()}
+                              </span>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <span className="font-mono" style={{ fontSize: 10, color: 'rgba(160,140,200,0.5)' }}>
+                                  {items.length} quest{items.length === 1 ? '' : 's'}
+                                </span>
+                                <span style={{ fontSize: 10, color: 'rgba(160,140,200,0.5)' }}>
+                                  {expanded ? '▲' : '▼'}
+                                </span>
+                              </span>
+                            </button>
+                            {expanded && (
+                              <div style={{ marginTop: 8 }}>
+                                {items.map((q) => renderQuestCard(q, questTab === 'completed'))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         )}

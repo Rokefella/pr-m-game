@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import BernardDialogue from '@/components/BernardDialogue';
+import { setBernardFlag } from '@/lib/bernardFlags';
 
 const CELL = 56;
 const COLS = 10;
@@ -64,7 +65,7 @@ const BernardRoom1 = () => {
   useEffect(() => {
     const had03 = localStorage.getItem('praem_bernard_03');
     if (!had03) {
-      localStorage.setItem('praem_bernard_03', 'true');
+      setBernardFlag(3);
     }
   }, []);
 
@@ -204,7 +205,7 @@ const BernardRoom1 = () => {
         {
           label: 'THANK YOU',
           onClick: () => {
-            localStorage.setItem('praem_bernard_04', 'true');
+            if (!setBernardFlag(4)) { setDialogOpen(null); return; }
             // award credits + steps via localStorage as additional pool the maze respects on next mount
             const credits = parseInt(localStorage.getItem('praem_credits') || '0', 10) + 150;
             localStorage.setItem('praem_credits', String(credits));

@@ -65,7 +65,7 @@ const BernardRoom1 = () => {
   useEffect(() => {
     const had03 = localStorage.getItem('praem_bernard_03');
     if (!had03) {
-      localStorage.setItem('praem_bernard_03', 'true');
+      setBernardFlag(3);
     }
   }, []);
 

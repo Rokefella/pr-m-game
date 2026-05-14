@@ -14,6 +14,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   // Synchronous reads — no useEffect, no async
   const username = localStorage.getItem('praem_username') || 'Wanderer';
   const regNum = localStorage.getItem('praem_registration_number') || '0001';
+  const auraColor = localStorage.getItem('praem_aura_color') || '#5b4fd4';
   const credits = localStorage.getItem('praem_credits') || '50';
   const steps = localStorage.getItem('praem_steps') || '100';
   const level = localStorage.getItem('praem_level') || '1';

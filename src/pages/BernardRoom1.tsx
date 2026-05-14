@@ -158,18 +158,33 @@ const BernardRoom1 = () => {
 
   const nearBernardRef = useRef(false);
 
-  // Dialogue triggers when player adjacent
+  const lastDialogCloseRef = useRef(0);
+
+  // Dialogue triggers when player adjacent — read flags fresh from localStorage
   useEffect(() => {
     if (!nearBernard) return;
+    if (dialogOpen) return;
+    if (Date.now() - lastDialogCloseRef.current < 3000) return;
     const dist = Math.max(Math.abs(pos.col - bernardCell.col), Math.abs(pos.row - bernardCell.row));
-    if (dist <= 1 && !dialogOpen) {
-      const had04 = localStorage.getItem('praem_bernard_04');
-      const fragments = JSON.parse(localStorage.getItem('praem_fragments') || '[]') as number[];
-      if (!had04 && fragments.length >= 1) {
-        setDialogOpen('reportFragment');
-      } else {
-        setDialogOpen('intro');
-      }
+    if (dist > 2) return;
+
+    const f03 = localStorage.getItem('praem_bernard_03') === 'true';
+    const f04 = localStorage.getItem('praem_bernard_04') === 'true';
+    const f05 = localStorage.getItem('praem_bernard_05') === 'true';
+    const f06 = localStorage.getItem('praem_bernard_06') === 'true';
+    const fragments = JSON.parse(localStorage.getItem('praem_fragments') || '[]') as number[];
+
+    if (!f03) {
+      setDialogOpen('intro');
+    } else if (!f04) {
+      if (fragments.length >= 1) setDialogOpen('reportFragment');
+      else setDialogOpen('fragmentQuest');
+    } else if (!f05) {
+      setDialogOpen('goldenDoor');
+    } else if (!f06) {
+      setDialogOpen('returnToVillage');
+    } else {
+      setDialogOpen('complete');
     }
   }, [pos, nearBernard, bernardCell, dialogOpen]);
 

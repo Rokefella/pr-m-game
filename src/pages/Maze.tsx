@@ -1371,8 +1371,8 @@ const Maze = () => {
       {paywallOpen && (
         <PaywallOverlay
           onContinue={() => {
-            window.localStorage.setItem('praem_subscribed', 'true');
             setPaywallOpen(false);
+            navigate('/village');
           }}
           onDismiss={() => {
             setPaywallOpen(false);

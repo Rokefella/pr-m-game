@@ -336,14 +336,15 @@ const Maze = () => {
   const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const subscribed = window.localStorage.getItem('praem_subscribed') === 'true';
-    const bernard06 = window.localStorage.getItem('praem_bernard_06') === 'true';
-    if (!subscribed && bernard06) setPaywallOpen(true);
-  }, []);
-
-  useEffect(() => {
-    const handler = () => setPaywallOpen(true);
+    const handler = () => {
+      const subscribed = window.localStorage.getItem('praem_subscribed');
+      const bernard06 = window.localStorage.getItem('praem_bernard_06');
+      const profileComplete = window.localStorage.getItem('praem_profile_complete');
+      console.log('Paywall check — bernard_06:', bernard06, 'subscribed:', subscribed, 'profile_complete:', profileComplete);
+      if (subscribed !== 'true' && bernard06 === 'true' && profileComplete === 'true') {
+        setPaywallOpen(true);
+      }
+    };
     window.addEventListener('praem:open-paywall', handler);
     return () => window.removeEventListener('praem:open-paywall', handler);
   }, []);

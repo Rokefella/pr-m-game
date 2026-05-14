@@ -248,17 +248,34 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                   </p>
                 ) : (
                   activeQuests.map((q) => (
-                    <div key={q.key} style={cardStyle}>
-                      <span
-                        style={{
-                          position: 'absolute', top: 12, right: 12,
-                          width: 6, height: 6, borderRadius: '50%',
-                          background: '#5b4fd4',
-                          boxShadow: '0 0 6px #5b4fd4',
-                        }}
-                      />
-                      <p className="font-cinzel" style={questNameStyle}>{q.name.toUpperCase()}</p>
-                      <p className="font-fell italic" style={giverStyle}>Given by {q.giver}</p>
+                    <div
+                      key={q.key}
+                      style={q.gold
+                        ? { ...cardStyle, background: 'rgba(200,150,58,0.06)', border: '0.5px solid rgba(200,150,58,0.3)' }
+                        : cardStyle}
+                    >
+                      {!q.gold && (
+                        <span
+                          style={{
+                            position: 'absolute', top: 12, right: 12,
+                            width: 6, height: 6, borderRadius: '50%',
+                            background: '#5b4fd4',
+                            boxShadow: '0 0 6px #5b4fd4',
+                          }}
+                        />
+                      )}
+                      <p
+                        className="font-cinzel"
+                        style={q.gold ? { ...questNameStyle, color: '#c8963a' } : questNameStyle}
+                      >
+                        {q.name.toUpperCase()}
+                      </p>
+                      <p
+                        className="font-fell italic"
+                        style={q.gold ? { ...giverStyle, color: 'rgba(160,140,200,0.6)' } : giverStyle}
+                      >
+                        Given by {q.giver}
+                      </p>
                       <p className="font-fell italic" style={statusStyle}>{q.status}</p>
                     </div>
                   ))

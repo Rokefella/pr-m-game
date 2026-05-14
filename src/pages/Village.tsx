@@ -1903,6 +1903,24 @@ const Village = () => {
                 THANK YOU BERNARD
               </button>
             )}
+            {bernardStage === 'alexandra' && (
+              <button
+                type="button"
+                className="font-cinzel"
+                onClick={() => {
+                  window.localStorage.setItem('praem_quest_find_alexandra', 'active');
+                  window.localStorage.removeItem('praem_quest_alexandra_pending');
+                  setBernardOpen(false);
+                }}
+                style={{
+                  background: 'rgba(200,150,58,0.18)', border: '0.5px solid rgba(200,150,58,0.5)',
+                  color: '#c8963a', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
+                  cursor: 'pointer',
+                }}
+              >
+                I WILL FIND HER
+              </button>
+            )}
             <button
               type="button"
               className="font-cinzel"

@@ -217,42 +217,25 @@ const BernardRoom1 = () => {
     }
 
     return (
-      <div
-        style={{
-          position: 'fixed', left: 0, right: 0, bottom: 0,
-          background: 'rgba(4,4,10,0.88)',
-          borderTop: '1px solid rgba(200,150,58,0.35)',
-          padding: '20px 24px 28px', zIndex: 80,
-          maxHeight: '40vh', overflow: 'auto',
-        }}
-      >
-        <p className="font-cinzel" style={{ color: '#c8963a', fontSize: 14, letterSpacing: '0.2em', margin: 0 }}>
-          {title}
-        </p>
-        <p className="font-fell italic" style={{ color: 'rgba(160,140,200,0.85)', fontSize: 15, lineHeight: 1.6, margin: '12px 0 16px' }}>
-          {body}
-        </p>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          {actions.map((a, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={a.onClick}
-              className="font-cinzel"
-              style={{
-                background: i === 0 ? 'rgba(169,140,255,0.15)' : 'transparent',
-                border: '0.5px solid rgba(169,140,255,0.4)',
-                color: i === 0 ? '#a98cff' : 'rgba(160,140,200,0.6)',
-                padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
-                cursor: 'pointer',
-                animation: i === 0 ? 'bernardPulse 2s ease-in-out infinite' : 'none',
-              }}
-            >
-              {a.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <BernardDialogue text={body}>
+        {actions.map((a, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={a.onClick}
+            className="font-cinzel"
+            style={{
+              background: i === 0 ? 'rgba(169,140,255,0.15)' : 'transparent',
+              border: '0.5px solid rgba(169,140,255,0.4)',
+              color: i === 0 ? '#a98cff' : 'rgba(160,140,200,0.6)',
+              padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
+              cursor: 'pointer',
+            }}
+          >
+            {a.label}
+          </button>
+        ))}
+      </BernardDialogue>
     );
   };
 

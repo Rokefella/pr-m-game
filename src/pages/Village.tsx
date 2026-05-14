@@ -1902,7 +1902,9 @@ const Village = () => {
                   updateUser(user.id, { credits: next });
                 }
                 setBernardOpen(false);
-                window.setTimeout(() => setPaywallOpen(true), 1500);
+                window.setTimeout(() => {
+                  window.dispatchEvent(new CustomEvent('praem:open-paywall'));
+                }, 1500);
               }}
               style={{
                 background: 'rgba(200,150,58,0.18)', border: '0.5px solid rgba(200,150,58,0.5)',

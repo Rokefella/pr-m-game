@@ -40,10 +40,15 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const b04 = localStorage.getItem('praem_bernard_04') === 'true';
   const b05 = localStorage.getItem('praem_bernard_05') === 'true';
   const b06 = localStorage.getItem('praem_bernard_06') === 'true';
+  const subscribed = localStorage.getItem('praem_subscribed') === 'true';
+  const subType = localStorage.getItem('praem_subscription_type') || '';
+  const alexandraQuest = localStorage.getItem('praem_quest_find_alexandra');
+  const alexandraActive = alexandraQuest === 'active';
 
-  type Quest = { key: string; name: string; giver: string; status: string };
+  type Quest = { key: string; name: string; giver: string; status: string; gold?: boolean };
 
   const activeQuests: Quest[] = [];
+  if (alexandraActive) activeQuests.push({ key: 'a-alexandra', name: 'Find Alexandra', giver: 'Bernard', status: 'She built the Instrument. She is still inside it. Find her.', gold: true });
   if (b02 && !b03) activeQuests.push({ key: 'a-blue', name: 'Find the Blue Door', giver: 'Bernard', status: 'Find the blue door inside the Instrument' });
   if (b03 && !b04) activeQuests.push({ key: 'a-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Collect one fragment and return to Bernard' });
   if (b04 && !b05) activeQuests.push({ key: 'a-gold', name: 'Find the golden door', giver: 'Bernard', status: 'Collect all 5 fragments and find the golden door' });
@@ -177,6 +182,30 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                 }}
               />
             </div>
+
+            <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center' }}>
+              {subscribed ? (
+                <span className="font-cinzel" style={{ fontSize: 10, letterSpacing: '0.22em', color: 'rgba(160,140,200,0.4)' }}>
+                  {(subType || 'monthly').toUpperCase()} MEMBER
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="font-cinzel"
+                  onClick={() => {
+                    onClose();
+                    window.dispatchEvent(new CustomEvent('praem:open-paywall'));
+                  }}
+                  style={{
+                    fontSize: 11, letterSpacing: '0.22em', color: '#c8963a',
+                    border: '0.5px solid #c8963a', background: 'transparent',
+                    padding: '8px 20px', cursor: 'pointer',
+                  }}
+                >
+                  SUBSCRIBE
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -219,17 +248,34 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                   </p>
                 ) : (
                   activeQuests.map((q) => (
-                    <div key={q.key} style={cardStyle}>
-                      <span
-                        style={{
-                          position: 'absolute', top: 12, right: 12,
-                          width: 6, height: 6, borderRadius: '50%',
-                          background: '#5b4fd4',
-                          boxShadow: '0 0 6px #5b4fd4',
-                        }}
-                      />
-                      <p className="font-cinzel" style={questNameStyle}>{q.name.toUpperCase()}</p>
-                      <p className="font-fell italic" style={giverStyle}>Given by {q.giver}</p>
+                    <div
+                      key={q.key}
+                      style={q.gold
+                        ? { ...cardStyle, background: 'rgba(200,150,58,0.06)', border: '0.5px solid rgba(200,150,58,0.3)' }
+                        : cardStyle}
+                    >
+                      {!q.gold && (
+                        <span
+                          style={{
+                            position: 'absolute', top: 12, right: 12,
+                            width: 6, height: 6, borderRadius: '50%',
+                            background: '#5b4fd4',
+                            boxShadow: '0 0 6px #5b4fd4',
+                          }}
+                        />
+                      )}
+                      <p
+                        className="font-cinzel"
+                        style={q.gold ? { ...questNameStyle, color: '#c8963a' } : questNameStyle}
+                      >
+                        {q.name.toUpperCase()}
+                      </p>
+                      <p
+                        className="font-fell italic"
+                        style={q.gold ? { ...giverStyle, color: 'rgba(160,140,200,0.6)' } : giverStyle}
+                      >
+                        Given by {q.giver}
+                      </p>
                       <p className="font-fell italic" style={statusStyle}>{q.status}</p>
                     </div>
                   ))

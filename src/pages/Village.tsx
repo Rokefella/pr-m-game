@@ -499,7 +499,7 @@ const Village = () => {
 
   // Bernard quest state
   const [bernardOpen, setBernardOpen] = useState(false);
-  const [bernardStage, setBernardStage] = useState<'00' | 'pretour' | '01' | '02' | '03' | '06' | null>(null);
+  const [bernardStage, setBernardStage] = useState<'00' | 'pretour' | '01' | '02' | '03' | '06' | 'alexandra' | null>(null);
   const bernardLockRef = useRef(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
 
@@ -515,8 +515,11 @@ const Village = () => {
     const t23 = ls.getItem('praem_touched_23') === 'true';
     const t47 = ls.getItem('praem_touched_47') === 'true';
     const t89 = ls.getItem('praem_touched_89') === 'true';
-    let stage: '00' | 'pretour' | '01' | '02' | '03' | '06' = '00';
-    if (f05 && !f06) stage = '06';
+    const alexandraPending = ls.getItem('praem_quest_alexandra_pending') === 'true';
+    const alexandraQuest = ls.getItem('praem_quest_find_alexandra');
+    let stage: '00' | 'pretour' | '01' | '02' | '03' | '06' | 'alexandra' = '00';
+    if (alexandraPending && alexandraQuest !== 'active' && alexandraQuest !== 'complete') stage = 'alexandra';
+    else if (f05 && !f06) stage = '06';
     else if (f03) stage = '03';
     else if (f02) stage = '02';
     else if (f00 && t23 && t47 && t89) stage = '01';
@@ -536,6 +539,13 @@ const Village = () => {
       setBernardOpen(true);
     }, 2000);
     return () => window.clearTimeout(t);
+  }, []);
+
+  // Listen for global "open paywall" event (dispatched from ProfileOverlay)
+  useEffect(() => {
+    const handler = () => setPaywallOpen(true);
+    window.addEventListener('praem:open-paywall', handler);
+    return () => window.removeEventListener('praem:open-paywall', handler);
   }, []);
 
   // Villagers — patrol around their base on independent timers
@@ -1832,6 +1842,7 @@ const Village = () => {
             {bernardStage === '02' && 'Did I tell you that it\'s impossible to get back to reality before you find the Golden Door?'}
             {bernardStage === '03' && 'Good. You found the room. Bernard will take care of you from here.'}
             {bernardStage === '06' && 'You went somewhere I have never been. You found what the instrument contains. You came back. I knew you would — I was a little worried. Well. I am always a little worried. That is the job. You have done something real today. Here — this is yours.'}
+            {bernardStage === 'alexandra' && 'Good. Now — one more thing. And this one does not end quickly. There is someone you need to find. Her name is Alexandra. She built this place. She is still here, somewhere. I have been looking for a long time. Maybe you will have better luck. Go carefully.'}
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {bernardStage === '00' && (
@@ -1899,6 +1910,24 @@ const Village = () => {
                 THANK YOU BERNARD
               </button>
             )}
+            {bernardStage === 'alexandra' && (
+              <button
+                type="button"
+                className="font-cinzel"
+                onClick={() => {
+                  window.localStorage.setItem('praem_quest_find_alexandra', 'active');
+                  window.localStorage.removeItem('praem_quest_alexandra_pending');
+                  setBernardOpen(false);
+                }}
+                style={{
+                  background: 'rgba(200,150,58,0.18)', border: '0.5px solid rgba(200,150,58,0.5)',
+                  color: '#c8963a', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
+                  cursor: 'pointer',
+                }}
+              >
+                I WILL FIND HER
+              </button>
+            )}
             <button
               type="button"
               className="font-cinzel"
@@ -1919,10 +1948,7 @@ const Village = () => {
 
       {paywallOpen && (
         <PaywallOverlay
-          onContinue={() => {
-            window.localStorage.setItem('praem_subscribed', 'true');
-            setPaywallOpen(false);
-          }}
+          onContinue={() => setPaywallOpen(false)}
           onDismiss={() => setPaywallOpen(false)}
         />
       )}

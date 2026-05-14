@@ -342,6 +342,12 @@ const Maze = () => {
     if (!subscribed && bernard06) setPaywallOpen(true);
   }, []);
 
+  useEffect(() => {
+    const handler = () => setPaywallOpen(true);
+    window.addEventListener('praem:open-paywall', handler);
+    return () => window.removeEventListener('praem:open-paywall', handler);
+  }, []);
+
   // Level config + derived sets — rebuilt only when currentLevel changes
   const config = useMemo<LevelConfig | null>(() => {
     if (currentLevel === 1) return buildLevel1();
@@ -1371,8 +1377,8 @@ const Maze = () => {
       {paywallOpen && (
         <PaywallOverlay
           onContinue={() => {
-            window.localStorage.setItem('praem_subscribed', 'true');
             setPaywallOpen(false);
+            navigate('/village');
           }}
           onDismiss={() => {
             setPaywallOpen(false);

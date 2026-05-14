@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 type Props = {
   isOpen: boolean;
@@ -8,6 +8,12 @@ type Props = {
 const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const [mainTab, setMainTab] = useState<'profile' | 'quests'>('profile');
   const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
+
+  // Reset expanded groups whenever the overlay closes
+  useEffect(() => {
+    if (!isOpen) setOpenGroups(new Set());
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

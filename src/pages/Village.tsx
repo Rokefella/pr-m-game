@@ -541,6 +541,13 @@ const Village = () => {
     return () => window.clearTimeout(t);
   }, []);
 
+  // Listen for global "open paywall" event (dispatched from ProfileOverlay)
+  useEffect(() => {
+    const handler = () => setPaywallOpen(true);
+    window.addEventListener('praem:open-paywall', handler);
+    return () => window.removeEventListener('praem:open-paywall', handler);
+  }, []);
+
   // Villagers — patrol around their base on independent timers
   type Villager = { id: number; x: number; y: number; baseX: number; baseY: number; whisper: string };
   const [villagers, setVillagers] = useState<Villager[]>(() =>

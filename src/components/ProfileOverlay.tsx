@@ -32,7 +32,8 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const credits = localStorage.getItem('praem_credits') || '50';
   const steps = localStorage.getItem('praem_steps') || '100';
   const level = localStorage.getItem('praem_level') || '1';
-  const title = localStorage.getItem('praem_title') || 'Wanderer';
+  const titleRaw = localStorage.getItem('praem_title');
+  const title = titleRaw && titleRaw.trim() !== '' ? titleRaw : '';
   const fragmentsRaw = localStorage.getItem('praem_fragments');
   let fragmentCount = 0;
   try {

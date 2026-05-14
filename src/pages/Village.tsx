@@ -502,33 +502,119 @@ const Village = () => {
 
   // Bernard quest state
   const [bernardOpen, setBernardOpen] = useState(false);
-  const [bernardStage, setBernardStage] = useState<'00' | 'pretour' | '01' | '02' | '03' | '06' | 'alexandra' | null>(null);
   const bernardLockRef = useRef(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
 
-  const openBernardDialog = () => {
-    if (typeof window === 'undefined') return;
+  // Single source of truth for Bernard dialogue. Reads localStorage fresh every call.
+  type BernardDialogueData = {
+    text: string;
+    buttonLabel: string | null;
+    buttonAction?: () => void;
+    onShow?: () => void;
+  };
+
+  const getBernardDialogue = (): BernardDialogueData => {
+    if (typeof window === 'undefined') {
+      return { text: '', buttonLabel: null };
+    }
     const ls = window.localStorage;
-    const f00 = ls.getItem('praem_bernard_00') === 'true';
-    const f01 = ls.getItem('praem_bernard_01') === 'true';
-    const f02 = ls.getItem('praem_bernard_02') === 'true';
-    const f03 = ls.getItem('praem_bernard_03') === 'true';
-    const f05 = ls.getItem('praem_bernard_05') === 'true';
-    const f06 = ls.getItem('praem_bernard_06') === 'true';
+    const b00 = ls.getItem('praem_bernard_00') === 'true';
+    const b01 = ls.getItem('praem_bernard_01') === 'true';
+    const b03 = ls.getItem('praem_bernard_03') === 'true';
+    const b05 = ls.getItem('praem_bernard_05') === 'true';
+    const b06 = ls.getItem('praem_bernard_06') === 'true';
+    const subscribed = ls.getItem('praem_subscribed') === 'true';
+    const alexandra = ls.getItem('praem_quest_find_alexandra') === 'active';
     const t23 = ls.getItem('praem_touched_23') === 'true';
     const t47 = ls.getItem('praem_touched_47') === 'true';
     const t89 = ls.getItem('praem_touched_89') === 'true';
-    const alexandraPending = ls.getItem('praem_quest_alexandra_pending') === 'true';
-    const alexandraQuest = ls.getItem('praem_quest_find_alexandra');
-    let stage: '00' | 'pretour' | '01' | '02' | '03' | '06' | 'alexandra' = '00';
-    if (alexandraPending && alexandraQuest !== 'active' && alexandraQuest !== 'complete') stage = 'alexandra';
-    else if (f05 && !f06) stage = '06';
-    else if (f03) stage = '03';
-    else if (f02) stage = '02';
-    else if (f00 && t23 && t47 && t89) stage = '01';
-    else if (f00) stage = 'pretour';
-    else stage = '00';
-    setBernardStage(stage);
+    const allTouched = t23 && t47 && t89;
+
+    if (!b00) {
+      return {
+        text: 'You are here. I heard your bell before you did. Welcome. My name is Bernard. Three buildings — 23, 47, 89. Find them all. Come back when you have stood at each one.',
+        buttonLabel: null,
+        onShow: () => { setBernardFlag(0); },
+      };
+    }
+    if (!allTouched) {
+      return {
+        text: 'Three buildings. Go and find them. Come back when you have stood at each one.',
+        buttonLabel: null,
+      };
+    }
+    if (!b01) {
+      return {
+        text: 'Great! You found them. Enter The Instrument when you\'re ready. Find me behind the Blue Door.',
+        buttonLabel: 'I will find it',
+        buttonAction: () => {
+          setBernardFlag(1);
+          if (user) {
+            const next = credits + 30;
+            setCredits(next);
+            updateUser(user.id, { credits: next });
+          }
+        },
+      };
+    }
+    if (!b03) {
+      return {
+        text: 'Did I tell you that it\'s impossible to get back to reality before you find the Golden Door?',
+        buttonLabel: null,
+      };
+    }
+    if (!b05) {
+      return {
+        text: 'You found me in there. Good. Keep going. Find all five fragments. Find the golden door.',
+        buttonLabel: null,
+      };
+    }
+    if (!b06) {
+      return {
+        text: 'Congratulations. You made it through.',
+        buttonLabel: 'Thank you Bernard',
+        buttonAction: () => {
+          if (window.localStorage.getItem('praem_bernard_05') !== 'true') return;
+          window.localStorage.setItem('praem_bernard_06', 'true');
+          const credNum = parseInt(window.localStorage.getItem('praem_credits') || '0', 10) + 100;
+          window.localStorage.setItem('praem_credits', String(credNum));
+          window.localStorage.setItem('praem_title', 'Wanderer');
+          window.localStorage.setItem('praem_titles_unlocked', JSON.stringify(['Wanderer']));
+          if (user) {
+            setCredits(credNum);
+            updateUser(user.id, { credits: credNum, title: 'Wanderer', unlocked_titles: ['Wanderer'] });
+          }
+          setEyeMessage('You are a Wanderer.');
+          window.setTimeout(() => setEyeMessage(null), 3000);
+          window.setTimeout(() => {
+            setPaywallOpen(true);
+          }, 2000);
+        },
+      };
+    }
+    if (b06 && !subscribed) {
+      return {
+        text: 'The world is waiting. When you are ready — go deeper.',
+        buttonLabel: null,
+      };
+    }
+    if (b06 && subscribed && !alexandra) {
+      return {
+        text: 'Good. Now — one more thing. There is someone you need to find. Her name is Alexandra. She built this place. She is still here somewhere. Go carefully.',
+        buttonLabel: 'I will find her',
+        buttonAction: () => {
+          window.localStorage.setItem('praem_quest_find_alexandra', 'active');
+          window.localStorage.removeItem('praem_quest_alexandra_pending');
+        },
+      };
+    }
+    return {
+      text: 'Still looking for Alexandra? Keep going. She is in there.',
+      buttonLabel: null,
+    };
+  };
+
+  const openBernardDialog = () => {
     setBernardOpen(true);
   };
 
@@ -538,7 +624,6 @@ const Village = () => {
     const had = window.localStorage.getItem('praem_bernard_00') === 'true';
     if (had) return;
     const t = window.setTimeout(() => {
-      setBernardStage('00');
       setBernardOpen(true);
     }, 2000);
     return () => window.clearTimeout(t);
@@ -1362,16 +1447,6 @@ const Village = () => {
           B
         </span>
 
-        {/* Bernard's watching eye (small, gold) — above his position */}
-        <CharacterEye
-          cx={BERNARD_VILLAGE.x}
-          cy={BERNARD_VILLAGE.y - 40}
-          color="#c8963a"
-          size="small"
-          playerPosition={player}
-          proximityRadius={50}
-          zIndex={4}
-        />
 
         {/* Player dot */}
         <div
@@ -1835,122 +1910,50 @@ const Village = () => {
       `}</style>
 
       {/* Bernard dialogue overlay */}
-      {bernardOpen && bernardStage && (
-        <BernardDialogue
-          text={
-            bernardStage === '00' ? 'Another one enters. I heard your bell before you did. Welcome. My name is Bernard. I have been here longer than I can remember. Look around you — three buildings, three numbers, one purpose. When you are ready, the tallest one will be waiting. I will be here when you return.' :
-            bernardStage === 'pretour' ? 'Have a look around first. Three buildings — 23, 47, 89. Go and find them. Come back when you have stood at each one.' :
-            bernardStage === '01' ? 'Great! You found them. Enter The Instrument when you\'re ready. Find me behind the Blue Door.' :
-            bernardStage === '02' ? 'Did I tell you that it\'s impossible to get back to reality before you find the Golden Door?' :
-            bernardStage === '03' ? 'Good. You found the room. Bernard will take care of you from here.' :
-            bernardStage === '06' ? 'You went somewhere I have never been. You found what the instrument contains. You came back. I knew you would — I was a little worried. Well. I am always a little worried. That is the job. You have done something real today. Here — this is yours.' :
-            bernardStage === 'alexandra' ? 'Good. Now — one more thing. And this one does not end quickly. There is someone you need to find. Her name is Alexandra. She built this place. She is still here, somewhere. I have been looking for a long time. Maybe you will have better luck. Go carefully.' :
-            ''
-          }
-        >
-          {bernardStage === '00' && (
+      {bernardOpen && (() => {
+        const d = getBernardDialogue();
+        return (
+          <BernardDialogue text={d.text} onShow={d.onShow}>
+            {d.buttonLabel && (
+              <button
+                type="button"
+                className="font-cinzel"
+                onClick={() => {
+                  d.buttonAction?.();
+                  setBernardOpen(false);
+                }}
+                style={{
+                  background: 'rgba(200,150,58,0.18)',
+                  border: '0.5px solid rgba(200,150,58,0.5)',
+                  color: '#c8963a',
+                  padding: '8px 18px',
+                  fontSize: 10,
+                  letterSpacing: '0.2em',
+                  cursor: 'pointer',
+                }}
+              >
+                {d.buttonLabel.toUpperCase()}
+              </button>
+            )}
             <button
               type="button"
               className="font-cinzel"
-              onClick={() => {
-                if (!setBernardFlag(0)) { setBernardOpen(false); return; }
-                const steps = parseInt(window.localStorage.getItem('praem_steps') || '0', 10) + 50;
-                window.localStorage.setItem('praem_steps', String(steps));
-                setBernardOpen(false);
-              }}
+              onClick={() => setBernardOpen(false)}
               style={{
-                background: 'rgba(169,140,255,0.15)', border: '0.5px solid rgba(169,140,255,0.4)',
-                color: '#a98cff', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
+                background: 'transparent',
+                border: '0.5px solid rgba(160,140,200,0.3)',
+                color: 'rgba(160,140,200,0.5)',
+                padding: '8px 18px',
+                fontSize: 10,
+                letterSpacing: '0.2em',
                 cursor: 'pointer',
               }}
             >
-              CONTINUE
+              CLOSE
             </button>
-          )}
-          {bernardStage === '01' && (
-            <button
-              type="button"
-              className="font-cinzel"
-              onClick={() => {
-                if (!setBernardFlag(1)) { setBernardOpen(false); return; }
-                if (!setBernardFlag(2)) { setBernardOpen(false); return; }
-                if (user) {
-                  const next = credits + 30;
-                  setCredits(next);
-                  updateUser(user.id, { credits: next });
-                }
-                setBernardOpen(false);
-              }}
-              style={{
-                background: 'rgba(169,140,255,0.15)', border: '0.5px solid rgba(169,140,255,0.4)',
-                color: '#a98cff', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
-                cursor: 'pointer',
-              }}
-            >
-              I WILL FIND IT
-            </button>
-          )}
-          {bernardStage === '06' && (
-            <button
-              type="button"
-              className="font-cinzel"
-              onClick={() => {
-                if (!setBernardFlag(6)) { setBernardOpen(false); return; }
-                window.localStorage.setItem('praem_title', 'Wanderer');
-                window.localStorage.setItem('praem_titles_unlocked', JSON.stringify(['Wanderer']));
-                if (user) {
-                  const next = credits + 500;
-                  setCredits(next);
-                  updateUser(user.id, { credits: next, title: 'Wanderer', unlocked_titles: ['Wanderer'] });
-                }
-                setBernardOpen(false);
-                setEyeMessage('You are a Wanderer.');
-                window.setTimeout(() => setEyeMessage(null), 3000);
-                window.setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent('praem:open-paywall'));
-                }, 1500);
-              }}
-              style={{
-                background: 'rgba(200,150,58,0.18)', border: '0.5px solid rgba(200,150,58,0.5)',
-                color: '#c8963a', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
-                cursor: 'pointer',
-              }}
-            >
-              THANK YOU BERNARD
-            </button>
-          )}
-          {bernardStage === 'alexandra' && (
-            <button
-              type="button"
-              className="font-cinzel"
-              onClick={() => {
-                window.localStorage.setItem('praem_quest_find_alexandra', 'active');
-                window.localStorage.removeItem('praem_quest_alexandra_pending');
-                setBernardOpen(false);
-              }}
-              style={{
-                background: 'rgba(200,150,58,0.18)', border: '0.5px solid rgba(200,150,58,0.5)',
-                color: '#c8963a', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
-                cursor: 'pointer',
-              }}
-            >
-              I WILL FIND HER
-            </button>
-          )}
-          <button
-            type="button"
-            className="font-cinzel"
-            onClick={() => setBernardOpen(false)}
-            style={{
-              background: 'transparent', border: '0.5px solid rgba(160,140,200,0.3)',
-              color: 'rgba(160,140,200,0.5)', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
-              cursor: 'pointer',
-            }}
-          >
-            CLOSE
-          </button>
-        </BernardDialogue>
-      )}
+          </BernardDialogue>
+        );
+      })()}
 
       <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} />
 

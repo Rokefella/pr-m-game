@@ -480,10 +480,6 @@ const ShadowRealm = () => {
   };
   const [currentLevel, setCurrentLevel] = useState(1);
   const [currentTitle, setCurrentTitle] = useState('');
-  const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
-
-  const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
-  const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('');
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);

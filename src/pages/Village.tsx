@@ -515,8 +515,11 @@ const Village = () => {
     const t23 = ls.getItem('praem_touched_23') === 'true';
     const t47 = ls.getItem('praem_touched_47') === 'true';
     const t89 = ls.getItem('praem_touched_89') === 'true';
-    let stage: '00' | 'pretour' | '01' | '02' | '03' | '06' = '00';
-    if (f05 && !f06) stage = '06';
+    const alexandraPending = ls.getItem('praem_quest_alexandra_pending') === 'true';
+    const alexandraQuest = ls.getItem('praem_quest_find_alexandra');
+    let stage: '00' | 'pretour' | '01' | '02' | '03' | '06' | 'alexandra' = '00';
+    if (alexandraPending && alexandraQuest !== 'active' && alexandraQuest !== 'complete') stage = 'alexandra';
+    else if (f05 && !f06) stage = '06';
     else if (f03) stage = '03';
     else if (f02) stage = '02';
     else if (f00 && t23 && t47 && t89) stage = '01';

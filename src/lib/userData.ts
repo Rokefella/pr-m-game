@@ -23,7 +23,7 @@ const DEFAULTS: Omit<UserRow, 'id'> = {
   level: 1,
   credits: 50,
   steps_remaining: 100,
-  title: 'Wanderer',
+  title: '',
   aura_color: null,
   username: null,
   entity_answer: null,

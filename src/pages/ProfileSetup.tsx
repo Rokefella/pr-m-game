@@ -2,13 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { restInsert } from '@/lib/supabaseRest';
 
-const AURA_COLORS = ['#2a2a32', '#1a2a4a', '#1a3a2a', '#3a1a1a', '#2a1a4a'];
-
 const ProfileSetup = () => {
-  const [selectedAura, setSelectedAura] = useState(4);
   const [username, setUsername] = useState('');
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const auraColor = (typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4';
 
   const handleEnter = async () => {
     if (saving) return;

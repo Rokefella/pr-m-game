@@ -1046,34 +1046,16 @@ const ShadowRealm = () => {
         ))}
 
         {/* Watching eye in town square */}
-        <svg
-          width={60}
-          height={40}
-          style={{
-            position: 'absolute',
-            left: CX - 30,
-            top: CY - 20,
-            pointerEvents: 'none',
-            zIndex: 1,
-            overflow: 'visible',
-          }}
-        >
-          <ellipse
-            cx={30}
-            cy={20}
-            rx={20}
-            ry={12}
-            stroke="rgba(120,200,140,0.4)"
-            strokeWidth={0.5}
-            fill="none"
-          />
-          <circle
-            cx={30 + eyePupil.x}
-            cy={20 + eyePupil.y}
-            r={3.5}
-            fill="#16a34a"
-          />
-        </svg>
+        {/* Watching entity eye — large, green */}
+        <CharacterEye
+          cx={CX}
+          cy={CY}
+          color="#16a34a"
+          size="large"
+          playerPosition={player}
+          isFixed={false}
+          zIndex={1}
+        />
 
         {/* Outermost rim buildings */}
         {TYPE_RIM.map((b) => (

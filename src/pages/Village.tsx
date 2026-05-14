@@ -480,14 +480,14 @@ const Village = () => {
     10: 'First One Through',
   };
   const [currentLevel, setCurrentLevel] = useState(1);
-  const [currentTitle, setCurrentTitle] = useState('Wanderer');
+  const [currentTitle, setCurrentTitle] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
-  const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
+  const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('');
   const [levelUpHandled, setLevelUpHandled] = useState(false);
   const [auraColor, setAuraColor] = useState<string>(() => (typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4');
   const [username, setUsername] = useState<string>('');
-  const [unlockedTitles, setUnlockedTitles] = useState<string[]>(['Wanderer']);
+  const [unlockedTitles, setUnlockedTitles] = useState<string[]>([]);
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);
   const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
@@ -626,7 +626,7 @@ const Village = () => {
       }
       setAuraColor(row.aura_color || '#5b4fd4');
       setUsername(row.username || '');
-      setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : ['Wanderer']);
+      setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : []);
       setStepsRemaining(row.steps_remaining);
       setCredits(row.credits);
       setTotalMazeSteps(row.total_maze_steps);
@@ -643,13 +643,16 @@ const Village = () => {
 
       if (row.levelup_pending && !levelUpHandled) {
         const newLv = row.levelup_newlevel ?? row.level;
-        const newTitle = TITLES_BY_LEVEL[newLv] || 'Wanderer';
+        const b06 = window.localStorage.getItem('praem_bernard_06') === 'true';
+        const newTitle = b06 ? (TITLES_BY_LEVEL[newLv] || '') : '';
         window.setTimeout(() => {
           if (cancelled) return;
           setLevelUpOverlay({ newLevel: newLv });
           setOverlaySelectedTitle(newTitle);
-          updateUser(user.id, { title: newTitle });
-          setCurrentTitle(newTitle);
+          if (b06 && newTitle) {
+            updateUser(user.id, { title: newTitle });
+            setCurrentTitle(newTitle);
+          }
         }, 2000);
       }
     })();
@@ -1623,82 +1626,86 @@ const Village = () => {
             LEVEL {levelUpOverlay.newLevel}
           </div>
 
-          <div
-            className="font-fell italic"
-            style={{
-              fontSize: 14,
-              color: 'rgba(160,140,200,0.5)',
-              marginTop: 24,
-              animation: 'villageLevelUpText 400ms ease-out 800ms both',
-            }}
-          >
-            New title unlocked:
-          </div>
-          <div
-            className="font-cinzel"
-            style={{
-              fontSize: 20,
-              color: 'rgba(160,140,200,0.9)',
-              marginTop: 8,
-              animation: 'villageLevelUpText 400ms ease-out 1000ms both',
-              letterSpacing: '0.08em',
-            }}
-          >
-            {TITLES_BY_LEVEL[levelUpOverlay.newLevel] || 'Wanderer'}
-          </div>
+          {(typeof window !== 'undefined' && window.localStorage.getItem('praem_bernard_06') === 'true') && (
+            <>
+              <div
+                className="font-fell italic"
+                style={{
+                  fontSize: 14,
+                  color: 'rgba(160,140,200,0.5)',
+                  marginTop: 24,
+                  animation: 'villageLevelUpText 400ms ease-out 800ms both',
+                }}
+              >
+                New title unlocked:
+              </div>
+              <div
+                className="font-cinzel"
+                style={{
+                  fontSize: 20,
+                  color: 'rgba(160,140,200,0.9)',
+                  marginTop: 8,
+                  animation: 'villageLevelUpText 400ms ease-out 1000ms both',
+                  letterSpacing: '0.08em',
+                }}
+              >
+                {TITLES_BY_LEVEL[levelUpOverlay.newLevel] || ''}
+              </div>
 
-          <div
-            className="font-cinzel"
-            style={{
-              fontSize: 10,
-              color: 'rgba(160,140,200,0.4)',
-              letterSpacing: '0.2em',
-              marginTop: 20,
-              animation: 'villageLevelUpText 400ms ease-out 1200ms both',
-            }}
-          >
-            Select your title:
-          </div>
+              <div
+                className="font-cinzel"
+                style={{
+                  fontSize: 10,
+                  color: 'rgba(160,140,200,0.4)',
+                  letterSpacing: '0.2em',
+                  marginTop: 20,
+                  animation: 'villageLevelUpText 400ms ease-out 1200ms both',
+                }}
+              >
+                Select your title:
+              </div>
 
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 8,
-              justifyContent: 'center',
-              marginTop: 12,
-              maxWidth: 360,
-              animation: 'villageLevelUpText 400ms ease-out 1400ms both',
-            }}
-          >
-            {Array.from({ length: levelUpOverlay.newLevel }, (_, i) => i + 1).map((lv) => {
-              const t = TITLES_BY_LEVEL[lv];
-              const sel = overlaySelectedTitle === t;
-              return (
-                <button
-                  key={lv}
-                  className="font-cinzel"
-                  onClick={() => {
-                    setOverlaySelectedTitle(t);
-                    if (user) updateUser(user.id, { title: t });
-                    setCurrentTitle(t);
-                  }}
-                  style={{
-                    fontSize: 10,
-                    padding: '6px 14px',
-                    border: `0.5px solid ${sel ? '#c8963a' : 'rgba(160,140,200,0.3)'}`,
-                    borderRadius: 2,
-                    color: sel ? '#c8963a' : 'rgba(160,140,200,0.6)',
-                    background: 'transparent',
-                    cursor: 'pointer',
-                    letterSpacing: '0.1em',
-                  }}
-                >
-                  {t}
-                </button>
-              );
-            })}
-          </div>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  justifyContent: 'center',
+                  marginTop: 12,
+                  maxWidth: 360,
+                  animation: 'villageLevelUpText 400ms ease-out 1400ms both',
+                }}
+              >
+                {Array.from({ length: levelUpOverlay.newLevel }, (_, i) => i + 1).map((lv) => {
+                  const t = TITLES_BY_LEVEL[lv];
+                  const sel = overlaySelectedTitle === t;
+                  return (
+                    <button
+                      key={lv}
+                      className="font-cinzel"
+                      onClick={() => {
+                        setOverlaySelectedTitle(t);
+                        if (user) updateUser(user.id, { title: t });
+                        setCurrentTitle(t);
+                      }}
+                      style={{
+                        fontSize: 10,
+                        padding: '6px 14px',
+                        border: `0.5px solid ${sel ? '#c8963a' : 'rgba(160,140,200,0.3)'}`,
+                        borderRadius: 2,
+                        color: sel ? '#c8963a' : 'rgba(160,140,200,0.6)',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        letterSpacing: '0.1em',
+                      }}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           <button
             className="font-cinzel"
@@ -1889,12 +1896,16 @@ const Village = () => {
               className="font-cinzel"
               onClick={() => {
                 if (!setBernardFlag(6)) { setBernardOpen(false); return; }
+                window.localStorage.setItem('praem_title', 'Wanderer');
+                window.localStorage.setItem('praem_titles_unlocked', JSON.stringify(['Wanderer']));
                 if (user) {
                   const next = credits + 500;
                   setCredits(next);
-                  updateUser(user.id, { credits: next });
+                  updateUser(user.id, { credits: next, title: 'Wanderer', unlocked_titles: ['Wanderer'] });
                 }
                 setBernardOpen(false);
+                setEyeMessage('You are a Wanderer.');
+                window.setTimeout(() => setEyeMessage(null), 3000);
                 window.setTimeout(() => {
                   window.dispatchEvent(new CustomEvent('praem:open-paywall'));
                 }, 1500);

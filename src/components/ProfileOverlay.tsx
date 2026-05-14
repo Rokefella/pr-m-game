@@ -32,7 +32,8 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const credits = localStorage.getItem('praem_credits') || '50';
   const steps = localStorage.getItem('praem_steps') || '100';
   const level = localStorage.getItem('praem_level') || '1';
-  const title = localStorage.getItem('praem_title') || 'Wanderer';
+  const titleRaw = localStorage.getItem('praem_title');
+  const title = titleRaw && titleRaw.trim() !== '' ? titleRaw : '';
   const fragmentsRaw = localStorage.getItem('praem_fragments');
   let fragmentCount = 0;
   try {
@@ -171,7 +172,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             <div style={{ marginTop: 24, textAlign: 'center' }}>
               <div className="font-mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(200,185,255,0.6)' }}>TITLE</div>
               <div className="font-cinzel" style={{ fontSize: 14, color: 'rgba(200,185,255,0.9)', marginTop: 6, letterSpacing: '0.2em' }}>
-                {title.toUpperCase()}
+                {title ? title.toUpperCase() : '—'}
               </div>
             </div>
 

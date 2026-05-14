@@ -1948,10 +1948,7 @@ const Village = () => {
 
       {paywallOpen && (
         <PaywallOverlay
-          onContinue={() => {
-            window.localStorage.setItem('praem_subscribed', 'true');
-            setPaywallOpen(false);
-          }}
+          onContinue={() => setPaywallOpen(false)}
           onDismiss={() => setPaywallOpen(false)}
         />
       )}

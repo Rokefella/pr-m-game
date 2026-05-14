@@ -4,10 +4,16 @@ import bernardImg from '@/assets/bernard.png';
 interface Props {
   text: string;
   children?: ReactNode; // action buttons
+  onShow?: () => void;
 }
 
-const BernardDialogue = ({ text, children }: Props) => {
+const BernardDialogue = ({ text, children, onShow }: Props) => {
   const [showBell, setShowBell] = useState(false);
+
+  useEffect(() => {
+    onShow?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {

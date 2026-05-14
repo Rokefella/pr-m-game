@@ -1472,82 +1472,86 @@ const ShadowRealm = () => {
             LEVEL {levelUpOverlay.newLevel}
           </div>
 
-          <div
-            className="font-fell italic"
-            style={{
-              fontSize: 14,
-              color: 'rgba(120,200,140,0.5)',
-              marginTop: 24,
-              animation: 'villageLevelUpText 400ms ease-out 800ms both',
-            }}
-          >
-            New title unlocked:
-          </div>
-          <div
-            className="font-cinzel"
-            style={{
-              fontSize: 20,
-              color: 'rgba(120,200,140,0.9)',
-              marginTop: 8,
-              animation: 'villageLevelUpText 400ms ease-out 1000ms both',
-              letterSpacing: '0.08em',
-            }}
-          >
-            {TITLES_BY_LEVEL[levelUpOverlay.newLevel] || 'Wanderer'}
-          </div>
+          {(typeof window !== 'undefined' && window.localStorage.getItem('praem_bernard_06') === 'true') && (
+            <>
+              <div
+                className="font-fell italic"
+                style={{
+                  fontSize: 14,
+                  color: 'rgba(120,200,140,0.5)',
+                  marginTop: 24,
+                  animation: 'villageLevelUpText 400ms ease-out 800ms both',
+                }}
+              >
+                New title unlocked:
+              </div>
+              <div
+                className="font-cinzel"
+                style={{
+                  fontSize: 20,
+                  color: 'rgba(120,200,140,0.9)',
+                  marginTop: 8,
+                  animation: 'villageLevelUpText 400ms ease-out 1000ms both',
+                  letterSpacing: '0.08em',
+                }}
+              >
+                {TITLES_BY_LEVEL[levelUpOverlay.newLevel] || ''}
+              </div>
 
-          <div
-            className="font-cinzel"
-            style={{
-              fontSize: 10,
-              color: 'rgba(120,200,140,0.4)',
-              letterSpacing: '0.2em',
-              marginTop: 20,
-              animation: 'villageLevelUpText 400ms ease-out 1200ms both',
-            }}
-          >
-            Select your title:
-          </div>
+              <div
+                className="font-cinzel"
+                style={{
+                  fontSize: 10,
+                  color: 'rgba(120,200,140,0.4)',
+                  letterSpacing: '0.2em',
+                  marginTop: 20,
+                  animation: 'villageLevelUpText 400ms ease-out 1200ms both',
+                }}
+              >
+                Select your title:
+              </div>
 
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 8,
-              justifyContent: 'center',
-              marginTop: 12,
-              maxWidth: 360,
-              animation: 'villageLevelUpText 400ms ease-out 1400ms both',
-            }}
-          >
-            {Array.from({ length: levelUpOverlay.newLevel }, (_, i) => i + 1).map((lv) => {
-              const t = TITLES_BY_LEVEL[lv];
-              const sel = overlaySelectedTitle === t;
-              return (
-                <button
-                  key={lv}
-                  className="font-cinzel"
-                  onClick={() => {
-                    setOverlaySelectedTitle(t);
-                    if (user) updateUser(user.id, { title: t });
-                    setCurrentTitle(t);
-                  }}
-                  style={{
-                    fontSize: 10,
-                    padding: '6px 14px',
-                    border: `0.5px solid ${sel ? '#f97316' : 'rgba(120,200,140,0.3)'}`,
-                    borderRadius: 2,
-                    color: sel ? '#f97316' : 'rgba(120,200,140,0.6)',
-                    background: 'transparent',
-                    cursor: 'pointer',
-                    letterSpacing: '0.1em',
-                  }}
-                >
-                  {t}
-                </button>
-              );
-            })}
-          </div>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 8,
+                  justifyContent: 'center',
+                  marginTop: 12,
+                  maxWidth: 360,
+                  animation: 'villageLevelUpText 400ms ease-out 1400ms both',
+                }}
+              >
+                {Array.from({ length: levelUpOverlay.newLevel }, (_, i) => i + 1).map((lv) => {
+                  const t = TITLES_BY_LEVEL[lv];
+                  const sel = overlaySelectedTitle === t;
+                  return (
+                    <button
+                      key={lv}
+                      className="font-cinzel"
+                      onClick={() => {
+                        setOverlaySelectedTitle(t);
+                        if (user) updateUser(user.id, { title: t });
+                        setCurrentTitle(t);
+                      }}
+                      style={{
+                        fontSize: 10,
+                        padding: '6px 14px',
+                        border: `0.5px solid ${sel ? '#f97316' : 'rgba(120,200,140,0.3)'}`,
+                        borderRadius: 2,
+                        color: sel ? '#f97316' : 'rgba(120,200,140,0.6)',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        letterSpacing: '0.1em',
+                      }}
+                    >
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           <button
             className="font-cinzel"

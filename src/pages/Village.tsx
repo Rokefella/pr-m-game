@@ -499,7 +499,7 @@ const Village = () => {
 
   // Bernard quest state
   const [bernardOpen, setBernardOpen] = useState(false);
-  const [bernardStage, setBernardStage] = useState<'00' | 'pretour' | '01' | '02' | '03' | '06' | null>(null);
+  const [bernardStage, setBernardStage] = useState<'00' | 'pretour' | '01' | '02' | '03' | '06' | 'alexandra' | null>(null);
   const bernardLockRef = useRef(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
 

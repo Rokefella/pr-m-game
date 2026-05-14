@@ -1873,8 +1873,8 @@ const Village = () => {
               type="button"
               className="font-cinzel"
               onClick={() => {
-                window.localStorage.setItem('praem_bernard_01', 'true');
-                window.localStorage.setItem('praem_bernard_02', 'true');
+                if (!setBernardFlag(1)) { setBernardOpen(false); return; }
+                if (!setBernardFlag(2)) { setBernardOpen(false); return; }
                 if (user) {
                   const next = credits + 30;
                   setCredits(next);

@@ -59,6 +59,8 @@ const BernardRoom1 = () => {
   const profileOpenRef = useRef(false);
   const [profileOpenDisplay, setProfileOpenDisplay] = useState(false);
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
+  const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
+
   const lastDialogCloseRef = useRef(0);
   const closeDialog = useCallback(() => {
     lastDialogCloseRef.current = Date.now();

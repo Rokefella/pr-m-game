@@ -155,6 +155,20 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                 {title.toUpperCase()}
               </div>
             </div>
+
+            <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+              <div className="font-cinzel" style={{ fontSize: 9, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>
+                DIMENSION
+              </div>
+              <div
+                aria-label="Dimension"
+                style={{
+                  width: 12, height: 12, borderRadius: '50%',
+                  background: auraColor,
+                  boxShadow: `0 0 6px ${auraColor}99`,
+                }}
+              />
+            </div>
           </div>
         )}
 

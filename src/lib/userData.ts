@@ -31,7 +31,7 @@ const DEFAULTS: Omit<UserRow, 'id'> = {
   levelup_newlevel: null,
   maze_completed_level: 0,
   registration_number: 0,
-  unlocked_titles: ['Wanderer'],
+  unlocked_titles: [],
   total_maze_steps: 0,
   total_maze_time: 0,
   first_launch_at: new Date().toISOString(),

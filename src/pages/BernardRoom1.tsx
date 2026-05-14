@@ -61,12 +61,9 @@ const BernardRoom1 = () => {
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
   const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
 
-  // Mark room visited on mount → BERNARD_03
-  useEffect(() => {
-    const had03 = localStorage.getItem('praem_bernard_03');
-    if (!had03) {
-      setBernardFlag(3);
-    }
+  const closeDialog = useCallback(() => {
+    lastDialogCloseRef.current = Date.now();
+    setDialogOpen(null);
   }, []);
 
   const tryMove = (dc: number, dr: number) => {

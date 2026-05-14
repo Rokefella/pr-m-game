@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import BernardDialogue from '@/components/BernardDialogue';
+import CharacterEye from '@/components/CharacterEye';
 import { setBernardFlag } from '@/lib/bernardFlags';
 
 const CELL = 56;
@@ -65,6 +66,25 @@ const BernardRoom1 = () => {
   const closeDialog = useCallback(() => {
     lastDialogCloseRef.current = Date.now();
     setDialogOpen(null);
+  }, []);
+
+  // One-time whispers on session entry — show each sequentially then remove
+  const whispersShownRef = useRef(false);
+  const [visibleWhisper, setVisibleWhisper] = useState<number | null>(null);
+  const [whispersDone, setWhispersDone] = useState(false);
+  useEffect(() => {
+    if (whispersShownRef.current) return;
+    whispersShownRef.current = true;
+    const timeouts: number[] = [];
+    const schedule = (i: number, inAt: number, outAt: number) => {
+      timeouts.push(window.setTimeout(() => setVisibleWhisper(i), inAt));
+      timeouts.push(window.setTimeout(() => setVisibleWhisper(null), outAt));
+    };
+    schedule(0, 1000, 3000);
+    schedule(1, 3500, 5500);
+    schedule(2, 6000, 8000);
+    timeouts.push(window.setTimeout(() => setWhispersDone(true), 8200));
+    return () => { timeouts.forEach((t) => window.clearTimeout(t)); };
   }, []);
 
   const tryMove = (dc: number, dr: number) => {
@@ -317,42 +337,31 @@ const BernardRoom1 = () => {
           })
         )}
 
-        {/* Ambient text */}
-        {AMBIENT.map((a, i) => (
+        {/* Ambient text — one-time sequential whispers per session */}
+        {!whispersDone && AMBIENT.map((a, i) => (
           <p
             key={`amb-${i}`}
             className="font-fell italic"
             style={{
               position: 'absolute', left: a.col * CELL + 6, top: a.row * CELL + CELL / 2 - 6,
-              margin: 0, fontSize: 11, color: 'rgba(200,150,58,0.15)', pointerEvents: 'none',
+              margin: 0, fontSize: 11, color: 'rgba(200,150,58,0.7)', pointerEvents: 'none',
+              opacity: visibleWhisper === i ? 1 : 0,
+              transition: 'opacity 600ms ease-in-out',
             }}
           >
             {a.text}
           </p>
         ))}
 
-        {/* Bernard */}
-        <div
-          style={{
-            position: 'absolute',
-            left: bernardSmooth.x * CELL + CELL / 2 - 5,
-            top: bernardSmooth.y * CELL + CELL / 2 - 5,
-            width: 10, height: 10, borderRadius: '50%',
-            background: '#c8963a',
-            boxShadow: '0 0 10px rgba(200,150,58,0.6)',
-            animation: 'bernardPulse 2s ease-in-out infinite',
-          }}
-        >
-          <div
-            style={{
-              position: 'absolute',
-              left: 3 + pupilOffset.x, top: 3 + pupilOffset.y,
-              width: 4, height: 4, borderRadius: '50%',
-              background: '#04040a',
-              transition: 'left 200ms, top 200ms',
-            }}
-          />
-        </div>
+        {/* Bernard — CharacterEye (medium, gold) */}
+        <CharacterEye
+          cx={bernardSmooth.x * CELL + CELL / 2}
+          cy={bernardSmooth.y * CELL + CELL / 2}
+          color="#c8963a"
+          size="medium"
+          playerPosition={{ x: pos.col * CELL + CELL / 2, y: pos.row * CELL + CELL / 2 }}
+          proximityRadius={CELL * 1.5}
+        />
 
         {/* Whisper above Bernard when near */}
         {nearBernard && !dialogOpen && (

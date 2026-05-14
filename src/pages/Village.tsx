@@ -7,6 +7,7 @@ import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/compone
 import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import BernardDialogue from '@/components/BernardDialogue';
+import CharacterEye from '@/components/CharacterEye';
 import { setBernardFlag } from '@/lib/bernardFlags';
 
 // Village Merchant
@@ -1186,34 +1187,14 @@ const Village = () => {
         ))}
 
         {/* Watching eye in town square */}
-        <svg
-          width={60}
-          height={40}
-          style={{
-            position: 'absolute',
-            left: CX - 30,
-            top: CY - 20,
-            pointerEvents: 'none',
-            zIndex: 1,
-            overflow: 'visible',
-          }}
-        >
-          <ellipse
-            cx={30}
-            cy={20}
-            rx={20}
-            ry={12}
-            stroke="rgba(160,140,200,0.4)"
-            strokeWidth={0.5}
-            fill="none"
-          />
-          <circle
-            cx={30 + eyePupil.x}
-            cy={20 + eyePupil.y}
-            r={3.5}
-            fill="#5b4fd4"
-          />
-        </svg>
+        <CharacterEye
+          cx={CX}
+          cy={CY}
+          color="#5b4fd4"
+          size="small"
+          playerPosition={player}
+          zIndex={1}
+        />
 
         {/* Outermost rim buildings */}
         {TYPE_RIM.map((b) => (
@@ -1377,6 +1358,17 @@ const Village = () => {
         >
           B
         </span>
+
+        {/* Bernard's watching eye (small, gold) — above his position */}
+        <CharacterEye
+          cx={BERNARD_VILLAGE.x}
+          cy={BERNARD_VILLAGE.y - 40}
+          color="#c8963a"
+          size="small"
+          playerPosition={player}
+          proximityRadius={50}
+          zIndex={4}
+        />
 
         {/* Player dot */}
         <div

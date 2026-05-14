@@ -1835,6 +1835,7 @@ const Village = () => {
             {bernardStage === '02' && 'Did I tell you that it\'s impossible to get back to reality before you find the Golden Door?'}
             {bernardStage === '03' && 'Good. You found the room. Bernard will take care of you from here.'}
             {bernardStage === '06' && 'You went somewhere I have never been. You found what the instrument contains. You came back. I knew you would — I was a little worried. Well. I am always a little worried. That is the job. You have done something real today. Here — this is yours.'}
+            {bernardStage === 'alexandra' && 'Good. Now — one more thing. And this one does not end quickly. There is someone you need to find. Her name is Alexandra. She built this place. She is still here, somewhere. I have been looking for a long time. Maybe you will have better luck. Go carefully.'}
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {bernardStage === '00' && (

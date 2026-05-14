@@ -483,7 +483,7 @@ const ShadowRealm = () => {
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
-  const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('Wanderer');
+  const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('');
   const [shadowFadeOut, setShadowFadeOut] = useState(false);
   const [exitConfirm, setExitConfirm] = useState<{ levelUp: boolean; nextLevel: number } | null>(null);
   const [credits, setCredits] = useState<number>(0);

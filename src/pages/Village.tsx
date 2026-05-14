@@ -1920,122 +1920,50 @@ const Village = () => {
       `}</style>
 
       {/* Bernard dialogue overlay */}
-      {bernardOpen && bernardStage && (
-        <BernardDialogue
-          text={
-            bernardStage === '00' ? 'Another one enters. I heard your bell before you did. Welcome. My name is Bernard. I have been here longer than I can remember. Look around you — three buildings, three numbers, one purpose. When you are ready, the tallest one will be waiting. I will be here when you return.' :
-            bernardStage === 'pretour' ? 'Have a look around first. Three buildings — 23, 47, 89. Go and find them. Come back when you have stood at each one.' :
-            bernardStage === '01' ? 'Great! You found them. Enter The Instrument when you\'re ready. Find me behind the Blue Door.' :
-            bernardStage === '02' ? 'Did I tell you that it\'s impossible to get back to reality before you find the Golden Door?' :
-            bernardStage === '03' ? 'Good. You found the room. Bernard will take care of you from here.' :
-            bernardStage === '06' ? 'You went somewhere I have never been. You found what the instrument contains. You came back. I knew you would — I was a little worried. Well. I am always a little worried. That is the job. You have done something real today. Here — this is yours.' :
-            bernardStage === 'alexandra' ? 'Good. Now — one more thing. And this one does not end quickly. There is someone you need to find. Her name is Alexandra. She built this place. She is still here, somewhere. I have been looking for a long time. Maybe you will have better luck. Go carefully.' :
-            ''
-          }
-        >
-          {bernardStage === '00' && (
+      {bernardOpen && (() => {
+        const d = getBernardDialogue();
+        return (
+          <BernardDialogue text={d.text} onShow={d.onShow}>
+            {d.buttonLabel && (
+              <button
+                type="button"
+                className="font-cinzel"
+                onClick={() => {
+                  d.buttonAction?.();
+                  setBernardOpen(false);
+                }}
+                style={{
+                  background: 'rgba(200,150,58,0.18)',
+                  border: '0.5px solid rgba(200,150,58,0.5)',
+                  color: '#c8963a',
+                  padding: '8px 18px',
+                  fontSize: 10,
+                  letterSpacing: '0.2em',
+                  cursor: 'pointer',
+                }}
+              >
+                {d.buttonLabel.toUpperCase()}
+              </button>
+            )}
             <button
               type="button"
               className="font-cinzel"
-              onClick={() => {
-                if (!setBernardFlag(0)) { setBernardOpen(false); return; }
-                const steps = parseInt(window.localStorage.getItem('praem_steps') || '0', 10) + 50;
-                window.localStorage.setItem('praem_steps', String(steps));
-                setBernardOpen(false);
-              }}
+              onClick={() => setBernardOpen(false)}
               style={{
-                background: 'rgba(169,140,255,0.15)', border: '0.5px solid rgba(169,140,255,0.4)',
-                color: '#a98cff', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
+                background: 'transparent',
+                border: '0.5px solid rgba(160,140,200,0.3)',
+                color: 'rgba(160,140,200,0.5)',
+                padding: '8px 18px',
+                fontSize: 10,
+                letterSpacing: '0.2em',
                 cursor: 'pointer',
               }}
             >
-              CONTINUE
+              CLOSE
             </button>
-          )}
-          {bernardStage === '01' && (
-            <button
-              type="button"
-              className="font-cinzel"
-              onClick={() => {
-                if (!setBernardFlag(1)) { setBernardOpen(false); return; }
-                if (!setBernardFlag(2)) { setBernardOpen(false); return; }
-                if (user) {
-                  const next = credits + 30;
-                  setCredits(next);
-                  updateUser(user.id, { credits: next });
-                }
-                setBernardOpen(false);
-              }}
-              style={{
-                background: 'rgba(169,140,255,0.15)', border: '0.5px solid rgba(169,140,255,0.4)',
-                color: '#a98cff', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
-                cursor: 'pointer',
-              }}
-            >
-              I WILL FIND IT
-            </button>
-          )}
-          {bernardStage === '06' && (
-            <button
-              type="button"
-              className="font-cinzel"
-              onClick={() => {
-                if (!setBernardFlag(6)) { setBernardOpen(false); return; }
-                window.localStorage.setItem('praem_title', 'Wanderer');
-                window.localStorage.setItem('praem_titles_unlocked', JSON.stringify(['Wanderer']));
-                if (user) {
-                  const next = credits + 500;
-                  setCredits(next);
-                  updateUser(user.id, { credits: next, title: 'Wanderer', unlocked_titles: ['Wanderer'] });
-                }
-                setBernardOpen(false);
-                setEyeMessage('You are a Wanderer.');
-                window.setTimeout(() => setEyeMessage(null), 3000);
-                window.setTimeout(() => {
-                  window.dispatchEvent(new CustomEvent('praem:open-paywall'));
-                }, 1500);
-              }}
-              style={{
-                background: 'rgba(200,150,58,0.18)', border: '0.5px solid rgba(200,150,58,0.5)',
-                color: '#c8963a', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
-                cursor: 'pointer',
-              }}
-            >
-              THANK YOU BERNARD
-            </button>
-          )}
-          {bernardStage === 'alexandra' && (
-            <button
-              type="button"
-              className="font-cinzel"
-              onClick={() => {
-                window.localStorage.setItem('praem_quest_find_alexandra', 'active');
-                window.localStorage.removeItem('praem_quest_alexandra_pending');
-                setBernardOpen(false);
-              }}
-              style={{
-                background: 'rgba(200,150,58,0.18)', border: '0.5px solid rgba(200,150,58,0.5)',
-                color: '#c8963a', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
-                cursor: 'pointer',
-              }}
-            >
-              I WILL FIND HER
-            </button>
-          )}
-          <button
-            type="button"
-            className="font-cinzel"
-            onClick={() => setBernardOpen(false)}
-            style={{
-              background: 'transparent', border: '0.5px solid rgba(160,140,200,0.3)',
-              color: 'rgba(160,140,200,0.5)', padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
-              cursor: 'pointer',
-            }}
-          >
-            CLOSE
-          </button>
-        </BernardDialogue>
-      )}
+          </BernardDialogue>
+        );
+      })()}
 
       <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} />
 

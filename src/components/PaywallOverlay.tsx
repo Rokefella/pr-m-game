@@ -147,6 +147,31 @@ const PaywallOverlay = ({ onContinue, onDismiss }: Props) => {
               )}
             </div>
 
+            {/* FREE — testing only */}
+            <div style={{ marginTop: 18, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '16px', border: '0.5px dashed rgba(160,140,200,0.15)' }}>
+              <p className="font-cinzel" style={{ fontSize: 9, letterSpacing: '0.22em', color: 'rgba(160,140,200,0.4)', margin: 0 }}>FREE</p>
+              <p className="font-fell italic" style={{ fontSize: 12, color: 'rgba(160,140,200,0.4)', margin: 0 }}>Testing access — will be removed</p>
+              <button
+                type="button"
+                onClick={() => {
+                  window.localStorage.setItem('praem_subscribed', 'true');
+                  window.localStorage.setItem('praem_subscription_type', 'free');
+                  window.localStorage.setItem('praem_quest_alexandra_pending', 'true');
+                  onContinue();
+                }}
+                className="font-cinzel"
+                style={{
+                  marginTop: 4, fontSize: 11, letterSpacing: '0.22em',
+                  color: 'rgba(160,140,200,0.4)', background: 'transparent',
+                  border: '0.5px solid rgba(160,140,200,0.2)',
+                  padding: '10px 24px', cursor: 'pointer',
+                }}
+              >
+                CONTINUE FREE
+              </button>
+              <p className="font-mono" style={{ fontSize: 9, color: 'rgba(160,140,200,0.2)', margin: 0 }}>// DEV ONLY — remove before launch</p>
+            </div>
+
             <p className="font-fell italic" style={{ fontSize: 12, color: 'rgba(160,140,200,0.4)', textAlign: 'center', margin: '20px 0 0', maxWidth: 460 }}>
               Your registration number, Trace, and title are yours regardless.
             </p>

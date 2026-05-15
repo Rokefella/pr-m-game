@@ -236,7 +236,7 @@ const BernardRoom1 = () => {
         {
           label: 'WHAT SHOULD I LOOK FOR?',
           onClick: () => {
-            setBernardFlag(3);
+            localStorage.setItem('praem_bernard_02_accepted', 'true');
             setDialogOpen('whatToLook');
           },
         },

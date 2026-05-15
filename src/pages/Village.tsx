@@ -764,7 +764,7 @@ const Village = () => {
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
       window.localStorage.setItem('praem_touched_89', 'true');
-      const unlocked = window.localStorage.getItem('praem_bernard_01') === 'true';
+      const unlocked = window.localStorage.getItem('praem_bernard_01_accepted') === 'true';
       if (!unlocked) {
         showLockWhisper('Not yet. Speak to Bernard first.');
         return true;

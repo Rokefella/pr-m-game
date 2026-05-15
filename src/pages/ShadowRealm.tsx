@@ -454,7 +454,7 @@ const ShadowRealm = () => {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('praem_shadow_visited', 'true');
-      setBernardFlag(5);
+      window.localStorage.setItem('praem_bernard_03_complete', 'true');
     }
   }, []);
 

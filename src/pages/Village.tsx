@@ -8,7 +8,7 @@ import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import BernardDialogue from '@/components/BernardDialogue';
 import CharacterEye from '@/components/CharacterEye';
-import { setBernardFlag } from '@/lib/bernardFlags';
+
 
 // Village Merchant
 // Village Merchant — TEMP: positioned at map center (col=27,row=17) for visibility testing
@@ -518,10 +518,10 @@ const Village = () => {
       return { text: '', buttonLabel: null };
     }
     const ls = window.localStorage;
-    const b00 = ls.getItem('praem_bernard_00') === 'true';
-    const b01 = ls.getItem('praem_bernard_01') === 'true';
-    const b03 = ls.getItem('praem_bernard_03') === 'true';
-    const b05 = ls.getItem('praem_bernard_05') === 'true';
+    const b00 = ls.getItem('praem_bernard_00_complete') === 'true';
+    const b01 = ls.getItem('praem_bernard_01_accepted') === 'true';
+    const b03 = ls.getItem('praem_bernard_01_complete') === 'true';
+    const b05 = ls.getItem('praem_bernard_03_complete') === 'true';
     const b06 = ls.getItem('praem_bernard_06') === 'true';
     const subscribed = ls.getItem('praem_subscribed') === 'true';
     const alexandra = ls.getItem('praem_quest_find_alexandra') === 'active';
@@ -534,7 +534,7 @@ const Village = () => {
       return {
         text: 'You are here. I heard your bell before you did. Welcome. My name is Bernard. Three buildings — 23, 47, 89. Find them all. Come back when you have stood at each one.',
         buttonLabel: null,
-        onShow: () => { setBernardFlag(0); },
+        onShow: () => { window.localStorage.setItem('praem_bernard_00_complete', 'true'); },
       };
     }
     if (!allTouched) {
@@ -548,7 +548,7 @@ const Village = () => {
         text: 'Great! You found them. Enter The Instrument when you\'re ready. Find me behind the Blue Door.',
         buttonLabel: 'I will find it',
         buttonAction: () => {
-          setBernardFlag(1);
+          window.localStorage.setItem('praem_bernard_01_accepted', 'true');
           if (user) {
             const next = credits + 30;
             setCredits(next);
@@ -574,7 +574,8 @@ const Village = () => {
         text: 'Congratulations. You made it through.',
         buttonLabel: 'Thank you Bernard',
         buttonAction: () => {
-          if (window.localStorage.getItem('praem_bernard_05') !== 'true') return;
+          if (window.localStorage.getItem('praem_bernard_03_complete') !== 'true') return;
+          window.localStorage.setItem('praem_bernard_04_complete', 'true');
           window.localStorage.setItem('praem_bernard_06', 'true');
           const credNum = parseInt(window.localStorage.getItem('praem_credits') || '0', 10) + 100;
           window.localStorage.setItem('praem_credits', String(credNum));
@@ -621,7 +622,7 @@ const Village = () => {
   // Auto-trigger BERNARD_00 on first Village entry
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const had = window.localStorage.getItem('praem_bernard_00') === 'true';
+    const had = window.localStorage.getItem('praem_bernard_00_complete') === 'true';
     if (had) return;
     const t = window.setTimeout(() => {
       setBernardOpen(true);
@@ -763,7 +764,7 @@ const Village = () => {
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
       window.localStorage.setItem('praem_touched_89', 'true');
-      const unlocked = window.localStorage.getItem('praem_bernard_01') === 'true';
+      const unlocked = window.localStorage.getItem('praem_bernard_01_accepted') === 'true';
       if (!unlocked) {
         showLockWhisper('Not yet. Speak to Bernard first.');
         return true;

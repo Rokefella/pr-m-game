@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import BernardDialogue from '@/components/BernardDialogue';
 import CharacterEye from '@/components/CharacterEye';
-import { setBernardFlag } from '@/lib/bernardFlags';
+
 
 const CELL = 56;
 const COLS = 10;
@@ -69,6 +69,13 @@ const BernardRoom1 = () => {
   }, []);
 
   // One-time whispers on session entry — show each sequentially then remove
+  // Also marks BERNARD quest 01 as complete on first room entry
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('praem_bernard_01_complete', 'true');
+    }
+  }, []);
+
   const whispersShownRef = useRef(false);
   const [visibleWhisper, setVisibleWhisper] = useState<number | null>(null);
   const [whispersDone, setWhispersDone] = useState(false);
@@ -184,20 +191,22 @@ const BernardRoom1 = () => {
     const dist = Math.max(Math.abs(pos.col - bernardCell.col), Math.abs(pos.row - bernardCell.row));
     if (dist > 2) return;
 
-    const f03 = localStorage.getItem('praem_bernard_03') === 'true';
-    const f04 = localStorage.getItem('praem_bernard_04') === 'true';
-    const f05 = localStorage.getItem('praem_bernard_05') === 'true';
+    const accept02 = localStorage.getItem('praem_bernard_02_accepted') === 'true';
+    const complete02 = localStorage.getItem('praem_bernard_02_complete') === 'true';
+    const complete03 = localStorage.getItem('praem_bernard_03_complete') === 'true';
     const f06 = localStorage.getItem('praem_bernard_06') === 'true';
     const fragments = JSON.parse(localStorage.getItem('praem_fragments') || '[]') as number[];
 
-    if (!f03) {
+    if (!accept02) {
       setDialogOpen('intro');
-    } else if (!f04) {
+    } else if (!complete02) {
       if (fragments.length >= 1) setDialogOpen('reportFragment');
       else setDialogOpen('fragmentQuest');
-    } else if (!f05) {
+    } else if (!complete03) {
       setDialogOpen('goldenDoor');
     } else if (!f06) {
+      // Player returned from Shadow Realm — accept return-to-village quest
+      localStorage.setItem('praem_bernard_04_accepted', 'true');
       setDialogOpen('returnToVillage');
     } else {
       setDialogOpen('complete');
@@ -227,7 +236,7 @@ const BernardRoom1 = () => {
         {
           label: 'WHAT SHOULD I LOOK FOR?',
           onClick: () => {
-            setBernardFlag(3);
+            localStorage.setItem('praem_bernard_02_accepted', 'true');
             setDialogOpen('whatToLook');
           },
         },
@@ -244,7 +253,8 @@ const BernardRoom1 = () => {
         {
           label: 'THANK YOU',
           onClick: () => {
-            if (!setBernardFlag(4)) { closeDialog(); return; }
+            localStorage.setItem('praem_bernard_02_complete', 'true');
+            localStorage.setItem('praem_bernard_03_accepted', 'true');
             const credits = parseInt(localStorage.getItem('praem_credits') || '0', 10) + 150;
             localStorage.setItem('praem_credits', String(credits));
             const steps = parseInt(localStorage.getItem('praem_steps') || '0', 10) + 200;

@@ -622,7 +622,7 @@ const Village = () => {
   // Auto-trigger BERNARD_00 on first Village entry
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const had = window.localStorage.getItem('praem_bernard_00') === 'true';
+    const had = window.localStorage.getItem('praem_bernard_00_complete') === 'true';
     if (had) return;
     const t = window.setTimeout(() => {
       setBernardOpen(true);

@@ -574,7 +574,8 @@ const Village = () => {
         text: 'Congratulations. You made it through.',
         buttonLabel: 'Thank you Bernard',
         buttonAction: () => {
-          if (window.localStorage.getItem('praem_bernard_05') !== 'true') return;
+          if (window.localStorage.getItem('praem_bernard_03_complete') !== 'true') return;
+          window.localStorage.setItem('praem_bernard_04_complete', 'true');
           window.localStorage.setItem('praem_bernard_06', 'true');
           const credNum = parseInt(window.localStorage.getItem('praem_credits') || '0', 10) + 100;
           window.localStorage.setItem('praem_credits', String(credNum));

@@ -40,13 +40,15 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     fragmentCount = fragmentsRaw ? (JSON.parse(fragmentsRaw) as unknown[]).length : 0;
   } catch { fragmentCount = 0; }
 
-  const b00 = localStorage.getItem('praem_bernard_00') === 'true';
-  const b01 = localStorage.getItem('praem_bernard_01') === 'true';
-  const b02 = localStorage.getItem('praem_bernard_02') === 'true';
-  const b03 = localStorage.getItem('praem_bernard_03') === 'true';
-  const b04 = localStorage.getItem('praem_bernard_04') === 'true';
-  const b05 = localStorage.getItem('praem_bernard_05') === 'true';
-  const b06 = localStorage.getItem('praem_bernard_06') === 'true';
+  const b00c = localStorage.getItem('praem_bernard_00_complete') === 'true';
+  const b01a = localStorage.getItem('praem_bernard_01_accepted') === 'true';
+  const b01c = localStorage.getItem('praem_bernard_01_complete') === 'true';
+  const b02a = localStorage.getItem('praem_bernard_02_accepted') === 'true';
+  const b02c = localStorage.getItem('praem_bernard_02_complete') === 'true';
+  const b03a = localStorage.getItem('praem_bernard_03_accepted') === 'true';
+  const b03c = localStorage.getItem('praem_bernard_03_complete') === 'true';
+  const b04a = localStorage.getItem('praem_bernard_04_accepted') === 'true';
+  const b04c = localStorage.getItem('praem_bernard_04_complete') === 'true';
   const subscribed = localStorage.getItem('praem_subscribed') === 'true';
   const subType = localStorage.getItem('praem_subscription_type') || '';
   const alexandraQuest = localStorage.getItem('praem_quest_find_alexandra');
@@ -56,17 +58,17 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
 
   const activeQuests: Quest[] = [];
   if (alexandraActive) activeQuests.push({ key: 'a-alexandra', name: 'Find Alexandra', giver: 'Bernard', status: 'She built the Instrument. She is still inside it. Find her.', gold: true });
-  if (b02 && !b03) activeQuests.push({ key: 'a-blue', name: 'Find the Blue Door', giver: 'Bernard', status: 'Find the blue door inside the Instrument' });
-  if (b03 && !b04) activeQuests.push({ key: 'a-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Collect one fragment and return to Bernard' });
-  if (b04 && !b05) activeQuests.push({ key: 'a-gold', name: 'Find the golden door', giver: 'Bernard', status: 'Collect all 5 fragments and find the golden door' });
-  if (b05 && !b06) activeQuests.push({ key: 'a-return', name: 'Return to Bernard', giver: 'Bernard', status: 'Return to Bernard in the Village square' });
+  if (b01a && !b01c) activeQuests.push({ key: 'a-blue', name: 'Find the Blue Door', giver: 'Bernard', status: 'Find the blue door inside the Instrument' });
+  if (b02a && !b02c) activeQuests.push({ key: 'a-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Collect one fragment and return to Bernard' });
+  if (b03a && !b03c) activeQuests.push({ key: 'a-gold', name: 'Find the golden door', giver: 'Bernard', status: 'Collect all 5 fragments and find the golden door' });
+  if (b04a && !b04c) activeQuests.push({ key: 'a-return', name: 'Return to Bernard', giver: 'Bernard', status: 'Return to Bernard in the Village square' });
 
   const completedQuests: Quest[] = [];
-  if (b00) completedQuests.push({ key: 'c-welcome', name: 'Welcome to the Village', giver: 'Bernard', status: 'Bernard welcomed you to the Village' });
-  if (b01) completedQuests.push({ key: 'c-feet', name: 'Find your feet', giver: 'Bernard', status: 'You found the three buildings' });
-  if (b03) completedQuests.push({ key: 'c-blue', name: 'Find the Blue Door', giver: 'Bernard', status: "You found Bernard's room" });
-  if (b04) completedQuests.push({ key: 'c-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Fragment collected. The instrument spoke.' });
-  if (b06) completedQuests.push({ key: 'c-return', name: 'The return', giver: 'Bernard', status: 'You completed Level 1' });
+  if (b00c) completedQuests.push({ key: 'c-welcome', name: 'Welcome to the Village', giver: 'Bernard', status: 'Bernard welcomed you to the Village' });
+  if (b01c) completedQuests.push({ key: 'c-blue', name: 'Find the Blue Door', giver: 'Bernard', status: "You found Bernard's room" });
+  if (b02c) completedQuests.push({ key: 'c-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Fragment collected. The instrument spoke.' });
+  if (b03c) completedQuests.push({ key: 'c-gold', name: 'Find the golden door and Shadow Realm', giver: 'Bernard', status: 'You found the golden door.' });
+  if (b04c) completedQuests.push({ key: 'c-return', name: 'The return', giver: 'Bernard', status: 'You returned to Bernard.' });
 
   const cardStyle: React.CSSProperties = {
     position: 'relative',

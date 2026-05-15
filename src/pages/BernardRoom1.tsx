@@ -253,7 +253,8 @@ const BernardRoom1 = () => {
         {
           label: 'THANK YOU',
           onClick: () => {
-            if (!setBernardFlag(4)) { closeDialog(); return; }
+            localStorage.setItem('praem_bernard_02_complete', 'true');
+            localStorage.setItem('praem_bernard_03_accepted', 'true');
             const credits = parseInt(localStorage.getItem('praem_credits') || '0', 10) + 150;
             localStorage.setItem('praem_credits', String(credits));
             const steps = parseInt(localStorage.getItem('praem_steps') || '0', 10) + 200;

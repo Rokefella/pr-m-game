@@ -548,7 +548,7 @@ const Village = () => {
         text: 'Great! You found them. Enter The Instrument when you\'re ready. Find me behind the Blue Door.',
         buttonLabel: 'I will find it',
         buttonAction: () => {
-          setBernardFlag(1);
+          window.localStorage.setItem('praem_bernard_01_accepted', 'true');
           if (user) {
             const next = credits + 30;
             setCredits(next);

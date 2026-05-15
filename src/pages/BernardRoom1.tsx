@@ -191,20 +191,22 @@ const BernardRoom1 = () => {
     const dist = Math.max(Math.abs(pos.col - bernardCell.col), Math.abs(pos.row - bernardCell.row));
     if (dist > 2) return;
 
-    const f03 = localStorage.getItem('praem_bernard_03') === 'true';
-    const f04 = localStorage.getItem('praem_bernard_04') === 'true';
-    const f05 = localStorage.getItem('praem_bernard_05') === 'true';
+    const accept02 = localStorage.getItem('praem_bernard_02_accepted') === 'true';
+    const complete02 = localStorage.getItem('praem_bernard_02_complete') === 'true';
+    const complete03 = localStorage.getItem('praem_bernard_03_complete') === 'true';
     const f06 = localStorage.getItem('praem_bernard_06') === 'true';
     const fragments = JSON.parse(localStorage.getItem('praem_fragments') || '[]') as number[];
 
-    if (!f03) {
+    if (!accept02) {
       setDialogOpen('intro');
-    } else if (!f04) {
+    } else if (!complete02) {
       if (fragments.length >= 1) setDialogOpen('reportFragment');
       else setDialogOpen('fragmentQuest');
-    } else if (!f05) {
+    } else if (!complete03) {
       setDialogOpen('goldenDoor');
     } else if (!f06) {
+      // Player returned from Shadow Realm — accept return-to-village quest
+      localStorage.setItem('praem_bernard_04_accepted', 'true');
       setDialogOpen('returnToVillage');
     } else {
       setDialogOpen('complete');

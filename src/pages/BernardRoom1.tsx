@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import BernardDialogue from '@/components/BernardDialogue';
 import CharacterEye from '@/components/CharacterEye';
-import { setBernardFlag } from '@/lib/bernardFlags';
+
 
 const CELL = 56;
 const COLS = 10;

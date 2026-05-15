@@ -518,10 +518,10 @@ const Village = () => {
       return { text: '', buttonLabel: null };
     }
     const ls = window.localStorage;
-    const b00 = ls.getItem('praem_bernard_00') === 'true';
-    const b01 = ls.getItem('praem_bernard_01') === 'true';
-    const b03 = ls.getItem('praem_bernard_03') === 'true';
-    const b05 = ls.getItem('praem_bernard_05') === 'true';
+    const b00 = ls.getItem('praem_bernard_00_complete') === 'true';
+    const b01 = ls.getItem('praem_bernard_01_accepted') === 'true';
+    const b03 = ls.getItem('praem_bernard_01_complete') === 'true';
+    const b05 = ls.getItem('praem_bernard_03_complete') === 'true';
     const b06 = ls.getItem('praem_bernard_06') === 'true';
     const subscribed = ls.getItem('praem_subscribed') === 'true';
     const alexandra = ls.getItem('praem_quest_find_alexandra') === 'active';

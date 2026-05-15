@@ -534,7 +534,7 @@ const Village = () => {
       return {
         text: 'You are here. I heard your bell before you did. Welcome. My name is Bernard. Three buildings — 23, 47, 89. Find them all. Come back when you have stood at each one.',
         buttonLabel: null,
-        onShow: () => { setBernardFlag(0); },
+        onShow: () => { window.localStorage.setItem('praem_bernard_00_complete', 'true'); },
       };
     }
     if (!allTouched) {

@@ -76,6 +76,7 @@ const BernardRoom1 = () => {
     }
   }, []);
 
+  const whispersShownRef = useRef(false);
   const [visibleWhisper, setVisibleWhisper] = useState<number | null>(null);
   const [whispersDone, setWhispersDone] = useState(false);
   useEffect(() => {

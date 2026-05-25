@@ -1,33 +1,23 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { restInsert } from '@/lib/supabaseRest';
+import { useAuth } from '@/context/AuthContext';
+import { updateUser } from '@/lib/userData';
 
 const ProfileSetup = () => {
   const [username, setUsername] = useState('');
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
-  const auraColor = (typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4';
+  const { user, loading } = useAuth();
+  const auraColor = localStorage.getItem('praem_aura_color') || '#5b4fd4';
 
   const handleEnter = async () => {
     if (saving) return;
-
-    let playerId = localStorage.getItem('praem_player_id');
-    if (!playerId) {
-      playerId = crypto.randomUUID();
-      localStorage.setItem('praem_player_id', playerId);
-    }
-
+    if (loading || !user) return;
     setSaving(true);
-
-    const result = await restInsert('users', {
-      id: playerId,
+    await updateUser(user.id, {
       username: username.trim() || 'Anonymous',
-      entity_answer: localStorage.getItem('praem_entity_answer'),
       aura_color: auraColor,
     });
-
-    console.error('DIRECT REST RESULT:', JSON.stringify(result));
-
     navigate('/village');
   };
 
@@ -193,15 +183,17 @@ const ProfileSetup = () => {
         style={{
           marginTop: 'auto',
           marginBottom: 0,
-          background: '#e0ddd5',
-          color: '#04040a',
+          background: 'transparent',
+          color: '#a98cff',
           padding: 11,
           fontSize: 16,
           letterSpacing: '0.3em',
-          border: 'none',
+          border: '0.5px solid rgba(169,140,255,0.35)',
           borderRadius: 0,
           textAlign: 'center',
           cursor: 'pointer',
+          textShadow: '0 0 12px rgba(169,140,255,0.6)',
+          animation: 'breathe 3s ease-in-out infinite',
         }}
       >
         ENTER

@@ -1142,13 +1142,13 @@ const Maze = () => {
           </div>
           <div
             className="font-fell italic"
-            style={{ marginTop: 10, fontSize: 14, color: 'rgba(160,140,200,0.5)', textAlign: 'center', maxWidth: '85vw' }}
+            style={{ marginTop: 10, fontSize: 18, color: 'rgba(160,140,200,0.5)', textAlign: 'center', maxWidth: '85vw' }}
           >
             Are you ready to leave the maze? Unfinished paths will remain.
           </div>
           <div
             className="font-cinzel"
-            style={{ marginTop: 16, fontSize: 11, color: 'rgba(200,150,58,0.4)', letterSpacing: '0.2em', textAlign: 'center' }}
+            style={{ marginTop: 16, fontSize: 14, color: 'rgba(200,150,58,0.4)', letterSpacing: '0.2em', textAlign: 'center' }}
           >
             All {config.fragmentsRequired} fragments collected.
           </div>

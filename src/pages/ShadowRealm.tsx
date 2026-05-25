@@ -1037,7 +1037,7 @@ const ShadowRealm = () => {
               position: 'absolute',
               left: ft.x,
               top: ft.y,
-              fontSize: 10,
+              fontSize: 14,
               color: 'rgba(40,100,60,0.20)',
               pointerEvents: 'none',
               zIndex: 1,

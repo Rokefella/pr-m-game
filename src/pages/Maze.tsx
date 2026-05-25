@@ -1028,7 +1028,7 @@ const Maze = () => {
         className="font-fell italic"
         style={{
           position: 'fixed', top: 24, left: 0, right: 0, textAlign: 'center',
-          fontSize: 14, color: 'rgba(160,140,200,0.5)', margin: 0, zIndex: 20, pointerEvents: 'none',
+          fontSize: 18, color: 'rgba(160,140,200,0.5)', margin: 0, zIndex: 20, pointerEvents: 'none',
         }}
       >
         {QUOTES[quoteIdx]}

@@ -494,7 +494,11 @@ const ShadowRealm = () => {
   const mazeCompletedLevelRef = useRef(0);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) return;
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     let cancelled = false;
     (async () => {
       const row = await fetchOrCreateUser(user.id);

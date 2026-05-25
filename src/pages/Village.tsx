@@ -1765,7 +1765,7 @@ const Village = () => {
                         setCurrentTitle(t);
                       }}
                       style={{
-                        fontSize: 10,
+                        fontSize: 14,
                         padding: '6px 14px',
                         border: `0.5px solid ${sel ? '#c8963a' : 'rgba(160,140,200,0.3)'}`,
                         borderRadius: 2,

@@ -536,7 +536,7 @@ const Maze = () => {
       setLevelLoaded(true);
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, authLoading]);
 
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [exchangeOpen, setExchangeOpen] = useState(false);

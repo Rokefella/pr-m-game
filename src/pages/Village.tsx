@@ -1623,7 +1623,7 @@ const Village = () => {
             left: 0,
             right: 0,
             textAlign: 'center',
-            fontSize: 8,
+            fontSize: 14,
             letterSpacing: '0.18em',
             color: 'rgba(200,150,58,0.5)',
             zIndex: 12,

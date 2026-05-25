@@ -44,7 +44,7 @@ const Signup = () => {
       setError('Signup failed. Please try again.');
       return;
     }
-    navigate('/');
+    navigate('/entity-questions');
   };
 
   return (

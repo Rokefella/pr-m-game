@@ -1319,7 +1319,7 @@ const Maze = () => {
                       className="font-cinzel"
                       onClick={() => setSelectedCredits(n)}
                       style={{
-                        fontSize: 9, letterSpacing: '0.15em', padding: '8px 12px',
+                        fontSize: 14, letterSpacing: '0.15em', padding: '8px 12px',
                         border: `0.5px solid ${sel ? '#c8963a' : 'rgba(100,80,160,0.4)'}`,
                         background: 'rgba(100,80,160,0.08)',
                         color: sel ? '#c8963a' : 'rgba(160,140,200,0.7)', cursor: 'pointer',

@@ -1538,7 +1538,7 @@ const ShadowRealm = () => {
                         setCurrentTitle(t);
                       }}
                       style={{
-                        fontSize: 10,
+                        fontSize: 14,
                         padding: '6px 14px',
                         border: `0.5px solid ${sel ? '#f97316' : 'rgba(120,200,140,0.3)'}`,
                         borderRadius: 2,

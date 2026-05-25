@@ -30,6 +30,7 @@ const Index = () => {
   const { user, loading } = useAuth();
 
   const handleEnter = async () => {
+    console.log('[handleEnter] user.id:', user?.id);
     if (loading) return;
     if (!user) {
       navigate('/login');
@@ -40,6 +41,7 @@ const Index = () => {
       .select('entity_answer, username')
       .eq('id', user.id)
       .maybeSingle();
+    console.log('[handleEnter] supabase data:', data);
     if (!data || (!data.entity_answer && !data.username)) {
       navigate('/entity-questions');
     } else {

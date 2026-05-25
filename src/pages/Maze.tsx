@@ -812,8 +812,8 @@ const Maze = () => {
           onClick={() => navigate('/village')}
           style={{
             background: 'transparent', border: '0.5px solid rgba(160,140,200,0.4)',
-            color: 'rgba(160,140,200,0.7)', padding: '10px 24px', fontSize: 11,
-            letterSpacing: '0.28em', cursor: 'pointer',
+            color: 'rgba(160,140,200,0.7)', padding: '10px 24px', fontSize: 16,
+            letterSpacing: '0.3em', cursor: 'pointer',
           }}
         >
           RETURN

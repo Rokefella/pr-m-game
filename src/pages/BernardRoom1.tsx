@@ -286,7 +286,7 @@ const BernardRoom1 = () => {
               background: i === 0 ? 'rgba(169,140,255,0.15)' : 'transparent',
               border: '0.5px solid rgba(169,140,255,0.4)',
               color: i === 0 ? '#a98cff' : 'rgba(160,140,200,0.6)',
-              padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
+              padding: '8px 18px', fontSize: 16, letterSpacing: '0.3em',
               cursor: 'pointer',
             }}
           >

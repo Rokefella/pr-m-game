@@ -1122,7 +1122,7 @@ const Village = () => {
           <p
             className="font-fell italic"
             style={{
-              fontSize: 10,
+              fontSize: 14,
               color: 'rgba(160,140,200,0.5)',
               marginTop: 4,
               animation: 'villageNotYet 1.5s ease-out forwards',

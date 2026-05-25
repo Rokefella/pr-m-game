@@ -1286,7 +1286,7 @@ const Maze = () => {
               <div
                 className="font-cinzel"
                 style={{
-                  textAlign: 'center', paddingTop: 16, fontSize: 12,
+                  textAlign: 'center', paddingTop: 16, fontSize: 16,
                   color: 'rgba(160,140,200,0.7)', letterSpacing: '0.2em',
                 }}
               >

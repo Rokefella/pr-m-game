@@ -1707,7 +1707,7 @@ const Village = () => {
               <div
                 className="font-fell italic"
                 style={{
-                  fontSize: 14,
+                  fontSize: 16,
                   color: 'rgba(160,140,200,0.5)',
                   marginTop: 24,
                   animation: 'villageLevelUpText 400ms ease-out 800ms both',

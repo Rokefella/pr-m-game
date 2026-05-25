@@ -1,4 +1,4 @@
-import { restInsert, restSelect, restUpdate } from './supabaseRest'
+import { supabase } from '@/lib/supabase'
 
 export type UserRow = {
   id: string
@@ -40,31 +40,44 @@ const DEFAULTS: Omit<UserRow, 'id'> = {
 export async function fetchOrCreateUser(userId: string): Promise<UserRow> {
   console.log('[fetchOrCreateUser] playerId:', userId)
 
-  const existing = await restSelect('users', 'id', userId)
-  if (Array.isArray(existing) && existing.length > 0) {
-    console.log('[fetchOrCreateUser] existing row:', existing[0])
-    return existing[0] as UserRow
+  const { data: existing, error: selectError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (selectError) {
+    console.error('[fetchOrCreateUser] select error:', selectError)
+    throw selectError
   }
 
-  const inserted = await restInsert('users', { id: userId })
-  if (Array.isArray(inserted) && inserted.length > 0) {
-    console.log('[fetchOrCreateUser] inserted row:', inserted[0])
-    return inserted[0] as UserRow
+  if (existing) {
+    console.log('[fetchOrCreateUser] existing row:', existing)
+    return existing as UserRow
   }
 
-  const refetch = await restSelect('users', 'id', userId)
-  if (Array.isArray(refetch) && refetch.length > 0) return refetch[0] as UserRow
+  const { data: inserted, error: insertError } = await supabase
+    .from('users')
+    .insert({ id: userId })
+    .select()
+    .single()
 
-  throw new Error('Failed to create or fetch user row')
+  if (insertError) {
+    console.error('[fetchOrCreateUser] insert error:', insertError)
+    throw insertError
+  }
+
+  console.log('[fetchOrCreateUser] inserted row:', inserted)
+  return inserted as UserRow
 }
 
 export async function updateUser(
   userId: string,
   patch: Partial<Omit<UserRow, 'id'>>,
 ): Promise<void> {
-  const result = await restUpdate('users', patch, 'id', userId)
-  if (result && (result as { error?: unknown }).error) {
-    console.error('updateUser failed', result, patch)
+  const { error } = await supabase.from('users').update(patch).eq('id', userId)
+  if (error) {
+    console.error('updateUser failed', error, patch)
   }
 }
 

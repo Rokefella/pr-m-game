@@ -382,7 +382,7 @@ const BernardRoom1 = () => {
               left: bernardSmooth.x * CELL + CELL / 2 - 60,
               top: bernardSmooth.y * CELL - 20,
               width: 120, textAlign: 'center',
-              fontSize: 13, color: '#a98cff', margin: 0,
+              fontSize: 18, color: '#a98cff', margin: 0,
               animation: 'bernardPulse 1.4s ease-in-out infinite',
               pointerEvents: 'none',
             }}

@@ -1292,13 +1292,13 @@ const ShadowRealm = () => {
           zIndex: 12,
         }}
       >
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'rgba(34,197,94,0.6)' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: 'rgba(34,197,94,0.6)' }}>
           SHADOW
         </span>
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: '#f97316' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#f97316' }}>
           FRAGMENTS 5/5
         </span>
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'rgba(34,197,94,0.7)' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: 'rgba(34,197,94,0.7)' }}>
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
         <ProfileButton onClick={openProfile} />

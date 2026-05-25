@@ -1314,7 +1314,7 @@ const ShadowRealm = () => {
             position: 'fixed',
             top: 12,
             right: 14,
-            fontSize: 10,
+            fontSize: 15,
             letterSpacing: '0.22em',
             color: 'rgba(34,197,94,0.7)',
             zIndex: 15,

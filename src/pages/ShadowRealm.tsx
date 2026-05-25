@@ -1480,7 +1480,7 @@ const ShadowRealm = () => {
               <div
                 className="font-fell italic"
                 style={{
-                  fontSize: 14,
+                  fontSize: 16,
                   color: 'rgba(120,200,140,0.5)',
                   marginTop: 24,
                   animation: 'villageLevelUpText 400ms ease-out 800ms both',

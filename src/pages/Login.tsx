@@ -59,8 +59,8 @@ const Login = () => {
         </svg>
 
         <h1
-          className="font-cinzel font-normal uppercase"
-          style={{ fontSize: 32, letterSpacing: '0.25em', color: '#e0ddd5', marginTop: 24 }}
+          className="font-cinzel font-normal uppercase text-[48px] sm:text-[56px]"
+          style={{ letterSpacing: '0.25em', color: '#e0ddd5', marginTop: 24 }}
         >
           PRÆM
         </h1>

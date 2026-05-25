@@ -1643,7 +1643,7 @@ const Village = () => {
           position: 'fixed',
           top: 12,
           right: 14,
-          fontSize: 10,
+          fontSize: 15,
           letterSpacing: '0.22em',
           color: 'rgba(160,140,200,0.7)',
           zIndex: 15,

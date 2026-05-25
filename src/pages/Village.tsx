@@ -1731,7 +1731,7 @@ const Village = () => {
               <div
                 className="font-cinzel"
                 style={{
-                  fontSize: 10,
+                  fontSize: 14,
                   color: 'rgba(160,140,200,0.4)',
                   letterSpacing: '0.2em',
                   marginTop: 20,

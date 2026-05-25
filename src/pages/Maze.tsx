@@ -1092,7 +1092,7 @@ const Maze = () => {
         >
           <div
             className="font-fell italic"
-            style={{ fontSize: 16, color: 'rgba(160,140,200,0.7)', textAlign: 'center', maxWidth: '85vw' }}
+            style={{ fontSize: 18, color: 'rgba(160,140,200,0.7)', textAlign: 'center', maxWidth: '85vw' }}
           >
             Leave the maze? All progress will be lost.
           </div>

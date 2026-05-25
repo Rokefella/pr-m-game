@@ -1177,7 +1177,7 @@ const Maze = () => {
               className="font-cinzel"
               onClick={() => setDoorConfirmOpen(false)}
               style={{
-                fontSize: 11, letterSpacing: '0.2em', background: 'transparent',
+                fontSize: 16, letterSpacing: '0.3em', background: 'transparent',
                 border: '0.5px solid rgba(160,140,200,0.3)', color: 'rgba(160,140,200,0.5)',
                 padding: '10px 24px', cursor: 'pointer',
               }}

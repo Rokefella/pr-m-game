@@ -1352,7 +1352,7 @@ const Maze = () => {
                     setExchangeOpen(false);
                   }}
                   style={{
-                    fontSize: 11, letterSpacing: '0.28em', background: '#c8963a',
+                    fontSize: 16, letterSpacing: '0.3em', background: '#c8963a',
                     color: '#04040a', padding: '10px 32px', border: 'none', cursor: 'pointer',
                   }}
                 >

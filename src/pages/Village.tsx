@@ -1945,8 +1945,8 @@ const Village = () => {
                 border: '0.5px solid rgba(160,140,200,0.3)',
                 color: 'rgba(160,140,200,0.5)',
                 padding: '8px 18px',
-                fontSize: 10,
-                letterSpacing: '0.2em',
+                fontSize: 16,
+                letterSpacing: '0.3em',
                 cursor: 'pointer',
               }}
             >

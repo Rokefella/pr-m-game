@@ -9,7 +9,7 @@ const inputStyle: React.CSSProperties = {
   background: 'transparent',
   color: '#e0ddd5',
   fontFamily: 'Cinzel, serif',
-  fontSize: 14,
+  fontSize: 16,
   letterSpacing: '0.15em',
   borderRadius: 0,
   outline: 'none',

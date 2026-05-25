@@ -4,6 +4,7 @@ import FragmentOverlay from '@/components/FragmentOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
+import { useAuth } from '@/context/AuthContext';
 import { restInsert, restUpdate } from '@/lib/supabaseRest';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 
@@ -311,15 +312,7 @@ const QUOTES = [
 
 const Maze = () => {
   const navigate = useNavigate();
-  const user = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    let id = window.localStorage.getItem('praem_player_id');
-    if (!id) {
-      id = crypto.randomUUID();
-      window.localStorage.setItem('praem_player_id', id);
-    }
-    return { id };
-  }, []);
+  const { user, loading: authLoading } = useAuth();
 
   const [currentLevel, setCurrentLevel] = useState(1);
   const currentLevelRef = useRef(1);
@@ -494,7 +487,11 @@ const Maze = () => {
   }, [config, levelLoaded, user]);
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) return;
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     let cancelled = false;
     (async () => {
       const row = await fetchOrCreateUser(user.id);
@@ -539,7 +536,7 @@ const Maze = () => {
       setLevelLoaded(true);
     })();
     return () => { cancelled = true; };
-  }, [user]);
+  }, [user, authLoading]);
 
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [exchangeOpen, setExchangeOpen] = useState(false);

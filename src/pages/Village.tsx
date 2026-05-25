@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 // player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
+import { useAuth } from '@/context/AuthContext';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
@@ -420,15 +421,7 @@ const computeSpawn = (): { x: number; y: number } => {
 
 const Village = () => {
   const navigate = useNavigate();
-  const user = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    let id = window.localStorage.getItem('praem_player_id');
-    if (!id) {
-      id = crypto.randomUUID();
-      window.localStorage.setItem('praem_player_id', id);
-    }
-    return { id };
-  }, []);
+  const { user, loading: authLoading } = useAuth();
   const navigatedRef = useRef(false);
   const feedbackTimer = useRef<number | null>(null);
   const trailIdRef = useRef(0);
@@ -696,10 +689,14 @@ const Village = () => {
   const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) return;
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     let cancelled = false;
     (async () => {
-      console.log('[Village] playerId from auth/localStorage:', user.id, 'localStorage:', localStorage.getItem('praem_player_id'));
+      console.log('[Village] playerId from auth:', user.id);
       const row = await fetchOrCreateUser(user.id);
       console.log('[Village] user row:', row);
       if (cancelled) return;
@@ -744,7 +741,7 @@ const Village = () => {
     })();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, authLoading]);
 
 
   useEffect(() => {

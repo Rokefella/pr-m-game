@@ -312,15 +312,7 @@ const QUOTES = [
 
 const Maze = () => {
   const navigate = useNavigate();
-  const user = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    let id = window.localStorage.getItem('praem_player_id');
-    if (!id) {
-      id = crypto.randomUUID();
-      window.localStorage.setItem('praem_player_id', id);
-    }
-    return { id };
-  }, []);
+  const { user, loading: authLoading } = useAuth();
 
   const [currentLevel, setCurrentLevel] = useState(1);
   const currentLevelRef = useRef(1);

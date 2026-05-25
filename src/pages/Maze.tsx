@@ -1076,7 +1076,7 @@ const Maze = () => {
         onClick={() => setExitConfirmOpen(true)}
         style={{
           position: 'fixed', bottom: 56, left: 16, background: 'transparent', border: 'none',
-          color: 'rgba(160,140,200,0.4)', fontSize: 9, letterSpacing: '0.2em', cursor: 'pointer',
+          color: 'rgba(160,140,200,0.4)', fontSize: 16, letterSpacing: '0.3em', cursor: 'pointer',
           padding: 4, zIndex: 65,
         }}
       >

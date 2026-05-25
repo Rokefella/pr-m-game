@@ -1167,7 +1167,7 @@ const Maze = () => {
                 navigate('/shadow');
               }}
               style={{
-                fontSize: 11, letterSpacing: '0.2em', background: '#c8963a', color: '#04040a',
+                fontSize: 16, letterSpacing: '0.3em', background: '#c8963a', color: '#04040a',
                 border: 'none', padding: '10px 24px', cursor: 'pointer',
               }}
             >

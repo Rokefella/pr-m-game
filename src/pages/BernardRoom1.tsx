@@ -354,7 +354,7 @@ const BernardRoom1 = () => {
             className="font-fell italic"
             style={{
               position: 'absolute', left: a.col * CELL + 6, top: a.row * CELL + CELL / 2 - 6,
-              margin: 0, fontSize: 11, color: 'rgba(200,150,58,0.7)', pointerEvents: 'none',
+              margin: 0, fontSize: 18, color: 'rgba(200,150,58,0.7)', pointerEvents: 'none',
               opacity: visibleWhisper === i ? 1 : 0,
               transition: 'opacity 600ms ease-in-out',
             }}

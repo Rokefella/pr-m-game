@@ -1241,7 +1241,7 @@ const Maze = () => {
         >
           <span>STEPS {stepsRemaining}</span>
           {stepsRemaining <= 20 && (
-            <span style={{ color: 'rgba(160,140,200,0.4)', fontSize: 8, letterSpacing: '0.15em' }}>tap to exchange</span>
+            <span style={{ color: 'rgba(160,140,200,0.4)', fontSize: 14, letterSpacing: '0.15em' }}>tap to exchange</span>
           )}
         </span>
         {currentLevel === 2 ? (

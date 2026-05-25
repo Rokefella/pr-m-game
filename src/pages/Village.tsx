@@ -421,15 +421,7 @@ const computeSpawn = (): { x: number; y: number } => {
 
 const Village = () => {
   const navigate = useNavigate();
-  const user = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    let id = window.localStorage.getItem('praem_player_id');
-    if (!id) {
-      id = crypto.randomUUID();
-      window.localStorage.setItem('praem_player_id', id);
-    }
-    return { id };
-  }, []);
+  const { user, loading: authLoading } = useAuth();
   const navigatedRef = useRef(false);
   const feedbackTimer = useRef<number | null>(null);
   const trailIdRef = useRef(0);

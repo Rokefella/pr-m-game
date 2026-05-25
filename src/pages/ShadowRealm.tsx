@@ -1385,7 +1385,7 @@ const ShadowRealm = () => {
           {exitConfirm.levelUp && (
             <p
               className="font-cinzel"
-              style={{ marginTop: 16, fontSize: 12, color: '#f97316', letterSpacing: '0.2em', textAlign: 'center' }}
+              style={{ marginTop: 16, fontSize: 16, color: '#f97316', letterSpacing: '0.2em', textAlign: 'center' }}
             >
               YOU WILL ADVANCE TO LEVEL {exitConfirm.nextLevel}.
             </p>

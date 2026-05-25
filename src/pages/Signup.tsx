@@ -31,14 +31,17 @@ const Signup = () => {
       return;
     }
     setSubmitting(true);
-    const { error: err } = await supabase.auth.signUp({
+    const { data, error: err } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: window.location.origin },
     });
     setSubmitting(false);
     if (err) {
       setError(err.message);
+      return;
+    }
+    if (!data.user) {
+      setError('Signup failed. Please try again.');
       return;
     }
     navigate('/');

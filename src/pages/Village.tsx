@@ -1439,7 +1439,7 @@ const Village = () => {
             position: 'absolute',
             left: BERNARD_VILLAGE.x - 4,
             top: BERNARD_VILLAGE.y - 24,
-            fontSize: 11,
+            fontSize: 14,
             color: 'rgba(200,150,58,0.6)',
             pointerEvents: 'none',
             zIndex: 4,

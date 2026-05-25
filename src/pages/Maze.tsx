@@ -1301,12 +1301,12 @@ const Maze = () => {
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: 48, marginTop: 12 }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 9, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>CREDITS</div>
-                  <div className="font-mono" style={{ fontSize: 18, color: '#c8963a', marginTop: 2 }}>{credits}</div>
+                  <div style={{ fontSize: 14, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>CREDITS</div>
+                  <div className="font-mono" style={{ fontSize: 20, color: '#c8963a', marginTop: 2 }}>{credits}</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 9, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>STEPS</div>
-                  <div className="font-mono" style={{ fontSize: 18, color: '#e0ddd5', marginTop: 2 }}>{stepsRemaining}</div>
+                  <div style={{ fontSize: 14, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>STEPS</div>
+                  <div className="font-mono" style={{ fontSize: 20, color: '#e0ddd5', marginTop: 2 }}>{stepsRemaining}</div>
                 </div>
               </div>
 

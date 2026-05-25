@@ -154,7 +154,7 @@ const EntityQuestions = () => {
         <p
           className="font-mono"
           style={{
-            fontSize: 11,
+            fontSize: 15,
             color: 'rgba(160,140,200,0.3)',
             textAlign: 'center',
             marginTop: 28,

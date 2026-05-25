@@ -1805,8 +1805,8 @@ const Village = () => {
               setLevelUpOverlay(null);
             }}
             style={{
-              fontSize: 11,
-              letterSpacing: '0.28em',
+              fontSize: 16,
+              letterSpacing: '0.3em',
               background: '#c8963a',
               color: '#04040a',
               padding: '10px 28px',

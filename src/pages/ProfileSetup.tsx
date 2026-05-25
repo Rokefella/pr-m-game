@@ -183,15 +183,17 @@ const ProfileSetup = () => {
         style={{
           marginTop: 'auto',
           marginBottom: 0,
-          background: '#e0ddd5',
-          color: '#04040a',
+          background: 'transparent',
+          color: '#a98cff',
           padding: 11,
           fontSize: 16,
           letterSpacing: '0.3em',
-          border: 'none',
+          border: '0.5px solid rgba(169,140,255,0.35)',
           borderRadius: 0,
           textAlign: 'center',
           cursor: 'pointer',
+          textShadow: '0 0 12px rgba(169,140,255,0.6)',
+          animation: 'breathe 3s ease-in-out infinite',
         }}
       >
         ENTER

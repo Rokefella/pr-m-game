@@ -94,10 +94,10 @@ const BernardDialogue = ({ text, children, onShow }: Props) => {
 
         {/* Right: dialogue */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
-          <p className="font-cinzel" style={{ color: '#c8963a', fontSize: 13, letterSpacing: '0.2em', margin: 0 }}>
+          <p className="font-cinzel" style={{ color: '#c8963a', fontSize: 16, letterSpacing: '0.2em', margin: 0 }}>
             Bernard
           </p>
-          <p className="font-fell italic" style={{ color: 'rgba(200,185,255,0.95)', fontSize: 16, lineHeight: 1.7, margin: '12px 0 16px' }}>
+          <p className="font-fell italic" style={{ color: 'rgba(200,185,255,0.95)', fontSize: 18, lineHeight: 1.7, margin: '12px 0 16px' }}>
             {text}
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>

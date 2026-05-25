@@ -1378,7 +1378,7 @@ const ShadowRealm = () => {
           </p>
           <p
             className="font-fell italic"
-            style={{ marginTop: 10, fontSize: 13, color: 'rgba(120,200,140,0.4)', textAlign: 'center', maxWidth: '85vw' }}
+            style={{ marginTop: 10, fontSize: 18, color: 'rgba(120,200,140,0.4)', textAlign: 'center', maxWidth: '85vw' }}
           >
             You cannot return without navigating the maze again.
           </p>

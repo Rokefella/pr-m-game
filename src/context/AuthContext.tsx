@@ -1,41 +1,53 @@
-import { createContext, useContext, useMemo, ReactNode } from 'react'
-
-interface PlayerUser {
-  id: string
-}
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import type { Session, User } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabase'
 
 interface AuthContextValue {
-  user: PlayerUser | null
+  user: User | null
+  session: Session | null
   loading: boolean
+  signOut: () => Promise<void>
 }
 
-const STORAGE_KEY = 'praem_player_id'
-
-const getOrCreatePlayerId = (): string => {
-  if (typeof window === 'undefined') {
-    // SSR / non-browser fallback — should not happen in this app.
-    return '00000000-0000-0000-0000-000000000000'
-  }
-  let id = window.localStorage.getItem(STORAGE_KEY)
-  if (!id) {
-    id =
-      typeof crypto !== 'undefined' && 'randomUUID' in crypto
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(36).slice(2)}`
-    window.localStorage.setItem(STORAGE_KEY, id)
-  }
-  return id
-}
-
-const AuthContext = createContext<AuthContextValue>({ user: null, loading: false })
+const AuthContext = createContext<AuthContextValue>({
+  user: null,
+  session: null,
+  loading: true,
+  signOut: async () => {},
+})
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const value = useMemo<AuthContextValue>(() => {
-    const id = getOrCreatePlayerId()
-    return { user: { id }, loading: false }
+  const [session, setSession] = useState<Session | null>(null)
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession)
+      setUser(newSession?.user ?? null)
+      setLoading(false)
+    })
+
+    supabase.auth.getSession().then(({ data: { session: existing } }) => {
+      setSession(existing)
+      setUser(existing?.user ?? null)
+      setLoading(false)
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
   }, [])
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  const signOut = async () => {
+    await supabase.auth.signOut()
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export const useAuth = () => useContext(AuthContext)

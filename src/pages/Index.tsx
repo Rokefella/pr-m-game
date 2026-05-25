@@ -96,7 +96,7 @@ const Index = () => {
 
         {/* Wordmark */}
         <h1
-          className="font-cinzel font-normal uppercase text-[43px] sm:text-[53px]"
+          className="font-cinzel font-normal uppercase text-[48px] sm:text-[56px]"
           style={{
             letterSpacing: '0.25em',
             color: '#e0ddd5',
@@ -111,8 +111,8 @@ const Index = () => {
           onClick={handleEnter}
           className="font-fell italic"
           style={{
-            fontSize: 13,
-            letterSpacing: '0.4em',
+            fontSize: 16,
+            letterSpacing: '0.3em',
             color: '#a98cff',
             marginTop: 44,
             padding: '10px 26px',

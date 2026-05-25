@@ -1294,7 +1294,7 @@ const Maze = () => {
               </div>
               <div
                 className="font-mono"
-                style={{ textAlign: 'center', marginTop: 8, fontSize: 11, color: 'rgba(160,140,200,0.4)' }}
+                style={{ textAlign: 'center', marginTop: 8, fontSize: 14, color: 'rgba(160,140,200,0.4)' }}
               >
                 1 CREDIT = 100 STEPS
               </div>

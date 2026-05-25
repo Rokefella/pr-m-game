@@ -1229,7 +1229,7 @@ const Maze = () => {
           position: 'fixed', bottom: 0, left: 0, right: 0,
           background: 'rgba(4,4,10,0.92)', borderTop: '0.5px solid rgba(169,140,255,0.3)',
           padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          fontSize: 9, letterSpacing: '0.18em', zIndex: 60,
+          fontSize: 15, letterSpacing: '0.18em', zIndex: 60,
         }}
       >
         <span

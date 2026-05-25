@@ -126,7 +126,7 @@ const ProfileSetup = () => {
         <p
           className="font-cinzel"
           style={{
-            fontSize: 9,
+            fontSize: 14,
             color: 'rgba(160,140,200,0.4)',
             letterSpacing: '0.2em',
             marginBottom: 8,

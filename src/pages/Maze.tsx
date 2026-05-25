@@ -1276,7 +1276,7 @@ const Maze = () => {
               className="font-fell italic"
               style={{
                 position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)',
-                textAlign: 'center', fontSize: 16, color: 'rgba(200,80,80,0.6)',
+                textAlign: 'center', fontSize: 18, color: 'rgba(200,80,80,0.6)',
               }}
             >
               You have nothing left to give.

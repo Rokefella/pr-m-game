@@ -1476,7 +1476,7 @@ const Village = () => {
           left: 0,
           right: 0,
           textAlign: 'center',
-          fontSize: 17,
+          fontSize: 18,
           margin: 0,
           zIndex: 10,
           pointerEvents: 'none',

@@ -689,10 +689,14 @@ const Village = () => {
   const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];
 
   useEffect(() => {
-    if (!user) return;
+    if (authLoading) return;
+    if (!user) {
+      navigate('/login');
+      return;
+    }
     let cancelled = false;
     (async () => {
-      console.log('[Village] playerId from auth/localStorage:', user.id, 'localStorage:', localStorage.getItem('praem_player_id'));
+      console.log('[Village] playerId from auth:', user.id);
       const row = await fetchOrCreateUser(user.id);
       console.log('[Village] user row:', row);
       if (cancelled) return;

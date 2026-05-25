@@ -812,8 +812,8 @@ const Maze = () => {
           onClick={() => navigate('/village')}
           style={{
             background: 'transparent', border: '0.5px solid rgba(160,140,200,0.4)',
-            color: 'rgba(160,140,200,0.7)', padding: '10px 24px', fontSize: 11,
-            letterSpacing: '0.28em', cursor: 'pointer',
+            color: 'rgba(160,140,200,0.7)', padding: '10px 24px', fontSize: 16,
+            letterSpacing: '0.3em', cursor: 'pointer',
           }}
         >
           RETURN
@@ -1028,7 +1028,7 @@ const Maze = () => {
         className="font-fell italic"
         style={{
           position: 'fixed', top: 24, left: 0, right: 0, textAlign: 'center',
-          fontSize: 14, color: 'rgba(160,140,200,0.5)', margin: 0, zIndex: 20, pointerEvents: 'none',
+          fontSize: 18, color: 'rgba(160,140,200,0.5)', margin: 0, zIndex: 20, pointerEvents: 'none',
         }}
       >
         {QUOTES[quoteIdx]}
@@ -1052,7 +1052,7 @@ const Maze = () => {
           className="font-fell italic"
           style={{
             position: 'fixed', top: '20%', left: 0, right: 0, textAlign: 'center',
-            fontSize: 16, color: 'rgba(160,140,200,0.6)', margin: 0, zIndex: 30, pointerEvents: 'none',
+            fontSize: 18, color: 'rgba(160,140,200,0.6)', margin: 0, zIndex: 30, pointerEvents: 'none',
           }}
         >
           You have no steps remaining. Walk to continue.
@@ -1064,7 +1064,7 @@ const Maze = () => {
         onClick={() => navigate('/village')}
         style={{
           position: 'fixed', bottom: 110, left: 16, background: 'transparent', border: 'none',
-          color: 'rgba(160,140,200,0.3)', fontSize: 10, letterSpacing: '0.2em', cursor: 'pointer',
+          color: 'rgba(160,140,200,0.3)', fontSize: 16, letterSpacing: '0.3em', cursor: 'pointer',
           padding: 4, zIndex: 25,
         }}
       >
@@ -1076,7 +1076,7 @@ const Maze = () => {
         onClick={() => setExitConfirmOpen(true)}
         style={{
           position: 'fixed', bottom: 56, left: 16, background: 'transparent', border: 'none',
-          color: 'rgba(160,140,200,0.4)', fontSize: 9, letterSpacing: '0.2em', cursor: 'pointer',
+          color: 'rgba(160,140,200,0.4)', fontSize: 16, letterSpacing: '0.3em', cursor: 'pointer',
           padding: 4, zIndex: 65,
         }}
       >
@@ -1092,7 +1092,7 @@ const Maze = () => {
         >
           <div
             className="font-fell italic"
-            style={{ fontSize: 16, color: 'rgba(160,140,200,0.7)', textAlign: 'center', maxWidth: '85vw' }}
+            style={{ fontSize: 18, color: 'rgba(160,140,200,0.7)', textAlign: 'center', maxWidth: '85vw' }}
           >
             Leave the maze? All progress will be lost.
           </div>
@@ -1101,7 +1101,7 @@ const Maze = () => {
               className="font-cinzel"
               onClick={() => navigate('/village')}
               style={{
-                fontSize: 11, letterSpacing: '0.2em', background: 'rgba(200,80,80,0.9)', color: 'white',
+                fontSize: 16, letterSpacing: '0.3em', background: 'rgba(200,80,80,0.9)', color: 'white',
                 border: 'none', padding: '10px 24px', cursor: 'pointer',
               }}
             >
@@ -1111,7 +1111,7 @@ const Maze = () => {
               className="font-cinzel"
               onClick={() => setExitConfirmOpen(false)}
               style={{
-                fontSize: 11, letterSpacing: '0.2em', background: 'transparent',
+                fontSize: 16, letterSpacing: '0.3em', background: 'transparent',
                 border: '0.5px solid rgba(160,140,200,0.3)', color: 'rgba(160,140,200,0.5)',
                 padding: '10px 24px', cursor: 'pointer',
               }}
@@ -1142,13 +1142,13 @@ const Maze = () => {
           </div>
           <div
             className="font-fell italic"
-            style={{ marginTop: 10, fontSize: 14, color: 'rgba(160,140,200,0.5)', textAlign: 'center', maxWidth: '85vw' }}
+            style={{ marginTop: 10, fontSize: 18, color: 'rgba(160,140,200,0.5)', textAlign: 'center', maxWidth: '85vw' }}
           >
             Are you ready to leave the maze? Unfinished paths will remain.
           </div>
           <div
             className="font-cinzel"
-            style={{ marginTop: 16, fontSize: 11, color: 'rgba(200,150,58,0.4)', letterSpacing: '0.2em', textAlign: 'center' }}
+            style={{ marginTop: 16, fontSize: 14, color: 'rgba(200,150,58,0.4)', letterSpacing: '0.2em', textAlign: 'center' }}
           >
             All {config.fragmentsRequired} fragments collected.
           </div>
@@ -1167,7 +1167,7 @@ const Maze = () => {
                 navigate('/shadow');
               }}
               style={{
-                fontSize: 11, letterSpacing: '0.2em', background: '#c8963a', color: '#04040a',
+                fontSize: 16, letterSpacing: '0.3em', background: '#c8963a', color: '#04040a',
                 border: 'none', padding: '10px 24px', cursor: 'pointer',
               }}
             >
@@ -1177,7 +1177,7 @@ const Maze = () => {
               className="font-cinzel"
               onClick={() => setDoorConfirmOpen(false)}
               style={{
-                fontSize: 11, letterSpacing: '0.2em', background: 'transparent',
+                fontSize: 16, letterSpacing: '0.3em', background: 'transparent',
                 border: '0.5px solid rgba(160,140,200,0.3)', color: 'rgba(160,140,200,0.5)',
                 padding: '10px 24px', cursor: 'pointer',
               }}
@@ -1229,7 +1229,7 @@ const Maze = () => {
           position: 'fixed', bottom: 0, left: 0, right: 0,
           background: 'rgba(4,4,10,0.92)', borderTop: '0.5px solid rgba(169,140,255,0.3)',
           padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          fontSize: 9, letterSpacing: '0.18em', zIndex: 60,
+          fontSize: 15, letterSpacing: '0.18em', zIndex: 60,
         }}
       >
         <span
@@ -1241,7 +1241,7 @@ const Maze = () => {
         >
           <span>STEPS {stepsRemaining}</span>
           {stepsRemaining <= 20 && (
-            <span style={{ color: 'rgba(160,140,200,0.4)', fontSize: 8, letterSpacing: '0.15em' }}>tap to exchange</span>
+            <span style={{ color: 'rgba(160,140,200,0.4)', fontSize: 14, letterSpacing: '0.15em' }}>tap to exchange</span>
           )}
         </span>
         {currentLevel === 2 ? (
@@ -1276,7 +1276,7 @@ const Maze = () => {
               className="font-fell italic"
               style={{
                 position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)',
-                textAlign: 'center', fontSize: 16, color: 'rgba(200,80,80,0.6)',
+                textAlign: 'center', fontSize: 18, color: 'rgba(200,80,80,0.6)',
               }}
             >
               You have nothing left to give.
@@ -1286,7 +1286,7 @@ const Maze = () => {
               <div
                 className="font-cinzel"
                 style={{
-                  textAlign: 'center', paddingTop: 16, fontSize: 12,
+                  textAlign: 'center', paddingTop: 16, fontSize: 16,
                   color: 'rgba(160,140,200,0.7)', letterSpacing: '0.2em',
                 }}
               >
@@ -1294,19 +1294,19 @@ const Maze = () => {
               </div>
               <div
                 className="font-mono"
-                style={{ textAlign: 'center', marginTop: 8, fontSize: 11, color: 'rgba(160,140,200,0.4)' }}
+                style={{ textAlign: 'center', marginTop: 8, fontSize: 14, color: 'rgba(160,140,200,0.4)' }}
               >
                 1 CREDIT = 100 STEPS
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'center', gap: 48, marginTop: 12 }}>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 9, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>CREDITS</div>
-                  <div className="font-mono" style={{ fontSize: 18, color: '#c8963a', marginTop: 2 }}>{credits}</div>
+                  <div style={{ fontSize: 14, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>CREDITS</div>
+                  <div className="font-mono" style={{ fontSize: 20, color: '#c8963a', marginTop: 2 }}>{credits}</div>
                 </div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 9, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>STEPS</div>
-                  <div className="font-mono" style={{ fontSize: 18, color: '#e0ddd5', marginTop: 2 }}>{stepsRemaining}</div>
+                  <div style={{ fontSize: 14, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>STEPS</div>
+                  <div className="font-mono" style={{ fontSize: 20, color: '#e0ddd5', marginTop: 2 }}>{stepsRemaining}</div>
                 </div>
               </div>
 
@@ -1319,7 +1319,7 @@ const Maze = () => {
                       className="font-cinzel"
                       onClick={() => setSelectedCredits(n)}
                       style={{
-                        fontSize: 9, letterSpacing: '0.15em', padding: '8px 12px',
+                        fontSize: 14, letterSpacing: '0.15em', padding: '8px 12px',
                         border: `0.5px solid ${sel ? '#c8963a' : 'rgba(100,80,160,0.4)'}`,
                         background: 'rgba(100,80,160,0.08)',
                         color: sel ? '#c8963a' : 'rgba(160,140,200,0.7)', cursor: 'pointer',
@@ -1352,7 +1352,7 @@ const Maze = () => {
                     setExchangeOpen(false);
                   }}
                   style={{
-                    fontSize: 11, letterSpacing: '0.28em', background: '#c8963a',
+                    fontSize: 16, letterSpacing: '0.3em', background: '#c8963a',
                     color: '#04040a', padding: '10px 32px', border: 'none', cursor: 'pointer',
                   }}
                 >

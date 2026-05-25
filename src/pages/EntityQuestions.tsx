@@ -102,7 +102,7 @@ const EntityQuestions = () => {
           key={`q-${step}`}
           className="font-fell italic"
           style={{
-            fontSize: 16,
+            fontSize: 18,
             color: '#e0ddd5',
             textAlign: 'center',
             lineHeight: 1.65,
@@ -123,7 +123,7 @@ const EntityQuestions = () => {
               onClick={() => handleAnswer(a.score)}
               className="font-fell italic"
               style={{
-                fontSize: 12,
+                fontSize: 16,
                 color: '#c8c5bd',
                 background: 'rgba(169,140,255,0.06)',
                 border: '1px solid rgba(169,140,255,0.4)',
@@ -154,7 +154,7 @@ const EntityQuestions = () => {
         <p
           className="font-mono"
           style={{
-            fontSize: 11,
+            fontSize: 15,
             color: 'rgba(160,140,200,0.3)',
             textAlign: 'center',
             marginTop: 28,

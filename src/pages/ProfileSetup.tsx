@@ -40,7 +40,7 @@ const ProfileSetup = () => {
       <h1
         className="font-cinzel text-center"
         style={{
-          fontSize: 10,
+          fontSize: 18,
           fontWeight: 400,
           letterSpacing: '0.28em',
           color: '#e0ddd5',
@@ -84,7 +84,7 @@ const ProfileSetup = () => {
         <label
           className="font-mono block"
           style={{
-            fontSize: 8,
+            fontSize: 14,
             letterSpacing: '0.2em',
             color: '#9a9890',
             marginBottom: 5,
@@ -102,7 +102,7 @@ const ProfileSetup = () => {
             background: '#0e0e16',
             border: '0.5px solid #3a3a44',
             padding: '9px 11px',
-            fontSize: 11,
+            fontSize: 16,
             color: '#e0ddd5',
             borderRadius: 0,
             outline: 'none',
@@ -112,7 +112,7 @@ const ProfileSetup = () => {
         <p
           className="font-mono italic"
           style={{
-            fontSize: 8,
+            fontSize: 14,
             color: 'rgba(169,140,255,0.8)',
             marginTop: 3,
           }}
@@ -126,7 +126,7 @@ const ProfileSetup = () => {
         <p
           className="font-cinzel"
           style={{
-            fontSize: 9,
+            fontSize: 14,
             color: 'rgba(160,140,200,0.4)',
             letterSpacing: '0.2em',
             marginBottom: 8,
@@ -158,7 +158,7 @@ const ProfileSetup = () => {
         <p
           className="font-mono"
           style={{
-            fontSize: 8,
+            fontSize: 14,
             letterSpacing: '0.18em',
             color: '#9a9890',
             marginBottom: 2,
@@ -168,19 +168,19 @@ const ProfileSetup = () => {
         </p>
         <p
           className="font-cinzel"
-          style={{ fontSize: 12, color: '#9a9890' }}
+          style={{ fontSize: 18, color: '#9a9890' }}
         >
           —
         </p>
         <p
           className="font-mono italic"
-          style={{ fontSize: 8, color: '#5a5855', marginTop: 3 }}
+          style={{ fontSize: 14, color: '#5a5855', marginTop: 3 }}
         >
           titles are earned · not chosen · first at level 5
         </p>
         <p
           className="font-mono italic"
-          style={{ fontSize: 8, color: '#5a5855', marginTop: 2 }}
+          style={{ fontSize: 14, color: '#5a5855', marginTop: 2 }}
         >
           first 500 players receive a founding title
         </p>
@@ -196,8 +196,8 @@ const ProfileSetup = () => {
           background: '#e0ddd5',
           color: '#04040a',
           padding: 11,
-          fontSize: 10,
-          letterSpacing: '0.28em',
+          fontSize: 16,
+          letterSpacing: '0.3em',
           border: 'none',
           borderRadius: 0,
           textAlign: 'center',

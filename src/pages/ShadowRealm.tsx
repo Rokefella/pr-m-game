@@ -900,7 +900,7 @@ const ShadowRealm = () => {
           <p
             className="font-fell italic"
             style={{
-              fontSize: 10,
+              fontSize: 14,
               color: 'rgba(120,200,140,0.5)',
               marginTop: 4,
               animation: 'villageNotYet 1.5s ease-out forwards',
@@ -1037,7 +1037,7 @@ const ShadowRealm = () => {
               position: 'absolute',
               left: ft.x,
               top: ft.y,
-              fontSize: 10,
+              fontSize: 14,
               color: 'rgba(40,100,60,0.20)',
               pointerEvents: 'none',
               zIndex: 1,
@@ -1191,7 +1191,7 @@ const ShadowRealm = () => {
           left: 0,
           right: 0,
           textAlign: 'center',
-          fontSize: 17,
+          fontSize: 18,
           margin: 0,
           zIndex: 10,
           pointerEvents: 'none',
@@ -1292,13 +1292,13 @@ const ShadowRealm = () => {
           zIndex: 12,
         }}
       >
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'rgba(34,197,94,0.6)' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: 'rgba(34,197,94,0.6)' }}>
           SHADOW
         </span>
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: '#f97316' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#f97316' }}>
           FRAGMENTS 5/5
         </span>
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'rgba(34,197,94,0.7)' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: 'rgba(34,197,94,0.7)' }}>
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
         <ProfileButton onClick={openProfile} />
@@ -1314,7 +1314,7 @@ const ShadowRealm = () => {
             position: 'fixed',
             top: 12,
             right: 14,
-            fontSize: 10,
+            fontSize: 15,
             letterSpacing: '0.22em',
             color: 'rgba(34,197,94,0.7)',
             zIndex: 15,
@@ -1378,14 +1378,14 @@ const ShadowRealm = () => {
           </p>
           <p
             className="font-fell italic"
-            style={{ marginTop: 10, fontSize: 13, color: 'rgba(120,200,140,0.4)', textAlign: 'center', maxWidth: '85vw' }}
+            style={{ marginTop: 10, fontSize: 18, color: 'rgba(120,200,140,0.4)', textAlign: 'center', maxWidth: '85vw' }}
           >
             You cannot return without navigating the maze again.
           </p>
           {exitConfirm.levelUp && (
             <p
               className="font-cinzel"
-              style={{ marginTop: 16, fontSize: 12, color: '#f97316', letterSpacing: '0.2em', textAlign: 'center' }}
+              style={{ marginTop: 16, fontSize: 16, color: '#f97316', letterSpacing: '0.2em', textAlign: 'center' }}
             >
               YOU WILL ADVANCE TO LEVEL {exitConfirm.nextLevel}.
             </p>
@@ -1401,8 +1401,8 @@ const ShadowRealm = () => {
                 performExit(levelUp, nextLevel);
               }}
               style={{
-                fontSize: 11,
-                letterSpacing: '0.28em',
+                fontSize: 16,
+                letterSpacing: '0.3em',
                 background: '#f97316',
                 color: '#04040a',
                 padding: '10px 24px',
@@ -1416,8 +1416,8 @@ const ShadowRealm = () => {
               className="font-cinzel"
               onClick={() => setExitConfirm(null)}
               style={{
-                fontSize: 11,
-                letterSpacing: '0.28em',
+                fontSize: 16,
+                letterSpacing: '0.3em',
                 background: 'transparent',
                 border: '0.5px solid rgba(120,200,140,0.3)',
                 color: 'rgba(120,200,140,0.5)',
@@ -1480,7 +1480,7 @@ const ShadowRealm = () => {
               <div
                 className="font-fell italic"
                 style={{
-                  fontSize: 14,
+                  fontSize: 16,
                   color: 'rgba(120,200,140,0.5)',
                   marginTop: 24,
                   animation: 'villageLevelUpText 400ms ease-out 800ms both',
@@ -1504,7 +1504,7 @@ const ShadowRealm = () => {
               <div
                 className="font-cinzel"
                 style={{
-                  fontSize: 10,
+                  fontSize: 14,
                   color: 'rgba(120,200,140,0.4)',
                   letterSpacing: '0.2em',
                   marginTop: 20,
@@ -1538,7 +1538,7 @@ const ShadowRealm = () => {
                         setCurrentTitle(t);
                       }}
                       style={{
-                        fontSize: 10,
+                        fontSize: 14,
                         padding: '6px 14px',
                         border: `0.5px solid ${sel ? '#f97316' : 'rgba(120,200,140,0.3)'}`,
                         borderRadius: 2,
@@ -1569,8 +1569,8 @@ const ShadowRealm = () => {
               setLevelUpOverlay(null);
             }}
             style={{
-              fontSize: 11,
-              letterSpacing: '0.28em',
+              fontSize: 16,
+              letterSpacing: '0.3em',
               background: '#f97316',
               color: '#04040a',
               padding: '10px 28px',

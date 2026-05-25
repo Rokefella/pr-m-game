@@ -1122,7 +1122,7 @@ const Village = () => {
           <p
             className="font-fell italic"
             style={{
-              fontSize: 10,
+              fontSize: 14,
               color: 'rgba(160,140,200,0.5)',
               marginTop: 4,
               animation: 'villageNotYet 1.5s ease-out forwards',
@@ -1264,7 +1264,7 @@ const Village = () => {
               position: 'absolute',
               left: ft.x,
               top: ft.y,
-              fontSize: 10,
+              fontSize: 14,
               color: 'rgba(40,100,60,0.20)',
               pointerEvents: 'none',
               zIndex: 1,
@@ -1439,7 +1439,7 @@ const Village = () => {
             position: 'absolute',
             left: BERNARD_VILLAGE.x - 4,
             top: BERNARD_VILLAGE.y - 24,
-            fontSize: 11,
+            fontSize: 14,
             color: 'rgba(200,150,58,0.6)',
             pointerEvents: 'none',
             zIndex: 4,
@@ -1476,7 +1476,7 @@ const Village = () => {
           left: 0,
           right: 0,
           textAlign: 'center',
-          fontSize: 17,
+          fontSize: 18,
           margin: 0,
           zIndex: 10,
           pointerEvents: 'none',
@@ -1601,13 +1601,13 @@ const Village = () => {
           zIndex: 12,
         }}
       >
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: '#e0ddd5' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#e0ddd5' }}>
           MAZE STEPS&nbsp;&nbsp;0
         </span>
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: '#c8963a' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#c8963a' }}>
           CREDITS&nbsp;&nbsp;0
         </span>
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: '#5b4fd4' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#5b4fd4' }}>
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
         <ProfileButton onClick={openProfile} />
@@ -1623,7 +1623,7 @@ const Village = () => {
             left: 0,
             right: 0,
             textAlign: 'center',
-            fontSize: 8,
+            fontSize: 14,
             letterSpacing: '0.18em',
             color: 'rgba(200,150,58,0.5)',
             zIndex: 12,
@@ -1643,7 +1643,7 @@ const Village = () => {
           position: 'fixed',
           top: 12,
           right: 14,
-          fontSize: 10,
+          fontSize: 15,
           letterSpacing: '0.22em',
           color: 'rgba(160,140,200,0.7)',
           zIndex: 15,
@@ -1707,7 +1707,7 @@ const Village = () => {
               <div
                 className="font-fell italic"
                 style={{
-                  fontSize: 14,
+                  fontSize: 16,
                   color: 'rgba(160,140,200,0.5)',
                   marginTop: 24,
                   animation: 'villageLevelUpText 400ms ease-out 800ms both',
@@ -1731,7 +1731,7 @@ const Village = () => {
               <div
                 className="font-cinzel"
                 style={{
-                  fontSize: 10,
+                  fontSize: 14,
                   color: 'rgba(160,140,200,0.4)',
                   letterSpacing: '0.2em',
                   marginTop: 20,
@@ -1765,7 +1765,7 @@ const Village = () => {
                         setCurrentTitle(t);
                       }}
                       style={{
-                        fontSize: 10,
+                        fontSize: 14,
                         padding: '6px 14px',
                         border: `0.5px solid ${sel ? '#c8963a' : 'rgba(160,140,200,0.3)'}`,
                         borderRadius: 2,
@@ -1805,8 +1805,8 @@ const Village = () => {
               setLevelUpOverlay(null);
             }}
             style={{
-              fontSize: 11,
-              letterSpacing: '0.28em',
+              fontSize: 16,
+              letterSpacing: '0.3em',
               background: '#c8963a',
               color: '#04040a',
               padding: '10px 28px',
@@ -1928,8 +1928,8 @@ const Village = () => {
                   border: '0.5px solid rgba(200,150,58,0.5)',
                   color: '#c8963a',
                   padding: '8px 18px',
-                  fontSize: 10,
-                  letterSpacing: '0.2em',
+                  fontSize: 16,
+                  letterSpacing: '0.3em',
                   cursor: 'pointer',
                 }}
               >
@@ -1945,8 +1945,8 @@ const Village = () => {
                 border: '0.5px solid rgba(160,140,200,0.3)',
                 color: 'rgba(160,140,200,0.5)',
                 padding: '8px 18px',
-                fontSize: 10,
-                letterSpacing: '0.2em',
+                fontSize: 16,
+                letterSpacing: '0.3em',
                 cursor: 'pointer',
               }}
             >

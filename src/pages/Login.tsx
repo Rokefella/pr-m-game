@@ -9,7 +9,7 @@ const inputStyle: React.CSSProperties = {
   background: 'transparent',
   color: '#e0ddd5',
   fontFamily: 'Cinzel, serif',
-  fontSize: 14,
+  fontSize: 16,
   letterSpacing: '0.15em',
   borderRadius: 0,
   outline: 'none',
@@ -59,8 +59,8 @@ const Login = () => {
         </svg>
 
         <h1
-          className="font-cinzel font-normal uppercase"
-          style={{ fontSize: 32, letterSpacing: '0.25em', color: '#e0ddd5', marginTop: 24 }}
+          className="font-cinzel font-normal uppercase text-[48px] sm:text-[56px]"
+          style={{ letterSpacing: '0.25em', color: '#e0ddd5', marginTop: 24 }}
         >
           PRÆM
         </h1>
@@ -86,7 +86,7 @@ const Login = () => {
           />
 
           {error && (
-            <p className="font-fell italic" style={{ color: '#c8943a', fontSize: 13, textAlign: 'center' }}>
+            <p className="font-fell italic" style={{ color: '#c8943a', fontSize: 14, textAlign: 'center' }}>
               {error}
             </p>
           )}
@@ -96,8 +96,8 @@ const Login = () => {
             disabled={submitting}
             className="font-fell italic self-center"
             style={{
-              fontSize: 13,
-              letterSpacing: '0.4em',
+              fontSize: 16,
+              letterSpacing: '0.3em',
               color: '#a98cff',
               marginTop: 16,
               padding: '10px 26px',
@@ -116,7 +116,7 @@ const Login = () => {
         <Link
           to="/signup"
           className="font-fell italic mt-8"
-          style={{ color: '#5a5855', fontSize: 13, letterSpacing: '0.1em' }}
+          style={{ color: '#5a5855', fontSize: 15, letterSpacing: '0.1em' }}
         >
           No account yet? Begin.
         </Link>

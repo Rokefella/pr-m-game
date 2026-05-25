@@ -286,7 +286,7 @@ const BernardRoom1 = () => {
               background: i === 0 ? 'rgba(169,140,255,0.15)' : 'transparent',
               border: '0.5px solid rgba(169,140,255,0.4)',
               color: i === 0 ? '#a98cff' : 'rgba(160,140,200,0.6)',
-              padding: '8px 18px', fontSize: 10, letterSpacing: '0.2em',
+              padding: '8px 18px', fontSize: 16, letterSpacing: '0.3em',
               cursor: 'pointer',
             }}
           >
@@ -354,7 +354,7 @@ const BernardRoom1 = () => {
             className="font-fell italic"
             style={{
               position: 'absolute', left: a.col * CELL + 6, top: a.row * CELL + CELL / 2 - 6,
-              margin: 0, fontSize: 11, color: 'rgba(200,150,58,0.7)', pointerEvents: 'none',
+              margin: 0, fontSize: 18, color: 'rgba(200,150,58,0.7)', pointerEvents: 'none',
               opacity: visibleWhisper === i ? 1 : 0,
               transition: 'opacity 600ms ease-in-out',
             }}
@@ -382,7 +382,7 @@ const BernardRoom1 = () => {
               left: bernardSmooth.x * CELL + CELL / 2 - 60,
               top: bernardSmooth.y * CELL - 20,
               width: 120, textAlign: 'center',
-              fontSize: 13, color: '#a98cff', margin: 0,
+              fontSize: 18, color: '#a98cff', margin: 0,
               animation: 'bernardPulse 1.4s ease-in-out infinite',
               pointerEvents: 'none',
             }}

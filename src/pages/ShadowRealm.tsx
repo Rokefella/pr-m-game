@@ -1504,7 +1504,7 @@ const ShadowRealm = () => {
               <div
                 className="font-cinzel"
                 style={{
-                  fontSize: 10,
+                  fontSize: 14,
                   color: 'rgba(120,200,140,0.4)',
                   letterSpacing: '0.2em',
                   marginTop: 20,

@@ -40,7 +40,7 @@ const ProfileSetup = () => {
       <h1
         className="font-cinzel text-center"
         style={{
-          fontSize: 10,
+          fontSize: 18,
           fontWeight: 400,
           letterSpacing: '0.28em',
           color: '#e0ddd5',

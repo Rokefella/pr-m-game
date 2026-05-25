@@ -1416,8 +1416,8 @@ const ShadowRealm = () => {
               className="font-cinzel"
               onClick={() => setExitConfirm(null)}
               style={{
-                fontSize: 11,
-                letterSpacing: '0.28em',
+                fontSize: 16,
+                letterSpacing: '0.3em',
                 background: 'transparent',
                 border: '0.5px solid rgba(120,200,140,0.3)',
                 color: 'rgba(120,200,140,0.5)',

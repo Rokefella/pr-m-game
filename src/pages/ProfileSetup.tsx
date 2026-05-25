@@ -84,7 +84,7 @@ const ProfileSetup = () => {
         <label
           className="font-mono block"
           style={{
-            fontSize: 8,
+            fontSize: 14,
             letterSpacing: '0.2em',
             color: '#9a9890',
             marginBottom: 5,
@@ -102,7 +102,7 @@ const ProfileSetup = () => {
             background: '#0e0e16',
             border: '0.5px solid #3a3a44',
             padding: '9px 11px',
-            fontSize: 11,
+            fontSize: 16,
             color: '#e0ddd5',
             borderRadius: 0,
             outline: 'none',
@@ -112,7 +112,7 @@ const ProfileSetup = () => {
         <p
           className="font-mono italic"
           style={{
-            fontSize: 8,
+            fontSize: 14,
             color: 'rgba(169,140,255,0.8)',
             marginTop: 3,
           }}

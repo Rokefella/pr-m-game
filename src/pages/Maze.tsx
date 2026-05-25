@@ -1101,7 +1101,7 @@ const Maze = () => {
               className="font-cinzel"
               onClick={() => navigate('/village')}
               style={{
-                fontSize: 11, letterSpacing: '0.2em', background: 'rgba(200,80,80,0.9)', color: 'white',
+                fontSize: 16, letterSpacing: '0.3em', background: 'rgba(200,80,80,0.9)', color: 'white',
                 border: 'none', padding: '10px 24px', cursor: 'pointer',
               }}
             >

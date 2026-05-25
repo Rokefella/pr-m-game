@@ -34,12 +34,13 @@ const QUESTIONS: { q: string; answers: { label: string; dim: Dim; score: number 
 
 const EntityQuestions = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [revealed, setRevealed] = useState(false);
   const [eyeHovered, setEyeHovered] = useState(false);
   const [step, setStep] = useState(0); // 0..2
   const [scores, setScores] = useState<number[]>([]);
 
-  const handleAnswer = (score: number) => {
+  const handleAnswer = async (score: number) => {
     const next = [...scores, score];
     if (step < 2) {
       setScores(next);
@@ -53,6 +54,12 @@ const EntityQuestions = () => {
     else if (total >= 2) { dim = 'amber'; color = '#d97706'; }
     localStorage.setItem('praem_dimension', dim);
     localStorage.setItem('praem_aura_color', color);
+    if (user) {
+      await updateUser(user.id, {
+        entity_answer: dim,
+        aura_color: color,
+      });
+    }
     navigate('/profile-setup');
   };
 

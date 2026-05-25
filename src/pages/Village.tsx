@@ -1928,8 +1928,8 @@ const Village = () => {
                   border: '0.5px solid rgba(200,150,58,0.5)',
                   color: '#c8963a',
                   padding: '8px 18px',
-                  fontSize: 10,
-                  letterSpacing: '0.2em',
+                  fontSize: 16,
+                  letterSpacing: '0.3em',
                   cursor: 'pointer',
                 }}
               >

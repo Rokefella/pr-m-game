@@ -86,7 +86,7 @@ const Login = () => {
           />
 
           {error && (
-            <p className="font-fell italic" style={{ color: '#c8943a', fontSize: 13, textAlign: 'center' }}>
+            <p className="font-fell italic" style={{ color: '#c8943a', fontSize: 14, textAlign: 'center' }}>
               {error}
             </p>
           )}
@@ -96,8 +96,8 @@ const Login = () => {
             disabled={submitting}
             className="font-fell italic self-center"
             style={{
-              fontSize: 13,
-              letterSpacing: '0.4em',
+              fontSize: 16,
+              letterSpacing: '0.3em',
               color: '#a98cff',
               marginTop: 16,
               padding: '10px 26px',
@@ -116,7 +116,7 @@ const Login = () => {
         <Link
           to="/signup"
           className="font-fell italic mt-8"
-          style={{ color: '#5a5855', fontSize: 13, letterSpacing: '0.1em' }}
+          style={{ color: '#5a5855', fontSize: 15, letterSpacing: '0.1em' }}
         >
           No account yet? Begin.
         </Link>

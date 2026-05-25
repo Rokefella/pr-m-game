@@ -1601,13 +1601,13 @@ const Village = () => {
           zIndex: 12,
         }}
       >
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: '#e0ddd5' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#e0ddd5' }}>
           MAZE STEPS&nbsp;&nbsp;0
         </span>
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: '#c8963a' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#c8963a' }}>
           CREDITS&nbsp;&nbsp;0
         </span>
-        <span className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: '#5b4fd4' }}>
+        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#5b4fd4' }}>
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
         <ProfileButton onClick={openProfile} />

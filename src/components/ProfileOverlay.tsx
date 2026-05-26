@@ -560,24 +560,18 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             <div style={{ marginBottom: 32 }}>
               {/* EMAIL */}
               <p className="font-cinzel" style={sectionLabelStyle}>EMAIL</p>
-              <div className="font-mono" style={valueStyle}>{user?.email ?? '—'}</div>
               {!emailForm ? (
                 <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(true); setEmailMsg(''); }}>
                   CHANGE EMAIL
                 </button>
               ) : (
                 <div>
-                  <input
-                    type="email"
-                    className="font-fell"
-                    style={inputStyle}
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    placeholder="new email"
-                  />
+                  <p className="font-fell italic" style={msgStyle}>
+                    A confirmation link will be sent to your current email address.
+                  </p>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleChangeEmail}>CONFIRM</button>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(false); setNewEmail(''); setEmailMsg(''); }}>CANCEL</button>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleSendEmailChangeLink}>SEND LINK</button>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(false); setEmailMsg(''); }}>CANCEL</button>
                   </div>
                 </div>
               )}
@@ -585,26 +579,9 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
 
               {/* PASSWORD */}
               <p className="font-cinzel" style={{ ...sectionLabelStyle, marginTop: 24 }}>PASSWORD</p>
-              {!passwordForm ? (
-                <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setPasswordForm(true); setPasswordMsg(''); }}>
-                  CHANGE PASSWORD
-                </button>
-              ) : (
-                <div>
-                  <input
-                    type="password"
-                    className="font-fell"
-                    style={inputStyle}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="new password"
-                  />
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleChangePassword}>CONFIRM</button>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setPasswordForm(false); setNewPassword(''); setPasswordMsg(''); }}>CANCEL</button>
-                  </div>
-                </div>
-              )}
+              <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleSendPasswordReset}>
+                CHANGE PASSWORD
+              </button>
               {passwordMsg && <p className="font-fell italic" style={msgStyle}>{passwordMsg}</p>}
 
               {/* NAME */}

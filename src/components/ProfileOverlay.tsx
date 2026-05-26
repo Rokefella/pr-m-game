@@ -583,7 +583,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
               </div>
 
               {/* Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 60px)', gap: 8, justifyContent: 'center' }}>
                 {cells.map((frag, i) => (
                   <div
                     key={i}

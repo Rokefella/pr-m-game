@@ -1,19 +1,72 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
+import { updateUser } from '@/lib/userData';
 
 type Props = {
   isOpen: boolean;
   onClose: () => void;
 };
 
+type SubStatus = 'dev' | 'trial' | 'active' | 'lifetime' | 'beta' | 'expired' | string;
+
+type AccountUserRow = {
+  username: string | null;
+  credits: number;
+  subscription_status: SubStatus;
+  trial_end: string | null;
+};
+
 const ProfileOverlay = ({ isOpen, onClose }: Props) => {
-  const [mainTab, setMainTab] = useState<'profile' | 'quests'>('profile');
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [mainTab, setMainTab] = useState<'profile' | 'quests' | 'account'>('profile');
   const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
 
+  // Account tab state
+  const [accountRow, setAccountRow] = useState<AccountUserRow | null>(null);
+  const [emailForm, setEmailForm] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [emailMsg, setEmailMsg] = useState('');
+  const [passwordForm, setPasswordForm] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordMsg, setPasswordMsg] = useState('');
+  const [nameForm, setNameForm] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [nameStep, setNameStep] = useState<'input' | 'confirm'>('input');
+  const [nameMsg, setNameMsg] = useState('');
+  const [nameMsgColor, setNameMsgColor] = useState('rgba(160,140,200,0.5)');
+  const [deleteForm, setDeleteForm] = useState(false);
+  const [deleteText, setDeleteText] = useState('');
+  const [deleteMsg, setDeleteMsg] = useState('');
+
   // Reset expanded groups whenever the overlay closes
   useEffect(() => {
-    if (!isOpen) setOpenGroups(new Set());
+    if (!isOpen) {
+      setOpenGroups(new Set());
+      setEmailForm(false); setNewEmail(''); setEmailMsg('');
+      setPasswordForm(false); setNewPassword(''); setPasswordMsg('');
+      setNameForm(false); setNewName(''); setNameStep('input'); setNameMsg('');
+      setDeleteForm(false); setDeleteText(''); setDeleteMsg('');
+    }
   }, [isOpen]);
+
+  // Fetch account data when overlay opens
+  useEffect(() => {
+    if (!isOpen || !user) return;
+    let cancelled = false;
+    supabase
+      .from('users')
+      .select('username, credits, subscription_status, trial_end')
+      .eq('id', user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data) setAccountRow(data as AccountUserRow);
+      });
+    return () => { cancelled = true; };
+  }, [isOpen, user]);
 
   if (!isOpen) return null;
 
@@ -54,6 +107,26 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const alexandraQuest = localStorage.getItem('praem_quest_find_alexandra');
   const alexandraActive = alexandraQuest === 'active';
 
+  // Subscription display mapping
+  const subStatus: SubStatus = accountRow?.subscription_status ?? 'expired';
+  const trialDays = (() => {
+    if (!accountRow?.trial_end) return 0;
+    const end = new Date(accountRow.trial_end);
+    const diff = end.getTime() - Date.now();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  })();
+  const subDisplay = (() => {
+    switch (subStatus) {
+      case 'dev': return { text: 'DEV ACCESS', color: '#c8963a' };
+      case 'trial': return { text: `TRIAL — ${trialDays} DAYS REMAINING`, color: 'rgba(160,140,200,0.7)' };
+      case 'active': return { text: 'SUBSCRIBED', color: '#c8963a' };
+      case 'lifetime': return { text: 'FOUNDING MEMBER', color: '#c8963a' };
+      case 'beta': return { text: 'BETA ACCESS', color: 'rgba(160,140,200,0.7)' };
+      case 'expired': return { text: 'NOT SUBSCRIBED', color: 'rgba(160,140,200,0.3)' };
+      default: return { text: 'NOT SUBSCRIBED', color: 'rgba(160,140,200,0.3)' };
+    }
+  })();
+
   type Quest = { key: string; name: string; giver: string; status: string; gold?: boolean };
 
   const activeQuests: Quest[] = [];
@@ -89,6 +162,105 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     margin: '4px 0 0', fontSize: 13, color: 'rgba(200,185,255,0.85)',
   };
 
+  // Account tab styles
+  const sectionLabelStyle: React.CSSProperties = {
+    fontFamily: undefined,
+    fontSize: 8,
+    letterSpacing: '0.2em',
+    color: 'rgba(160,140,200,0.4)',
+    margin: 0,
+  };
+  const valueStyle: React.CSSProperties = {
+    fontSize: 13,
+    color: 'rgba(200,185,255,0.9)',
+    marginTop: 6,
+  };
+  const ghostBtn: React.CSSProperties = {
+    fontSize: 9,
+    letterSpacing: '0.2em',
+    color: 'rgba(160,140,200,0.6)',
+    background: 'transparent',
+    border: '0.5px solid rgba(160,140,200,0.2)',
+    padding: '8px 16px',
+    cursor: 'pointer',
+    marginTop: 10,
+  };
+  const redGhostBtn: React.CSSProperties = {
+    ...ghostBtn,
+    border: '0.5px solid rgba(200,80,80,0.2)',
+    color: 'rgba(200,80,80,0.4)',
+  };
+  const inputStyle: React.CSSProperties = {
+    background: 'transparent',
+    border: 'none',
+    borderBottom: '1px solid rgba(160,140,200,0.3)',
+    color: '#e0ddd5',
+    fontStyle: 'italic',
+    borderRadius: 0,
+    padding: '4px 0',
+    width: '100%',
+    outline: 'none',
+    marginTop: 10,
+  };
+  const msgStyle: React.CSSProperties = {
+    fontSize: 12,
+    color: 'rgba(160,140,200,0.5)',
+    marginTop: 8,
+  };
+
+  const handleChangeEmail = async () => {
+    if (!newEmail) return;
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    if (error) {
+      setEmailMsg(error.message);
+    } else {
+      setEmailMsg('Confirmation sent.');
+      setNewEmail('');
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!newPassword) return;
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) {
+      setPasswordMsg(error.message);
+    } else {
+      setPasswordMsg('Password updated.');
+      setNewPassword('');
+    }
+  };
+
+  const handleConfirmName = async () => {
+    if (!user || !accountRow) return;
+    if ((accountRow.credits ?? 0) < 10000) {
+      setNameMsg('Insufficient credits.');
+      setNameMsgColor('rgba(200,80,80,0.4)');
+      return;
+    }
+    await updateUser(user.id, {
+      credits: accountRow.credits - 10000,
+      username: newName,
+    });
+    setAccountRow({ ...accountRow, credits: accountRow.credits - 10000, username: newName });
+    localStorage.setItem('praem_username', newName);
+    setNameMsg('Name changed.');
+    setNameMsgColor('rgba(160,140,200,0.5)');
+    setNameStep('input');
+    setNewName('');
+    setNameForm(false);
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/');
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (deleteText !== 'DELETE') return;
+    await supabase.auth.signOut();
+    setDeleteMsg('Contact support to complete deletion.');
+  };
+
   return (
     <div
       style={{
@@ -115,7 +287,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
 
         {/* Main tabs */}
         <div style={{ display: 'flex', gap: 4, marginTop: 24, borderBottom: '0.5px solid rgba(100,80,160,0.2)' }}>
-          {(['profile', 'quests'] as const).map((t) => {
+          {(['profile', 'quests', 'account'] as const).map((t) => {
             const active = mainTab === t;
             return (
               <button
@@ -193,7 +365,11 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             </div>
 
             <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center' }}>
-              {subscribed ? (
+              {subStatus === 'dev' ? (
+                <span className="font-cinzel" style={{ fontSize: 10, letterSpacing: '0.22em', color: '#c8963a' }}>
+                  DEV ACCESS
+                </span>
+              ) : subscribed ? (
                 <span className="font-cinzel" style={{ fontSize: 10, letterSpacing: '0.22em', color: 'rgba(160,140,200,0.4)' }}>
                   {(subType || 'monthly').toUpperCase()} MEMBER
                 </span>
@@ -240,13 +416,11 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             <div style={{ marginTop: 16 }}>
               {(() => {
                 const list = questTab === 'active' ? activeQuests : completedQuests;
-                // Find Alexandra is rendered separately (active tab only)
                 const alexandra = questTab === 'active'
                   ? list.find((q) => q.gold)
                   : undefined;
                 const rest = list.filter((q) => !q.gold);
 
-                // Group rest by giver (character)
                 const groups = new Map<string, Quest[]>();
                 rest.forEach((q) => {
                   const arr = groups.get(q.giver) ?? [];
@@ -380,6 +554,154 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                   </>
                 );
               })()}
+            </div>
+          </div>
+        )}
+
+        {/* ACCOUNT content */}
+        {mainTab === 'account' && (
+          <div style={{ marginTop: 24 }}>
+            {/* SECTION 1 — CREDENTIALS */}
+            <div style={{ marginBottom: 32 }}>
+              {/* EMAIL */}
+              <p className="font-cinzel" style={sectionLabelStyle}>EMAIL</p>
+              <div className="font-mono" style={valueStyle}>{user?.email ?? '—'}</div>
+              {!emailForm ? (
+                <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(true); setEmailMsg(''); }}>
+                  CHANGE EMAIL
+                </button>
+              ) : (
+                <div>
+                  <input
+                    type="email"
+                    className="font-fell"
+                    style={inputStyle}
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="new email"
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleChangeEmail}>CONFIRM</button>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(false); setNewEmail(''); setEmailMsg(''); }}>CANCEL</button>
+                  </div>
+                </div>
+              )}
+              {emailMsg && <p className="font-fell italic" style={msgStyle}>{emailMsg}</p>}
+
+              {/* PASSWORD */}
+              <p className="font-cinzel" style={{ ...sectionLabelStyle, marginTop: 24 }}>PASSWORD</p>
+              {!passwordForm ? (
+                <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setPasswordForm(true); setPasswordMsg(''); }}>
+                  CHANGE PASSWORD
+                </button>
+              ) : (
+                <div>
+                  <input
+                    type="password"
+                    className="font-fell"
+                    style={inputStyle}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="new password"
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleChangePassword}>CONFIRM</button>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setPasswordForm(false); setNewPassword(''); setPasswordMsg(''); }}>CANCEL</button>
+                  </div>
+                </div>
+              )}
+              {passwordMsg && <p className="font-fell italic" style={msgStyle}>{passwordMsg}</p>}
+
+              {/* NAME */}
+              <p className="font-cinzel" style={{ ...sectionLabelStyle, marginTop: 24 }}>NAME</p>
+              <div className="font-mono" style={valueStyle}>{accountRow?.username ?? username}</div>
+              {!nameForm ? (
+                <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setNameForm(true); setNameStep('input'); setNameMsg(''); }}>
+                  CHANGE NAME
+                </button>
+              ) : nameStep === 'input' ? (
+                <div>
+                  <input
+                    type="text"
+                    className="font-fell"
+                    style={inputStyle}
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="new name"
+                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => newName && setNameStep('confirm')}>NEXT</button>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setNameForm(false); setNewName(''); }}>CANCEL</button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="font-fell italic" style={msgStyle}>
+                    Changing your name costs 10,000 credits. This cannot be undone.
+                  </p>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleConfirmName}>CONFIRM</button>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setNameForm(false); setNameStep('input'); setNewName(''); }}>CANCEL</button>
+                  </div>
+                </div>
+              )}
+              {nameMsg && <p className="font-fell italic" style={{ ...msgStyle, color: nameMsgColor }}>{nameMsg}</p>}
+            </div>
+
+            {/* SECTION 2 — SUBSCRIPTION */}
+            <div style={{ marginBottom: 32 }}>
+              <p className="font-cinzel" style={sectionLabelStyle}>SUBSCRIPTION</p>
+              <div className="font-cinzel" style={{ ...valueStyle, color: subDisplay.color, letterSpacing: '0.18em' }}>
+                {subDisplay.text}
+              </div>
+              <button
+                type="button"
+                className="font-cinzel"
+                style={{
+                  fontSize: 8,
+                  letterSpacing: '0.2em',
+                  background: 'transparent',
+                  border: '0.5px solid rgba(160,140,200,0.2)',
+                  color: 'rgba(160,140,200,0.4)',
+                  padding: '8px 16px',
+                  cursor: 'pointer',
+                  marginTop: 12,
+                }}
+                onClick={() => { onClose(); navigate('/paywall'); }}
+              >
+                MANAGE SUBSCRIPTION
+              </button>
+            </div>
+
+            {/* SECTION 3 — DANGER */}
+            <div>
+              <p className="font-cinzel" style={{ ...sectionLabelStyle, color: 'rgba(200,80,80,0.4)' }}>DANGER</p>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8, marginTop: 4 }}>
+                <button type="button" className="font-cinzel" style={redGhostBtn} onClick={handleSignOut}>
+                  SIGN OUT
+                </button>
+                {!deleteForm ? (
+                  <button type="button" className="font-cinzel" style={redGhostBtn} onClick={() => { setDeleteForm(true); setDeleteMsg(''); }}>
+                    DELETE ACCOUNT
+                  </button>
+                ) : (
+                  <div style={{ width: '100%' }}>
+                    <p className="font-fell italic" style={msgStyle}>Type DELETE to confirm</p>
+                    <input
+                      type="text"
+                      className="font-fell"
+                      style={inputStyle}
+                      value={deleteText}
+                      onChange={(e) => setDeleteText(e.target.value)}
+                    />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button type="button" className="font-cinzel" style={redGhostBtn} onClick={handleDeleteConfirm}>CONFIRM</button>
+                      <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setDeleteForm(false); setDeleteText(''); setDeleteMsg(''); }}>CANCEL</button>
+                    </div>
+                    {deleteMsg && <p className="font-fell italic" style={msgStyle}>{deleteMsg}</p>}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}

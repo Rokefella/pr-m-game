@@ -84,10 +84,13 @@ const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: Fragm
 
   const handleCapture = () => {
     // Fragment is already persisted to the folder (Supabase) on collection.
-    // This button just confirms it to the player.
+    // Confirm to the player, then continue the normal post-collection flow.
     setSavedMsg(true);
     if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
-    savedTimerRef.current = window.setTimeout(() => setSavedMsg(false), 1500);
+    savedTimerRef.current = window.setTimeout(() => {
+      setSavedMsg(false);
+      handleContinue();
+    }, 800);
   };
 
   return (

@@ -1655,8 +1655,8 @@ const Village = () => {
         <ProfileButton onClick={openProfile} />
       </div>
 
-      {/* Trial countdown — appears just above HUD when ≤3 days remain */}
-      {trialDaysRemaining > 0 && trialDaysRemaining <= 3 && (
+      {/* Trial countdown — shown above HUD while on trial */}
+      {subscriptionStatus === 'trial' && (
         <div
           className="font-mono"
           style={{
@@ -1665,14 +1665,14 @@ const Village = () => {
             left: 0,
             right: 0,
             textAlign: 'center',
-            fontSize: 14,
+            fontSize: 10,
             letterSpacing: '0.18em',
-            color: 'rgba(200,150,58,0.5)',
+            color: 'rgba(160,140,200,0.4)',
             zIndex: 12,
             pointerEvents: 'none',
           }}
         >
-          Trial ends in {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'}
+          {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} remaining in trial
         </div>
       )}
 

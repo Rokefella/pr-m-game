@@ -448,6 +448,7 @@ const ShadowRealm = () => {
     if (typeof window !== 'undefined') {
       window.localStorage.setItem('praem_shadow_visited', 'true');
       window.localStorage.setItem('praem_bernard_03_complete', 'true');
+      window.sessionStorage.setItem('visited_shadow_this_run', 'true');
     }
   }, []);
 

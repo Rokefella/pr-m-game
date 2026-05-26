@@ -99,7 +99,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     return () => { cancelled = true; };
   }, [isOpen, user]);
 
-  if (!isOpen) return null;
+  
 
   // Synchronous reads — no useEffect, no async
   const username = localStorage.getItem('praem_username') || 'Wanderer';

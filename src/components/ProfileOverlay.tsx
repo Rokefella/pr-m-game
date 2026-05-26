@@ -68,20 +68,19 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     return () => { cancelled = true; };
   }, [isOpen, user]);
 
-  // Fetch fragments from Supabase on mount and whenever the user changes
-  useEffect(() => {
+  // Fetch fragments from Supabase — runs on mount, when user changes, and every time the overlay opens
+  const fetchFragments = React.useCallback(async () => {
     if (!user) { setFolderFragments([]); return; }
-    let cancelled = false;
-    supabase
+    const { data } = await supabase
       .from('fragments')
       .select('*')
       .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (!cancelled && data) setFolderFragments(data as any);
-      });
-    return () => { cancelled = true; };
+      .order('created_at', { ascending: false });
+    if (data) setFolderFragments(data as any);
   }, [user]);
+
+  useEffect(() => { fetchFragments(); }, [fetchFragments]);
+  useEffect(() => { if (isOpen) fetchFragments(); }, [isOpen, fetchFragments]);
 
   if (!isOpen) return null;
 

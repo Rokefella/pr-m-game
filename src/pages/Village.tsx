@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 // player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
@@ -423,6 +423,7 @@ const computeSpawn = (): { x: number; y: number } => {
 
 const Village = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const navigatedRef = useRef(false);
   const feedbackTimer = useRef<number | null>(null);
@@ -735,60 +736,66 @@ const Village = () => {
 
   const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];
 
+  const refetchUser = useCallback(async () => {
+    if (!user) return;
+    console.log('[Village] playerId from auth:', user.id);
+    const row = await fetchOrCreateUser(user.id);
+    console.log('[Village] user row:', row);
+    setCurrentLevel(row.level);
+    setCurrentTitle(row.title);
+    setOverlaySelectedTitle(row.title);
+    setRegistrationNumber(row.registration_number);
+    if (row.registration_number != null) {
+      localStorage.setItem('praem_registration_number', String(row.registration_number).padStart(4, '0'));
+    }
+    setAuraColor(row.aura_color || '#5b4fd4');
+    setUsername(row.username || '');
+    setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : []);
+    setStepsRemaining(row.steps_remaining);
+    setCredits(row.credits);
+    setTotalMazeSteps(row.total_maze_steps);
+    setTotalMazeTime(row.total_maze_time);
+
+    // Trial check (display only — paywall is gated by Bernard quest, not trial)
+    if (row.first_launch_at) {
+      const daysSince = Math.floor(
+        (Date.now() - new Date(row.first_launch_at).getTime()) / (1000 * 60 * 60 * 24),
+      );
+      const remaining = Math.max(0, 14 - daysSince);
+      setTrialDaysRemaining(remaining);
+    }
+
+    if (row.levelup_pending && !levelUpHandled) {
+      const newLv = row.levelup_newlevel ?? row.level;
+      const b06 = window.localStorage.getItem('praem_bernard_06') === 'true';
+      const newTitle = b06 ? (TITLES_BY_LEVEL[newLv] || '') : '';
+      window.setTimeout(() => {
+        setLevelUpOverlay({ newLevel: newLv });
+        setOverlaySelectedTitle(newTitle);
+        if (b06 && newTitle) {
+          updateUser(user.id, { title: newTitle });
+          setCurrentTitle(newTitle);
+        }
+      }, 2000);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
       navigate('/login');
       return;
     }
-    let cancelled = false;
-    (async () => {
-      console.log('[Village] playerId from auth:', user.id);
-      const row = await fetchOrCreateUser(user.id);
-      console.log('[Village] user row:', row);
-      if (cancelled) return;
-      setCurrentLevel(row.level);
-      setCurrentTitle(row.title);
-      setOverlaySelectedTitle(row.title);
-      setRegistrationNumber(row.registration_number);
-      if (row.registration_number != null) {
-        localStorage.setItem('praem_registration_number', String(row.registration_number).padStart(4, '0'));
-      }
-      setAuraColor(row.aura_color || '#5b4fd4');
-      setUsername(row.username || '');
-      setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : []);
-      setStepsRemaining(row.steps_remaining);
-      setCredits(row.credits);
-      setTotalMazeSteps(row.total_maze_steps);
-      setTotalMazeTime(row.total_maze_time);
+    refetchUser();
+  }, [user, authLoading, navigate, refetchUser]);
 
-      // Trial check (display only — paywall is gated by Bernard quest, not trial)
-      if (row.first_launch_at) {
-        const daysSince = Math.floor(
-          (Date.now() - new Date(row.first_launch_at).getTime()) / (1000 * 60 * 60 * 24),
-        );
-        const remaining = Math.max(0, 14 - daysSince);
-        setTrialDaysRemaining(remaining);
-      }
-
-      if (row.levelup_pending && !levelUpHandled) {
-        const newLv = row.levelup_newlevel ?? row.level;
-        const b06 = window.localStorage.getItem('praem_bernard_06') === 'true';
-        const newTitle = b06 ? (TITLES_BY_LEVEL[newLv] || '') : '';
-        window.setTimeout(() => {
-          if (cancelled) return;
-          setLevelUpOverlay({ newLevel: newLv });
-          setOverlaySelectedTitle(newTitle);
-          if (b06 && newTitle) {
-            updateUser(user.id, { title: newTitle });
-            setCurrentTitle(newTitle);
-          }
-        }, 2000);
-      }
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading]);
+  // Re-fetch user data whenever we return to /village (e.g., from /maze)
+  useEffect(() => {
+    if (location.pathname === '/village') {
+      refetchUser();
+    }
+  }, [location.pathname, refetchUser]);
 
 
   useEffect(() => {

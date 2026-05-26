@@ -301,7 +301,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
 
         {/* Main tabs */}
         <div style={{ display: 'flex', gap: 4, marginTop: 24, borderBottom: '0.5px solid rgba(100,80,160,0.2)' }}>
-          {(['profile', 'growth', 'quests', 'account'] as const).map((t) => {
+          {(['profile', 'growth', 'quests', 'folder', 'account'] as const).map((t) => {
             const active = mainTab === t;
             return (
               <button

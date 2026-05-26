@@ -1154,12 +1154,7 @@ const Maze = () => {
               className="font-cinzel"
               onClick={async () => {
                 if (user) {
-                  await restUpdate(
-                    'users',
-                    { maze_completed_level: currentLevelRef.current },
-                    'id',
-                    user.id,
-                  );
+                  await supabase.from('users').update({ maze_completed_level: currentLevelRef.current }).eq('id', user.id);
                 }
                 navigate('/shadow');
               }}

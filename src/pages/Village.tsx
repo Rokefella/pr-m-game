@@ -490,17 +490,20 @@ const Village = () => {
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
   const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
   const [devOverlay, setDevOverlay] = useState(false);
-  const devTapsRef = useRef<number[]>([]);
+  const devTapCountRef = useRef(0);
+  const devLastTapRef = useRef(0);
   const handleRegTap = useCallback(() => {
     const now = Date.now();
-    devTapsRef.current = [...devTapsRef.current.filter(t => now - t < 1500), now];
-    if (devTapsRef.current.length >= 5) {
-      devTapsRef.current = [];
-      setDevOverlay(true);
-      return;
+    if (now - devLastTapRef.current > 1500) {
+      devTapCountRef.current = 0;
     }
-    openProfile();
-  }, [openProfile]);
+    devLastTapRef.current = now;
+    devTapCountRef.current += 1;
+    if (devTapCountRef.current >= 5) {
+      devTapCountRef.current = 0;
+      setDevOverlay(true);
+    }
+  }, []);
   const handleDevReset = useCallback(async () => {
     if (user) {
       await updateUser(user.id, { entity_answer: null, username: null, aura_color: '#5b4fd4', level: 1 });

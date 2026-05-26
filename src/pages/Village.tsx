@@ -494,7 +494,8 @@ const Village = () => {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const status = await checkSubscriptionStatus(user.id);
+      const override = typeof window !== 'undefined' ? sessionStorage.getItem('dev_sub_override') : null;
+      const status = (override as SubscriptionStatus | null) ?? (await checkSubscriptionStatus(user.id));
       if (cancelled) return;
       setSubscriptionStatus(status);
       if (status === 'trial') {
@@ -513,7 +514,10 @@ const Village = () => {
   const [devOverlay, setDevOverlay] = useState(false);
   const devTapCountRef = useRef(0);
   const devLastTapRef = useRef(0);
+  const registrationNumberRef = useRef<number | null>(null);
+  useEffect(() => { registrationNumberRef.current = registrationNumber; }, [registrationNumber]);
   const handleRegTap = useCallback(() => {
+    if (registrationNumberRef.current !== 1) return;
     const now = Date.now();
     if (now - devLastTapRef.current > 1500) {
       devTapCountRef.current = 0;
@@ -1716,6 +1720,19 @@ const Village = () => {
             <button type="button" onClick={handleDevReset} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Reset profile</button>
             <button type="button" onClick={() => { setDevOverlay(false); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Maze</button>
             <button type="button" onClick={() => { setDevOverlay(false); navigate('/door'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Door</button>
+
+            <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
+            <div style={{ opacity: 0.7, fontSize: 11 }}>SUBSCRIPTION OVERRIDES</div>
+            <button type="button" onClick={() => { sessionStorage.setItem('dev_sub_override', 'active'); setDevOverlay(false); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>SET SUB: ACTIVE</button>
+            <button type="button" onClick={() => { sessionStorage.setItem('dev_sub_override', 'expired'); setDevOverlay(false); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>SET SUB: EXPIRED</button>
+            <button type="button" onClick={() => { sessionStorage.removeItem('dev_sub_override'); setDevOverlay(false); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>CLEAR OVERRIDE</button>
+
+            <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
+            <div style={{ opacity: 0.7, fontSize: 11 }}>NAVIGATION</div>
+            <button type="button" onClick={() => { setDevOverlay(false); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L1</button>
+            <button type="button" onClick={() => { setDevOverlay(false); navigate('/maze/2'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L2</button>
+            <button type="button" onClick={() => { setDevOverlay(false); navigate('/shadow'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → SHADOW</button>
+
             <button type="button" onClick={() => setDevOverlay(false)} style={{ background: 'transparent', border: '1px solid rgba(169,140,255,0.4)', color: 'rgba(169,140,255,0.7)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Close</button>
           </div>
         </div>

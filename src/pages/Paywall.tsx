@@ -130,6 +130,27 @@ const Paywall = () => {
         }}
       />
 
+      <button
+        type="button"
+        onClick={() => navigate(-1)}
+        className="font-cinzel"
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          zIndex: 20,
+          fontSize: 9,
+          letterSpacing: '0.2em',
+          color: 'rgba(160,140,200,0.3)',
+          background: 'transparent',
+          border: 'none',
+          cursor: 'pointer',
+          padding: 16,
+        }}
+      >
+        LEAVE
+      </button>
+
       <div className="relative z-10 flex w-full max-w-md flex-col items-center px-6 pt-16 pb-12">
         {/* Headline */}
         <p

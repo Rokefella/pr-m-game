@@ -28,10 +28,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   // Account tab state
   const [accountRow, setAccountRow] = useState<AccountUserRow | null>(null);
   const [emailForm, setEmailForm] = useState(false);
-  const [newEmail, setNewEmail] = useState('');
   const [emailMsg, setEmailMsg] = useState('');
-  const [passwordForm, setPasswordForm] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
   const [passwordMsg, setPasswordMsg] = useState('');
   const [nameForm, setNameForm] = useState(false);
   const [newName, setNewName] = useState('');
@@ -46,8 +43,8 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   useEffect(() => {
     if (!isOpen) {
       setOpenGroups(new Set());
-      setEmailForm(false); setNewEmail(''); setEmailMsg('');
-      setPasswordForm(false); setNewPassword(''); setPasswordMsg('');
+      setEmailForm(false); setEmailMsg('');
+      setPasswordMsg('');
       setNameForm(false); setNewName(''); setNameStep('input'); setNameMsg('');
       setDeleteForm(false); setDeleteText(''); setDeleteMsg('');
     }
@@ -165,7 +162,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   // Account tab styles
   const sectionLabelStyle: React.CSSProperties = {
     fontFamily: undefined,
-    fontSize: 8,
+    fontSize: 13,
     letterSpacing: '0.2em',
     color: 'rgba(160,140,200,0.4)',
     margin: 0,
@@ -176,7 +173,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     marginTop: 6,
   };
   const ghostBtn: React.CSSProperties = {
-    fontSize: 9,
+    fontSize: 13,
     letterSpacing: '0.2em',
     color: 'rgba(160,140,200,0.6)',
     background: 'transparent',
@@ -203,30 +200,28 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     marginTop: 10,
   };
   const msgStyle: React.CSSProperties = {
-    fontSize: 12,
+    fontSize: 13,
     color: 'rgba(160,140,200,0.5)',
     marginTop: 8,
   };
 
-  const handleChangeEmail = async () => {
-    if (!newEmail) return;
-    const { error } = await supabase.auth.updateUser({ email: newEmail });
+  const handleSendEmailChangeLink = async () => {
+    if (!user?.email) return;
+    const { error } = await supabase.auth.updateUser({ email: user.email });
     if (error) {
       setEmailMsg(error.message);
     } else {
-      setEmailMsg('Confirmation sent.');
-      setNewEmail('');
+      setEmailMsg('Check your inbox.');
     }
   };
 
-  const handleChangePassword = async () => {
-    if (!newPassword) return;
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
+  const handleSendPasswordReset = async () => {
+    if (!user?.email) return;
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email);
     if (error) {
       setPasswordMsg(error.message);
     } else {
-      setPasswordMsg('Password updated.');
-      setNewPassword('');
+      setPasswordMsg('A reset link has been sent to your email.');
     }
   };
 
@@ -565,24 +560,18 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             <div style={{ marginBottom: 32 }}>
               {/* EMAIL */}
               <p className="font-cinzel" style={sectionLabelStyle}>EMAIL</p>
-              <div className="font-mono" style={valueStyle}>{user?.email ?? '—'}</div>
               {!emailForm ? (
                 <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(true); setEmailMsg(''); }}>
                   CHANGE EMAIL
                 </button>
               ) : (
                 <div>
-                  <input
-                    type="email"
-                    className="font-fell"
-                    style={inputStyle}
-                    value={newEmail}
-                    onChange={(e) => setNewEmail(e.target.value)}
-                    placeholder="new email"
-                  />
+                  <p className="font-fell italic" style={msgStyle}>
+                    A confirmation link will be sent to your current email address.
+                  </p>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleChangeEmail}>CONFIRM</button>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(false); setNewEmail(''); setEmailMsg(''); }}>CANCEL</button>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleSendEmailChangeLink}>SEND LINK</button>
+                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(false); setEmailMsg(''); }}>CANCEL</button>
                   </div>
                 </div>
               )}
@@ -590,26 +579,9 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
 
               {/* PASSWORD */}
               <p className="font-cinzel" style={{ ...sectionLabelStyle, marginTop: 24 }}>PASSWORD</p>
-              {!passwordForm ? (
-                <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setPasswordForm(true); setPasswordMsg(''); }}>
-                  CHANGE PASSWORD
-                </button>
-              ) : (
-                <div>
-                  <input
-                    type="password"
-                    className="font-fell"
-                    style={inputStyle}
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="new password"
-                  />
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleChangePassword}>CONFIRM</button>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setPasswordForm(false); setNewPassword(''); setPasswordMsg(''); }}>CANCEL</button>
-                  </div>
-                </div>
-              )}
+              <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleSendPasswordReset}>
+                CHANGE PASSWORD
+              </button>
               {passwordMsg && <p className="font-fell italic" style={msgStyle}>{passwordMsg}</p>}
 
               {/* NAME */}
@@ -658,7 +630,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                 type="button"
                 className="font-cinzel"
                 style={{
-                  fontSize: 8,
+                  fontSize: 13,
                   letterSpacing: '0.2em',
                   background: 'transparent',
                   border: '0.5px solid rgba(160,140,200,0.2)',

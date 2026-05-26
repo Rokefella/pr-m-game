@@ -482,6 +482,25 @@ const Paywall = () => {
         >
           Cancel anytime. No commitment.
         </p>
+
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="font-cinzel"
+          style={{
+            fontSize: 11,
+            letterSpacing: '0.2em',
+            color: 'rgba(160,140,200,0.4)',
+            border: '1px solid rgba(160,140,200,0.15)',
+            background: 'transparent',
+            padding: '16px 0',
+            width: '100%',
+            cursor: 'pointer',
+            marginTop: 24,
+          }}
+        >
+          LEAVE
+        </button>
       </div>
     </div>
   );

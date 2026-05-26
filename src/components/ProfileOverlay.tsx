@@ -679,6 +679,81 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             </div>
           </div>
         )}
+
+        {/* GROWTH content */}
+        {mainTab === 'growth' && (
+          <div style={{ marginTop: 24 }}>
+            {([
+              { key: 'social' as const, name: 'SOCIAL', color: '#c8963a', borderRgba: 'rgba(200,150,58,0.2)', desc: "Social affinity grants deeper resonance with the village's inhabitants. Dialogue paths others cannot hear." },
+              { key: 'perception' as const, name: 'PERCEPTION', color: '#2dd4bf', borderRgba: 'rgba(45,212,191,0.2)', desc: 'Perception affinity extends your awareness within the maze. What others stumble into, you see first.' },
+              { key: 'trade' as const, name: 'TRADE', color: '#a78bfa', borderRgba: 'rgba(167,139,250,0.2)', desc: 'Trade affinity reduces the friction of movement. Every step costs less when you know the value of things.' },
+            ]).map((a, idx) => {
+              const open = growthOpen[a.key];
+              return (
+                <div key={a.key} style={{ marginBottom: idx < 2 ? 20 : 0 }}>
+                  <button
+                    type="button"
+                    onClick={() => setGrowthOpen((s) => ({ ...s, [a.key]: !s[a.key] }))}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: open ? '1px solid transparent' : '1px solid rgba(160,140,200,0.08)',
+                      padding: '12px 0',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: a.color, display: 'inline-block' }} />
+                      <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: '#e0ddd5' }}>{a.name}</span>
+                    </span>
+                    <span style={{ color: 'rgba(160,140,200,0.3)', fontSize: 11 }}>{open ? '▲' : '▼'}</span>
+                  </button>
+                  <div
+                    style={{
+                      maxHeight: open ? 400 : 0,
+                      overflow: 'hidden',
+                      transition: 'max-height 240ms ease',
+                    }}
+                  >
+                    <div style={{ padding: '12px 0 16px' }}>
+                      <p className="font-fell italic" style={{ fontSize: 15, color: 'rgba(160,140,200,0.5)', marginBottom: 16 }}>
+                        {a.desc}
+                      </p>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginBottom: 10 }}>
+                        {[0, 1, 2, 3, 4].map((n) => (
+                          <span
+                            key={n}
+                            style={{
+                              width: 28,
+                              height: 28,
+                              borderRadius: '50%',
+                              background: n === 0 ? a.color : 'transparent',
+                              border: n === 0 ? 'none' : `1px solid ${a.borderRgba}`,
+                              display: 'inline-block',
+                            }}
+                          />
+                        ))}
+                      </div>
+                      <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.3)', margin: 0 }}>
+                        LEVEL 1 / 5
+                      </p>
+                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 12, color: 'rgba(160,140,200,0.2)', marginTop: 6 }}>
+                        Further progression locked.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.2)', marginTop: 24 }}>
+              Your affinities emerge through play. They cannot be chosen.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* LEAVE button */}

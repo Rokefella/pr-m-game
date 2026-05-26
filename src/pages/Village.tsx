@@ -487,6 +487,25 @@ const Village = () => {
   const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(14);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const subscriptionStatusRef = useRef<SubscriptionStatus | null>(null);
+  useEffect(() => { subscriptionStatusRef.current = subscriptionStatus; }, [subscriptionStatus]);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const status = await checkSubscriptionStatus(user.id);
+      if (cancelled) return;
+      setSubscriptionStatus(status);
+      if (status === 'trial') {
+        const { data } = await supabase.from('users').select('trial_end').eq('id', user.id).single();
+        if (!cancelled && data?.trial_end) {
+          setTrialDaysRemaining(getDaysRemainingInTrial(data.trial_end));
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
   const profileOpenRef = useRef(false);
   const [profileOpenDisplay, setProfileOpenDisplay] = useState(false);
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);

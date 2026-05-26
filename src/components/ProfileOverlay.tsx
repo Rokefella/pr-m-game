@@ -293,6 +293,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
         position: 'fixed', inset: 0, zIndex: 150,
         background: '#04040a',
         overflow: 'auto',
+        display: isOpen ? 'block' : 'none',
       }}
     >
       <div

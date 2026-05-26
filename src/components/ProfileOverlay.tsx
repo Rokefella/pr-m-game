@@ -21,8 +21,10 @@ type AccountUserRow = {
 const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [mainTab, setMainTab] = useState<'profile' | 'quests' | 'account' | 'growth'>('profile');
+  const [mainTab, setMainTab] = useState<'profile' | 'quests' | 'account' | 'growth' | 'folder'>('profile');
   const [growthOpen, setGrowthOpen] = useState<{ social: boolean; perception: boolean; trade: boolean }>({ social: false, perception: false, trade: false });
+  const [folderFragments, setFolderFragments] = useState<Array<{ id: string; prime_number: number; image_data: string | null }>>([]);
+  const [folderTooltip, setFolderTooltip] = useState<string | null>(null);
   const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
 
@@ -62,6 +64,21 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
       .maybeSingle()
       .then(({ data }) => {
         if (!cancelled && data) setAccountRow(data as AccountUserRow);
+      });
+    return () => { cancelled = true; };
+  }, [isOpen, user]);
+
+  // Fetch fragments when overlay opens
+  useEffect(() => {
+    if (!isOpen || !user) return;
+    let cancelled = false;
+    supabase
+      .from('fragments')
+      .select('id, prime_number, image_data, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (!cancelled && data) setFolderFragments(data as any);
       });
     return () => { cancelled = true; };
   }, [isOpen, user]);
@@ -284,7 +301,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
 
         {/* Main tabs */}
         <div style={{ display: 'flex', gap: 4, marginTop: 24, borderBottom: '0.5px solid rgba(100,80,160,0.2)' }}>
-          {(['profile', 'growth', 'quests', 'account'] as const).map((t) => {
+          {(['profile', 'growth', 'quests', 'folder', 'account'] as const).map((t) => {
             const active = mainTab === t;
             return (
               <button
@@ -554,6 +571,84 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             </div>
           </div>
         )}
+
+        {/* FOLDER content */}
+        {mainTab === 'folder' && (() => {
+          const count = folderFragments.length;
+          const cells = Array.from({ length: 20 }, (_, i) => folderFragments[i] || null);
+          return (
+            <div style={{ marginTop: 24 }}>
+              {/* Header row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 16 }}>
+                <span className="font-cinzel" style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>FOLDER</span>
+                <span className="font-cinzel" style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>{count} / 20</span>
+              </div>
+
+              {/* Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+                {cells.map((frag, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      position: 'relative',
+                      aspectRatio: '1 / 1',
+                      border: frag
+                        ? '1px solid rgba(160,140,200,0.15)'
+                        : '1px dashed rgba(160,140,200,0.08)',
+                      background: 'transparent',
+                      cursor: frag ? 'pointer' : 'default',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                    onMouseEnter={() => frag && setFolderTooltip(frag.id)}
+                    onMouseLeave={() => frag && setFolderTooltip(null)}
+                    onClick={() => frag && setFolderTooltip(folderTooltip === frag.id ? null : frag.id)}
+                  >
+                    {frag?.image_data && (
+                      <img src={frag.image_data} alt={`Fragment ${frag.prime_number}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
+                    {frag && folderTooltip === frag.id && (
+                      <div
+                        className="font-cinzel"
+                        style={{
+                          position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
+                          marginBottom: 4, padding: '2px 6px',
+                          background: 'rgba(4,4,10,0.95)', border: '1px solid rgba(160,140,200,0.2)',
+                          fontSize: 10, color: '#c8963a', whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 10,
+                        }}
+                      >
+                        {frag.prime_number}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Status text */}
+              {count === 0 && (
+                <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.3)', marginTop: 24 }}>
+                  Your folder is empty. Enter the maze.
+                </p>
+              )}
+              {count === 20 && (
+                <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(200,80,80,0.4)', marginTop: 24 }}>
+                  Your folder is full. You cannot collect further fragments.
+                </p>
+              )}
+              {count >= 18 && count < 20 && (
+                <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(200,150,58,0.5)', marginTop: 24 }}>
+                  Your folder is nearly full. Find the Shadow Realm.
+                </p>
+              )}
+
+              {/* Shadow realm note */}
+              <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 11, color: 'rgba(160,140,200,0.2)', marginTop: 32 }}>
+                Fragments are lost if you leave the maze without visiting the Shadow Realm.
+              </p>
+            </div>
+          );
+        })()}
+
+
 
         {/* ACCOUNT content */}
         {mainTab === 'account' && (

@@ -489,6 +489,25 @@ const Village = () => {
   const [profileOpenDisplay, setProfileOpenDisplay] = useState(false);
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
   const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
+  const [devOverlay, setDevOverlay] = useState(false);
+  const devTapsRef = useRef<number[]>([]);
+  const handleRegTap = useCallback(() => {
+    const now = Date.now();
+    devTapsRef.current = [...devTapsRef.current.filter(t => now - t < 1500), now];
+    if (devTapsRef.current.length >= 5) {
+      devTapsRef.current = [];
+      setDevOverlay(true);
+      return;
+    }
+    openProfile();
+  }, [openProfile]);
+  const handleDevReset = useCallback(async () => {
+    if (user) {
+      await updateUser(user.id, { entity_answer: null, username: null, aura_color: '#5b4fd4', level: 1 });
+    }
+    setDevOverlay(false);
+    navigate('/entity-questions');
+  }, [user, navigate]);
   const [credits, setCredits] = useState<number>(0);
   const [merchantOpen, setMerchantOpen] = useState(false);
   const merchantTriggerLockRef = useRef(false);

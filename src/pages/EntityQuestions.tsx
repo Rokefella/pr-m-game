@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { updateUser } from '@/lib/userData';
+import { upsertUser } from '@/lib/userData';
 
 type Dim = 'amber' | 'teal' | 'purple';
 
@@ -55,7 +55,7 @@ const EntityQuestions = () => {
     localStorage.setItem('praem_dimension', dim);
     localStorage.setItem('praem_aura_color', color);
     if (user) {
-      await updateUser(user.id, {
+      await upsertUser(user.id, {
         entity_answer: dim,
         aura_color: color,
       });

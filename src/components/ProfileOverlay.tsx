@@ -162,18 +162,18 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   // Account tab styles
   const sectionLabelStyle: React.CSSProperties = {
     fontFamily: undefined,
-    fontSize: 13,
+    fontSize: 18,
     letterSpacing: '0.2em',
     color: 'rgba(160,140,200,0.4)',
     margin: 0,
   };
   const valueStyle: React.CSSProperties = {
-    fontSize: 13,
+    fontSize: 18,
     color: 'rgba(200,185,255,0.9)',
     marginTop: 6,
   };
   const ghostBtn: React.CSSProperties = {
-    fontSize: 13,
+    fontSize: 18,
     letterSpacing: '0.2em',
     color: 'rgba(160,140,200,0.6)',
     background: 'transparent',
@@ -193,6 +193,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     borderBottom: '1px solid rgba(160,140,200,0.3)',
     color: '#e0ddd5',
     fontStyle: 'italic',
+    fontSize: 18,
     borderRadius: 0,
     padding: '4px 0',
     width: '100%',
@@ -200,7 +201,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     marginTop: 10,
   };
   const msgStyle: React.CSSProperties = {
-    fontSize: 13,
+    fontSize: 18,
     color: 'rgba(160,140,200,0.5)',
     marginTop: 8,
   };
@@ -630,7 +631,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                 type="button"
                 className="font-cinzel"
                 style={{
-                  fontSize: 13,
+                  fontSize: 18,
                   letterSpacing: '0.2em',
                   background: 'transparent',
                   border: '0.5px solid rgba(160,140,200,0.2)',

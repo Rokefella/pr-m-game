@@ -1672,6 +1672,32 @@ const Village = () => {
         #{registrationNumber !== null ? String(registrationNumber).padStart(4, '0') : '????'}
       </button>
 
+      {devOverlay && (
+        <div
+          className="font-mono"
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 500,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+          }}
+          onClick={() => setDevOverlay(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#000', border: '1px solid #a98cff', padding: 20,
+              minWidth: 240, display: 'flex', flexDirection: 'column', gap: 10,
+              color: '#a98cff', fontSize: 13, letterSpacing: '0.1em',
+            }}
+          >
+            <div style={{ opacity: 0.7, marginBottom: 6 }}>DEV MENU</div>
+            <button type="button" onClick={handleDevReset} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Reset profile</button>
+            <button type="button" onClick={() => { setDevOverlay(false); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Maze</button>
+            <button type="button" onClick={() => { setDevOverlay(false); navigate('/door'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Door</button>
+            <button type="button" onClick={() => setDevOverlay(false)} style={{ background: 'transparent', border: '1px solid rgba(169,140,255,0.4)', color: 'rgba(169,140,255,0.7)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Close</button>
+          </div>
+        </div>
+      )}
+
       {/* Profile rendered via shared ProfileOverlay below (matches ShadowRealm pattern) */}
 
       {/* LEVEL UP OVERLAY */}

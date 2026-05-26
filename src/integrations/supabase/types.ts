@@ -55,9 +55,12 @@ export type Database = {
           maze_completed_level: number
           registration_number: number
           steps_remaining: number
+          subscription_status: string
+          subscription_tier: string | null
           title: string
           total_maze_steps: number
           total_maze_time: number
+          trial_end: string
           unlocked_titles: string[]
           updated_at: string
           username: string | null
@@ -75,9 +78,12 @@ export type Database = {
           maze_completed_level?: number
           registration_number?: number
           steps_remaining?: number
+          subscription_status?: string
+          subscription_tier?: string | null
           title?: string
           total_maze_steps?: number
           total_maze_time?: number
+          trial_end?: string
           unlocked_titles?: string[]
           updated_at?: string
           username?: string | null
@@ -95,9 +101,12 @@ export type Database = {
           maze_completed_level?: number
           registration_number?: number
           steps_remaining?: number
+          subscription_status?: string
+          subscription_tier?: string | null
           title?: string
           total_maze_steps?: number
           total_maze_time?: number
+          trial_end?: string
           unlocked_titles?: string[]
           updated_at?: string
           username?: string | null

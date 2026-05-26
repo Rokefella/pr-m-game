@@ -9,6 +9,8 @@ import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import BernardDialogue from '@/components/BernardDialogue';
 import CharacterEye from '@/components/CharacterEye';
+import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
+import { supabase } from '@/lib/supabase';
 
 
 // Village Merchant
@@ -485,6 +487,25 @@ const Village = () => {
   const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(14);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
+  const subscriptionStatusRef = useRef<SubscriptionStatus | null>(null);
+  useEffect(() => { subscriptionStatusRef.current = subscriptionStatus; }, [subscriptionStatus]);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      const status = await checkSubscriptionStatus(user.id);
+      if (cancelled) return;
+      setSubscriptionStatus(status);
+      if (status === 'trial') {
+        const { data } = await supabase.from('users').select('trial_end').eq('id', user.id).single();
+        if (!cancelled && data?.trial_end) {
+          setTrialDaysRemaining(getDaysRemainingInTrial(data.trial_end));
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
   const profileOpenRef = useRef(false);
   const [profileOpenDisplay, setProfileOpenDisplay] = useState(false);
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
@@ -790,7 +811,9 @@ const Village = () => {
       }
       if (!navigatedRef.current) {
         navigatedRef.current = true;
-        window.setTimeout(() => navigate('/door'), 600);
+        const status = subscriptionStatusRef.current;
+        const target = status && canAccessMaze(status) ? '/door' : '/paywall';
+        window.setTimeout(() => navigate(target), 600);
       }
       return true;
     }
@@ -1632,8 +1655,8 @@ const Village = () => {
         <ProfileButton onClick={openProfile} />
       </div>
 
-      {/* Trial countdown — appears just above HUD when ≤3 days remain */}
-      {trialDaysRemaining > 0 && trialDaysRemaining <= 3 && (
+      {/* Trial countdown — shown above HUD while on trial */}
+      {subscriptionStatus === 'trial' && (
         <div
           className="font-mono"
           style={{
@@ -1642,14 +1665,14 @@ const Village = () => {
             left: 0,
             right: 0,
             textAlign: 'center',
-            fontSize: 14,
+            fontSize: 10,
             letterSpacing: '0.18em',
-            color: 'rgba(200,150,58,0.5)',
+            color: 'rgba(160,140,200,0.4)',
             zIndex: 12,
             pointerEvents: 'none',
           }}
         >
-          Trial ends in {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'}
+          {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} remaining in trial
         </div>
       )}
 

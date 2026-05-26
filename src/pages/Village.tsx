@@ -811,7 +811,9 @@ const Village = () => {
       }
       if (!navigatedRef.current) {
         navigatedRef.current = true;
-        window.setTimeout(() => navigate('/door'), 600);
+        const status = subscriptionStatusRef.current;
+        const target = status && canAccessMaze(status) ? '/door' : '/paywall';
+        window.setTimeout(() => navigate(target), 600);
       }
       return true;
     }

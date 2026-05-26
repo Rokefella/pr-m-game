@@ -749,7 +749,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                 </div>
               );
             })}
-            <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.2)', marginTop: 24 }}>
+            <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 10, color: 'rgba(160,140,200,0.2)', marginTop: 24 }}>
               Your affinities emerge through play. They cannot be chosen.
             </p>
           </div>

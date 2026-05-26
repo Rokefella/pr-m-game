@@ -1,4 +1,6 @@
-import { Purchases, type PurchasesOffering } from '@revenuecat/purchases-js';
+import { Purchases, type Offering } from '@revenuecat/purchases-js';
+
+type PurchasesOffering = Offering;
 
 const RC_API_KEY = 'test_SDEYzqawaDVeDcCQsditmNwaLbN';
 
@@ -31,5 +33,6 @@ export async function checkEntitlement(): Promise<boolean> {
 }
 
 export async function restorePurchases() {
-  return Purchases.getSharedInstance().restorePurchases();
+  // Web SDK has no restorePurchases — re-fetch customer info as the equivalent
+  return Purchases.getSharedInstance().getCustomerInfo();
 }

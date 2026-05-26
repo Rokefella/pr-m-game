@@ -641,7 +641,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
               )}
 
               {/* Shadow realm note */}
-              <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 11, color: 'rgba(160,140,200,0.2)', marginTop: 32 }}>
+              <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.2)', marginTop: 32 }}>
                 Fragments are lost if you leave the maze without visiting the Shadow Realm.
               </p>
             </div>

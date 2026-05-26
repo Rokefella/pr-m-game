@@ -75,7 +75,9 @@ export async function updateUser(
   userId: string,
   patch: Partial<Omit<UserRow, 'id'>>,
 ): Promise<void> {
-  const { error } = await supabase.from('users').update(patch).eq('id', userId)
+  console.log('[updateUser] called with userId:', userId, 'patch:', patch)
+  const { data, error } = await supabase.from('users').update(patch).eq('id', userId).select()
+  console.log('[updateUser] result data:', data, 'error:', error)
   if (error) {
     console.error('updateUser failed', error, patch)
   }

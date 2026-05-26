@@ -74,7 +74,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     let cancelled = false;
     supabase
       .from('fragments')
-      .select('id, prime_number, image_data, created_at')
+      .select('id, prime_number, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .then(({ data }) => {

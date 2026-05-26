@@ -595,35 +595,39 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                       position: 'relative',
                       aspectRatio: '1 / 1',
                       border: frag
-                        ? '1px solid rgba(160,140,200,0.15)'
+                        ? '1px solid rgba(167,139,250,0.4)'
                         : '1px dashed rgba(160,140,200,0.08)',
-                      background: 'transparent',
+                      background: frag ? 'rgba(107,70,193,0.3)' : 'transparent',
                       cursor: frag ? 'pointer' : 'default',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
-                    onMouseEnter={() => frag && setFolderTooltip(frag.id)}
-                    onMouseLeave={() => frag && setFolderTooltip(null)}
                     onClick={() => frag && setFolderTooltip(folderTooltip === frag.id ? null : frag.id)}
                   >
-                    {frag?.image_data && (
-                      <img src={frag.image_data} alt={`Fragment ${frag.prime_number}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    )}
-                    {frag && folderTooltip === frag.id && (
-                      <div
+                    {frag && (
+                      <span
                         className="font-cinzel"
-                        style={{
-                          position: 'absolute', bottom: '100%', left: '50%', transform: 'translateX(-50%)',
-                          marginBottom: 4, padding: '2px 6px',
-                          background: 'rgba(4,4,10,0.95)', border: '1px solid rgba(160,140,200,0.2)',
-                          fontSize: 10, color: '#c8963a', whiteSpace: 'nowrap', pointerEvents: 'none', zIndex: 10,
-                        }}
+                        style={{ fontSize: 14, color: '#a78bfa' }}
                       >
                         {frag.prime_number}
-                      </div>
+                      </span>
                     )}
                   </div>
                 ))}
               </div>
+
+              {/* Tooltip / flavour text */}
+              {(() => {
+                const selected = folderFragments.find((f) => f.id === folderTooltip);
+                if (!selected) return null;
+                return (
+                  <p
+                    className="font-fell italic"
+                    style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.6)', marginTop: 16 }}
+                  >
+                    Prime {selected.prime_number}. You are inside the instrument now.
+                  </p>
+                );
+              })()}
 
               {/* Status text */}
               {count === 0 && (

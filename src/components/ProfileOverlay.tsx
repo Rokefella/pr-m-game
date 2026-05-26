@@ -313,9 +313,11 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                   background: 'transparent',
                   border: 'none',
                   borderBottom: active ? '1.5px solid #5b4fd4' : '1.5px solid transparent',
-                  padding: '8px 20px',
-                  fontSize: 13,
-                  letterSpacing: '0.2em',
+                  padding: '8px 0',
+                  flex: 1,
+                  textAlign: 'center',
+                  fontSize: 10,
+                  letterSpacing: '0.15em',
                   color: active ? '#e0ddd5' : 'rgba(160,140,200,0.5)',
                   cursor: 'pointer',
                   marginBottom: -1,
@@ -580,8 +582,8 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             <div style={{ marginTop: 24 }}>
               {/* Header row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 16 }}>
-                <span className="font-cinzel" style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>FOLDER</span>
-                <span className="font-cinzel" style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>{count} / 20</span>
+                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>FOLDER</span>
+                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>{count} / 20</span>
               </div>
 
               {/* Grid */}
@@ -641,7 +643,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
               )}
 
               {/* Shadow realm note */}
-              <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 11, color: 'rgba(160,140,200,0.2)', marginTop: 32 }}>
+              <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.2)', marginTop: 32 }}>
                 Fragments are lost if you leave the maze without visiting the Shadow Realm.
               </p>
             </div>

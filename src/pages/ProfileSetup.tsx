@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { updateUser } from '@/lib/userData';
+import { upsertUser } from '@/lib/userData';
 
 const ProfileSetup = () => {
   const [username, setUsername] = useState('');
@@ -14,7 +14,7 @@ const ProfileSetup = () => {
     if (saving) return;
     if (loading || !user) return;
     setSaving(true);
-    await updateUser(user.id, {
+    await upsertUser(user.id, {
       username: username.trim() || 'Anonymous',
       aura_color: auraColor,
     });

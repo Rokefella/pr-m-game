@@ -83,4 +83,19 @@ export async function updateUser(
   }
 }
 
+export async function upsertUser(
+  userId: string,
+  patch: Partial<Omit<UserRow, 'id'>>,
+): Promise<void> {
+  console.log('[upsertUser] called with userId:', userId, 'patch:', patch)
+  const { data, error } = await supabase
+    .from('users')
+    .upsert({ id: userId, ...patch }, { onConflict: 'id' })
+    .select()
+  console.log('[upsertUser] result data:', data, 'error:', error)
+  if (error) {
+    console.error('upsertUser failed', error, patch)
+  }
+}
+
 export { DEFAULTS as USER_DEFAULTS }

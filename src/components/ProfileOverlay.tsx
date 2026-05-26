@@ -589,7 +589,8 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                     key={i}
                     style={{
                       position: 'relative',
-                      aspectRatio: '1 / 1',
+                      width: 60,
+                      height: 60,
                       border: frag
                         ? '1px solid rgba(167,139,250,0.4)'
                         : '1px dashed rgba(160,140,200,0.08)',

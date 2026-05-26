@@ -1653,11 +1653,10 @@ const Village = () => {
         </div>
       )}
 
-      {/* Registration number — top-right (tap to open profile) */}
-      <button
-        type="button"
+      {/* Registration number — top-right (display only; 5 rapid taps open dev menu) */}
+      <div
         className="font-mono"
-        onClick={handleRegTap}
+        onPointerDown={handleRegTap}
         style={{
           position: 'fixed',
           top: 12,
@@ -1666,14 +1665,12 @@ const Village = () => {
           letterSpacing: '0.22em',
           color: 'rgba(160,140,200,0.7)',
           zIndex: 15,
-          background: 'transparent',
-          border: 'none',
           padding: 4,
-          cursor: 'pointer',
+          userSelect: 'none',
         }}
       >
         #{registrationNumber !== null ? String(registrationNumber).padStart(4, '0') : '????'}
-      </button>
+      </div>
 
       {devOverlay && (
         <div

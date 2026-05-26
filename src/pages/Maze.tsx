@@ -328,6 +328,20 @@ const Maze = () => {
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
   const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
 
+  // Forfeit fragments if the player leaves the maze without visiting the Shadow Realm.
+  const userIdRef = useRef<string | null>(null);
+  useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
+  useEffect(() => {
+    return () => {
+      const visited = sessionStorage.getItem('visited_shadow_this_run');
+      const uid = userIdRef.current;
+      if (visited !== 'true' && uid) {
+        supabase.from('fragments').delete().eq('user_id', uid).then(() => {});
+      }
+      sessionStorage.removeItem('visited_shadow_this_run');
+    };
+  }, []);
+
   useEffect(() => {
     const handler = () => {
       const subscribed = window.localStorage.getItem('praem_subscribed');

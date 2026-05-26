@@ -494,7 +494,8 @@ const Village = () => {
     if (!user) return;
     let cancelled = false;
     (async () => {
-      const status = await checkSubscriptionStatus(user.id);
+      const override = typeof window !== 'undefined' ? sessionStorage.getItem('dev_sub_override') : null;
+      const status = (override as SubscriptionStatus | null) ?? (await checkSubscriptionStatus(user.id));
       if (cancelled) return;
       setSubscriptionStatus(status);
       if (status === 'trial') {
@@ -513,7 +514,10 @@ const Village = () => {
   const [devOverlay, setDevOverlay] = useState(false);
   const devTapCountRef = useRef(0);
   const devLastTapRef = useRef(0);
+  const registrationNumberRef = useRef<number | null>(null);
+  useEffect(() => { registrationNumberRef.current = registrationNumber; }, [registrationNumber]);
   const handleRegTap = useCallback(() => {
+    if (registrationNumberRef.current !== 1) return;
     const now = Date.now();
     if (now - devLastTapRef.current > 1500) {
       devTapCountRef.current = 0;

@@ -1,4 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { initRevenueCat, getOffering, purchasePackage, restorePurchases } from '@/lib/revenuecat';
+import { supabase } from '@/lib/supabase';
 
 type Tier = 'founding' | 'monthly' | 'annual' | null;
 

@@ -102,11 +102,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const level = localStorage.getItem('praem_level') || '1';
   const titleRaw = localStorage.getItem('praem_title');
   const title = titleRaw && titleRaw.trim() !== '' ? titleRaw : '';
-  const fragmentsRaw = localStorage.getItem('praem_fragments');
-  let fragmentCount = 0;
-  try {
-    fragmentCount = fragmentsRaw ? (JSON.parse(fragmentsRaw) as unknown[]).length : 0;
-  } catch { fragmentCount = 0; }
+  const fragmentCount = folderFragments.length;
 
   const b00c = localStorage.getItem('praem_bernard_00_complete') === 'true';
   const b01a = localStorage.getItem('praem_bernard_01_accepted') === 'true';

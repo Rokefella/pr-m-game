@@ -13,15 +13,38 @@ const TIER_CONFIG: Record<Exclude<Tier, null>, { cx: number; color: string }> = 
 };
 
 const Paywall = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [eyeVisible, setEyeVisible] = useState(false);
   const [activeTier, setActiveTier] = useState<Tier>(null);
   const [thanksTier, setThanksTier] = useState<Tier>(null);
   const [idleCx, setIdleCx] = useState(0);
+  const [packages, setPackages] = useState<Record<string, any>>({});
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const t = window.setTimeout(() => setEyeVisible(true), 50);
     return () => window.clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        await initRevenueCat(user.id);
+        const offering = await getOffering();
+        if (offering) {
+          const map: Record<string, any> = {};
+          for (const pkg of offering.availablePackages) {
+            map[pkg.identifier] = pkg;
+          }
+          setPackages(map);
+        }
+      } catch (e) {
+        console.error('[Paywall] init error', e);
+      }
+    })();
+  }, [user]);
 
   // Idle drift when no tier selected
   useEffect(() => {
@@ -41,8 +64,55 @@ const Paywall = () => {
   const pupilCx = activeTier ? TIER_CONFIG[activeTier].cx : idleCx;
   const pupilColor = activeTier ? TIER_CONFIG[activeTier].color : '#5b4fd4';
 
-  const handleBegin = (tier: Exclude<Tier, null>) => {
-    setThanksTier(tier);
+  const tierToPackageId: Record<Exclude<Tier, null>, string> = {
+    founding: 'lifetime',
+    monthly: 'monthly',
+    annual: 'yearly',
+  };
+
+  const handleBegin = async (tier: Exclude<Tier, null>) => {
+    setErrorMsg(null);
+    if (!user) {
+      setErrorMsg('You must be signed in.');
+      return;
+    }
+    const pkg = packages[tierToPackageId[tier]];
+    if (!pkg) {
+      setErrorMsg('This option is unavailable right now.');
+      return;
+    }
+    try {
+      await purchasePackage(pkg);
+      await supabase
+        .from('users')
+        .update({ subscription_status: 'active', subscription_tier: tier })
+        .eq('id', user.id);
+      setThanksTier(tier);
+      navigate('/village');
+    } catch (e: any) {
+      console.error('[Paywall] purchase error', e);
+      setErrorMsg(e?.message || 'Purchase could not be completed.');
+    }
+  };
+
+  const handleRestore = async () => {
+    setErrorMsg(null);
+    if (!user) return;
+    try {
+      const ci: any = await restorePurchases();
+      if (ci?.entitlements?.active?.['praem_access']) {
+        await supabase
+          .from('users')
+          .update({ subscription_status: 'active' })
+          .eq('id', user.id);
+        navigate('/village');
+      } else {
+        setErrorMsg('No purchases to restore.');
+      }
+    } catch (e: any) {
+      console.error('[Paywall] restore error', e);
+      setErrorMsg(e?.message || 'Restore failed.');
+    }
   };
 
   return (

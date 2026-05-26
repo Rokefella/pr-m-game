@@ -446,6 +446,7 @@ const Paywall = () => {
         {/* Restore purchase */}
         <button
           type="button"
+          onClick={handleRestore}
           className="font-cinzel"
           style={{
             marginTop: 24,
@@ -459,6 +460,15 @@ const Paywall = () => {
         >
           RESTORE PURCHASE
         </button>
+
+        {errorMsg && (
+          <p
+            className="font-fell italic"
+            style={{ marginTop: 12, fontSize: 13, color: 'rgba(200,120,120,0.7)', textAlign: 'center' }}
+          >
+            {errorMsg}
+          </p>
+        )}
 
         <p
           className="font-fell italic"

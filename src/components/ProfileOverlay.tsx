@@ -20,7 +20,7 @@ type AccountUserRow = {
 
 const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [mainTab, setMainTab] = useState<'profile' | 'quests' | 'account' | 'growth' | 'folder'>('profile');
   const [growthOpen, setGrowthOpen] = useState<{ social: boolean; perception: boolean; trade: boolean }>({ social: false, perception: false, trade: false });
   const [folderFragments, setFolderFragments] = useState<Array<{ id: string; prime_number: number }>>([]);

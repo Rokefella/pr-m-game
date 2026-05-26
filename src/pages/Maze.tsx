@@ -477,12 +477,12 @@ const Maze = () => {
     setActiveFragment({ prime: frag.prime, index: fragIdx });
     if (user) {
       const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
-      restInsert('fragments', {
+      supabase.from('fragments').insert({
         user_id: user.id,
         prime_number: frag.prime,
         level: currentLevelRef.current,
         image_data: imageData,
-      }).catch((error) => console.error('Failed to save fragment', error));
+      }).then(({ error }) => { if (error) console.error('Failed to save fragment', error); });
     }
   }, [config, levelLoaded, user]);
 

@@ -208,7 +208,7 @@ const Paywall = () => {
               <span
                 className="font-cinzel"
                 style={{
-                  fontSize: 7,
+                  fontSize: 18,
                   letterSpacing: '0.2em',
                   background: 'rgba(200,150,58,0.15)',
                   border: '0.5px solid rgba(200,150,58,0.4)',
@@ -221,7 +221,7 @@ const Paywall = () => {
             </div>
             <p
               className="font-cinzel"
-              style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(200,150,58,0.6)', textAlign: 'center', margin: 0 }}
+              style={{ fontSize: 18, letterSpacing: '0.2em', color: 'rgba(200,150,58,0.6)', textAlign: 'center', margin: 0 }}
             >
               FOUNDING MEMBER
             </p>
@@ -233,14 +233,14 @@ const Paywall = () => {
             </p>
             <p
               className="font-fell italic"
-              style={{ fontSize: 12, color: 'rgba(160,140,200,0.4)', marginTop: 4, textAlign: 'center', margin: '4px 0 0' }}
+              style={{ fontSize: 18, color: 'rgba(160,140,200,0.4)', marginTop: 4, textAlign: 'center', margin: '4px 0 0' }}
             >
               once. forever.
             </p>
             <ul
               className="font-fell italic"
               style={{
-                fontSize: 11,
+                fontSize: 18,
                 color: 'rgba(160,140,200,0.55)',
                 lineHeight: 1.8,
                 marginTop: 12,
@@ -260,7 +260,7 @@ const Paywall = () => {
               style={{
                 background: '#c8963a',
                 color: '#04040a',
-                fontSize: 10,
+                fontSize: 18,
                 letterSpacing: '0.25em',
                 padding: '10px 0',
                 marginTop: 16,
@@ -274,7 +274,7 @@ const Paywall = () => {
             {thanksTier === 'founding' && (
               <p
                 className="font-fell italic"
-                style={{ fontSize: 13, color: 'rgba(160,140,200,0.5)', marginTop: 12, textAlign: 'center' }}
+                style={{ fontSize: 18, color: 'rgba(160,140,200,0.5)', marginTop: 12, textAlign: 'center' }}
               >
                 Payment coming soon. Thank you for your interest.
               </p>
@@ -295,7 +295,7 @@ const Paywall = () => {
           >
             <p
               className="font-cinzel"
-              style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)', textAlign: 'center', margin: 0 }}
+              style={{ fontSize: 18, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)', textAlign: 'center', margin: 0 }}
             >
               MONTHLY
             </p>
@@ -307,14 +307,14 @@ const Paywall = () => {
             </p>
             <p
               className="font-fell italic"
-              style={{ fontSize: 12, color: 'rgba(160,140,200,0.4)', textAlign: 'center', margin: '4px 0 0' }}
+              style={{ fontSize: 18, color: 'rgba(160,140,200,0.4)', textAlign: 'center', margin: '4px 0 0' }}
             >
               per month
             </p>
             <ul
               className="font-fell italic"
               style={{
-                fontSize: 11,
+                fontSize: 18,
                 color: 'rgba(160,140,200,0.55)',
                 lineHeight: 1.8,
                 marginTop: 12,
@@ -333,7 +333,7 @@ const Paywall = () => {
               style={{
                 background: 'rgba(91,79,212,0.8)',
                 color: '#ffffff',
-                fontSize: 10,
+                fontSize: 18,
                 letterSpacing: '0.25em',
                 padding: '10px 0',
                 marginTop: 16,
@@ -347,7 +347,7 @@ const Paywall = () => {
             {thanksTier === 'monthly' && (
               <p
                 className="font-fell italic"
-                style={{ fontSize: 13, color: 'rgba(160,140,200,0.5)', marginTop: 12, textAlign: 'center' }}
+                style={{ fontSize: 18, color: 'rgba(160,140,200,0.5)', marginTop: 12, textAlign: 'center' }}
               >
                 Payment coming soon. Thank you for your interest.
               </p>
@@ -370,7 +370,7 @@ const Paywall = () => {
               <span
                 className="font-cinzel"
                 style={{
-                  fontSize: 7,
+                  fontSize: 18,
                   letterSpacing: '0.15em',
                   background: 'rgba(34,197,94,0.1)',
                   border: '0.5px solid rgba(34,197,94,0.3)',
@@ -383,7 +383,7 @@ const Paywall = () => {
             </div>
             <p
               className="font-cinzel"
-              style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)', textAlign: 'center', margin: 0 }}
+              style={{ fontSize: 18, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)', textAlign: 'center', margin: 0 }}
             >
               ANNUAL
             </p>
@@ -395,14 +395,14 @@ const Paywall = () => {
             </p>
             <p
               className="font-fell italic"
-              style={{ fontSize: 12, color: 'rgba(160,140,200,0.4)', textAlign: 'center', margin: '4px 0 0' }}
+              style={{ fontSize: 18, color: 'rgba(160,140,200,0.4)', textAlign: 'center', margin: '4px 0 0' }}
             >
               per year
             </p>
             <ul
               className="font-fell italic"
               style={{
-                fontSize: 11,
+                fontSize: 18,
                 color: 'rgba(160,140,200,0.55)',
                 lineHeight: 1.8,
                 marginTop: 12,
@@ -422,7 +422,7 @@ const Paywall = () => {
               style={{
                 background: 'rgba(91,79,212,0.8)',
                 color: '#ffffff',
-                fontSize: 10,
+                fontSize: 18,
                 letterSpacing: '0.25em',
                 padding: '10px 0',
                 marginTop: 16,
@@ -436,7 +436,7 @@ const Paywall = () => {
             {thanksTier === 'annual' && (
               <p
                 className="font-fell italic"
-                style={{ fontSize: 13, color: 'rgba(160,140,200,0.5)', marginTop: 12, textAlign: 'center' }}
+                style={{ fontSize: 18, color: 'rgba(160,140,200,0.5)', marginTop: 12, textAlign: 'center' }}
               >
                 Payment coming soon. Thank you for your interest.
               </p>
@@ -451,7 +451,7 @@ const Paywall = () => {
           className="font-cinzel"
           style={{
             marginTop: 24,
-            fontSize: 9,
+            fontSize: 18,
             color: 'rgba(160,140,200,0.2)',
             letterSpacing: '0.15em',
             background: 'transparent',
@@ -465,7 +465,7 @@ const Paywall = () => {
         {errorMsg && (
           <p
             className="font-fell italic"
-            style={{ marginTop: 12, fontSize: 13, color: 'rgba(200,120,120,0.7)', textAlign: 'center' }}
+            style={{ marginTop: 12, fontSize: 18, color: 'rgba(200,120,120,0.7)', textAlign: 'center' }}
           >
             {errorMsg}
           </p>
@@ -475,7 +475,7 @@ const Paywall = () => {
           className="font-fell italic"
           style={{
             marginTop: 8,
-            fontSize: 11,
+            fontSize: 18,
             color: 'rgba(160,140,200,0.3)',
             textAlign: 'center',
           }}

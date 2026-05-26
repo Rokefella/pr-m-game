@@ -704,13 +704,23 @@ const Maze = () => {
         } catch { /* ignore */ }
 
         if (user) {
-          const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
-          supabase.from('fragments').insert({
-            user_id: user.id,
-            prime_number: frag.prime,
-            level: currentLevelRef.current,
-            image_data: imageData,
-          }).then(({ error }) => { if (error) console.error('Failed to save fragment', error); });
+          (async () => {
+            const { data: existing } = await supabase
+              .from('fragments')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('prime_number', frag.prime)
+              .limit(1);
+            if (existing && existing.length > 0) return; // duplicate, skip silently
+            const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
+            const { error } = await supabase.from('fragments').insert({
+              user_id: user.id,
+              prime_number: frag.prime,
+              level: currentLevelRef.current,
+              image_data: imageData,
+            });
+            if (error) console.error('Failed to save fragment', error);
+          })();
         }
       }
     }

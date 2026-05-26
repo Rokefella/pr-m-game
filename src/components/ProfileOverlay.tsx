@@ -71,16 +71,27 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   useEffect(() => {
     if (!isOpen || !user) return;
     let cancelled = false;
-    supabase
-      .from('fragments')
-      .select('id, prime_number, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .then(({ data, error }) => {
+
+    const tokenRaw = localStorage.getItem('praem-auth-token');
+    if (!tokenRaw) return;
+    const accessToken = JSON.parse(tokenRaw).access_token;
+    if (!accessToken) return;
+
+    fetch(
+      `https://jngofylkynipsnzyyzdq.supabase.co/rest/v1/fragments?select=id,prime_number,created_at&user_id=eq.${user.id}&order=created_at.desc`,
+      {
+        headers: {
+          apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    )
+      .then((r) => r.json())
+      .then((data) => {
         if (cancelled) return;
-        if (error) console.error('[Folder] fetch error', error);
-        setFolderFragments((data as any) ?? []);
-      });
+        setFolderFragments(Array.isArray(data) ? data : []);
+      })
+      .catch((e) => console.error('[Folder] fetch error', e));
     return () => { cancelled = true; };
   }, [isOpen, user]);
 

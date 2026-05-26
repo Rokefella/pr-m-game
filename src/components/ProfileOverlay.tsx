@@ -631,7 +631,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                 type="button"
                 className="font-cinzel"
                 style={{
-                  fontSize: 13,
+                  fontSize: 18,
                   letterSpacing: '0.2em',
                   background: 'transparent',
                   border: '0.5px solid rgba(160,140,200,0.2)',

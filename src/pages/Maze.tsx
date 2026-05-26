@@ -5,7 +5,7 @@ import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
-import { restInsert, restUpdate } from '@/lib/supabaseRest';
+import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 
 // TODO: restore to real walking steps via HealthKit for production.
@@ -477,12 +477,12 @@ const Maze = () => {
     setActiveFragment({ prime: frag.prime, index: fragIdx });
     if (user) {
       const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
-      restInsert('fragments', {
+      supabase.from('fragments').insert({
         user_id: user.id,
         prime_number: frag.prime,
         level: currentLevelRef.current,
         image_data: imageData,
-      }).catch((error) => console.error('Failed to save fragment', error));
+      }).then(({ error }) => { if (error) console.error('Failed to save fragment', error); });
     }
   }, [config, levelLoaded, user]);
 
@@ -512,26 +512,16 @@ const Maze = () => {
         updateUser(user.id, { steps_remaining: INITIAL_STEPS });
       }
 
-      try {
-        const fragRes = await fetch(
-          `https://jngofylkynipsnzyyzdq.supabase.co/rest/v1/fragments?user_id=eq.${user.id}&level=eq.${row.level}&select=prime_number`,
-          {
-            headers: {
-              apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
-              Authorization:
-                'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
-            },
-          },
-        );
-        const existing = (await fragRes.json()) as Array<{ prime_number: number }>;
-        if (cancelled) return;
-        if (Array.isArray(existing)) {
-          const next = new Set<number>(existing.map((r) => r.prime_number));
-          collectedRef.current = next;
-          setCollected(next);
-        }
-      } catch (e) {
-        console.error('Failed to load fragments', e);
+      const { data: existing, error: fragError } = await supabase
+        .from('fragments')
+        .select('prime_number')
+        .eq('user_id', user.id)
+        .eq('level', row.level);
+      if (fragError) console.error('Failed to load fragments', fragError);
+      if (!cancelled && Array.isArray(existing)) {
+        const next = new Set<number>(existing.map((r) => r.prime_number));
+        collectedRef.current = next;
+        setCollected(next);
       }
       setLevelLoaded(true);
     })();
@@ -691,12 +681,12 @@ const Maze = () => {
 
         if (user) {
           const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
-          restInsert('fragments', {
+          supabase.from('fragments').insert({
             user_id: user.id,
             prime_number: frag.prime,
             level: currentLevelRef.current,
             image_data: imageData,
-          }).catch((error) => console.error('Failed to save fragment', error));
+          }).then(({ error }) => { if (error) console.error('Failed to save fragment', error); });
         }
       }
     }
@@ -1154,12 +1144,7 @@ const Maze = () => {
               className="font-cinzel"
               onClick={async () => {
                 if (user) {
-                  await restUpdate(
-                    'users',
-                    { maze_completed_level: currentLevelRef.current },
-                    'id',
-                    user.id,
-                  );
+                  await supabase.from('users').update({ maze_completed_level: currentLevelRef.current }).eq('id', user.id);
                 }
                 navigate('/shadow');
               }}

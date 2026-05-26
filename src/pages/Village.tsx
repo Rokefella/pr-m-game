@@ -1654,7 +1654,7 @@ const Village = () => {
       <button
         type="button"
         className="font-mono"
-        onClick={openProfile}
+        onClick={handleRegTap}
         style={{
           position: 'fixed',
           top: 12,

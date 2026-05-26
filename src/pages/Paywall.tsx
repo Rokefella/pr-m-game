@@ -148,7 +148,7 @@ const Paywall = () => {
         <p
           className="font-fell italic"
           style={{
-            fontSize: 14,
+            fontSize: 18,
             color: 'rgba(160,140,200,0.5)',
             marginTop: 12,
             marginBottom: 24,

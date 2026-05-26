@@ -162,7 +162,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   // Account tab styles
   const sectionLabelStyle: React.CSSProperties = {
     fontFamily: undefined,
-    fontSize: 8,
+    fontSize: 13,
     letterSpacing: '0.2em',
     color: 'rgba(160,140,200,0.4)',
     margin: 0,
@@ -173,7 +173,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     marginTop: 6,
   };
   const ghostBtn: React.CSSProperties = {
-    fontSize: 9,
+    fontSize: 13,
     letterSpacing: '0.2em',
     color: 'rgba(160,140,200,0.6)',
     background: 'transparent',

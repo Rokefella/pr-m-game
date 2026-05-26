@@ -83,11 +83,14 @@ const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: Fragm
   };
 
   const handleCapture = () => {
-    // Fragment is already persisted to the backpack (Supabase) on collection.
-    // This button just confirms it to the player.
+    // Fragment is already persisted to the folder (Supabase) on collection.
+    // Confirm to the player, then continue the normal post-collection flow.
     setSavedMsg(true);
     if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
-    savedTimerRef.current = window.setTimeout(() => setSavedMsg(false), 1500);
+    savedTimerRef.current = window.setTimeout(() => {
+      setSavedMsg(false);
+      handleContinue();
+    }, 800);
   };
 
   return (
@@ -209,22 +212,7 @@ const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: Fragm
                 cursor: 'pointer',
               }}
             >
-              SAVE TO BACKPACK
-            </button>
-            <button
-              className="font-cinzel"
-              onClick={handleContinue}
-              style={{
-                fontSize: 11,
-                letterSpacing: '0.28em',
-                background: 'transparent',
-                border: '0.5px solid rgba(160,140,200,0.4)',
-                color: 'rgba(160,140,200,0.7)',
-                padding: '10px 24px',
-                cursor: 'pointer',
-              }}
-            >
-              CONTINUE
+              SAVE TO FOLDER
             </button>
           </div>
           {savedMsg && (
@@ -235,7 +223,7 @@ const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: Fragm
                 color: 'rgba(160,140,200,0.6)',
               }}
             >
-              Saved to your backpack.
+              Saved to your folder.
             </div>
           )}
         </div>

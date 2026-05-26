@@ -1,5 +1,5 @@
 // Generates the saved fragment image as a PNG data URL.
-// Mirrors the canvas drawing in FragmentOverlay's "Save to backpack" action.
+// Mirrors the canvas drawing in FragmentOverlay's "Save to folder" action.
 export const generateFragmentImage = (prime: number, registrationNumber: number): string | null => {
   const canvas = document.createElement('canvas');
   canvas.width = 600;

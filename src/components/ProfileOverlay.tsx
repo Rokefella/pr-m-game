@@ -68,20 +68,20 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     return () => { cancelled = true; };
   }, [isOpen, user]);
 
-  // Fetch fragments when overlay opens
+  // Fetch fragments from Supabase on mount and whenever the user changes
   useEffect(() => {
-    if (!isOpen || !user) return;
+    if (!user) { setFolderFragments([]); return; }
     let cancelled = false;
     supabase
       .from('fragments')
-      .select('id, prime_number, created_at')
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         if (!cancelled && data) setFolderFragments(data as any);
       });
     return () => { cancelled = true; };
-  }, [isOpen, user]);
+  }, [user]);
 
   if (!isOpen) return null;
 
@@ -102,11 +102,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const level = localStorage.getItem('praem_level') || '1';
   const titleRaw = localStorage.getItem('praem_title');
   const title = titleRaw && titleRaw.trim() !== '' ? titleRaw : '';
-  const fragmentsRaw = localStorage.getItem('praem_fragments');
-  let fragmentCount = 0;
-  try {
-    fragmentCount = fragmentsRaw ? (JSON.parse(fragmentsRaw) as unknown[]).length : 0;
-  } catch { fragmentCount = 0; }
+  const fragmentCount = folderFragments.length;
 
   const b00c = localStorage.getItem('praem_bernard_00_complete') === 'true';
   const b01a = localStorage.getItem('praem_bernard_01_accepted') === 'true';
@@ -587,13 +583,14 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
               </div>
 
               {/* Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 60px)', gap: 8, justifyContent: 'center' }}>
                 {cells.map((frag, i) => (
                   <div
                     key={i}
                     style={{
                       position: 'relative',
-                      aspectRatio: '1 / 1',
+                      width: 60,
+                      height: 60,
                       border: frag
                         ? '1px solid rgba(167,139,250,0.4)'
                         : '1px dashed rgba(160,140,200,0.08)',

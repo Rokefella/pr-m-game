@@ -72,6 +72,10 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     if (!isOpen || !user) return;
     let cancelled = false;
 
+    console.log('[Folder] fetching, user:', user?.id,
+      'isOpen:', isOpen,
+      'token:', !!localStorage.getItem('praem-auth-token'));
+
     const tokenRaw = localStorage.getItem('praem-auth-token');
     if (!tokenRaw) return;
     const accessToken = JSON.parse(tokenRaw).access_token;
@@ -95,7 +99,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     return () => { cancelled = true; };
   }, [isOpen, user]);
 
-  if (!isOpen) return null;
+  
 
   // Synchronous reads — no useEffect, no async
   const username = localStorage.getItem('praem_username') || 'Wanderer';
@@ -289,6 +293,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
         position: 'fixed', inset: 0, zIndex: 150,
         background: '#04040a',
         overflow: 'auto',
+        display: isOpen ? 'block' : 'none',
       }}
     >
       <div

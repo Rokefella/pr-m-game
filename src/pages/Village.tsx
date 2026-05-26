@@ -423,6 +423,7 @@ const computeSpawn = (): { x: number; y: number } => {
 
 const Village = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const navigatedRef = useRef(false);
   const feedbackTimer = useRef<number | null>(null);

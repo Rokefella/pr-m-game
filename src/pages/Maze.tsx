@@ -512,26 +512,16 @@ const Maze = () => {
         updateUser(user.id, { steps_remaining: INITIAL_STEPS });
       }
 
-      try {
-        const fragRes = await fetch(
-          `https://jngofylkynipsnzyyzdq.supabase.co/rest/v1/fragments?user_id=eq.${user.id}&level=eq.${row.level}&select=prime_number`,
-          {
-            headers: {
-              apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
-              Authorization:
-                'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
-            },
-          },
-        );
-        const existing = (await fragRes.json()) as Array<{ prime_number: number }>;
-        if (cancelled) return;
-        if (Array.isArray(existing)) {
-          const next = new Set<number>(existing.map((r) => r.prime_number));
-          collectedRef.current = next;
-          setCollected(next);
-        }
-      } catch (e) {
-        console.error('Failed to load fragments', e);
+      const { data: existing, error: fragError } = await supabase
+        .from('fragments')
+        .select('prime_number')
+        .eq('user_id', user.id)
+        .eq('level', row.level);
+      if (fragError) console.error('Failed to load fragments', fragError);
+      if (!cancelled && Array.isArray(existing)) {
+        const next = new Set<number>(existing.map((r) => r.prime_number));
+        collectedRef.current = next;
+        setCollected(next);
       }
       setLevelLoaded(true);
     })();

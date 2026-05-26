@@ -68,20 +68,20 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     return () => { cancelled = true; };
   }, [isOpen, user]);
 
-  // Fetch fragments when overlay opens
+  // Fetch fragments from Supabase on mount and whenever the user changes
   useEffect(() => {
-    if (!isOpen || !user) return;
+    if (!user) { setFolderFragments([]); return; }
     let cancelled = false;
     supabase
       .from('fragments')
-      .select('id, prime_number, created_at')
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         if (!cancelled && data) setFolderFragments(data as any);
       });
     return () => { cancelled = true; };
-  }, [isOpen, user]);
+  }, [user]);
 
   if (!isOpen) return null;
 

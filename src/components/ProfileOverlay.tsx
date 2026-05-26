@@ -580,8 +580,8 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             <div style={{ marginTop: 24 }}>
               {/* Header row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 16 }}>
-                <span className="font-cinzel" style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>FOLDER</span>
-                <span className="font-cinzel" style={{ fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>{count} / 20</span>
+                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>FOLDER</span>
+                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>{count} / 20</span>
               </div>
 
               {/* Grid */}

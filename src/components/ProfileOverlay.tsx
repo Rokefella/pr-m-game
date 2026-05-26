@@ -28,10 +28,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   // Account tab state
   const [accountRow, setAccountRow] = useState<AccountUserRow | null>(null);
   const [emailForm, setEmailForm] = useState(false);
-  const [newEmail, setNewEmail] = useState('');
   const [emailMsg, setEmailMsg] = useState('');
-  const [passwordForm, setPasswordForm] = useState(false);
-  const [newPassword, setNewPassword] = useState('');
   const [passwordMsg, setPasswordMsg] = useState('');
   const [nameForm, setNameForm] = useState(false);
   const [newName, setNewName] = useState('');
@@ -46,8 +43,8 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   useEffect(() => {
     if (!isOpen) {
       setOpenGroups(new Set());
-      setEmailForm(false); setNewEmail(''); setEmailMsg('');
-      setPasswordForm(false); setNewPassword(''); setPasswordMsg('');
+      setEmailForm(false); setEmailMsg('');
+      setPasswordMsg('');
       setNameForm(false); setNewName(''); setNameStep('input'); setNameMsg('');
       setDeleteForm(false); setDeleteText(''); setDeleteMsg('');
     }

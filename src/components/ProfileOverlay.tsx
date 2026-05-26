@@ -72,6 +72,10 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     if (!isOpen || !user) return;
     let cancelled = false;
 
+    console.log('[Folder] fetching, user:', user?.id,
+      'isOpen:', isOpen,
+      'token:', !!localStorage.getItem('praem-auth-token'));
+
     const tokenRaw = localStorage.getItem('praem-auth-token');
     if (!tokenRaw) return;
     const accessToken = JSON.parse(tokenRaw).access_token;

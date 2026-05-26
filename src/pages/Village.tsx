@@ -9,6 +9,8 @@ import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import BernardDialogue from '@/components/BernardDialogue';
 import CharacterEye from '@/components/CharacterEye';
+import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
+import { supabase } from '@/lib/supabase';
 
 
 // Village Merchant

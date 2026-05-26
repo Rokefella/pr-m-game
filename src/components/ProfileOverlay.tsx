@@ -200,30 +200,28 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     marginTop: 10,
   };
   const msgStyle: React.CSSProperties = {
-    fontSize: 12,
+    fontSize: 13,
     color: 'rgba(160,140,200,0.5)',
     marginTop: 8,
   };
 
-  const handleChangeEmail = async () => {
-    if (!newEmail) return;
-    const { error } = await supabase.auth.updateUser({ email: newEmail });
+  const handleSendEmailChangeLink = async () => {
+    if (!user?.email) return;
+    const { error } = await supabase.auth.updateUser({ email: user.email });
     if (error) {
       setEmailMsg(error.message);
     } else {
-      setEmailMsg('Confirmation sent.');
-      setNewEmail('');
+      setEmailMsg('Check your inbox.');
     }
   };
 
-  const handleChangePassword = async () => {
-    if (!newPassword) return;
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
+  const handleSendPasswordReset = async () => {
+    if (!user?.email) return;
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email);
     if (error) {
       setPasswordMsg(error.message);
     } else {
-      setPasswordMsg('Password updated.');
-      setNewPassword('');
+      setPasswordMsg('A reset link has been sent to your email.');
     }
   };
 

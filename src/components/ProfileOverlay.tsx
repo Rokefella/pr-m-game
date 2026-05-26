@@ -68,6 +68,21 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     return () => { cancelled = true; };
   }, [isOpen, user]);
 
+  // Fetch fragments when overlay opens
+  useEffect(() => {
+    if (!isOpen || !user) return;
+    let cancelled = false;
+    supabase
+      .from('fragments')
+      .select('id, prime_number, image_data, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        if (!cancelled && data) setFolderFragments(data as any);
+      });
+    return () => { cancelled = true; };
+  }, [isOpen, user]);
+
   if (!isOpen) return null;
 
   // Synchronous reads — no useEffect, no async

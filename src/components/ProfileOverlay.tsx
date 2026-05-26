@@ -23,7 +23,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const { user } = useAuth();
   const [mainTab, setMainTab] = useState<'profile' | 'quests' | 'account' | 'growth' | 'folder'>('profile');
   const [growthOpen, setGrowthOpen] = useState<{ social: boolean; perception: boolean; trade: boolean }>({ social: false, perception: false, trade: false });
-  const [folderFragments, setFolderFragments] = useState<Array<{ id: string; prime_number: number; image_data: string | null }>>([]);
+  const [folderFragments, setFolderFragments] = useState<Array<{ id: string; prime_number: number }>>([]);
   const [folderTooltip, setFolderTooltip] = useState<string | null>(null);
   const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());

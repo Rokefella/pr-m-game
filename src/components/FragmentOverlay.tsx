@@ -209,22 +209,7 @@ const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: Fragm
                 cursor: 'pointer',
               }}
             >
-              SAVE TO BACKPACK
-            </button>
-            <button
-              className="font-cinzel"
-              onClick={handleContinue}
-              style={{
-                fontSize: 11,
-                letterSpacing: '0.28em',
-                background: 'transparent',
-                border: '0.5px solid rgba(160,140,200,0.4)',
-                color: 'rgba(160,140,200,0.7)',
-                padding: '10px 24px',
-                cursor: 'pointer',
-              }}
-            >
-              CONTINUE
+              SAVE TO FOLDER
             </button>
           </div>
           {savedMsg && (
@@ -235,7 +220,7 @@ const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: Fragm
                 color: 'rgba(160,140,200,0.6)',
               }}
             >
-              Saved to your backpack.
+              Saved to your folder.
             </div>
           )}
         </div>

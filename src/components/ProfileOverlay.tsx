@@ -69,7 +69,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   }, [isOpen, user]);
 
   useEffect(() => {
-    if (authLoading || !user || !isOpen) return;
+    if (!isOpen || !user) return;
     let cancelled = false;
     supabase
       .from('fragments')
@@ -82,7 +82,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
         setFolderFragments((data as any) ?? []);
       });
     return () => { cancelled = true; };
-  }, [isOpen, user, authLoading]);
+  }, [isOpen, user]);
 
   if (!isOpen) return null;
 

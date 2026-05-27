@@ -16,6 +16,7 @@ type AccountUserRow = {
   credits: number;
   subscription_status: SubStatus;
   trial_end: string | null;
+  title: string | null;
 };
 
 const ProfileOverlay = ({ isOpen, onClose }: Props) => {
@@ -59,7 +60,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, subscription_status, trial_end')
+      .select('username, credits, subscription_status, trial_end, title')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -309,7 +310,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
       <div style={{ position: 'relative', maxWidth: 520, margin: '0 auto', padding: '24px 20px 140px' }}>
         {/* Header */}
         <div className="font-mono" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: 'rgba(200,185,255,0.8)' }}>
-          <span>{username}</span>
+          <span>{accountRow?.username && accountRow.username.trim() !== '' ? accountRow.username : `#${regNum}`}</span>
           <span>#{regNum}</span>
         </div>
 
@@ -376,7 +377,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
             <div style={{ marginTop: 24, textAlign: 'center' }}>
               <div className="font-mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(200,185,255,0.6)' }}>TITLE</div>
               <div className="font-cinzel" style={{ fontSize: 14, color: 'rgba(200,185,255,0.9)', marginTop: 6, letterSpacing: '0.2em' }}>
-                {title ? title.toUpperCase() : '—'}
+                {accountRow?.title ?? '—'}
               </div>
             </div>
 

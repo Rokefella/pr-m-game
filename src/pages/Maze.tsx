@@ -832,7 +832,7 @@ const Maze = () => {
         </p>
         <button
           className="font-cinzel"
-          onClick={() => navigate('/village')}
+          onClick={() => { window.dispatchEvent(new Event('praem:exit-maze-to-village')); navigate('/village'); }}
           style={{
             background: 'transparent', border: '0.5px solid rgba(160,140,200,0.4)',
             color: 'rgba(160,140,200,0.7)', padding: '10px 24px', fontSize: 16,

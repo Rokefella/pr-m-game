@@ -376,12 +376,80 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
               ))}
             </div>
 
-            <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <div
+              style={{ marginTop: 24, textAlign: 'center' }}
+              ref={(el) => {
+                // attach outside-click handler via data attr; handled below
+              }}
+            >
               <div className="font-mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(200,185,255,0.6)' }}>TITLE</div>
-              <div className="font-cinzel" style={{ fontSize: 14, color: 'rgba(200,185,255,0.9)', marginTop: 6, letterSpacing: '0.2em' }}>
-                {accountRow?.title ?? '—'}
-              </div>
+              {(() => {
+                const titles = accountRow?.unlocked_titles ?? [];
+                const hasMultiple = titles.length >= 2;
+                const titleColor = 'rgba(200,185,255,0.9)';
+                return (
+                  <>
+                    <div
+                      className="font-cinzel"
+                      onClick={() => { if (hasMultiple) setTitleDropdownOpen((v) => !v); }}
+                      style={{
+                        fontSize: 14,
+                        color: titleColor,
+                        marginTop: 6,
+                        letterSpacing: '0.2em',
+                        cursor: hasMultiple ? 'pointer' : 'default',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                      }}
+                    >
+                      {accountRow?.title ?? '—'}
+                      {hasMultiple && (
+                        <span style={{ fontSize: 10, color: titleColor }}>▾</span>
+                      )}
+                    </div>
+                    {hasMultiple && titleDropdownOpen && (
+                      <>
+                        <div
+                          onClick={() => setTitleDropdownOpen(false)}
+                          style={{ position: 'fixed', inset: 0, zIndex: 200 }}
+                        />
+                        <div
+                          style={{ position: 'relative', zIndex: 201, marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {titles.map((t) => {
+                            const isActive = t === accountRow?.title;
+                            return (
+                              <div
+                                key={t}
+                                className="font-cinzel"
+                                onClick={async () => {
+                                  if (!user) return;
+                                  await supabase.from('users').update({ title: t }).eq('id', user.id);
+                                  setAccountRow((prev) => prev ? { ...prev, title: t } : prev);
+                                  setTitleDropdownOpen(false);
+                                }}
+                                style={{
+                                  fontSize: 14,
+                                  letterSpacing: '0.2em',
+                                  color: isActive ? '#c8963a' : 'rgba(160,140,200,0.6)',
+                                  padding: '6px 0',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {t}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </>
+                );
+              })()}
             </div>
+
 
             <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
               <div className="font-cinzel" style={{ fontSize: 9, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>

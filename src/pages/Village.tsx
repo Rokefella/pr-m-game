@@ -779,7 +779,7 @@ const Village = () => {
       }, 2000);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     if (authLoading) return;
@@ -789,13 +789,6 @@ const Village = () => {
     }
     refetchUser();
   }, [user, authLoading, navigate, refetchUser]);
-
-  // Re-fetch user data whenever we return to /village (e.g., from /maze)
-  useEffect(() => {
-    if (location.pathname === '/village') {
-      refetchUser();
-    }
-  }, [location.pathname, refetchUser]);
 
 
   useEffect(() => {

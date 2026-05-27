@@ -21,6 +21,8 @@ const Paywall = () => {
   const [idleCx, setIdleCx] = useState(0);
   const [packages, setPackages] = useState<Record<string, any>>({});
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [betaCode, setBetaCode] = useState('');
+  const [betaError, setBetaError] = useState(false);
 
   useEffect(() => {
     const t = window.setTimeout(() => setEyeVisible(true), 50);
@@ -113,6 +115,20 @@ const Paywall = () => {
       console.error('[Paywall] restore error', e);
       setErrorMsg(e?.message || 'Restore failed.');
     }
+  };
+
+  const handleActivateBeta = async () => {
+    if (betaCode.trim().toUpperCase() !== 'PRAEM2026') {
+      setBetaError(true);
+      window.setTimeout(() => setBetaError(false), 2000);
+      return;
+    }
+    if (!user) return;
+    await supabase
+      .from('users')
+      .update({ subscription_status: 'beta' })
+      .eq('id', user.id);
+    navigate('/village');
   };
 
   return (
@@ -482,6 +498,74 @@ const Paywall = () => {
         >
           Cancel anytime. No commitment.
         </p>
+
+        {/* Beta access code */}
+        <div style={{ width: '100%', marginTop: 24 }}>
+          <div style={{ width: '100%', height: 1, background: 'rgba(160,140,200,0.08)' }} />
+          <p
+            className="font-cinzel"
+            style={{
+              fontSize: 9,
+              color: 'rgba(160,140,200,0.3)',
+              textAlign: 'center',
+              marginTop: 24,
+              letterSpacing: '0.2em',
+            }}
+          >
+            Have a beta access code?
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 12 }}>
+            <input
+              type="text"
+              value={betaCode}
+              onChange={(e) => setBetaCode(e.target.value)}
+              placeholder="ENTER CODE"
+              className="font-cinzel"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid rgba(160,140,200,0.15)',
+                color: '#e0ddd5',
+                fontSize: 11,
+                textAlign: 'center',
+                width: 160,
+                padding: '8px 0',
+                letterSpacing: '0.2em',
+                outline: 'none',
+                borderRadius: 0,
+              }}
+            />
+            <button
+              type="button"
+              onClick={handleActivateBeta}
+              className="font-cinzel"
+              style={{
+                fontSize: 9,
+                color: 'rgba(160,140,200,0.4)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                letterSpacing: '0.2em',
+                marginTop: 8,
+              }}
+            >
+              ACTIVATE
+            </button>
+            {betaError && (
+              <p
+                className="font-fell italic"
+                style={{
+                  marginTop: 8,
+                  fontSize: 12,
+                  color: 'rgba(200,80,80,0.4)',
+                  textAlign: 'center',
+                }}
+              >
+                Invalid code.
+              </p>
+            )}
+          </div>
+        </div>
 
         <button
           type="button"

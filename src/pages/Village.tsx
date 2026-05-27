@@ -481,7 +481,7 @@ const Village = () => {
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('');
   const [levelUpHandled, setLevelUpHandled] = useState(false);
-  const [auraColor, setAuraColor] = useState<string>(() => (typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4');
+  const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [username, setUsername] = useState<string>('');
   const [unlockedTitles, setUnlockedTitles] = useState<string[]>([]);
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);
@@ -1710,6 +1710,7 @@ const Village = () => {
             <button type="button" onClick={handleDevReset} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Reset profile</button>
             <button type="button" onClick={async () => {
               Object.keys(localStorage).filter(k => k.startsWith('praem_')).forEach(k => localStorage.removeItem(k));
+              localStorage.removeItem('praem_aura_color');
               sessionStorage.clear();
               if (user) {
                 await supabase.from('fragments').delete().eq('user_id', user.id);

@@ -1397,10 +1397,12 @@ const Maze = () => {
         <PaywallOverlay
           onContinue={() => {
             setPaywallOpen(false);
+            window.dispatchEvent(new Event('praem:exit-maze-to-village'));
             navigate('/village');
           }}
           onDismiss={() => {
             setPaywallOpen(false);
+            window.dispatchEvent(new Event('praem:exit-maze-to-village'));
             navigate('/village');
           }}
         />

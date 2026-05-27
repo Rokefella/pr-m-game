@@ -17,6 +17,7 @@ type AccountUserRow = {
   subscription_status: SubStatus;
   trial_end: string | null;
   title: string | null;
+  unlocked_titles: string[] | null;
 };
 
 const ProfileOverlay = ({ isOpen, onClose }: Props) => {

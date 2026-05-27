@@ -18,6 +18,7 @@ type AccountUserRow = {
   trial_end: string | null;
   title: string | null;
   unlocked_titles: string[] | null;
+  aura_color: string | null;
 };
 
 const ProfileOverlay = ({ isOpen, onClose }: Props) => {
@@ -62,7 +63,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, subscription_status, trial_end, title, unlocked_titles')
+      .select('username, credits, subscription_status, trial_end, title, unlocked_titles, aura_color')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -459,8 +460,8 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
                 aria-label="Dimension"
                 style={{
                   width: 12, height: 12, borderRadius: '50%',
-                  background: auraColor,
-                  boxShadow: `0 0 6px ${auraColor}99`,
+                  background: accountRow?.aura_color ?? '#5b4fd4',
+                  boxShadow: `0 0 6px ${(accountRow?.aura_color ?? '#5b4fd4')}99`,
                 }}
               />
             </div>

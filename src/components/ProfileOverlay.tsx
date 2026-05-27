@@ -62,7 +62,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, subscription_status, trial_end, title')
+      .select('username, credits, subscription_status, trial_end, title, unlocked_titles')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {

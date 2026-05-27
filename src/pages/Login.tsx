@@ -118,7 +118,7 @@ const Login = () => {
           className="font-cinzel mt-8"
           style={{ color: 'rgba(160,140,200,0.4)', fontSize: 9, letterSpacing: '0.2em' }}
         >
-          Don't have an account?
+          New to PRÆM?
         </Link>
       </div>
     </div>

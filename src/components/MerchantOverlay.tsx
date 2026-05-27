@@ -202,18 +202,18 @@ const MerchantOverlay = ({
       </div>
 
       <button
-        className="font-cinzel"
         onClick={onClose}
         style={{
-          fontSize: 9,
+          fontFamily: 'Cinzel, serif',
+          fontSize: 11,
           letterSpacing: '0.2em',
-          color: 'rgba(160,140,200,0.3)',
+          color: 'rgba(160,140,200,0.4)',
           background: 'transparent',
-          border: 'none',
+          border: '1px solid rgba(160,140,200,0.15)',
+          padding: '16px 0',
+          width: '100%',
           cursor: 'pointer',
-          marginTop: 'auto',
-          marginBottom: 32,
-          padding: 12,
+          marginTop: 24,
         }}
       >
         LEAVE

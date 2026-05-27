@@ -332,7 +332,7 @@ const Maze = () => {
   const userIdRef = useRef<string | null>(null);
   useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
   useEffect(() => {
-    return () => {
+    const handleExit = () => {
       const visited = sessionStorage.getItem('visited_shadow_this_run');
       const uid = userIdRef.current;
       if (visited !== 'true' && uid) {
@@ -340,6 +340,8 @@ const Maze = () => {
       }
       sessionStorage.removeItem('visited_shadow_this_run');
     };
+    window.addEventListener('praem:exit-maze-to-village', handleExit);
+    return () => window.removeEventListener('praem:exit-maze-to-village', handleExit);
   }, []);
 
   useEffect(() => {
@@ -830,7 +832,7 @@ const Maze = () => {
         </p>
         <button
           className="font-cinzel"
-          onClick={() => navigate('/village')}
+          onClick={() => { window.dispatchEvent(new Event('praem:exit-maze-to-village')); navigate('/village'); }}
           style={{
             background: 'transparent', border: '0.5px solid rgba(160,140,200,0.4)',
             color: 'rgba(160,140,200,0.7)', padding: '10px 24px', fontSize: 16,
@@ -1082,7 +1084,7 @@ const Maze = () => {
 
       <button
         className="font-cinzel"
-        onClick={() => navigate('/village')}
+        onClick={() => { window.dispatchEvent(new Event('praem:exit-maze-to-village')); navigate('/village'); }}
         style={{
           position: 'fixed', bottom: 110, left: 16, background: 'transparent', border: 'none',
           color: 'rgba(160,140,200,0.3)', fontSize: 16, letterSpacing: '0.3em', cursor: 'pointer',
@@ -1120,7 +1122,7 @@ const Maze = () => {
           <div style={{ display: 'flex', gap: 16 }}>
             <button
               className="font-cinzel"
-              onClick={() => navigate('/village')}
+              onClick={() => { window.dispatchEvent(new Event('praem:exit-maze-to-village')); navigate('/village'); }}
               style={{
                 fontSize: 16, letterSpacing: '0.3em', background: 'rgba(200,80,80,0.9)', color: 'white',
                 border: 'none', padding: '10px 24px', cursor: 'pointer',
@@ -1395,10 +1397,12 @@ const Maze = () => {
         <PaywallOverlay
           onContinue={() => {
             setPaywallOpen(false);
+            window.dispatchEvent(new Event('praem:exit-maze-to-village'));
             navigate('/village');
           }}
           onDismiss={() => {
             setPaywallOpen(false);
+            window.dispatchEvent(new Event('praem:exit-maze-to-village'));
             navigate('/village');
           }}
         />

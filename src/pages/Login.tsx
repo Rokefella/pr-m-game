@@ -62,7 +62,7 @@ const Login = () => {
           className="font-cinzel font-normal uppercase text-[48px] sm:text-[56px]"
           style={{ letterSpacing: '0.25em', color: '#e0ddd5', marginTop: 24 }}
         >
-          PRÆM
+          RETURN
         </h1>
 
         <form onSubmit={handleSubmit} className="mt-10 flex w-full flex-col gap-4">
@@ -115,10 +115,10 @@ const Login = () => {
 
         <Link
           to="/signup"
-          className="font-fell italic mt-8"
-          style={{ color: '#5a5855', fontSize: 15, letterSpacing: '0.1em' }}
+          className="font-cinzel mt-8"
+          style={{ color: 'rgba(160,140,200,0.4)', fontSize: 9, letterSpacing: '0.2em' }}
         >
-          No account yet? Begin.
+          Don't have an account?
         </Link>
       </div>
     </div>

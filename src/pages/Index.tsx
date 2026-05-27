@@ -33,7 +33,7 @@ const Index = () => {
     console.log('[handleEnter] user.id:', user?.id);
     if (loading) return;
     if (!user) {
-      navigate('/login');
+      navigate('/signup');
       return;
     }
     const { data } = await supabase

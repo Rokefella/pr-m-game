@@ -41,9 +41,9 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const [nameMsg, setNameMsg] = useState('');
   const [nameMsgColor, setNameMsgColor] = useState('rgba(160,140,200,0.5)');
   const [deleteForm, setDeleteForm] = useState(false);
-  const [deleteForm, setDeleteForm] = useState(false);
   const [deleteText, setDeleteText] = useState('');
   const [deleteMsg, setDeleteMsg] = useState('');
+  const [titleDropdownOpen, setTitleDropdownOpen] = useState(false);
   const [titleDropdownOpen, setTitleDropdownOpen] = useState(false);
 
   // Reset expanded groups whenever the overlay closes

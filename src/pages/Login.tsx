@@ -115,10 +115,10 @@ const Login = () => {
 
         <Link
           to="/signup"
-          className="font-fell italic mt-8"
-          style={{ color: '#5a5855', fontSize: 15, letterSpacing: '0.1em' }}
+          className="font-cinzel mt-8"
+          style={{ color: 'rgba(160,140,200,0.4)', fontSize: 9, letterSpacing: '0.2em' }}
         >
-          No account yet? Begin.
+          Don't have an account?
         </Link>
       </div>
     </div>

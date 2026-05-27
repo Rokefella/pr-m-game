@@ -211,7 +211,9 @@ const MerchantOverlay = ({
           background: 'transparent',
           border: '1px solid rgba(160,140,200,0.15)',
           padding: '16px 0',
-          width: '100%',
+          paddingLeft: 32,
+          paddingRight: 32,
+          width: 'auto',
           cursor: 'pointer',
           marginTop: 24,
         }}

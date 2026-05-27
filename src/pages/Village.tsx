@@ -1708,6 +1708,26 @@ const Village = () => {
           >
             <div style={{ opacity: 0.7, marginBottom: 6 }}>DEV MENU</div>
             <button type="button" onClick={handleDevReset} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Reset profile</button>
+            <button type="button" onClick={async () => {
+              Object.keys(localStorage).filter(k => k.startsWith('praem_')).forEach(k => localStorage.removeItem(k));
+              sessionStorage.clear();
+              if (user) {
+                await supabase.from('fragments').delete().eq('user_id', user.id);
+                await updateUser(user.id, {
+                  entity_answer: null,
+                  username: null,
+                  aura_color: '#5b4fd4',
+                  level: 1,
+                  credits: 150,
+                  steps_remaining: 200,
+                  subscription_status: 'dev',
+                  title: null,
+                  unlocked_titles: [],
+                } as never);
+              }
+              setDevOverlay(false);
+              navigate('/');
+            }} style={{ background: 'transparent', border: '1px solid #ff6b6b', color: '#ff6b6b', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>FULL RESET</button>
             <button type="button" onClick={() => { setDevOverlay(false); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Maze</button>
             <button type="button" onClick={() => { setDevOverlay(false); navigate('/door'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Door</button>
 

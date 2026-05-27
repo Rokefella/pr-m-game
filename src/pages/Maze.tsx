@@ -332,7 +332,7 @@ const Maze = () => {
   const userIdRef = useRef<string | null>(null);
   useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
   useEffect(() => {
-    return () => {
+    const handleExit = () => {
       const visited = sessionStorage.getItem('visited_shadow_this_run');
       const uid = userIdRef.current;
       if (visited !== 'true' && uid) {
@@ -340,6 +340,8 @@ const Maze = () => {
       }
       sessionStorage.removeItem('visited_shadow_this_run');
     };
+    window.addEventListener('praem:exit-maze-to-village', handleExit);
+    return () => window.removeEventListener('praem:exit-maze-to-village', handleExit);
   }, []);
 
   useEffect(() => {

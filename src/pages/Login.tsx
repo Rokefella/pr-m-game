@@ -62,7 +62,7 @@ const Login = () => {
           className="font-cinzel font-normal uppercase text-[48px] sm:text-[56px]"
           style={{ letterSpacing: '0.25em', color: '#e0ddd5', marginTop: 24 }}
         >
-          PRÆM
+          RETURN
         </h1>
 
         <form onSubmit={handleSubmit} className="mt-10 flex w-full flex-col gap-4">

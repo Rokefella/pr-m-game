@@ -660,16 +660,6 @@ const Village = () => {
     setBernardOpen(true);
   };
 
-  // Auto-trigger BERNARD_00 on first Village entry
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const had = window.localStorage.getItem('praem_bernard_00_complete') === 'true';
-    if (had) return;
-    const t = window.setTimeout(() => {
-      setBernardOpen(true);
-    }, 2000);
-    return () => window.clearTimeout(t);
-  }, []);
 
   // Listen for global "open paywall" event (dispatched from ProfileOverlay or Bernard quest)
   useEffect(() => {

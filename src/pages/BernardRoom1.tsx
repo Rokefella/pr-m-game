@@ -200,22 +200,36 @@ const BernardRoom1 = () => {
     const dist = Math.max(Math.abs(pos.col - bernardCell.col), Math.abs(pos.row - bernardCell.row));
     if (dist > 2) return;
 
-    const stage = parseInt(getFlag('bernard_stage') || '0', 10);
-    const fragments = JSON.parse(localStorage.getItem('praem_fragments') || '[]') as number[];
-    // Shadow Realm completion signal (set by ShadowRealm.tsx — out of scope to migrate).
-    const srDone = localStorage.getItem('praem_bernard_03_complete') === 'true';
+    let cancelled = false;
+    (async () => {
+      const stage = parseInt(getFlag('bernard_stage') || '0', 10);
+      // Shadow Realm completion signal (set by ShadowRealm.tsx — out of scope to migrate).
+      const srDone = localStorage.getItem('praem_bernard_03_complete') === 'true';
 
-    if (stage < 3) {
-      if (fragments.length >= 1) setDialogOpen('reportFragment');
-      else if (stage < 2) setDialogOpen('intro');
-      else setDialogOpen('fragmentQuest');
-    } else if (stage === 3 && !srDone) {
-      setDialogOpen('goldenDoor');
-    } else if (stage === 3 && srDone) {
-      setDialogOpen('returnToVillage');
-    } else {
-      setDialogOpen('complete');
-    }
+      let fragmentCount = 0;
+      if (stage < 3) {
+        const { count, error } = await supabase
+          .from('fragments')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        if (error) console.error('Failed to count fragments', error);
+        fragmentCount = count ?? 0;
+      }
+      if (cancelled) return;
+
+      if (stage < 3) {
+        if (fragmentCount >= 1) setDialogOpen('reportFragment');
+        else if (stage < 2) setDialogOpen('intro');
+        else setDialogOpen('fragmentQuest');
+      } else if (stage === 3 && !srDone) {
+        setDialogOpen('goldenDoor');
+      } else if (stage === 3 && srDone) {
+        setDialogOpen('returnToVillage');
+      } else {
+        setDialogOpen('complete');
+      }
+    })();
+    return () => { cancelled = true; };
   }, [pos, nearBernard, bernardCell, dialogOpen, flagsReady, user]);
 
   // Bernard pupil offset toward player

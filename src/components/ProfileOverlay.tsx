@@ -153,19 +153,20 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   type Quest = { key: string; name: string; giver: string; status: string; gold?: boolean };
 
   const activeQuests: Quest[] = [];
-  if (alexandraActive) activeQuests.push({ key: 'a-alexandra', name: 'Find Alexandra', giver: 'Bernard', status: 'She built the Instrument. She is still inside it. Find her.', gold: true });
-  if (!b00c) activeQuests.push({ key: 'a-find-bernard', name: 'Find Bernard', giver: 'Bernard', status: 'Seek out Bernard in the Village square.' });
-  if (b00c && b01a && !b01c) activeQuests.push({ key: 'a-blue', name: 'Find the Blue Door', giver: 'Bernard', status: 'Find the blue door inside the Instrument' });
-  if (b01c && b02a && !b02c) activeQuests.push({ key: 'a-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Collect one fragment and return to Bernard' });
-  if (b02c && b03a && !b03c) activeQuests.push({ key: 'a-gold', name: 'Find the golden door', giver: 'Bernard', status: 'Collect all 5 fragments and find the golden door' });
-  if (b03c && b04a && !b04c) activeQuests.push({ key: 'a-return', name: 'Return to Bernard', giver: 'Bernard', status: 'Return to Bernard in the Village square' });
+  if (alexandraActive) activeQuests.push({ key: 'a-alexandra', name: 'The One Who Was Here Before', giver: 'Bernard', status: 'Someone was here before. Follow it far enough and you will find them.', gold: true });
+  if (stage < 1) activeQuests.push({ key: 'a-find-bernard', name: 'Find Bernard', giver: 'Bernard', status: 'Seek out Bernard in the Village square.' });
+  if (stage === 1) activeQuests.push({ key: 'a-blue', name: 'Find the Blue Door', giver: 'Bernard', status: 'Find the blue door inside the Instrument.' });
+  if (stage === 2) activeQuests.push({ key: 'a-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Collect one fragment and return to Bernard.' });
+  if (stage === 3) activeQuests.push({ key: 'a-gold', name: 'Find the golden door', giver: 'Bernard', status: 'Collect all 5 fragments and find the golden door.' });
+  if (stage === 4) activeQuests.push({ key: 'a-return', name: 'Return to Bernard', giver: 'Bernard', status: 'Return to Bernard in the Village square.' });
 
   const completedQuests: Quest[] = [];
-  if (b00c) completedQuests.push({ key: 'c-welcome', name: 'Welcome to the Village', giver: 'Bernard', status: 'Bernard welcomed you to the Village' });
-  if (b01c) completedQuests.push({ key: 'c-blue', name: 'Find the Blue Door', giver: 'Bernard', status: "You found Bernard's room" });
-  if (b02c) completedQuests.push({ key: 'c-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Fragment collected. The instrument spoke.' });
-  if (b03c) completedQuests.push({ key: 'c-gold', name: 'Find the golden door and Shadow Realm', giver: 'Bernard', status: 'You found the golden door.' });
-  if (b04c) completedQuests.push({ key: 'c-return', name: 'The return', giver: 'Bernard', status: 'You returned to Bernard.' });
+  if (stage >= 1) completedQuests.push({ key: 'c-welcome', name: 'Welcome to the Village', giver: 'Bernard', status: 'Bernard welcomed you to the Village.' });
+  if (stage >= 2) completedQuests.push({ key: 'c-blue', name: 'Find the Blue Door', giver: 'Bernard', status: "You found Bernard's room." });
+  if (stage >= 3) completedQuests.push({ key: 'c-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Fragment collected. The instrument spoke.' });
+  if (stage >= 4) completedQuests.push({ key: 'c-gold', name: 'Find the golden door and Shadow Realm', giver: 'Bernard', status: 'You found the golden door.' });
+  if (stage >= 5) completedQuests.push({ key: 'c-return', name: 'The return', giver: 'Bernard', status: 'You returned to Bernard. Wanderer title granted.' });
+
 
   const cardStyle: React.CSSProperties = {
     position: 'relative',

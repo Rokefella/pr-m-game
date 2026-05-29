@@ -11,6 +11,7 @@ import BernardDialogue from '@/components/BernardDialogue';
 import CharacterEye from '@/components/CharacterEye';
 import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { supabase } from '@/lib/supabase';
+import { getAllFlags, getFlag, setFlag, hasFlags } from '@/lib/questFlags';
 
 
 // Village Merchant

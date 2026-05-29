@@ -81,13 +81,7 @@ const BernardRoom1 = () => {
     setDialogOpen(null);
   }, []);
 
-  // One-time whispers on session entry — show each sequentially then remove
-  // Also marks BERNARD quest 01 as complete on first room entry
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('praem_bernard_01_complete', 'true');
-    }
-  }, []);
+  // One-time whispers on session entry — no quest-flag side effects here.
 
   const whispersShownRef = useRef(false);
   const [visibleWhisper, setVisibleWhisper] = useState<number | null>(null);

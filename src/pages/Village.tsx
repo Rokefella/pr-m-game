@@ -682,24 +682,21 @@ const Village = () => {
   };
 
 
-  // Listen for global "open paywall" event (dispatched from ProfileOverlay or Bernard quest)
+  // Listen for global "open paywall" event (dispatched from ProfileOverlay etc.)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const allKeys = Object.keys(localStorage).filter(k => k.startsWith('praem_'));
-      console.log('Village mount — localStorage:', allKeys.map(k => k + '=' + localStorage.getItem(k)));
-    }
-    const handler = () => {
-      const subscribed = window.localStorage.getItem('praem_subscribed');
-      const bernard06 = window.localStorage.getItem('praem_bernard_06');
-      const profileComplete = window.localStorage.getItem('praem_profile_complete');
-      console.log('Paywall check — bernard_06:', bernard06, 'subscribed:', subscribed, 'profile_complete:', profileComplete);
-      if (subscribed !== 'true' && bernard06 === 'true' && profileComplete === 'true') {
+    const handler = async () => {
+      if (!user) return;
+      const status = subscriptionStatusRef.current;
+      const allowed = status === 'active' || status === 'lifetime' || status === 'dev' || status === 'trial';
+      const stage = parseInt(getFlag('bernard_stage') || '0', 10);
+      const profileComplete = window.localStorage.getItem('praem_profile_complete') === 'true';
+      if (!allowed && stage >= 5 && profileComplete) {
         setPaywallOpen(true);
       }
     };
     window.addEventListener('praem:open-paywall', handler);
     return () => window.removeEventListener('praem:open-paywall', handler);
-  }, []);
+  }, [user]);
 
   // Villagers — patrol around their base on independent timers
   type Villager = { id: number; x: number; y: number; baseX: number; baseY: number; whisper: string };

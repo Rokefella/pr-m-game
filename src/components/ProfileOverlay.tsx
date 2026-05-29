@@ -88,7 +88,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     if (!accessToken) return;
 
     fetch(
-      `https://jngofylkynipsnzyyzdq.supabase.co/rest/v1/fragments?select=id%2Cprime_number%2Ccreated_at&user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc`,
+      `https://jngofylkynipsnzyyzdq.supabase.co/rest/v1/fragments?select=id%2Cprime_number%2Ccollected_at&user_id=eq.${encodeURIComponent(user.id)}&order=created_at.desc`,
       {
         headers: {
           apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',

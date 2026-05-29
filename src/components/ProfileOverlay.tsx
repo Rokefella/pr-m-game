@@ -156,7 +156,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
 
   const activeQuests: Quest[] = [];
   if (alexandraActive) activeQuests.push({ key: 'a-alexandra', name: 'The One Who Was Here Before', giver: 'Bernard', status: 'Someone was here before. Follow it far enough and you will find them.', gold: true });
-  if (stage < 1) activeQuests.push({ key: 'a-find-bernard', name: 'Find Bernard', giver: 'Bernard', status: 'Seek out Bernard in the Village square.' });
+  if (stage === 0) activeQuests.push({ key: 'a-find-bernard', name: 'Find Bernard', giver: 'Bernard', status: 'Seek out Bernard in the Village square.' });
   if (stage === 1) activeQuests.push({ key: 'a-blue', name: 'Find the Blue Door', giver: 'Bernard', status: 'Find the blue door inside the Instrument.' });
   if (stage === 2) activeQuests.push({ key: 'a-frag', name: 'Find a fragment', giver: 'Bernard', status: 'Collect one fragment and return to Bernard.' });
   if (stage === 3) activeQuests.push({ key: 'a-gold', name: 'Find the golden door', giver: 'Bernard', status: 'Collect all 5 fragments and find the golden door.' });

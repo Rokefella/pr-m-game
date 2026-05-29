@@ -45,6 +45,17 @@ type DialogStage = 'intro' | 'whatToLook' | 'fragmentQuest' | 'reportFragment' |
 
 const BernardRoom1 = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [flagsReady, setFlagsReady] = useState(false);
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      await getAllFlags(user.id);
+      if (!cancelled) setFlagsReady(true);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
   const [pos, setPos] = useState<Cell>(SPAWN);
   const posRef = useRef<Cell>(SPAWN);
   const heldKeysRef = useRef<Set<string>>(new Set());

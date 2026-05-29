@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { updateUser } from '@/lib/userData';
+import { getFlag } from '@/lib/questFlags';
+
 
 type Props = {
   isOpen: boolean;

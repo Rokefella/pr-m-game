@@ -5,6 +5,7 @@ import BernardDialogue from '@/components/BernardDialogue';
 import CharacterEye from '@/components/CharacterEye';
 import { useAuth } from '@/context/AuthContext';
 import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
+import { supabase } from '@/lib/supabase';
 
 
 const CELL = 56;
@@ -199,22 +200,36 @@ const BernardRoom1 = () => {
     const dist = Math.max(Math.abs(pos.col - bernardCell.col), Math.abs(pos.row - bernardCell.row));
     if (dist > 2) return;
 
-    const stage = parseInt(getFlag('bernard_stage') || '0', 10);
-    const fragments = JSON.parse(localStorage.getItem('praem_fragments') || '[]') as number[];
-    // Shadow Realm completion signal (set by ShadowRealm.tsx — out of scope to migrate).
-    const srDone = localStorage.getItem('praem_bernard_03_complete') === 'true';
+    let cancelled = false;
+    (async () => {
+      const stage = parseInt(getFlag('bernard_stage') || '0', 10);
+      // Shadow Realm completion signal (set by ShadowRealm.tsx — out of scope to migrate).
+      const srDone = localStorage.getItem('praem_bernard_03_complete') === 'true';
 
-    if (stage < 3) {
-      if (fragments.length >= 1) setDialogOpen('reportFragment');
-      else if (stage < 2) setDialogOpen('intro');
-      else setDialogOpen('fragmentQuest');
-    } else if (stage === 3 && !srDone) {
-      setDialogOpen('goldenDoor');
-    } else if (stage === 3 && srDone) {
-      setDialogOpen('returnToVillage');
-    } else {
-      setDialogOpen('complete');
-    }
+      let fragmentCount = 0;
+      if (stage < 3) {
+        const { count, error } = await supabase
+          .from('fragments')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+        if (error) console.error('Failed to count fragments', error);
+        fragmentCount = count ?? 0;
+      }
+      if (cancelled) return;
+
+      if (stage < 3) {
+        if (fragmentCount >= 1) setDialogOpen('reportFragment');
+        else if (stage < 2) setDialogOpen('intro');
+        else setDialogOpen('fragmentQuest');
+      } else if (stage === 3 && !srDone) {
+        setDialogOpen('goldenDoor');
+      } else if (stage === 3 && srDone) {
+        setDialogOpen('returnToVillage');
+      } else {
+        setDialogOpen('complete');
+      }
+    })();
+    return () => { cancelled = true; };
   }, [pos, nearBernard, bernardCell, dialogOpen, flagsReady, user]);
 
   // Bernard pupil offset toward player
@@ -247,7 +262,7 @@ const BernardRoom1 = () => {
       body = 'Fragments. There are five of them hidden in the corridors. Each one is a prime number. You will know one when you find it — the instrument makes it known. Find one and come back to me.';
       actions = [{ label: 'I WILL FIND THEM', onClick: closeDialog }];
     } else if (dialogOpen === 'fragmentQuest') {
-      body = 'Find one fragment and return to me.';
+      body = "You haven't found anything yet. Keep looking.";
       actions = [{ label: 'CLOSE', onClick: closeDialog }];
     } else if (dialogOpen === 'reportFragment') {
       body = 'You found one. I can tell — you look different. They all look different after the first one. What did it say to you? Never mind — you do not have to answer that. Here. You earned this. Now — there are four more. And somewhere in the deep corridors there is a golden door. You need all five fragments before it will open. Find them. Find the door. Go through. Come back to me — not here. Outside. In the square. I will be waiting.';
@@ -256,6 +271,15 @@ const BernardRoom1 = () => {
           label: 'THANK YOU',
           onClick: async () => {
             if (user) {
+              // Defensive gate: verify the player actually has a fragment in Supabase before advancing.
+              const { count } = await supabase
+                .from('fragments')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', user.id);
+              if ((count ?? 0) < 1) {
+                setDialogOpen('fragmentQuest');
+                return;
+              }
               await setFlag(user.id, 'bernard_stage', '3');
             }
             closeDialog();

@@ -1828,7 +1828,7 @@ const Village = () => {
             LEVEL {levelUpOverlay.newLevel}
           </div>
 
-          {(typeof window !== 'undefined' && window.localStorage.getItem('praem_bernard_06') === 'true') && (
+          {(parseInt(getFlag('bernard_stage') || '0', 10) >= 5) && (
             <>
               <div
                 className="font-fell italic"

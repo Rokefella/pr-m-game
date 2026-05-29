@@ -262,7 +262,7 @@ const BernardRoom1 = () => {
       body = 'Fragments. There are five of them hidden in the corridors. Each one is a prime number. You will know one when you find it — the instrument makes it known. Find one and come back to me.';
       actions = [{ label: 'I WILL FIND THEM', onClick: closeDialog }];
     } else if (dialogOpen === 'fragmentQuest') {
-      body = 'Find one fragment and return to me.';
+      body = "You haven't found anything yet. Keep looking.";
       actions = [{ label: 'CLOSE', onClick: closeDialog }];
     } else if (dialogOpen === 'reportFragment') {
       body = 'You found one. I can tell — you look different. They all look different after the first one. What did it say to you? Never mind — you do not have to answer that. Here. You earned this. Now — there are four more. And somewhere in the deep corridors there is a golden door. You need all five fragments before it will open. Find them. Find the door. Go through. Come back to me — not here. Outside. In the square. I will be waiting.';
@@ -271,6 +271,15 @@ const BernardRoom1 = () => {
           label: 'THANK YOU',
           onClick: async () => {
             if (user) {
+              // Defensive gate: verify the player actually has a fragment in Supabase before advancing.
+              const { count } = await supabase
+                .from('fragments')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', user.id);
+              if ((count ?? 0) < 1) {
+                setDialogOpen('fragmentQuest');
+                return;
+              }
               await setFlag(user.id, 'bernard_stage', '3');
             }
             closeDialog();

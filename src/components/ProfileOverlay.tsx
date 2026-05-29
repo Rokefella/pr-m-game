@@ -124,19 +124,11 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const title = titleRaw && titleRaw.trim() !== '' ? titleRaw : '';
   const fragmentCount = folderFragments.length;
 
-  const b00c = localStorage.getItem('praem_bernard_00_complete') === 'true';
-  const b01a = localStorage.getItem('praem_bernard_01_accepted') === 'true';
-  const b01c = localStorage.getItem('praem_bernard_01_complete') === 'true';
-  const b02a = localStorage.getItem('praem_bernard_02_accepted') === 'true';
-  const b02c = localStorage.getItem('praem_bernard_02_complete') === 'true';
-  const b03a = localStorage.getItem('praem_bernard_03_accepted') === 'true';
-  const b03c = localStorage.getItem('praem_bernard_03_complete') === 'true';
-  const b04a = localStorage.getItem('praem_bernard_04_accepted') === 'true';
-  const b04c = localStorage.getItem('praem_bernard_04_complete') === 'true';
+  const stage = parseInt(getFlag('bernard_stage') ?? '0', 10);
+  const alexandraActive = getFlag('alexandra_quest') === 'active';
   const subscribed = localStorage.getItem('praem_subscribed') === 'true';
   const subType = localStorage.getItem('praem_subscription_type') || '';
-  const alexandraQuest = localStorage.getItem('praem_quest_find_alexandra');
-  const alexandraActive = alexandraQuest === 'active';
+
 
   // Subscription display mapping
   const subStatus: SubStatus = accountRow?.subscription_status ?? 'expired';

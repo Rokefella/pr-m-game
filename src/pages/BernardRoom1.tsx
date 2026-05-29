@@ -5,6 +5,7 @@ import BernardDialogue from '@/components/BernardDialogue';
 import CharacterEye from '@/components/CharacterEye';
 import { useAuth } from '@/context/AuthContext';
 import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
+import { supabase } from '@/lib/supabase';
 
 
 const CELL = 56;

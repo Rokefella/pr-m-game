@@ -546,8 +546,40 @@ const Village = () => {
   const [bernardOpen, setBernardOpen] = useState(false);
   const bernardLockRef = useRef(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
+  const paywallIntentRef = useRef<'alexandra' | null>(null);
+  // Forces re-render of Bernard dialogue when quest flags change.
+  const [, setFlagsVersion] = useState(0);
+  const bumpFlags = useCallback(() => setFlagsVersion((v) => v + 1), []);
 
-  // Single source of truth for Bernard dialogue. Reads localStorage fresh every call.
+  const getBernardStage = (): number => {
+    return parseInt(getFlag('bernard_stage') || '0', 10);
+  };
+
+  // Helper: persist a Bernard stage advance.
+  const advanceBernardStage = useCallback(
+    async (stage: number) => {
+      if (!user) return;
+      await setFlag(user.id, 'bernard_stage', String(stage));
+      bumpFlags();
+    },
+    [user, bumpFlags],
+  );
+
+  const acceptAlexandraQuest = useCallback(async () => {
+    if (!user) return;
+    const status = subscriptionStatusRef.current;
+    const allowed = status === 'active' || status === 'lifetime' || status === 'dev' || status === 'trial';
+    if (allowed) {
+      await setFlag(user.id, 'alexandra_quest', 'active');
+      await setFlag(user.id, 'bernard_stage', '6');
+      bumpFlags();
+    } else {
+      paywallIntentRef.current = 'alexandra';
+      setPaywallOpen(true);
+    }
+  }, [user, bumpFlags]);
+
+  // Single source of truth for Bernard dialogue.
   type BernardDialogueData = {
     text: string;
     buttonLabel: string | null;
@@ -556,106 +588,94 @@ const Village = () => {
   };
 
   const getBernardDialogue = (): BernardDialogueData => {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || !user) {
       return { text: '', buttonLabel: null };
     }
+    const stage = getBernardStage();
+    const alexandra = getFlag('alexandra_quest') === 'active';
     const ls = window.localStorage;
-    const b00 = ls.getItem('praem_bernard_00_complete') === 'true';
-    const b01 = ls.getItem('praem_bernard_01_accepted') === 'true';
-    const b03 = ls.getItem('praem_bernard_01_complete') === 'true';
-    const b05 = ls.getItem('praem_bernard_03_complete') === 'true';
-    const b06 = ls.getItem('praem_bernard_06') === 'true';
-    const subscribed = ls.getItem('praem_subscribed') === 'true';
-    const alexandra = ls.getItem('praem_quest_find_alexandra') === 'active';
     const t23 = ls.getItem('praem_touched_23') === 'true';
     const t47 = ls.getItem('praem_touched_47') === 'true';
     const t89 = ls.getItem('praem_touched_89') === 'true';
     const allTouched = t23 && t47 && t89;
 
-    if (!b00) {
+    // Stage 0 — first meeting: greet, then advance to stage 1 (arrival complete).
+    if (stage === 0) {
       return {
         text: 'You are here. I heard your bell before you did. Welcome. My name is Bernard. Three buildings — 23, 47, 89. Find them all. Come back when you have stood at each one.',
         buttonLabel: null,
-        onShow: () => { window.localStorage.setItem('praem_bernard_00_complete', 'true'); },
+        onShow: () => { advanceBernardStage(1); },
       };
     }
-    if (!allTouched) {
+    // Stage 1 — looking for the three buildings.
+    if (stage === 1 && !allTouched) {
       return {
         text: 'Three buildings. Go and find them. Come back when you have stood at each one.',
         buttonLabel: null,
       };
     }
-    if (!b01) {
+    if (stage === 1 && allTouched) {
       return {
-        text: 'Great! You found them. Enter The Instrument when you\'re ready. Find me behind the Blue Door.',
+        text: "Great! You found them. Enter The Instrument when you're ready. Find me behind the Blue Door.",
         buttonLabel: 'I will find it',
         buttonAction: () => {
-          window.localStorage.setItem('praem_bernard_01_accepted', 'true');
-          if (user) {
-            const next = credits + 30;
-            setCredits(next);
-            updateUser(user.id, { credits: next });
-          }
+          const next = credits + 30;
+          setCredits(next);
+          updateUser(user.id, { credits: next });
+          advanceBernardStage(2);
         },
       };
     }
-    if (!b03) {
+    // Stage 2 — told to enter the Instrument, no fragment yet.
+    if (stage === 2) {
       return {
-        text: 'Did I tell you that it\'s impossible to get back to reality before you find the Golden Door?',
+        text: "Did I tell you that it's impossible to get back to reality before you find the Golden Door?",
         buttonLabel: null,
       };
     }
-    if (!b05) {
+    // Stage 3 — first fragment reported, still in the Instrument hunting the rest.
+    if (stage === 3) {
       return {
         text: 'You found me in there. Good. Keep going. Find all five fragments. Find the golden door.',
         buttonLabel: null,
       };
     }
-    if (!b06) {
+    // Stage 4 — Shadow Realm done, returned to the village. Grant Wanderer → stage 5.
+    if (stage === 4) {
       return {
         text: 'Congratulations. You made it through.',
         buttonLabel: 'Thank you Bernard',
-        buttonAction: () => {
-          if (window.localStorage.getItem('praem_bernard_03_complete') !== 'true') return;
-          window.localStorage.setItem('praem_bernard_04_complete', 'true');
-          window.localStorage.setItem('praem_bernard_06', 'true');
-          const credNum = parseInt(window.localStorage.getItem('praem_credits') || '0', 10) + 100;
-          window.localStorage.setItem('praem_credits', String(credNum));
-          window.localStorage.setItem('praem_title', 'Wanderer');
-          window.localStorage.setItem('praem_titles_unlocked', JSON.stringify(['Wanderer']));
-          if (user) {
-            setCredits(credNum);
-            updateUser(user.id, { credits: credNum, title: 'Wanderer', unlocked_titles: ['Wanderer'] });
-          }
+        buttonAction: async () => {
+          const credNum = credits + 100;
+          setCredits(credNum);
+          await updateUser(user.id, {
+            credits: credNum,
+            title: 'Wanderer',
+            unlocked_titles: ['Wanderer'],
+          });
+          setCurrentTitle('Wanderer');
+          setUnlockedTitles(['Wanderer']);
+          await advanceBernardStage(5);
           setEyeMessage('You are a Wanderer.');
           window.setTimeout(() => setEyeMessage(null), 3000);
-          window.setTimeout(() => {
-            setPaywallOpen(true);
-          }, 2000);
         },
       };
     }
-    if (b06 && !subscribed) {
+    // Stage 5 — Wanderer granted. Offer the Alexandra (un-named) quest.
+    if (stage === 5 && !alexandra) {
       return {
-        text: 'The world is waiting. When you are ready — go deeper.',
-        buttonLabel: null,
+        text: 'There is one more thing. Someone was here before any of you. Before me, even — and I have been here a very long time. I never met them. But if you follow this place far enough, everything points back to them. I think you are the kind of person who follows things far enough. Will you?',
+        buttonLabel: 'I will follow it',
+        buttonAction: () => { acceptAlexandraQuest(); },
       };
     }
-    if (b06 && subscribed && !alexandra) {
-      return {
-        text: 'Good. Now — one more thing. There is someone you need to find. Her name is Alexandra. She built this place. She is still here somewhere. Go carefully.',
-        buttonLabel: 'I will find her',
-        buttonAction: () => {
-          window.localStorage.setItem('praem_quest_find_alexandra', 'active');
-          window.localStorage.removeItem('praem_quest_alexandra_pending');
-        },
-      };
-    }
+    // Stage 6 / quest active — follow-up.
     return {
-      text: 'Still looking for Alexandra? Keep going. She is in there.',
+      text: 'Still following it? Good. Keep going. You will know them when you find them.',
       buttonLabel: null,
     };
   };
+
 
   const openBernardDialog = () => {
     setBernardOpen(true);

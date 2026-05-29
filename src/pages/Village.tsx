@@ -764,6 +764,19 @@ const Village = () => {
     setTotalMazeSteps(row.total_maze_steps);
     setTotalMazeTime(row.total_maze_time);
 
+    // Load quest flags from Supabase into module cache.
+    await getAllFlags(user.id);
+
+    // Bridge from legacy shadow-realm completion signal (set by ShadowRealm.tsx)
+    // into the new quest_flags system: if SR is done and we're still on stage 3,
+    // advance to stage 4 so Bernard offers the Wanderer dialogue.
+    const srDone = window.localStorage.getItem('praem_bernard_03_complete') === 'true';
+    const currentStage = parseInt(getFlag('bernard_stage') || '0', 10);
+    if (srDone && currentStage < 4) {
+      await setFlag(user.id, 'bernard_stage', '4');
+    }
+    bumpFlags();
+
     // Trial check (display only — paywall is gated by Bernard quest, not trial)
     if (row.first_launch_at) {
       const daysSince = Math.floor(
@@ -775,19 +788,20 @@ const Village = () => {
 
     if (row.levelup_pending && !levelUpHandled) {
       const newLv = row.levelup_newlevel ?? row.level;
-      const b06 = window.localStorage.getItem('praem_bernard_06') === 'true';
-      const newTitle = b06 ? (TITLES_BY_LEVEL[newLv] || '') : '';
+      const stageNow = parseInt(getFlag('bernard_stage') || '0', 10);
+      const titlesUnlocked = stageNow >= 5;
+      const newTitle = titlesUnlocked ? (TITLES_BY_LEVEL[newLv] || '') : '';
       window.setTimeout(() => {
         setLevelUpOverlay({ newLevel: newLv });
         setOverlaySelectedTitle(newTitle);
-        if (b06 && newTitle) {
+        if (titlesUnlocked && newTitle) {
           updateUser(user.id, { title: newTitle });
           setCurrentTitle(newTitle);
         }
       }, 2000);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (authLoading) return;

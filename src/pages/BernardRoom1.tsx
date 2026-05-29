@@ -190,35 +190,32 @@ const BernardRoom1 = () => {
 
   const nearBernardRef = useRef(false);
 
-  // Dialogue triggers when player adjacent — read flags fresh from localStorage
+  // Dialogue triggers when player adjacent — read stage from the quest_flags cache.
   useEffect(() => {
     if (!nearBernard) return;
     if (dialogOpen) return;
+    if (!flagsReady || !user) return;
     if (Date.now() - lastDialogCloseRef.current < 3000) return;
     const dist = Math.max(Math.abs(pos.col - bernardCell.col), Math.abs(pos.row - bernardCell.row));
     if (dist > 2) return;
 
-    const accept02 = localStorage.getItem('praem_bernard_02_accepted') === 'true';
-    const complete02 = localStorage.getItem('praem_bernard_02_complete') === 'true';
-    const complete03 = localStorage.getItem('praem_bernard_03_complete') === 'true';
-    const f06 = localStorage.getItem('praem_bernard_06') === 'true';
+    const stage = parseInt(getFlag('bernard_stage') || '0', 10);
     const fragments = JSON.parse(localStorage.getItem('praem_fragments') || '[]') as number[];
+    // Shadow Realm completion signal (set by ShadowRealm.tsx — out of scope to migrate).
+    const srDone = localStorage.getItem('praem_bernard_03_complete') === 'true';
 
-    if (!accept02) {
-      setDialogOpen('intro');
-    } else if (!complete02) {
+    if (stage < 3) {
       if (fragments.length >= 1) setDialogOpen('reportFragment');
+      else if (stage < 2) setDialogOpen('intro');
       else setDialogOpen('fragmentQuest');
-    } else if (!complete03) {
+    } else if (stage === 3 && !srDone) {
       setDialogOpen('goldenDoor');
-    } else if (!f06) {
-      // Player returned from Shadow Realm — accept return-to-village quest
-      localStorage.setItem('praem_bernard_04_accepted', 'true');
+    } else if (stage === 3 && srDone) {
       setDialogOpen('returnToVillage');
     } else {
       setDialogOpen('complete');
     }
-  }, [pos, nearBernard, bernardCell, dialogOpen]);
+  }, [pos, nearBernard, bernardCell, dialogOpen, flagsReady, user]);
 
   // Bernard pupil offset toward player
   const pupilOffset = nearBernard
@@ -233,7 +230,6 @@ const BernardRoom1 = () => {
 
   const renderDialog = () => {
     if (!dialogOpen) return null;
-    let title = 'Bernard';
     let body = '';
     let actions: { label: string; onClick: () => void }[] = [];
 
@@ -243,7 +239,6 @@ const BernardRoom1 = () => {
         {
           label: 'WHAT SHOULD I LOOK FOR?',
           onClick: () => {
-            localStorage.setItem('praem_bernard_02_accepted', 'true');
             setDialogOpen('whatToLook');
           },
         },
@@ -259,13 +254,10 @@ const BernardRoom1 = () => {
       actions = [
         {
           label: 'THANK YOU',
-          onClick: () => {
-            localStorage.setItem('praem_bernard_02_complete', 'true');
-            localStorage.setItem('praem_bernard_03_accepted', 'true');
-            const credits = parseInt(localStorage.getItem('praem_credits') || '0', 10) + 150;
-            localStorage.setItem('praem_credits', String(credits));
-            const steps = parseInt(localStorage.getItem('praem_steps') || '0', 10) + 200;
-            localStorage.setItem('praem_steps', String(steps));
+          onClick: async () => {
+            if (user) {
+              await setFlag(user.id, 'bernard_stage', '3');
+            }
             closeDialog();
           },
         },
@@ -280,6 +272,7 @@ const BernardRoom1 = () => {
       body = 'You did it. Go. The Village is waiting.';
       actions = [{ label: 'CLOSE', onClick: closeDialog }];
     }
+
 
     return (
       <BernardDialogue text={body}>

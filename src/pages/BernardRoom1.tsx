@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import BernardDialogue from '@/components/BernardDialogue';
 import CharacterEye from '@/components/CharacterEye';
+import { useAuth } from '@/context/AuthContext';
+import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
 
 
 const CELL = 56;

@@ -41,6 +41,35 @@ export type Database = {
         }
         Relationships: []
       }
+      quest_flags: {
+        Row: {
+          flag_key: string
+          flag_value: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          flag_key: string
+          flag_value: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          flag_key?: string
+          flag_value?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quest_flags_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           aura_color: string | null

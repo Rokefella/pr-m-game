@@ -2086,8 +2086,26 @@ const Village = () => {
 
       {paywallOpen && (
         <PaywallOverlay
-          onContinue={() => setPaywallOpen(false)}
-          onDismiss={() => setPaywallOpen(false)}
+          onContinue={async () => {
+            setPaywallOpen(false);
+            // If the paywall was opened to accept the Alexandra quest,
+            // re-check subscription and persist the quest flags on success.
+            if (paywallIntentRef.current === 'alexandra' && user) {
+              paywallIntentRef.current = null;
+              const status = await checkSubscriptionStatus(user.id);
+              setSubscriptionStatus(status);
+              const allowed = status === 'active' || status === 'lifetime' || status === 'dev' || status === 'trial';
+              if (allowed) {
+                await setFlag(user.id, 'alexandra_quest', 'active');
+                await setFlag(user.id, 'bernard_stage', '6');
+                bumpFlags();
+              }
+            }
+          }}
+          onDismiss={() => {
+            paywallIntentRef.current = null;
+            setPaywallOpen(false);
+          }}
         />
       )}
     </div>

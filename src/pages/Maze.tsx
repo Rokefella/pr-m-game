@@ -630,7 +630,8 @@ const Maze = () => {
     setPos(newPos);
     stepsRemainingRef.current -= 1;
     setStepsRemaining(stepsRemainingRef.current);
-    if (user) updateUser(user.id, { steps_remaining: stepsRemainingRef.current });
+    const uidStep = userIdRef.current;
+    if (uidStep) updateUser(uidStep, { steps_remaining: stepsRemainingRef.current });
 
     moveCountRef.current += 1;
 

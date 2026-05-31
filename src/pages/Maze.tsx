@@ -706,18 +706,19 @@ const Maze = () => {
           window.localStorage.setItem('praem_fragments', JSON.stringify(Array.from(next)));
         } catch { /* ignore */ }
 
-        if (user) {
+        const uidFrag = userIdRef.current;
+        if (uidFrag) {
           (async () => {
             const { data: existing } = await supabase
               .from('fragments')
               .select('id')
-              .eq('user_id', user.id)
+              .eq('user_id', uidFrag)
               .eq('prime_number', frag.prime)
               .limit(1);
             if (existing && existing.length > 0) return; // duplicate, skip silently
             const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
             const { error } = await supabase.from('fragments').insert({
-              user_id: user.id,
+              user_id: uidFrag,
               prime_number: frag.prime,
               level: currentLevelRef.current,
               image_data: imageData,

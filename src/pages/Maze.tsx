@@ -7,6 +7,7 @@ import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
+import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/levelLoader';
 
 // TODO: restore to real walking steps via HealthKit for production.
 const INITIAL_STEPS = 1000;

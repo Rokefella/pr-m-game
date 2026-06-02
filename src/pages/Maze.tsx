@@ -399,11 +399,19 @@ const Maze = () => {
     return s;
   }, [config]);
 
+  // Refs so the rAF movement loop (registered once with empty deps) always reads current values
+  // instead of stale closure values captured when config was still null.
+  const configRef = useRef<LevelConfig | null>(null);
+  const wallSetRef = useRef<Set<string>>(new Set());
+  useEffect(() => { configRef.current = config; }, [config]);
+  useEffect(() => { wallSetRef.current = wallSet; }, [wallSet]);
+
   const isWall = (c: number, r: number) => {
-    if (!config) return true;
-    if (c < 0 || c >= config.cols || r < 0 || r >= config.rows) return true;
-    if (config.specialSet.has(`${c},${r}`)) return false;
-    return wallSet.has(`${c},${r}`);
+    const cfg = configRef.current;
+    if (!cfg) return true;
+    if (c < 0 || c >= cfg.cols || r < 0 || r >= cfg.rows) return true;
+    if (cfg.specialSet.has(`${c},${r}`)) return false;
+    return wallSetRef.current.has(`${c},${r}`);
   };
 
 

@@ -595,7 +595,7 @@ const Maze = () => {
 
   // Move Claire one step toward target if possible
   const stepClaireToward = (target: Cell) => {
-    if (!config) return;
+    if (!configRef.current) return;
     const cp = clairePosRef.current;
     const dc = target.col - cp.col;
     const dr = target.row - cp.row;

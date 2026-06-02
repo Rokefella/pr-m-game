@@ -631,7 +631,8 @@ const Maze = () => {
   };
 
   const tryMove = (dc: number, dr: number) => {
-    if (!config) return;
+    const cfg = configRef.current;
+    if (!cfg) return;
     const now = Date.now();
     if (now - lastMoveTimeRef.current < 150) return;
     if (stepsRemainingRef.current <= 0) return;
@@ -639,8 +640,8 @@ const Maze = () => {
     const sdc = dc === 0 ? 0 : dc > 0 ? 1 : -1;
     const sdr = dr === 0 ? 0 : dr > 0 ? 1 : -1;
     const cur = posRef.current;
-    const nc = Math.max(0, Math.min(config.cols - 1, cur.col + sdc));
-    const nr = Math.max(0, Math.min(config.rows - 1, cur.row + sdr));
+    const nc = Math.max(0, Math.min(cfg.cols - 1, cur.col + sdc));
+    const nr = Math.max(0, Math.min(cfg.rows - 1, cur.row + sdr));
     if (nc === cur.col && nr === cur.row) return;
     if (isWall(nc, nr)) return;
     lastMoveTimeRef.current = now;
@@ -664,18 +665,18 @@ const Maze = () => {
     // Reunion check
     if (
       claireFollowingRef.current &&
-      config.alexandra &&
+      cfg.alexandra &&
       !reunionDoneRef.current
     ) {
       const cp = clairePosRef.current;
-      const a = config.alexandra;
+      const a = cfg.alexandra;
       const dist = Math.max(Math.abs(cp.col - a.col), Math.abs(cp.row - a.row));
       if (dist <= 3) triggerReunion();
     }
 
     // Alexandra contact (within 2 cells)
-    if (config.alexandra && alexandraVisible && !reunionDoneRef.current) {
-      const a = config.alexandra;
+    if (cfg.alexandra && alexandraVisible && !reunionDoneRef.current) {
+      const a = cfg.alexandra;
       const d = Math.max(Math.abs(nc - a.col), Math.abs(nr - a.row));
       if (d <= 2) {
         if (!claireFoundRef.current) {
@@ -699,7 +700,7 @@ const Maze = () => {
     }
 
     // Claire contact (within 2 cells)
-    if (config.claire && claireVisible && !claireFoundRef.current && alexandraFoundRef.current) {
+    if (cfg.claire && claireVisible && !claireFoundRef.current && alexandraFoundRef.current) {
       const cp = clairePosRef.current;
       const d = Math.max(Math.abs(nc - cp.col), Math.abs(nr - cp.row));
       if (d <= 2) {
@@ -712,9 +713,9 @@ const Maze = () => {
     }
 
     // fragment check
-    const fragIdx = config.fragments.findIndex((f) => f.col === nc && f.row === nr);
+    const fragIdx = cfg.fragments.findIndex((f) => f.col === nc && f.row === nr);
     if (fragIdx !== -1) {
-      const frag = config.fragments[fragIdx];
+      const frag = cfg.fragments[fragIdx];
       if (!collectedRef.current.has(frag.prime)) {
         const next = new Set(collectedRef.current);
         next.add(frag.prime);
@@ -752,15 +753,15 @@ const Maze = () => {
 
     // easter egg check
     const eggKey = `${nc},${nr}`;
-    const egg = config.eggs.find((e) => e.col === nc && e.row === nr);
+    const egg = cfg.eggs.find((e) => e.col === nc && e.row === nr);
     if (egg && !eggsTriggeredRef.current.has(eggKey)) {
       eggsTriggeredRef.current.add(eggKey);
       showWhisper(egg.line, 'rgba(160,140,200,0.85)', 2500);
     }
 
     // door check
-    if (nc === config.door.col && nr === config.door.row) {
-      const required = config.fragmentsRequired;
+    if (nc === cfg.door.col && nr === cfg.door.row) {
+      const required = cfg.fragmentsRequired;
       let count = collectedRef.current.size;
       try {
         const stored = JSON.parse(window.localStorage.getItem('praem_fragments') || '[]') as number[];
@@ -778,7 +779,7 @@ const Maze = () => {
     }
 
     // blue door — Bernard's room (Level 1) / credit game (other levels)
-    if (config.creditDoors.some((d) => d.col === nc && d.row === nr)) {
+    if (cfg.creditDoors.some((d) => d.col === nc && d.row === nr)) {
       if (currentLevelRef.current === 1) {
         navigate('/bernard-room-1');
       } else {

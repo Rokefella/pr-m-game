@@ -113,10 +113,11 @@ export async function loadLevelFromSupabase(
     spawn,
     openSet,
     specialSet,
-    fragments,
+    fragments: fragments ?? [],
     door,
-    creditDoors,
-    doorsToRoom,
+    creditDoors: creditDoors ?? [],
+    doorsToRoom: doorsToRoom ?? [],
+    eggs: [],
     fragmentsRequired: requiredFragments,
   };
 }

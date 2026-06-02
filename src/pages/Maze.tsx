@@ -30,6 +30,7 @@ type LevelConfig = {
   alexandra?: Cell;
   claire?: Cell;
   fragmentsRequired: number;
+  doorsToRoom?: DoorToRoom[];
 };
 
 // =================== LEVEL 1 — corrected corridor layout ===================

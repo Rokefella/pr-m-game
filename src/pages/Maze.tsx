@@ -7,6 +7,7 @@ import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
+import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/levelLoader';
 
 // TODO: restore to real walking steps via HealthKit for production.
 const INITIAL_STEPS = 1000;
@@ -29,6 +30,7 @@ type LevelConfig = {
   alexandra?: Cell;
   claire?: Cell;
   fragmentsRequired: number;
+  doorsToRoom?: DoorToRoom[];
 };
 
 // =================== LEVEL 1 — corrected corridor layout ===================
@@ -358,20 +360,44 @@ const Maze = () => {
     return () => window.removeEventListener('praem:open-paywall', handler);
   }, []);
 
-  // Level config + derived sets — rebuilt only when currentLevel changes
-  const config = useMemo<LevelConfig | null>(() => {
-    if (currentLevel === 1) return buildLevel1();
-    if (currentLevel === 2) return buildLevel2();
-    return null;
-  }, [currentLevel]);
+  // Dimension (Purple base; rotations applied by loader)
+  const [dimension] = useState<Dimension>('purple');
 
-  // wallSet built directly from LEVEL2_WALLS — single source of truth for L2 collision + rendering.
+  // Level config — loaded async from Supabase `levels` table, with buildLevel1 fallback.
+  const [config, setConfig] = useState<LevelConfig | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    setConfigLoading(true);
+    (async () => {
+      const loaded = await loadLevelFromSupabase(currentLevel, dimension);
+      if (cancelled) return;
+      if (loaded) {
+        setConfig(loaded as LevelConfig);
+      } else if (currentLevel === 1) {
+        setConfig(buildLevel1());
+      } else if (currentLevel === 2) {
+        setConfig(buildLevel2());
+      } else {
+        setConfig(null);
+      }
+      setConfigLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [currentLevel, dimension]);
+
+  // wallSet derived from the loaded config's openSet (a cell is a wall if not in openSet, within bounds).
   const wallSet = useMemo(() => {
     const s = new Set<string>();
-    if (currentLevel === 1) LEVEL1_WALL_SET.forEach((k) => s.add(k));
-    if (currentLevel === 2) LEVEL2_WALLS.forEach((w) => s.add(`${w.col},${w.row}`));
+    if (!config) return s;
+    for (let r = 0; r < config.rows; r++) {
+      for (let c = 0; c < config.cols; c++) {
+        const k = `${c},${r}`;
+        if (!config.openSet.has(k)) s.add(k);
+      }
+    }
     return s;
-  }, [currentLevel]);
+  }, [config]);
 
   const isWall = (c: number, r: number) => {
     if (!config) return true;
@@ -380,19 +406,6 @@ const Maze = () => {
     return wallSet.has(`${c},${r}`);
   };
 
-  useEffect(() => {
-    console.log('L2 wall count:', LEVEL2_WALLS.length);
-  }, []);
-
-  useEffect(() => {
-    if (currentLevel === 2) {
-      console.log('L2 wall count:', LEVEL2_WALLS.length);
-      console.log('L2 wallSet size:', wallSet.size);
-      if (LEVEL2_WALLS.length !== wallSet.size) {
-        console.warn('L2 MISMATCH: LEVEL2_WALLS and wallSet differ — construction bug.');
-      }
-    }
-  }, [currentLevel, wallSet]);
 
 
   const [pos, setPos] = useState<Cell>({ col: 0, row: 0 });

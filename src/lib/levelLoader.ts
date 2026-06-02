@@ -4,6 +4,8 @@ export type Cell = { col: number; row: number };
 export type FragmentDef = Cell & { prime: number };
 export type DoorToRoom = Cell & { roomId: string; reentry: Cell };
 
+export type EggDef = Cell & { line: string };
+
 export type LoadedLevelConfig = {
   cols: number;
   rows: number;
@@ -14,6 +16,9 @@ export type LoadedLevelConfig = {
   door: Cell;
   creditDoors: Cell[];
   doorsToRoom: DoorToRoom[];
+  eggs: EggDef[];
+  alexandra?: Cell;
+  claire?: Cell;
   fragmentsRequired: number;
 };
 
@@ -108,10 +113,11 @@ export async function loadLevelFromSupabase(
     spawn,
     openSet,
     specialSet,
-    fragments,
+    fragments: fragments ?? [],
     door,
-    creditDoors,
-    doorsToRoom,
+    creditDoors: creditDoors ?? [],
+    doorsToRoom: doorsToRoom ?? [],
+    eggs: [],
     fragmentsRequired: requiredFragments,
   };
 }

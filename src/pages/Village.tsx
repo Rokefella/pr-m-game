@@ -847,7 +847,7 @@ const Village = () => {
     }
     if (inside(nx, ny, A_23)) {
       window.localStorage.setItem('praem_touched_23', 'true');
-      const lv = parseInt(window.localStorage.getItem('praem_level') || '1', 10);
+      const lv = currentLevelRef.current;
       if (lv < 3) {
         showLockWhisper('The Library opens later.');
         return true;

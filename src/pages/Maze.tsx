@@ -413,8 +413,7 @@ const Maze = () => {
     const cfg = configRef.current;
     if (!cfg) return true;
     if (c < 0 || c >= cfg.cols || r < 0 || r >= cfg.rows) return true;
-    if (cfg.specialSet.has(`${c},${r}`)) return false;
-    return wallSetRef.current.has(`${c},${r}`);
+    return !cfg.openSet.has(`${c},${r}`);
   };
 
 

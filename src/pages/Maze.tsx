@@ -119,6 +119,7 @@ const buildLevel1 = (): LevelConfig => {
     openSet: open, specialSet: special,
     fragments, door, creditDoors, eggs: [],
     fragmentsRequired: 5,
+    veilSet: new Set(),
   };
 };
 

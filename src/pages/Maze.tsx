@@ -303,6 +303,7 @@ const buildLevel2 = (): LevelConfig => {
     fragments, door, creditDoors, eggs,
     alexandra, claire,
     fragmentsRequired: 7,
+    veilSet: new Set(),
   };
 };
 

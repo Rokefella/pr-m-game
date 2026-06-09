@@ -9,6 +9,8 @@ import { getFlag } from '@/lib/questFlags';
 type Props = {
   isOpen: boolean;
   onClose: () => void;
+  runFragmentCount?: number;
+  requiredFragmentCount?: number;
 };
 
 type SubStatus = 'dev' | 'trial' | 'active' | 'lifetime' | 'beta' | 'expired' | string;
@@ -24,7 +26,7 @@ type AccountUserRow = {
   level: number;
 };
 
-const ProfileOverlay = ({ isOpen, onClose }: Props) => {
+const ProfileOverlay = ({ isOpen, onClose, runFragmentCount, requiredFragmentCount }: Props) => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [mainTab, setMainTab] = useState<'profile' | 'quests' | 'account' | 'growth' | 'folder'>('profile');
@@ -126,6 +128,8 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const titleRaw = localStorage.getItem('praem_title');
   const title = titleRaw && titleRaw.trim() !== '' ? titleRaw : '';
   const fragmentCount = folderFragments.length;
+  const displayFragmentCount = runFragmentCount !== undefined ? runFragmentCount : fragmentCount;
+  const displayRequiredCount = requiredFragmentCount !== undefined ? requiredFragmentCount : 5;
 
   const stage = parseInt(getFlag('bernard_stage') ?? '0', 10);
   const alexandraActive = getFlag('alexandra_quest') === 'active';
@@ -364,7 +368,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
               {[
                 { label: 'CREDITS', value: credits, color: '#c8963a' },
                 { label: 'STEPS', value: steps, color: '#e0ddd5' },
-                { label: 'FRAGMENTS', value: `${fragmentCount}/5`, color: '#5b4fd4' },
+                { label: 'FRAGMENTS', value: `${displayFragmentCount}/${displayRequiredCount}`, color: '#5b4fd4' },
               ].map((s) => (
                 <div key={s.label} style={{ textAlign: 'center' }}>
                   <div className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'rgba(200,185,255,0.6)' }}>{s.label}</div>

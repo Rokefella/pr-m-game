@@ -25,7 +25,10 @@ export type LoadedLevelConfig = {
 
 export type Dimension = 'purple' | 'amber' | 'teal';
 
-const rotate = (cell: Cell, dim: Dimension, N: number): Cell => {
+const rotate = (cell: Cell | null | undefined, dim: Dimension, N: number): Cell => {
+  if (!cell || typeof cell.col !== 'number' || typeof cell.row !== 'number') {
+    return { col: 1, row: 1 };
+  }
   if (dim === 'amber') return { col: cell.row, row: N - 1 - cell.col };
   if (dim === 'teal') return { col: N - 1 - cell.row, row: cell.col };
   return { col: cell.col, row: cell.row };
@@ -55,9 +58,9 @@ export async function loadLevelFromSupabase(
   const wallsArr = (d.walls as Cell[]) ?? [];
   const corridorsArr = (d.corridors as Cell[]) ?? [];
   const fragmentsArr = (d.fragments as FragmentDef[]) ?? [];
-  const goldenDoor = d.goldenDoor as Cell;
-  const blueDoor = d.blueDoor as Cell | undefined;
-  const start = d.start as Cell;
+  const goldenDoor = (d.goldenDoor as Cell | null | undefined) ?? null;
+  const blueDoor = (d.blueDoor as Cell | null | undefined) ?? null;
+  const start = (d.start as Cell | null | undefined) ?? null;
   const requiredFragments = (d.requiredFragments as number) ?? 5;
   const doorsToRoomArr = ((d.doorsToRoom as DoorToRoom[]) ?? []);
   const veilsArr = (d.veils as Cell[]) ?? [];
@@ -87,10 +90,35 @@ export async function loadLevelFromSupabase(
     openSet.add(`${p.col},${p.row}`);
   });
 
-  const fragments: FragmentDef[] = fragmentsArr.map((f) => ({ ...rot(f), prime: f.prime }));
-  const door: Cell = rot(goldenDoor);
+  const validFragments = fragmentsArr.filter(
+    (f) => f && typeof f.col === 'number' && typeof f.row === 'number',
+  );
+  const fragments: FragmentDef[] = validFragments.map((f) => ({ ...rot(f), prime: f.prime }));
+
+  // Spawn fallback: first corridor cell, else {1,1}
+  let spawn: Cell;
+  if (start) {
+    spawn = rot(start);
+  } else {
+    console.warn(`Level ${levelNumber} missing start`);
+    const firstOpen = baseOpen.values().next().value as string | undefined;
+    if (firstOpen) {
+      const [cc, rr] = firstOpen.split(',').map(Number);
+      spawn = rot({ col: cc, row: rr });
+    } else {
+      spawn = { col: 1, row: 1 };
+    }
+  }
+
+  let door: Cell;
+  if (goldenDoor) {
+    door = rot(goldenDoor);
+  } else {
+    console.warn(`Level ${levelNumber} missing goldenDoor`);
+    door = spawn;
+  }
+
   const creditDoors: Cell[] = blueDoor ? [rot(blueDoor)] : [];
-  const spawn: Cell = rot(start);
   const doorsToRoom: DoorToRoom[] = doorsToRoomArr.map((dr) => ({
     ...rot({ col: dr.col, row: dr.row }),
     roomId: dr.roomId,

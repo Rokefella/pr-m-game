@@ -429,8 +429,11 @@ const Maze = () => {
   const prevPosRef = useRef<Cell>({ col: 0, row: 0 });
 
   const eggsTriggeredRef = useRef<Set<string>>(new Set());
+  // `collected` / collectedRef = RUN fragments (this visit, this level, banked=false).
+  // bankedRef = all permanently-banked primes (across all levels). Doesn't satisfy doors.
   const [collected, setCollected] = useState<Set<number>>(new Set());
   const collectedRef = useRef<Set<number>>(new Set());
+  const bankedRef = useRef<Set<number>>(new Set());
 
   const [stepsRemaining, setStepsRemaining] = useState(INITIAL_STEPS);
   const stepsRemainingRef = useRef(INITIAL_STEPS);

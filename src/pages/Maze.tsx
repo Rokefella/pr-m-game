@@ -561,16 +561,22 @@ const Maze = () => {
         updateUser(user.id, { steps_remaining: INITIAL_STEPS });
       }
 
+      // Load ALL the user's fragments (no level filter) so the Folder reflects everything.
+      // Split into banked (permanent, all levels) and run (this run; starts empty per run).
       const { data: existing, error: fragError } = await supabase
         .from('fragments')
-        .select('prime_number')
-        .eq('user_id', user.id)
-        .eq('level', row.level);
+        .select('prime_number, banked')
+        .eq('user_id', user.id);
       if (fragError) console.error('Failed to load fragments', fragError);
       if (!cancelled && Array.isArray(existing)) {
-        const next = new Set<number>(existing.map((r) => r.prime_number));
-        collectedRef.current = next;
-        setCollected(next);
+        const banked = new Set<number>();
+        existing.forEach((r: { prime_number: number; banked: boolean | null }) => {
+          if (r.banked) banked.add(r.prime_number);
+        });
+        bankedRef.current = banked;
+        // Run fragments always start empty on entering a level.
+        collectedRef.current = new Set<number>();
+        setCollected(new Set<number>());
       }
       setLevelLoaded(true);
     })();

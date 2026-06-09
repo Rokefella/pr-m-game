@@ -2085,7 +2085,7 @@ const Village = () => {
         );
       })()}
 
-      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} />
+      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} context="village" />
 
       {paywallOpen && (
         <PaywallOverlay

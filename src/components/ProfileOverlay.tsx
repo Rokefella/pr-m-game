@@ -26,7 +26,7 @@ type AccountUserRow = {
   level: number;
 };
 
-const ProfileOverlay = ({ isOpen, onClose, runFragmentCount, requiredFragmentCount }: Props) => {
+const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: Props) => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [mainTab, setMainTab] = useState<'profile' | 'quests' | 'account' | 'growth' | 'folder'>('profile');
@@ -128,8 +128,10 @@ const ProfileOverlay = ({ isOpen, onClose, runFragmentCount, requiredFragmentCou
   const titleRaw = localStorage.getItem('praem_title');
   const title = titleRaw && titleRaw.trim() !== '' ? titleRaw : '';
   const fragmentCount = folderFragments.length;
-  const displayFragmentCount = runFragmentCount !== undefined ? runFragmentCount : fragmentCount;
-  const displayRequiredCount = requiredFragmentCount !== undefined ? requiredFragmentCount : 5;
+  const fragmentDisplayValue =
+    context === 'maze' && runProgress
+      ? `${runProgress.collected}/${runProgress.required}`
+      : `${fragmentCount}`;
 
   const stage = parseInt(getFlag('bernard_stage') ?? '0', 10);
   const alexandraActive = getFlag('alexandra_quest') === 'active';

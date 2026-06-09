@@ -550,7 +550,7 @@ const Maze = () => {
     (async () => {
       const row = await fetchOrCreateUser(user.id);
       if (cancelled) return;
-      setCurrentLevel(row.level);
+      setPosition({ level: row.level, dimension: 'purple' });
       currentLevelRef.current = row.level;
       setCredits(row.credits);
       if (row.aura_color) setAuraColor(row.aura_color);

@@ -319,7 +319,10 @@ const Maze = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
-  const [currentLevel, setCurrentLevel] = useState(1);
+  // Current position (level + dimension) is sourced ONLY from the users row.
+  // Structured as a single object so future fields (era/time) can be added without rework.
+  const [position, setPosition] = useState<{ level: number; dimension: Dimension } | null>(null);
+  const currentLevel = position?.level ?? 1;
   const currentLevelRef = useRef(1);
   const [levelLoaded, setLevelLoaded] = useState(false);
   const [credits, setCredits] = useState(50);

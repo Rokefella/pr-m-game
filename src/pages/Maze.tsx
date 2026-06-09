@@ -763,18 +763,16 @@ const Maze = () => {
       showWhisper(egg.line, 'rgba(160,140,200,0.85)', 2500);
     }
 
-    // door check
+    // door check — opens only when EVERY required prime for this level
+    // has been collected THIS RUN. Banked primes do not count.
     if (nc === cfg.door.col && nr === cfg.door.row) {
-      const required = cfg.fragmentsRequired;
-      let count = collectedRef.current.size;
-      try {
-        const stored = JSON.parse(window.localStorage.getItem('praem_fragments') || '[]') as number[];
-        if (Array.isArray(stored)) count = Math.max(count, stored.length);
-      } catch { /* ignore */ }
-      if (count >= required) {
+      const requiredPrimes = cfg.fragments.map((f) => f.prime);
+      const have = requiredPrimes.filter((p) => collectedRef.current.has(p)).length;
+      const required = requiredPrimes.length;
+      if (have >= required) {
         setDoorConfirmOpen(true);
       } else {
-        const remaining = required - count;
+        const remaining = required - have;
         const msg = remaining === 1
           ? 'One fragment remains. The door does not open.'
           : `${remaining} fragments remain. The door does not open.`;

@@ -370,7 +370,7 @@ const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: P
               {[
                 { label: 'CREDITS', value: credits, color: '#c8963a' },
                 { label: 'STEPS', value: steps, color: '#e0ddd5' },
-                { label: 'FRAGMENTS', value: `${displayFragmentCount}/${displayRequiredCount}`, color: '#5b4fd4' },
+                { label: 'FRAGMENTS', value: fragmentDisplayValue, color: '#5b4fd4' },
               ].map((s) => (
                 <div key={s.label} style={{ textAlign: 'center' }}>
                   <div className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'rgba(200,185,255,0.6)' }}>{s.label}</div>

@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       fragments: {
         Row: {
+          banked: boolean
           created_at: string
           id: string
           image_data: string | null
@@ -24,6 +25,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          banked?: boolean
           created_at?: string
           id?: string
           image_data?: string | null
@@ -32,6 +34,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          banked?: boolean
           created_at?: string
           id?: string
           image_data?: string | null

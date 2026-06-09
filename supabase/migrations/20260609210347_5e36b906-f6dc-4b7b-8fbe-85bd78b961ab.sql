@@ -1,0 +1,1 @@
+ALTER TABLE public.fragments ADD COLUMN IF NOT EXISTS banked BOOLEAN NOT NULL DEFAULT false;

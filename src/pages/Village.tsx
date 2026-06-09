@@ -1673,7 +1673,7 @@ const Village = () => {
         }}
       >
         <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#e0ddd5' }}>
-          MAZE STEPS&nbsp;&nbsp;0
+          STEPS&nbsp;&nbsp;{String(stepsRemaining).padStart(2, '0')}
         </span>
         <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#c8963a' }}>
           CREDITS&nbsp;&nbsp;{String(credits).padStart(2, '0')}

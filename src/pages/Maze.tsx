@@ -1417,7 +1417,7 @@ const Maze = () => {
         />
       )}
 
-      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} />
+      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} runFragmentCount={collected.size} requiredFragmentCount={config.fragmentsRequired} />
 
       {paywallOpen && (
         <PaywallOverlay

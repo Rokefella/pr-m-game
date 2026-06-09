@@ -389,14 +389,14 @@ const Maze = () => {
     return () => { cancelled = true; };
   }, [currentLevel, dimension]);
 
-  // wallSet derived from the loaded config's openSet (a cell is a wall if not in openSet, within bounds).
+  // wallSet derived for rendering: a cell is visually a wall if not in openSet OR it is a veil.
   const wallSet = useMemo(() => {
     const s = new Set<string>();
     if (!config) return s;
     for (let r = 0; r < config.rows; r++) {
       for (let c = 0; c < config.cols; c++) {
         const k = `${c},${r}`;
-        if (!config.openSet.has(k)) s.add(k);
+        if (!config.openSet.has(k) || config.veilSet?.has(k)) s.add(k);
       }
     }
     return s;

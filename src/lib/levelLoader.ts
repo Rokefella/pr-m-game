@@ -16,6 +16,7 @@ export type LoadedLevelConfig = {
   door: Cell;
   creditDoors: Cell[];
   doorsToRoom: DoorToRoom[];
+  veilSet: Set<string>;
   eggs: EggDef[];
   alexandra?: Cell;
   claire?: Cell;

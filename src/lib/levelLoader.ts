@@ -111,6 +111,8 @@ export async function loadLevelFromSupabase(
   doorsToRoom.forEach((dr) => addSpecial({ col: dr.col, row: dr.row }));
   veils.forEach((v) => openSet.add(`${v.col},${v.row}`));
 
+  const veilSet = new Set(veils.map((v) => `${v.col},${v.row}`));
+
   return {
     cols: N,
     rows: N,
@@ -121,6 +123,7 @@ export async function loadLevelFromSupabase(
     door,
     creditDoors: creditDoors ?? [],
     doorsToRoom: doorsToRoom ?? [],
+    veilSet,
     eggs: [],
     fragmentsRequired: requiredFragments,
   };

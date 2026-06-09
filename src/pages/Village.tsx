@@ -477,6 +477,8 @@ const Village = () => {
     10: 'First One Through',
   };
   const [currentLevel, setCurrentLevel] = useState(1);
+  const currentLevelRef = useRef(1);
+  useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
   const [currentTitle, setCurrentTitle] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);

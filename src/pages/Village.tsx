@@ -859,7 +859,7 @@ const Village = () => {
     }
     if (inside(nx, ny, A_47)) {
       window.localStorage.setItem('praem_touched_47', 'true');
-      const lv = parseInt(window.localStorage.getItem('praem_level') || '1', 10);
+      const lv = currentLevelRef.current;
       if (lv < 3) {
         showLockWhisper('The Exchange opens later.');
         return true;

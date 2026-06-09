@@ -344,7 +344,8 @@ const Maze = () => {
       const visited = sessionStorage.getItem('visited_shadow_this_run');
       const uid = userIdRef.current;
       if (visited !== 'true' && uid) {
-        supabase.from('fragments').delete().eq('user_id', uid).then(() => {});
+        // Only forfeit run fragments. Banked fragments survive exit.
+        supabase.from('fragments').delete().eq('user_id', uid).eq('banked', false).then(() => {});
       }
       sessionStorage.removeItem('visited_shadow_this_run');
     };
@@ -428,8 +429,11 @@ const Maze = () => {
   const prevPosRef = useRef<Cell>({ col: 0, row: 0 });
 
   const eggsTriggeredRef = useRef<Set<string>>(new Set());
+  // `collected` / collectedRef = RUN fragments (this visit, this level, banked=false).
+  // bankedRef = all permanently-banked primes (across all levels). Doesn't satisfy doors.
   const [collected, setCollected] = useState<Set<number>>(new Set());
   const collectedRef = useRef<Set<number>>(new Set());
+  const bankedRef = useRef<Set<number>>(new Set());
 
   const [stepsRemaining, setStepsRemaining] = useState(INITIAL_STEPS);
   const stepsRemainingRef = useRef(INITIAL_STEPS);
@@ -475,15 +479,6 @@ const Maze = () => {
         window.localStorage.removeItem('praem_maze_return_col');
         window.localStorage.removeItem('praem_maze_return_row');
       }
-      // load fragments from localStorage
-      try {
-        const stored = JSON.parse(window.localStorage.getItem('praem_fragments') || '[]') as number[];
-        if (Array.isArray(stored) && stored.length) {
-          const next = new Set<number>(stored);
-          collectedRef.current = next;
-          setCollected(next);
-        }
-      } catch { /* ignore */ }
     }
     posRef.current = { ...spawn };
     prevPosRef.current = { ...spawn };
@@ -566,16 +561,22 @@ const Maze = () => {
         updateUser(user.id, { steps_remaining: INITIAL_STEPS });
       }
 
+      // Load ALL the user's fragments (no level filter) so the Folder reflects everything.
+      // Split into banked (permanent, all levels) and run (this run; starts empty per run).
       const { data: existing, error: fragError } = await supabase
         .from('fragments')
-        .select('prime_number')
-        .eq('user_id', user.id)
-        .eq('level', row.level);
+        .select('prime_number, banked')
+        .eq('user_id', user.id);
       if (fragError) console.error('Failed to load fragments', fragError);
       if (!cancelled && Array.isArray(existing)) {
-        const next = new Set<number>(existing.map((r) => r.prime_number));
-        collectedRef.current = next;
-        setCollected(next);
+        const banked = new Set<number>();
+        existing.forEach((r: { prime_number: number; banked: boolean | null }) => {
+          if (r.banked) banked.add(r.prime_number);
+        });
+        bankedRef.current = banked;
+        // Run fragments always start empty on entering a level.
+        collectedRef.current = new Set<number>();
+        setCollected(new Set<number>());
       }
       setLevelLoaded(true);
     })();
@@ -730,11 +731,6 @@ const Maze = () => {
         setCollected(next);
         setActiveFragment({ prime: frag.prime, index: fragIdx });
 
-        // persist to localStorage for cross-screen quest tracking
-        try {
-          window.localStorage.setItem('praem_fragments', JSON.stringify(Array.from(next)));
-        } catch { /* ignore */ }
-
         const uidFrag = userIdRef.current;
         if (uidFrag) {
           (async () => {
@@ -751,6 +747,7 @@ const Maze = () => {
               prime_number: frag.prime,
               level: currentLevelRef.current,
               image_data: imageData,
+              banked: false,
             });
             if (error) console.error('Failed to save fragment', error);
           })();
@@ -766,18 +763,16 @@ const Maze = () => {
       showWhisper(egg.line, 'rgba(160,140,200,0.85)', 2500);
     }
 
-    // door check
+    // door check — opens only when EVERY required prime for this level
+    // has been collected THIS RUN. Banked primes do not count.
     if (nc === cfg.door.col && nr === cfg.door.row) {
-      const required = cfg.fragmentsRequired;
-      let count = collectedRef.current.size;
-      try {
-        const stored = JSON.parse(window.localStorage.getItem('praem_fragments') || '[]') as number[];
-        if (Array.isArray(stored)) count = Math.max(count, stored.length);
-      } catch { /* ignore */ }
-      if (count >= required) {
+      const requiredPrimes = cfg.fragments.map((f) => f.prime);
+      const have = requiredPrimes.filter((p) => collectedRef.current.has(p)).length;
+      const required = requiredPrimes.length;
+      if (have >= required) {
         setDoorConfirmOpen(true);
       } else {
-        const remaining = required - count;
+        const remaining = required - have;
         const msg = remaining === 1
           ? 'One fragment remains. The door does not open.'
           : `${remaining} fragments remain. The door does not open.`;

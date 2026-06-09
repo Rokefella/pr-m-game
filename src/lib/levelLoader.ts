@@ -96,6 +96,7 @@ export async function loadLevelFromSupabase(
     roomId: dr.roomId,
     reentry: rot(dr.reentry),
   }));
+  const veils = veilsArr.map((v) => rot(v));
 
   // Build specialSet of all special cells and force into openSet
   const specialSet = new Set<string>();
@@ -108,6 +109,7 @@ export async function loadLevelFromSupabase(
   addSpecial(door);
   creditDoors.forEach(addSpecial);
   doorsToRoom.forEach((dr) => addSpecial({ col: dr.col, row: dr.row }));
+  veils.forEach((v) => openSet.add(`${v.col},${v.row}`));
 
   return {
     cols: N,

@@ -31,6 +31,7 @@ type LevelConfig = {
   claire?: Cell;
   fragmentsRequired: number;
   doorsToRoom?: DoorToRoom[];
+  veilSet?: Set<string>;
 };
 
 // =================== LEVEL 1 — corrected corridor layout ===================

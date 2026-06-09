@@ -31,6 +31,7 @@ type LevelConfig = {
   claire?: Cell;
   fragmentsRequired: number;
   doorsToRoom?: DoorToRoom[];
+  veilSet?: Set<string>;
 };
 
 // =================== LEVEL 1 — corrected corridor layout ===================
@@ -118,6 +119,7 @@ const buildLevel1 = (): LevelConfig => {
     openSet: open, specialSet: special,
     fragments, door, creditDoors, eggs: [],
     fragmentsRequired: 5,
+    veilSet: new Set(),
   };
 };
 
@@ -301,6 +303,7 @@ const buildLevel2 = (): LevelConfig => {
     fragments, door, creditDoors, eggs,
     alexandra, claire,
     fragmentsRequired: 7,
+    veilSet: new Set(),
   };
 };
 
@@ -386,14 +389,14 @@ const Maze = () => {
     return () => { cancelled = true; };
   }, [currentLevel, dimension]);
 
-  // wallSet derived from the loaded config's openSet (a cell is a wall if not in openSet, within bounds).
+  // wallSet derived for rendering: a cell is visually a wall if not in openSet OR it is a veil.
   const wallSet = useMemo(() => {
     const s = new Set<string>();
     if (!config) return s;
     for (let r = 0; r < config.rows; r++) {
       for (let c = 0; c < config.cols; c++) {
         const k = `${c},${r}`;
-        if (!config.openSet.has(k)) s.add(k);
+        if (!config.openSet.has(k) || config.veilSet?.has(k)) s.add(k);
       }
     }
     return s;
@@ -410,8 +413,7 @@ const Maze = () => {
     const cfg = configRef.current;
     if (!cfg) return true;
     if (c < 0 || c >= cfg.cols || r < 0 || r >= cfg.rows) return true;
-    if (cfg.specialSet.has(`${c},${r}`)) return false;
-    return wallSetRef.current.has(`${c},${r}`);
+    return !cfg.openSet.has(`${c},${r}`);
   };
 
 

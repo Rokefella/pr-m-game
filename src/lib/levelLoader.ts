@@ -16,6 +16,7 @@ export type LoadedLevelConfig = {
   door: Cell;
   creditDoors: Cell[];
   doorsToRoom: DoorToRoom[];
+  veilSet: Set<string>;
   eggs: EggDef[];
   alexandra?: Cell;
   claire?: Cell;
@@ -59,6 +60,7 @@ export async function loadLevelFromSupabase(
   const start = d.start as Cell;
   const requiredFragments = (d.requiredFragments as number) ?? 5;
   const doorsToRoomArr = ((d.doorsToRoom as DoorToRoom[]) ?? []);
+  const veilsArr = (d.veils as Cell[]) ?? [];
 
   // Reconstruct base open set in Purple coordinates
   const baseOpen = new Set<string>();
@@ -94,6 +96,7 @@ export async function loadLevelFromSupabase(
     roomId: dr.roomId,
     reentry: rot(dr.reentry),
   }));
+  const veils = veilsArr.map((v) => rot(v));
 
   // Build specialSet of all special cells and force into openSet
   const specialSet = new Set<string>();
@@ -106,6 +109,9 @@ export async function loadLevelFromSupabase(
   addSpecial(door);
   creditDoors.forEach(addSpecial);
   doorsToRoom.forEach((dr) => addSpecial({ col: dr.col, row: dr.row }));
+  veils.forEach((v) => openSet.add(`${v.col},${v.row}`));
+
+  const veilSet = new Set(veils.map((v) => `${v.col},${v.row}`));
 
   return {
     cols: N,
@@ -117,6 +123,7 @@ export async function loadLevelFromSupabase(
     door,
     creditDoors: creditDoors ?? [],
     doorsToRoom: doorsToRoom ?? [],
+    veilSet,
     eggs: [],
     fragmentsRequired: requiredFragments,
   };

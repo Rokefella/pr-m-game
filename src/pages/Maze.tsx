@@ -366,23 +366,25 @@ const Maze = () => {
     return () => window.removeEventListener('praem:open-paywall', handler);
   }, []);
 
-  // Dimension (Purple base; rotations applied by loader)
-  const [dimension] = useState<Dimension>('purple');
+  // Dimension is part of position; default 'purple'. Kept here pending dimension column.
+  const dimension: Dimension = position?.dimension ?? 'purple';
 
   // Level config — loaded async from Supabase `levels` table, with buildLevel1 fallback.
+  // Guarded: do NOT load until the user row (position) has resolved.
   const [config, setConfig] = useState<LevelConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
   useEffect(() => {
+    if (!position) return;
     let cancelled = false;
     setConfigLoading(true);
     (async () => {
-      const loaded = await loadLevelFromSupabase(currentLevel, dimension);
+      const loaded = await loadLevelFromSupabase(position.level, position.dimension);
       if (cancelled) return;
       if (loaded) {
         setConfig(loaded as LevelConfig);
-      } else if (currentLevel === 1) {
+      } else if (position.level === 1) {
         setConfig(buildLevel1());
-      } else if (currentLevel === 2) {
+      } else if (position.level === 2) {
         setConfig(buildLevel2());
       } else {
         setConfig(null);
@@ -390,7 +392,7 @@ const Maze = () => {
       setConfigLoading(false);
     })();
     return () => { cancelled = true; };
-  }, [currentLevel, dimension]);
+  }, [position]);
 
   // wallSet derived for rendering: a cell is visually a wall if not in openSet OR it is a veil.
   const wallSet = useMemo(() => {

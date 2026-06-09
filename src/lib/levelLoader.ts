@@ -60,6 +60,7 @@ export async function loadLevelFromSupabase(
   const start = d.start as Cell;
   const requiredFragments = (d.requiredFragments as number) ?? 5;
   const doorsToRoomArr = ((d.doorsToRoom as DoorToRoom[]) ?? []);
+  const veilsArr = (d.veils as Cell[]) ?? [];
 
   // Reconstruct base open set in Purple coordinates
   const baseOpen = new Set<string>();

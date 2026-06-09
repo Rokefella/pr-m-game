@@ -731,11 +731,6 @@ const Maze = () => {
         setCollected(next);
         setActiveFragment({ prime: frag.prime, index: fragIdx });
 
-        // persist to localStorage for cross-screen quest tracking
-        try {
-          window.localStorage.setItem('praem_fragments', JSON.stringify(Array.from(next)));
-        } catch { /* ignore */ }
-
         const uidFrag = userIdRef.current;
         if (uidFrag) {
           (async () => {
@@ -752,6 +747,7 @@ const Maze = () => {
               prime_number: frag.prime,
               level: currentLevelRef.current,
               image_data: imageData,
+              banked: false,
             });
             if (error) console.error('Failed to save fragment', error);
           })();

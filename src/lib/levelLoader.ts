@@ -58,9 +58,9 @@ export async function loadLevelFromSupabase(
   const wallsArr = (d.walls as Cell[]) ?? [];
   const corridorsArr = (d.corridors as Cell[]) ?? [];
   const fragmentsArr = (d.fragments as FragmentDef[]) ?? [];
-  const goldenDoor = d.goldenDoor as Cell;
-  const blueDoor = d.blueDoor as Cell | undefined;
-  const start = d.start as Cell;
+  const goldenDoor = (d.goldenDoor as Cell | null | undefined) ?? null;
+  const blueDoor = (d.blueDoor as Cell | null | undefined) ?? null;
+  const start = (d.start as Cell | null | undefined) ?? null;
   const requiredFragments = (d.requiredFragments as number) ?? 5;
   const doorsToRoomArr = ((d.doorsToRoom as DoorToRoom[]) ?? []);
   const veilsArr = (d.veils as Cell[]) ?? [];

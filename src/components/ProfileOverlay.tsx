@@ -21,6 +21,7 @@ type AccountUserRow = {
   title: string | null;
   unlocked_titles: string[] | null;
   aura_color: string | null;
+  level: number;
 };
 
 const ProfileOverlay = ({ isOpen, onClose }: Props) => {

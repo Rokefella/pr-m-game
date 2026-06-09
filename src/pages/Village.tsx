@@ -477,6 +477,8 @@ const Village = () => {
     10: 'First One Through',
   };
   const [currentLevel, setCurrentLevel] = useState(1);
+  const currentLevelRef = useRef(1);
+  useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
   const [currentTitle, setCurrentTitle] = useState('');
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
@@ -845,7 +847,7 @@ const Village = () => {
     }
     if (inside(nx, ny, A_23)) {
       window.localStorage.setItem('praem_touched_23', 'true');
-      const lv = parseInt(window.localStorage.getItem('praem_level') || '1', 10);
+      const lv = currentLevelRef.current;
       if (lv < 3) {
         showLockWhisper('The Library opens later.');
         return true;
@@ -857,7 +859,7 @@ const Village = () => {
     }
     if (inside(nx, ny, A_47)) {
       window.localStorage.setItem('praem_touched_47', 'true');
-      const lv = parseInt(window.localStorage.getItem('praem_level') || '1', 10);
+      const lv = currentLevelRef.current;
       if (lv < 3) {
         showLockWhisper('The Exchange opens later.');
         return true;
@@ -1773,8 +1775,8 @@ const Village = () => {
 
             <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
             <div style={{ opacity: 0.7, fontSize: 11 }}>NAVIGATION</div>
-            <button type="button" onClick={() => { setDevOverlay(false); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L1</button>
-            <button type="button" onClick={() => { setDevOverlay(false); navigate('/maze/2'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L2</button>
+            <button type="button" onClick={async () => { setDevOverlay(false); if (user) await updateUser(user.id, { level: 1 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L1</button>
+            <button type="button" onClick={async () => { setDevOverlay(false); if (user) await updateUser(user.id, { level: 2 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L2</button>
             <button type="button" onClick={() => { setDevOverlay(false); navigate('/shadow'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → SHADOW</button>
 
             <button type="button" onClick={() => setDevOverlay(false)} style={{ background: 'transparent', border: '1px solid rgba(169,140,255,0.4)', color: 'rgba(169,140,255,0.7)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Close</button>

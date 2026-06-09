@@ -21,6 +21,7 @@ type AccountUserRow = {
   title: string | null;
   unlocked_titles: string[] | null;
   aura_color: string | null;
+  level: number;
 };
 
 const ProfileOverlay = ({ isOpen, onClose }: Props) => {
@@ -65,7 +66,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, subscription_status, trial_end, title, unlocked_titles, aura_color')
+      .select('username, credits, subscription_status, trial_end, title, unlocked_titles, aura_color, level')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -121,7 +122,7 @@ const ProfileOverlay = ({ isOpen, onClose }: Props) => {
   const auraColor = localStorage.getItem('praem_aura_color') || '#5b4fd4';
   const credits = localStorage.getItem('praem_credits') || '50';
   const steps = localStorage.getItem('praem_steps') || '100';
-  const level = localStorage.getItem('praem_level') || '1';
+  const level = String(accountRow?.level ?? 1);
   const titleRaw = localStorage.getItem('praem_title');
   const title = titleRaw && titleRaw.trim() !== '' ? titleRaw : '';
   const fragmentCount = folderFragments.length;

@@ -479,15 +479,6 @@ const Maze = () => {
         window.localStorage.removeItem('praem_maze_return_col');
         window.localStorage.removeItem('praem_maze_return_row');
       }
-      // load fragments from localStorage
-      try {
-        const stored = JSON.parse(window.localStorage.getItem('praem_fragments') || '[]') as number[];
-        if (Array.isArray(stored) && stored.length) {
-          const next = new Set<number>(stored);
-          collectedRef.current = next;
-          setCollected(next);
-        }
-      } catch { /* ignore */ }
     }
     posRef.current = { ...spawn };
     prevPosRef.current = { ...spawn };

@@ -1676,7 +1676,7 @@ const Village = () => {
           MAZE STEPS&nbsp;&nbsp;0
         </span>
         <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#c8963a' }}>
-          CREDITS&nbsp;&nbsp;0
+          CREDITS&nbsp;&nbsp;{String(credits).padStart(2, '0')}
         </span>
         <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#5b4fd4' }}>
           LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}

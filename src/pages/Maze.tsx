@@ -344,7 +344,8 @@ const Maze = () => {
       const visited = sessionStorage.getItem('visited_shadow_this_run');
       const uid = userIdRef.current;
       if (visited !== 'true' && uid) {
-        supabase.from('fragments').delete().eq('user_id', uid).then(() => {});
+        // Only forfeit run fragments. Banked fragments survive exit.
+        supabase.from('fragments').delete().eq('user_id', uid).eq('banked', false).then(() => {});
       }
       sessionStorage.removeItem('visited_shadow_this_run');
     };

@@ -25,7 +25,10 @@ export type LoadedLevelConfig = {
 
 export type Dimension = 'purple' | 'amber' | 'teal';
 
-const rotate = (cell: Cell, dim: Dimension, N: number): Cell => {
+const rotate = (cell: Cell | null | undefined, dim: Dimension, N: number): Cell => {
+  if (!cell || typeof cell.col !== 'number' || typeof cell.row !== 'number') {
+    return { col: 1, row: 1 };
+  }
   if (dim === 'amber') return { col: cell.row, row: N - 1 - cell.col };
   if (dim === 'teal') return { col: N - 1 - cell.row, row: cell.col };
   return { col: cell.col, row: cell.row };

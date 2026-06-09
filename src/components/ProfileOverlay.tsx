@@ -128,6 +128,8 @@ const ProfileOverlay = ({ isOpen, onClose, runFragmentCount, requiredFragmentCou
   const titleRaw = localStorage.getItem('praem_title');
   const title = titleRaw && titleRaw.trim() !== '' ? titleRaw : '';
   const fragmentCount = folderFragments.length;
+  const displayFragmentCount = runFragmentCount !== undefined ? runFragmentCount : fragmentCount;
+  const displayRequiredCount = requiredFragmentCount !== undefined ? requiredFragmentCount : 5;
 
   const stage = parseInt(getFlag('bernard_stage') ?? '0', 10);
   const alexandraActive = getFlag('alexandra_quest') === 'active';
@@ -363,8 +365,6 @@ const ProfileOverlay = ({ isOpen, onClose, runFragmentCount, requiredFragmentCou
                 borderBottom: '0.5px solid rgba(100,80,160,0.2)',
               }}
             >
-              const displayFragmentCount = runFragmentCount !== undefined ? runFragmentCount : fragmentCount;
-              const displayRequiredCount = requiredFragmentCount !== undefined ? requiredFragmentCount : 5;
               {[
                 { label: 'CREDITS', value: credits, color: '#c8963a' },
                 { label: 'STEPS', value: steps, color: '#e0ddd5' },

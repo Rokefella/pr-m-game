@@ -9,8 +9,8 @@ import { getFlag } from '@/lib/questFlags';
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  runFragmentCount?: number;
-  requiredFragmentCount?: number;
+  context?: 'village' | 'maze';
+  runProgress?: { collected: number; required: number };
 };
 
 type SubStatus = 'dev' | 'trial' | 'active' | 'lifetime' | 'beta' | 'expired' | string;

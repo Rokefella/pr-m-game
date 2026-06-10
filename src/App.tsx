@@ -16,6 +16,7 @@ import BernardRoom1 from "./pages/BernardRoom1.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
+import AvatarPreview from "./pages/AvatarPreview.tsx";
 
 const queryClient = new QueryClient();
 

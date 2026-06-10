@@ -16,6 +16,7 @@ import BernardRoom1 from "./pages/BernardRoom1.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
+import AvatarPreview from "./pages/AvatarPreview.tsx";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/shadow" element={<ShadowRealm />} />
             <Route path="/paywall" element={<Paywall />} />
             <Route path="/bernard-room-1" element={<BernardRoom1 />} />
+            <Route path="/avatar-preview" element={<AvatarPreview />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

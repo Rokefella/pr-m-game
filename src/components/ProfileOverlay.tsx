@@ -4,6 +4,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { updateUser } from '@/lib/userData';
 import { getFlag } from '@/lib/questFlags';
+import Avatar from '@/components/Avatar';
+
 
 
 type Props = {
@@ -24,6 +26,9 @@ type AccountUserRow = {
   unlocked_titles: string[] | null;
   aura_color: string | null;
   level: number;
+  avatar_hat: string | null;
+  avatar_body: string | null;
+  avatar_head: string | null;
 };
 
 const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: Props) => {
@@ -68,7 +73,7 @@ const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: P
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, subscription_status, trial_end, title, unlocked_titles, aura_color, level')
+      .select('username, credits, subscription_status, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -352,6 +357,16 @@ const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: P
         {/* PROFILE content */}
         {mainTab === 'profile' && (
           <div style={{ marginTop: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+              <Avatar
+                view="front"
+                hat={accountRow?.avatar_hat ?? 'none'}
+                body={accountRow?.avatar_body ?? 'default'}
+                head={accountRow?.avatar_head ?? 'default'}
+                auraColor={accountRow?.aura_color ?? '#5b4fd4'}
+                size={150}
+              />
+            </div>
             <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 36, color: '#c8963a', margin: '24px 0 0' }}>
               #{regNum}
             </p>

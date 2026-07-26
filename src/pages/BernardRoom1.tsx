@@ -6,6 +6,7 @@ import CharacterEye from '@/components/CharacterEye';
 import { useAuth } from '@/context/AuthContext';
 import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
 import { supabase } from '@/lib/supabase';
+import { fetchOrCreateUser } from '@/lib/userData';
 
 
 const CELL = 56;
@@ -48,12 +49,19 @@ const BernardRoom1 = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [flagsReady, setFlagsReady] = useState(false);
+  const [auraColor, setAuraColor] = useState('#5b4fd4');
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
     (async () => {
       await getAllFlags(user.id);
       if (!cancelled) setFlagsReady(true);
+      try {
+        const row = await fetchOrCreateUser(user.id);
+        if (!cancelled && row.aura_color) setAuraColor(row.aura_color);
+      } catch (e) {
+        console.error('[BernardRoom1] fetchOrCreateUser failed', e);
+      }
     })();
     return () => { cancelled = true; };
   }, [user]);

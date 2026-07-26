@@ -1464,7 +1464,7 @@ const Village = () => {
         />
 
         {/* Forest blocks (outside outermost ring) */}
-        {FOREST.map((f, i) => (
+        {(dynamicBuildings ? dynamicBuildings.forest : FOREST).map((f, i) => (
           <div
             key={`f-${i}`}
             style={{

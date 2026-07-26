@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabase';
 
-export type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'lifetime' | 'dev';
+export type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'lifetime' | 'dev' | 'beta';
 
 export async function checkSubscriptionStatus(userId: string): Promise<SubscriptionStatus> {
   const { data, error } = await supabase
@@ -28,7 +28,7 @@ export async function checkSubscriptionStatus(userId: string): Promise<Subscript
 }
 
 export function canAccessMaze(status: SubscriptionStatus): boolean {
-  return ['trial', 'active', 'lifetime', 'dev'].includes(status);
+  return ['trial', 'active', 'lifetime', 'dev', 'beta'].includes(status);
 }
 
 export function getDaysRemainingInTrial(trialEnd: string): number {

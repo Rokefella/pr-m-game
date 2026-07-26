@@ -985,6 +985,46 @@ const Village = () => {
     whisperTimer.current = window.setTimeout(() => setWhisper(null), 2000);
   };
 
+  // Pull a random line from the shared `whispers` table
+  const fetchRandomWhisper = async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('whispers' as never)
+        .select('text')
+        .order('random()' as never)
+        .limit(1)
+        .single();
+      if (!error && data) return (data as { text?: string }).text ?? null;
+      const { data: pool } = await supabase
+        .from('whispers' as never)
+        .select('text')
+        .limit(100);
+      const rows = (pool as { text?: string }[] | null) ?? [];
+      if (rows.length === 0) return null;
+      return rows[Math.floor(Math.random() * rows.length)]?.text ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  const triggerTileWhisper = (key: string) => {
+    const now = Date.now();
+    const last = whisperCellLastRef.current.get(key) ?? 0;
+    if (now - last <= 30000) return;
+    whisperCellLastRef.current.set(key, now);
+    void fetchRandomWhisper().then((text) => {
+      if (!text) return;
+      setWhisper(text);
+      if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
+      whisperTimer.current = window.setTimeout(() => {
+        setWhisper(null);
+        lastWhisperIdxRef.current = null;
+      }, 2500);
+    });
+  };
+
+
+
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
       if (user) void setFlag(user.id, 'touched_89', 'true');

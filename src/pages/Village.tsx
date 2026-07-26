@@ -1554,7 +1554,7 @@ const Village = () => {
         ))}
 
         {/* Type B buildings */}
-        {TYPE_B.map((b) => (
+        {(dynamicBuildings ? dynamicBuildings.typeB : TYPE_B).map((b) => (
           <div
             key={`b-${b.id}`}
             style={{

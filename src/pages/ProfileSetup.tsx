@@ -1,14 +1,28 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { upsertUser } from '@/lib/userData';
+import { fetchOrCreateUser, upsertUser } from '@/lib/userData';
 
 const ProfileSetup = () => {
   const [username, setUsername] = useState('');
   const [saving, setSaving] = useState(false);
+  const [auraColor, setAuraColor] = useState('#5b4fd4');
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const auraColor = localStorage.getItem('praem_aura_color') || '#5b4fd4';
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const row = await fetchOrCreateUser(user.id);
+        if (!cancelled && row.aura_color) setAuraColor(row.aura_color);
+      } catch (e) {
+        console.error('[ProfileSetup] fetchOrCreateUser failed', e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   const handleEnter = async () => {
     if (saving) return;

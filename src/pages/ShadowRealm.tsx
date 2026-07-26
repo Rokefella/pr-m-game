@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
-import { getAllFlags, getFlag } from '@/lib/questFlags';
+import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
@@ -447,11 +446,12 @@ const ShadowRealm = () => {
   const [view, setView] = useState({ w: 390, h: 800 });
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem('praem_shadow_visited', 'true');
-      window.localStorage.setItem('praem_bernard_03_complete', 'true');
       window.sessionStorage.setItem('visited_shadow_this_run', 'true');
     }
-  }, []);
+    if (!user) return;
+    void setFlag(user.id, 'shadow_visited', 'true');
+    void setFlag(user.id, 'bernard_03_complete', 'true');
+  }, [user]);
 
   useEffect(() => {
     const update = () => setView({ w: window.innerWidth, h: window.innerHeight });
@@ -516,9 +516,6 @@ const ShadowRealm = () => {
       setOverlaySelectedTitle(row.title);
       if (row.aura_color) setAuraColor(row.aura_color);
       setRegistrationNumber(row.registration_number);
-      if (row.registration_number != null) {
-        localStorage.setItem('praem_registration_number', String(row.registration_number).padStart(4, '0'));
-      }
 
       if (row.levelup_pending) {
         const newLv = row.levelup_newlevel ?? row.level;

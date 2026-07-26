@@ -52,8 +52,6 @@ const EntityQuestions = () => {
     let color = '#5b4fd4';
     if (total >= 5) { dim = 'teal'; color = '#0d9488'; }
     else if (total >= 2) { dim = 'amber'; color = '#d97706'; }
-    localStorage.setItem('praem_dimension', dim);
-    localStorage.setItem('praem_aura_color', color);
     if (user) {
       await upsertUser(user.id, {
         entity_answer: dim,

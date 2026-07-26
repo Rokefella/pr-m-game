@@ -20,6 +20,8 @@ type SubStatus = 'dev' | 'trial' | 'active' | 'lifetime' | 'beta' | 'expired' | 
 type AccountUserRow = {
   username: string | null;
   credits: number;
+  steps_remaining: number;
+  registration_number: number | null;
   subscription_status: SubStatus;
   subscription_tier: string | null;
   trial_end: string | null;
@@ -74,7 +76,7 @@ const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: P
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head')
+      .select('username, credits, steps_remaining, registration_number, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -116,22 +118,19 @@ const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: P
 
   
 
-  // Synchronous reads — no useEffect, no async
-  const username = localStorage.getItem('praem_username') || 'Wanderer';
-  const storedReg = localStorage.getItem('praem_registration_number');
-  console.log('Registration number from localStorage:', storedReg);
+  // Values derived from the fetched user row
+  const username = accountRow?.username ?? 'Wanderer';
   let regNum: string;
-  if (storedReg && storedReg.trim() !== '') {
-    regNum = storedReg.padStart(4, '0');
+  if (accountRow?.registration_number != null) {
+    regNum = String(accountRow.registration_number).padStart(4, '0');
   } else {
-    const playerId = localStorage.getItem('praem_player_id');
-    regNum = playerId ? playerId.slice(-4).toUpperCase() : '????';
+    regNum = user ? user.id.slice(-4).toUpperCase() : '????';
   }
-  const auraColor = localStorage.getItem('praem_aura_color') || '#5b4fd4';
-  const credits = localStorage.getItem('praem_credits') || '50';
-  const steps = localStorage.getItem('praem_steps') || '100';
+  const auraColor = accountRow?.aura_color ?? '#5b4fd4';
+  const credits = String(accountRow?.credits ?? 50);
+  const steps = String(accountRow?.steps_remaining ?? 100);
   const level = String(accountRow?.level ?? 1);
-  const titleRaw = localStorage.getItem('praem_title');
+  const titleRaw = accountRow?.title ?? null;
   const title = titleRaw && titleRaw.trim() !== '' ? titleRaw : '';
   const fragmentCount = folderFragments.length;
   const fragmentDisplayValue =
@@ -281,7 +280,7 @@ const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: P
       username: newName,
     });
     setAccountRow({ ...accountRow, credits: accountRow.credits - 10000, username: newName });
-    localStorage.setItem('praem_username', newName);
+    await updateUser(user.id, { username: newName });
     setNameMsg('Name changed.');
     setNameMsgColor('rgba(160,140,200,0.5)');
     setNameStep('input');

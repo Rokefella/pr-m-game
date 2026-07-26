@@ -486,6 +486,7 @@ const Village = () => {
   const [levelUpHandled, setLevelUpHandled] = useState(false);
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [username, setUsername] = useState<string>('');
+  const usernameRef = useRef<string>('');
   const [unlockedTitles, setUnlockedTitles] = useState<string[]>([]);
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);
   const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
@@ -595,10 +596,9 @@ const Village = () => {
     }
     const stage = getBernardStage();
     const alexandra = getFlag('alexandra_quest') === 'active';
-    const ls = window.localStorage;
-    const t23 = ls.getItem('praem_touched_23') === 'true';
-    const t47 = ls.getItem('praem_touched_47') === 'true';
-    const t89 = ls.getItem('praem_touched_89') === 'true';
+    const t23 = getFlag('touched_23') === 'true';
+    const t47 = getFlag('touched_47') === 'true';
+    const t89 = getFlag('touched_89') === 'true';
     const allTouched = t23 && t47 && t89;
 
     // Stage 0 — first meeting: greet, then advance to stage 1 (arrival complete).
@@ -691,7 +691,7 @@ const Village = () => {
       const status = subscriptionStatusRef.current;
       const allowed = status === 'active' || status === 'lifetime' || status === 'dev' || status === 'trial';
       const stage = parseInt(getFlag('bernard_stage') || '0', 10);
-      const profileComplete = window.localStorage.getItem('praem_profile_complete') === 'true';
+      const profileComplete = usernameRef.current.trim().length > 0;
       if (!allowed && stage >= 5 && profileComplete) {
         setPaywallOpen(true);
       }
@@ -755,11 +755,9 @@ const Village = () => {
     setCurrentTitle(row.title);
     setOverlaySelectedTitle(row.title);
     setRegistrationNumber(row.registration_number);
-    if (row.registration_number != null) {
-      localStorage.setItem('praem_registration_number', String(row.registration_number).padStart(4, '0'));
-    }
     setAuraColor(row.aura_color || '#5b4fd4');
     setUsername(row.username || '');
+    usernameRef.current = row.username || '';
     setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : []);
     setStepsRemaining(row.steps_remaining);
     console.log('[Village credits] row.credits =', row.credits, typeof row.credits);
@@ -773,7 +771,7 @@ const Village = () => {
     // Bridge from legacy shadow-realm completion signal (set by ShadowRealm.tsx)
     // into the new quest_flags system: if SR is done and we're still on stage 3,
     // advance to stage 4 so Bernard offers the Wanderer dialogue.
-    const srDone = window.localStorage.getItem('praem_bernard_03_complete') === 'true';
+    const srDone = getFlag('bernard_03_complete') === 'true';
     const currentStage = parseInt(getFlag('bernard_stage') || '0', 10);
     if (srDone && currentStage < 4) {
       await setFlag(user.id, 'bernard_stage', '4');
@@ -832,7 +830,7 @@ const Village = () => {
 
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
-      window.localStorage.setItem('praem_touched_89', 'true');
+      if (user) void setFlag(user.id, 'touched_89', 'true');
       const unlocked = parseInt(getFlag('bernard_stage') || '0', 10) >= 2;
       if (!unlocked) {
         showLockWhisper('Not yet. Speak to Bernard first.');
@@ -847,7 +845,7 @@ const Village = () => {
       return true;
     }
     if (inside(nx, ny, A_23)) {
-      window.localStorage.setItem('praem_touched_23', 'true');
+      if (user) void setFlag(user.id, 'touched_23', 'true');
       const lv = currentLevelRef.current;
       if (lv < 3) {
         showLockWhisper('The Library opens later.');
@@ -859,7 +857,7 @@ const Village = () => {
       return true;
     }
     if (inside(nx, ny, A_47)) {
-      window.localStorage.setItem('praem_touched_47', 'true');
+      if (user) void setFlag(user.id, 'touched_47', 'true');
       const lv = currentLevelRef.current;
       if (lv < 3) {
         showLockWhisper('The Exchange opens later.');

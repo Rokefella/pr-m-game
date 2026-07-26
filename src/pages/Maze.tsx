@@ -605,6 +605,50 @@ const Maze = () => {
     whisperTimer.current = window.setTimeout(() => setWhisper(null), dur);
   };
 
+  // Whisper tiles from the loaded level, backed by the shared `whispers` table
+  const whisperCellsRef = useRef<{ col: number; row: number }[]>([]);
+  const whisperCellLastRef = useRef<Map<string, number>>(new Map());
+  useEffect(() => {
+    const cells = (config as unknown as { whispers?: { col: number; row: number }[] } | null)?.whispers;
+    whisperCellsRef.current = Array.isArray(cells)
+      ? cells.filter((c) => c && typeof c.col === 'number' && typeof c.row === 'number')
+      : [];
+    whisperCellLastRef.current = new Map();
+  }, [config]);
+
+  const fetchRandomWhisper = async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('whispers' as never)
+        .select('text')
+        .order('random()' as never)
+        .limit(1)
+        .single();
+      if (!error && data) return (data as { text?: string }).text ?? null;
+      const { data: pool } = await supabase
+        .from('whispers' as never)
+        .select('text')
+        .limit(100);
+      const rows = (pool as { text?: string }[] | null) ?? [];
+      if (rows.length === 0) return null;
+      return rows[Math.floor(Math.random() * rows.length)]?.text ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  const triggerTileWhisper = (col: number, row: number) => {
+    const key = `${col},${row}`;
+    const now = Date.now();
+    const last = whisperCellLastRef.current.get(key) ?? 0;
+    if (now - last <= 60000) return;
+    whisperCellLastRef.current.set(key, now);
+    void fetchRandomWhisper().then((text) => {
+      if (text) showWhisper(text, 'rgba(160,140,200,0.85)', 3000);
+    });
+  };
+
+
   // Move Claire one step toward target if possible
   const stepClaireToward = (target: Cell) => {
     if (!configRef.current) return;
@@ -759,7 +803,13 @@ const Maze = () => {
       }
     }
 
+    // whisper tile check — 60s cooldown per cell
+    if (whisperCellsRef.current.some((w) => w.col === nc && w.row === nr)) {
+      triggerTileWhisper(nc, nr);
+    }
+
     // easter egg check
+
     const eggKey = `${nc},${nr}`;
     const egg = cfg.eggs.find((e) => e.col === nc && e.row === nr);
     if (egg && !eggsTriggeredRef.current.has(eggKey)) {

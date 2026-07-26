@@ -459,6 +459,11 @@ const Village = () => {
   const whisperTimer = useRef<number | null>(null);
   const lastWhisperIdxRef = useRef<number | null>(null);
 
+  // Supabase-driven whisper tiles
+  const whisperCellsRef = useRef<{ key: string; x: number; y: number }[]>([]);
+  const whisperCellLastRef = useRef<Map<string, number>>(new Map());
+
+
   // Eye whisper state
   const [eyeMessage, setEyeMessage] = useState<string | null>(null);
   const eyeMessageIndexRef = useRef(0);
@@ -901,9 +906,14 @@ const Village = () => {
           }
         });
 
+        whisperCellsRef.current = cells
+          .filter((c) => c && c.type === 'WHISPER')
+          .map((c) => ({ key: `${c.col},${c.row}`, x: c.col * CELL, y: c.row * CELL }));
+
         if (!cancelled) {
           setDynamicBuildings({ typeA, typeB, typeC, forest, npcs, eyeCenter });
         }
+
       } catch (e) {
         console.warn('[Village] dynamic layout load failed', e);
       }
@@ -974,6 +984,46 @@ const Village = () => {
     if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
     whisperTimer.current = window.setTimeout(() => setWhisper(null), 2000);
   };
+
+  // Pull a random line from the shared `whispers` table
+  const fetchRandomWhisper = async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('whispers' as never)
+        .select('text')
+        .order('random()' as never)
+        .limit(1)
+        .single();
+      if (!error && data) return (data as { text?: string }).text ?? null;
+      const { data: pool } = await supabase
+        .from('whispers' as never)
+        .select('text')
+        .limit(100);
+      const rows = (pool as { text?: string }[] | null) ?? [];
+      if (rows.length === 0) return null;
+      return rows[Math.floor(Math.random() * rows.length)]?.text ?? null;
+    } catch {
+      return null;
+    }
+  };
+
+  const triggerTileWhisper = (key: string) => {
+    const now = Date.now();
+    const last = whisperCellLastRef.current.get(key) ?? 0;
+    if (now - last <= 30000) return;
+    whisperCellLastRef.current.set(key, now);
+    void fetchRandomWhisper().then((text) => {
+      if (!text) return;
+      setWhisper(text);
+      if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
+      whisperTimer.current = window.setTimeout(() => {
+        setWhisper(null);
+        lastWhisperIdxRef.current = null;
+      }, 2500);
+    });
+  };
+
+
 
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
@@ -1071,6 +1121,16 @@ const Village = () => {
 
     // Commit target
     playerTargetRef.current = { x: fx, y: fy };
+
+    // Whisper tiles (within 16px of the tile centre), 30s cooldown per tile
+    for (const wc of whisperCellsRef.current) {
+      if (Math.hypot(fx - wc.x, fy - wc.y) <= 16) {
+        triggerTileWhisper(wc.key);
+        break;
+      }
+    }
+
+
 
     // Broadcast own position (throttled to once every 2s)
     const uid = userIdRef.current;

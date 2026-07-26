@@ -1591,24 +1591,7 @@ const Village = () => {
 
         {/* Forest blocks (outside outermost ring) */}
         {(dynamicBuildings ? dynamicBuildings.forest : FOREST).map((f, i) => (
-          <div
-            key={`f-${i}`}
-            style={{
-              position: 'absolute',
-              left: f.x,
-              top: f.y,
-              width: f.w,
-              height: f.h,
-              background: 'linear-gradient(135deg, rgba(30,100,60,0.18) 0%, rgba(20,80,40,0.10) 60%, rgba(10,40,20,0.22) 100%)',
-              borderTop: '1px solid rgba(40,120,70,0.45)',
-              borderLeft: '1px solid rgba(35,110,60,0.35)',
-              borderBottom: '0.5px solid rgba(5,20,10,0.9)',
-              borderRight: '0.5px solid rgba(8,25,15,0.8)',
-              boxShadow: 'inset -2px -2px 6px rgba(0,0,0,0.3)',
-              pointerEvents: 'none',
-              zIndex: 1,
-            }}
-          />
+          <ForestTreeCell key={`f-${i}`} x={f.x} y={f.y} w={f.w} h={f.h} />
         ))}
 
         {/* Forest atmosphere text fragments */}

@@ -771,7 +771,7 @@ const Village = () => {
     // Bridge from legacy shadow-realm completion signal (set by ShadowRealm.tsx)
     // into the new quest_flags system: if SR is done and we're still on stage 3,
     // advance to stage 4 so Bernard offers the Wanderer dialogue.
-    const srDone = window.localStorage.getItem('praem_bernard_03_complete') === 'true';
+    const srDone = getFlag('bernard_03_complete') === 'true';
     const currentStage = parseInt(getFlag('bernard_stage') || '0', 10);
     if (srDone && currentStage < 4) {
       await setFlag(user.id, 'bernard_stage', '4');
@@ -830,7 +830,7 @@ const Village = () => {
 
   const triggerA = (nx: number, ny: number) => {
     if (inside(nx, ny, A_89)) {
-      window.localStorage.setItem('praem_touched_89', 'true');
+      if (user) void setFlag(user.id, 'touched_89', 'true');
       const unlocked = parseInt(getFlag('bernard_stage') || '0', 10) >= 2;
       if (!unlocked) {
         showLockWhisper('Not yet. Speak to Bernard first.');
@@ -845,7 +845,7 @@ const Village = () => {
       return true;
     }
     if (inside(nx, ny, A_23)) {
-      window.localStorage.setItem('praem_touched_23', 'true');
+      if (user) void setFlag(user.id, 'touched_23', 'true');
       const lv = currentLevelRef.current;
       if (lv < 3) {
         showLockWhisper('The Library opens later.');
@@ -857,7 +857,7 @@ const Village = () => {
       return true;
     }
     if (inside(nx, ny, A_47)) {
-      window.localStorage.setItem('praem_touched_47', 'true');
+      if (user) void setFlag(user.id, 'touched_47', 'true');
       const lv = currentLevelRef.current;
       if (lv < 3) {
         showLockWhisper('The Exchange opens later.');

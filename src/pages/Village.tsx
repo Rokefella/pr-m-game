@@ -545,6 +545,19 @@ const Village = () => {
   const [merchantOpen, setMerchantOpen] = useState(false);
   const merchantTriggerLockRef = useRef(false);
 
+  // ── Ghost players (real-time positions of other players) ──
+  const userIdRef = useRef<string | null>(null);
+  useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
+  const lastPositionWriteRef = useRef(0);
+  const [ghostDots, setGhostDots] = useState<
+    { user_id: string; x: number; y: number; village_level: number }[]
+  >([]);
+  const [tooltipState, setTooltipState] = useState<{
+    visible: boolean; x: number; y: number; level: number;
+  }>({ visible: false, x: 0, y: 0, level: 1 });
+
+
+
   // Bernard quest state
   const [bernardOpen, setBernardOpen] = useState(false);
   const bernardLockRef = useRef(false);
@@ -813,6 +826,51 @@ const Village = () => {
     refetchUser();
   }, [user, authLoading, navigate, refetchUser]);
 
+  // Ghost players — initial fetch + realtime subscription
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let cancelled = false;
+
+    const load = async () => {
+      await fetchOrCreateUser(user.id);
+      const { data: ghosts } = await supabase
+        .from('player_positions')
+        .select('user_id, x, y, village_level')
+        .neq('user_id', user.id)
+        .gte('last_seen', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+        .order('last_seen', { ascending: false })
+        .limit(100);
+      if (!cancelled && ghosts) setGhostDots(ghosts as typeof ghostDots);
+    };
+    void load();
+
+    const channel = supabase
+      .channel('player_positions')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'player_positions',
+      }, (payload) => {
+        if (payload.new && (payload.new as any).user_id !== user.id) {
+          setGhostDots((prev) => {
+            const filtered = prev.filter(
+              (g) => g.user_id !== (payload.new as any).user_id,
+            );
+            return [...filtered, payload.new as any].slice(-100);
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading]);
+
+
+
 
   useEffect(() => {
     return () => {
@@ -924,6 +982,20 @@ const Village = () => {
 
     // Commit target
     playerTargetRef.current = { x: fx, y: fy };
+
+    // Broadcast own position (throttled to once every 2s)
+    const uid = userIdRef.current;
+    if (uid && Date.now() - lastPositionWriteRef.current > 2000) {
+      lastPositionWriteRef.current = Date.now();
+      supabase.from('player_positions').upsert({
+        user_id: uid,
+        x: fx,
+        y: fy,
+        village_level: currentLevelRef.current,
+        last_seen: new Date().toISOString(),
+      }, { onConflict: 'user_id' }).then(() => {});
+    }
+
 
     // Villager proximity whisper (within 30px), 10s cooldown per villager
     const now = Date.now();
@@ -1518,6 +1590,32 @@ const Village = () => {
         </span>
 
 
+        {/* Ghost players */}
+        {ghostDots.map((ghost) => (
+          <div
+            key={ghost.user_id}
+            onMouseEnter={(e) => setTooltipState({
+              visible: true,
+              x: e.clientX + 10,
+              y: e.clientY - 24,
+              level: ghost.village_level,
+            })}
+            onMouseLeave={() => setTooltipState((t) => ({ ...t, visible: false }))}
+            style={{
+              position: 'absolute',
+              left: ghost.x - 3,
+              top: ghost.y - 3,
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: 'rgba(91,79,212,0.18)',
+              pointerEvents: 'auto',
+              zIndex: 2,
+              cursor: 'default',
+            }}
+          />
+        ))}
+
         {/* Player dot */}
         <div
           style={{
@@ -1535,6 +1633,30 @@ const Village = () => {
           }}
         />
       </div>
+
+      {/* Ghost hover tooltip */}
+      {tooltipState.visible && (
+        <div
+          className="font-mono"
+          style={{
+            position: 'fixed',
+            left: tooltipState.x,
+            top: tooltipState.y,
+            fontSize: 10,
+            color: 'rgba(160,140,200,0.7)',
+            background: 'rgba(4,4,10,0.9)',
+            border: '0.5px solid rgba(100,80,160,0.3)',
+            borderRadius: 4,
+            padding: '4px 8px',
+            pointerEvents: 'none',
+            zIndex: 60,
+          }}
+        >
+          {`· Level ${tooltipState.level}`}
+        </div>
+      )}
+
+
 
       {/* Entity quote (screen-fixed) */}
       <p

@@ -2089,6 +2089,8 @@ const Village = () => {
 
       {paywallOpen && (
         <PaywallOverlay
+          userId={user?.id ?? ''}
+
           onContinue={async () => {
             setPaywallOpen(false);
             // If the paywall was opened to accept the Alexandra quest,

@@ -1634,6 +1634,30 @@ const Village = () => {
         />
       </div>
 
+      {/* Ghost hover tooltip */}
+      {tooltipState.visible && (
+        <div
+          className="font-mono"
+          style={{
+            position: 'fixed',
+            left: tooltipState.x,
+            top: tooltipState.y,
+            fontSize: 10,
+            color: 'rgba(160,140,200,0.7)',
+            background: 'rgba(4,4,10,0.9)',
+            border: '0.5px solid rgba(100,80,160,0.3)',
+            borderRadius: 4,
+            padding: '4px 8px',
+            pointerEvents: 'none',
+            zIndex: 60,
+          }}
+        >
+          {`· Level ${tooltipState.level}`}
+        </div>
+      )}
+
+
+
       {/* Entity quote (screen-fixed) */}
       <p
         className="font-fell italic"

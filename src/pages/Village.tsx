@@ -983,6 +983,20 @@ const Village = () => {
     // Commit target
     playerTargetRef.current = { x: fx, y: fy };
 
+    // Broadcast own position (throttled to once every 2s)
+    const uid = userIdRef.current;
+    if (uid && Date.now() - lastPositionWriteRef.current > 2000) {
+      lastPositionWriteRef.current = Date.now();
+      supabase.from('player_positions').upsert({
+        user_id: uid,
+        x: fx,
+        y: fy,
+        village_level: currentLevelRef.current,
+        last_seen: new Date().toISOString(),
+      }, { onConflict: 'user_id' }).then(() => {});
+    }
+
+
     // Villager proximity whisper (within 30px), 10s cooldown per villager
     const now = Date.now();
     for (const v of villagersRef.current) {

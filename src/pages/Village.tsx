@@ -459,6 +459,11 @@ const Village = () => {
   const whisperTimer = useRef<number | null>(null);
   const lastWhisperIdxRef = useRef<number | null>(null);
 
+  // Supabase-driven whisper tiles
+  const whisperCellsRef = useRef<{ key: string; x: number; y: number }[]>([]);
+  const whisperCellLastRef = useRef<Map<string, number>>(new Map());
+
+
   // Eye whisper state
   const [eyeMessage, setEyeMessage] = useState<string | null>(null);
   const eyeMessageIndexRef = useRef(0);

@@ -21,6 +21,7 @@ type AccountUserRow = {
   username: string | null;
   credits: number;
   subscription_status: SubStatus;
+  subscription_tier: string | null;
   trial_end: string | null;
   title: string | null;
   unlocked_titles: string[] | null;
@@ -73,7 +74,7 @@ const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: P
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, subscription_status, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head')
+      .select('username, credits, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -140,8 +141,8 @@ const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: P
 
   const stage = parseInt(getFlag('bernard_stage') ?? '0', 10);
   const alexandraActive = getFlag('alexandra_quest') === 'active';
-  const subscribed = localStorage.getItem('praem_subscribed') === 'true';
-  const subType = localStorage.getItem('praem_subscription_type') || '';
+  const subscribed = accountRow ? ['active','lifetime','dev','beta'].includes(accountRow.subscription_status) : false;
+  const subType = accountRow?.subscription_tier ?? '';
 
 
   // Subscription display mapping

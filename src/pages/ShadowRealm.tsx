@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 // player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
+import { getAllFlags, getFlag } from '@/lib/questFlags';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
@@ -504,6 +505,8 @@ const ShadowRealm = () => {
     (async () => {
       const row = await fetchOrCreateUser(user.id);
       if (cancelled) return;
+      await getAllFlags(user.id);
+      if (cancelled) return;
       setCurrentLevel(row.level);
       currentLevelRef.current = row.level;
       mazeCompletedLevelRef.current = row.maze_completed_level;
@@ -519,7 +522,7 @@ const ShadowRealm = () => {
 
       if (row.levelup_pending) {
         const newLv = row.levelup_newlevel ?? row.level;
-        const b06 = window.localStorage.getItem('praem_bernard_06') === 'true';
+        const b06 = Number(getFlag('bernard_stage') ?? 0) >= 6;
         const newTitle = b06 ? (TITLES_BY_LEVEL[newLv] || '') : '';
         window.setTimeout(() => {
           if (cancelled) return;
@@ -1473,7 +1476,7 @@ const ShadowRealm = () => {
             LEVEL {levelUpOverlay.newLevel}
           </div>
 
-          {(typeof window !== 'undefined' && window.localStorage.getItem('praem_bernard_06') === 'true') && (
+          {(Number(getFlag('bernard_stage') ?? 0) >= 6) && (
             <>
               <div
                 className="font-fell italic"

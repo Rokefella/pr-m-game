@@ -359,7 +359,7 @@ const Maze = () => {
   const SUBBED = ['active', 'lifetime', 'dev', 'beta'];
   useEffect(() => {
     const handler = () => {
-      const bernard06 = getFlag('bernard_06') === 'true';
+      const bernard06 = Number(getFlag('bernard_stage') ?? 0) >= 6;
       if (bernard06 && !SUBBED.includes(subStatusRef.current)) {
         setPaywallOpen(true);
       }
@@ -549,7 +549,7 @@ const Maze = () => {
       subStatusRef.current = row.subscription_status ?? 'trial';
       await getAllFlags(user.id);
       if (cancelled) return;
-      if (getFlag('bernard_06') === 'true' && !SUBBED.includes(subStatusRef.current)) {
+      if (Number(getFlag('bernard_stage') ?? 0) >= 6 && !SUBBED.includes(subStatusRef.current)) {
         window.dispatchEvent(new Event('praem:open-paywall'));
       }
       setPosition({ level: row.level, dimension: 'purple' });

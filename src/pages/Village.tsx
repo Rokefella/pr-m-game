@@ -1122,6 +1122,16 @@ const Village = () => {
     // Commit target
     playerTargetRef.current = { x: fx, y: fy };
 
+    // Whisper tiles (within 16px of the tile centre), 30s cooldown per tile
+    for (const wc of whisperCellsRef.current) {
+      if (Math.hypot(fx - wc.x, fy - wc.y) <= 16) {
+        triggerTileWhisper(wc.key);
+        break;
+      }
+    }
+
+
+
     // Broadcast own position (throttled to once every 2s)
     const uid = userIdRef.current;
     if (uid && Date.now() - lastPositionWriteRef.current > 2000) {

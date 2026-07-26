@@ -803,7 +803,13 @@ const Maze = () => {
       }
     }
 
+    // whisper tile check — 60s cooldown per cell
+    if (whisperCellsRef.current.some((w) => w.col === nc && w.row === nr)) {
+      triggerTileWhisper(nc, nr);
+    }
+
     // easter egg check
+
     const eggKey = `${nc},${nr}`;
     const egg = cfg.eggs.find((e) => e.col === nc && e.row === nr);
     if (egg && !eggsTriggeredRef.current.has(eggKey)) {

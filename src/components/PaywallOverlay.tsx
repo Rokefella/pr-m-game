@@ -1,18 +1,23 @@
 import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { purchaseTier, type PurchaseTier } from '@/lib/purchase';
+import { setFlag } from '@/lib/questFlags';
 
 type Props = {
+  userId: string;
   onContinue: () => void;
   onDismiss: () => void;
 };
 
-type Tier = 'monthly' | 'yearly' | 'lifetime';
+type Tier = PurchaseTier;
 
-const PaywallOverlay = ({ onContinue, onDismiss }: Props) => {
+const FOUNDING_CAP = 500;
+
+const PaywallOverlay = ({ userId, onContinue, onDismiss }: Props) => {
   const [stage, setStage] = useState(0);
-  const [lifetimeRemaining, setLifetimeRemaining] = useState<number>(() => {
-    const v = window.localStorage.getItem('praem_lifetime_remaining');
-    return v ? parseInt(v, 10) : 500;
-  });
+  const [lifetimeRemaining, setLifetimeRemaining] = useState<number>(FOUNDING_CAP);
+  const [pending, setPending] = useState<Tier | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     const t1 = window.setTimeout(() => setStage(1), 800);
@@ -21,17 +26,34 @@ const PaywallOverlay = ({ onContinue, onDismiss }: Props) => {
     return () => { [t1, t2, t3].forEach(window.clearTimeout); };
   }, []);
 
-  const handleSubscribe = (tier: Tier) => {
-    window.localStorage.setItem('praem_subscribed', 'true');
-    window.localStorage.setItem('praem_subscription_type', tier);
-    if (tier === 'lifetime') {
-      const next = Math.max(0, lifetimeRemaining - 1);
-      window.localStorage.setItem('praem_lifetime_remaining', String(next));
-      setLifetimeRemaining(next);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { count, error } = await supabase
+        .from('users')
+        .select('id', { count: 'exact', head: true })
+        .eq('subscription_tier', 'founding');
+      if (cancelled || error) return;
+      setLifetimeRemaining(Math.max(0, FOUNDING_CAP - (count ?? 0)));
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSubscribe = async (tier: Tier) => {
+    if (pending) return;
+    setErrorMsg(null);
+    setPending(tier);
+    try {
+      await purchaseTier(userId, tier);
+      // Mark Find Alexandra quest as pending — Bernard triggers on next contact
+      await setFlag(userId, 'quest_alexandra_pending', 'true');
+      onContinue();
+    } catch (e: any) {
+      console.error('[PaywallOverlay] purchase error', e);
+      setErrorMsg(e?.message || 'Purchase could not be completed.');
+    } finally {
+      setPending(null);
     }
-    // Mark Find Alexandra quest as pending — Bernard triggers on next contact
-    window.localStorage.setItem('praem_quest_alexandra_pending', 'true');
-    onContinue();
   };
 
   const showLifetime = lifetimeRemaining > 0;
@@ -110,7 +132,7 @@ const PaywallOverlay = ({ onContinue, onDismiss }: Props) => {
                 <p className="font-fell italic" style={{ fontSize: 12, color: '#a98cff', margin: 0 }}>Save 38%</p>
                 <button
                   type="button"
-                  onClick={() => handleSubscribe('yearly')}
+                  onClick={() => handleSubscribe('annual')}
                   className="font-cinzel"
                   style={{
                     marginTop: 12, fontSize: 11, letterSpacing: '0.22em',
@@ -133,7 +155,7 @@ const PaywallOverlay = ({ onContinue, onDismiss }: Props) => {
                   </p>
                   <button
                     type="button"
-                    onClick={() => handleSubscribe('lifetime')}
+                    onClick={() => handleSubscribe('founding')}
                     className="font-cinzel"
                     style={{
                       marginTop: 12, fontSize: 11, letterSpacing: '0.22em',
@@ -153,10 +175,8 @@ const PaywallOverlay = ({ onContinue, onDismiss }: Props) => {
               <p className="font-fell italic" style={{ fontSize: 12, color: 'rgba(160,140,200,0.4)', margin: 0 }}>Testing access — will be removed</p>
               <button
                 type="button"
-                onClick={() => {
-                  window.localStorage.setItem('praem_subscribed', 'true');
-                  window.localStorage.setItem('praem_subscription_type', 'free');
-                  window.localStorage.setItem('praem_quest_alexandra_pending', 'true');
+                onClick={async () => {
+                  await setFlag(userId, 'quest_alexandra_pending', 'true');
                   onContinue();
                 }}
                 className="font-cinzel"
@@ -171,6 +191,12 @@ const PaywallOverlay = ({ onContinue, onDismiss }: Props) => {
               </button>
               <p className="font-mono" style={{ fontSize: 9, color: 'rgba(160,140,200,0.2)', margin: 0 }}>// DEV ONLY — remove before launch</p>
             </div>
+
+            {errorMsg && (
+              <p className="font-fell italic" style={{ fontSize: 13, color: 'rgba(220,120,120,0.9)', textAlign: 'center', margin: '16px 0 0', maxWidth: 460 }}>
+                {errorMsg}
+              </p>
+            )}
 
             <p className="font-fell italic" style={{ fontSize: 12, color: 'rgba(160,140,200,0.4)', textAlign: 'center', margin: '20px 0 0', maxWidth: 460 }}>
               Your registration number, Trace, and title are yours regardless.

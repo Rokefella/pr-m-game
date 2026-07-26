@@ -1533,7 +1533,7 @@ const Village = () => {
         ))}
 
         {/* Type C buildings */}
-        {TYPE_C.map((b) => (
+        {(dynamicBuildings ? dynamicBuildings.typeC : TYPE_C).map((b) => (
           <div
             key={`c-${b.id}`}
             style={{

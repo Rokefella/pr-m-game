@@ -826,6 +826,51 @@ const Village = () => {
     refetchUser();
   }, [user, authLoading, navigate, refetchUser]);
 
+  // Ghost players — initial fetch + realtime subscription
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let cancelled = false;
+
+    const load = async () => {
+      await fetchOrCreateUser(user.id);
+      const { data: ghosts } = await supabase
+        .from('player_positions')
+        .select('user_id, x, y, village_level')
+        .neq('user_id', user.id)
+        .gte('last_seen', new Date(Date.now() - 5 * 60 * 1000).toISOString())
+        .order('last_seen', { ascending: false })
+        .limit(100);
+      if (!cancelled && ghosts) setGhostDots(ghosts as typeof ghostDots);
+    };
+    void load();
+
+    const channel = supabase
+      .channel('player_positions')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'player_positions',
+      }, (payload) => {
+        if (payload.new && (payload.new as any).user_id !== user.id) {
+          setGhostDots((prev) => {
+            const filtered = prev.filter(
+              (g) => g.user_id !== (payload.new as any).user_id,
+            );
+            return [...filtered, payload.new as any].slice(-100);
+          });
+        }
+      })
+      .subscribe();
+
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading]);
+
+
+
 
   useEffect(() => {
     return () => {

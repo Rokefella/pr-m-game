@@ -451,6 +451,7 @@ const Village = () => {
   const lastTrailPushRef = useRef<{ x: number; y: number } | null>(null);
 
   const [trail, setTrail] = useState<Trail[]>([]);
+  const [dynamicBuildings, setDynamicBuildings] = useState<DynamicVillage | null>(null);
   const eyePupilRef = useRef({ x: 0, y: 0 });
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });

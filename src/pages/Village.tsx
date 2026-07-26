@@ -1507,8 +1507,8 @@ const Village = () => {
 
         {/* Watching eye in town square */}
         <CharacterEye
-          cx={CX}
-          cy={CY}
+          cx={dynamicBuildings?.eyeCenter ? dynamicBuildings.eyeCenter.x : CX}
+          cy={dynamicBuildings?.eyeCenter ? dynamicBuildings.eyeCenter.y : CY}
           color="#5b4fd4"
           size="small"
           playerPosition={player}

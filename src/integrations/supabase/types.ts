@@ -71,6 +71,30 @@ export type Database = {
         }
         Relationships: []
       }
+      player_positions: {
+        Row: {
+          last_seen: string
+          user_id: string
+          village_level: number
+          x: number
+          y: number
+        }
+        Insert: {
+          last_seen?: string
+          user_id: string
+          village_level?: number
+          x?: number
+          y?: number
+        }
+        Update: {
+          last_seen?: string
+          user_id?: string
+          village_level?: number
+          x?: number
+          y?: number
+        }
+        Relationships: []
+      }
       quest_flags: {
         Row: {
           flag_key: string

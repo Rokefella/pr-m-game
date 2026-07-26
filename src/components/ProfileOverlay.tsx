@@ -21,6 +21,7 @@ type AccountUserRow = {
   username: string | null;
   credits: number;
   subscription_status: SubStatus;
+  subscription_tier: string | null;
   trial_end: string | null;
   title: string | null;
   unlocked_titles: string[] | null;

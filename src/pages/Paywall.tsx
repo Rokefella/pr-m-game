@@ -84,11 +84,7 @@ const Paywall = () => {
       return;
     }
     try {
-      await purchasePackage(pkg);
-      await supabase
-        .from('users')
-        .update({ subscription_status: 'active', subscription_tier: tier })
-        .eq('id', user.id);
+      await purchaseTier(user.id, tier);
       setThanksTier(tier);
       navigate('/village');
     } catch (e: any) {
@@ -101,12 +97,8 @@ const Paywall = () => {
     setErrorMsg(null);
     if (!user) return;
     try {
-      const ci: any = await restorePurchases();
-      if (ci?.entitlements?.active?.['praem_access']) {
-        await supabase
-          .from('users')
-          .update({ subscription_status: 'active' })
-          .eq('id', user.id);
+      const restored = await restoreForUser(user.id);
+      if (restored) {
         navigate('/village');
       } else {
         setErrorMsg('No purchases to restore.');
@@ -118,18 +110,22 @@ const Paywall = () => {
   };
 
   const handleActivateBeta = async () => {
-    if (betaCode.trim().toUpperCase() !== 'PRAEM2026') {
+    if (!user) {
+      if (betaCode.trim().toUpperCase() !== 'PRAEM2026') {
+        setBetaError(true);
+        window.setTimeout(() => setBetaError(false), 2000);
+      }
+      return;
+    }
+    const ok = await redeemBetaCode(user.id, betaCode);
+    if (!ok) {
       setBetaError(true);
       window.setTimeout(() => setBetaError(false), 2000);
       return;
     }
-    if (!user) return;
-    await supabase
-      .from('users')
-      .update({ subscription_status: 'beta' })
-      .eq('id', user.id);
     navigate('/village');
   };
+
 
   return (
     <div

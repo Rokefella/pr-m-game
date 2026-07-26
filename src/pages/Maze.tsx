@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
+import { getAllFlags, getFlag } from '@/lib/questFlags';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
@@ -353,13 +354,13 @@ const Maze = () => {
     return () => window.removeEventListener('praem:exit-maze-to-village', handleExit);
   }, []);
 
+  // Subscription status from the users row + quest flags gate the paywall moment.
+  const subStatusRef = useRef<string>('trial');
+  const SUBBED = ['active', 'lifetime', 'dev', 'beta'];
   useEffect(() => {
     const handler = () => {
-      const subscribed = window.localStorage.getItem('praem_subscribed');
-      const bernard06 = window.localStorage.getItem('praem_bernard_06');
-      const profileComplete = window.localStorage.getItem('praem_profile_complete');
-      console.log('Paywall check — bernard_06:', bernard06, 'subscribed:', subscribed, 'profile_complete:', profileComplete);
-      if (subscribed !== 'true' && bernard06 === 'true' && profileComplete === 'true') {
+      const bernard06 = getFlag('bernard_06') === 'true';
+      if (bernard06 && !SUBBED.includes(subStatusRef.current)) {
         setPaywallOpen(true);
       }
     };
@@ -545,6 +546,12 @@ const Maze = () => {
     (async () => {
       const row = await fetchOrCreateUser(user.id);
       if (cancelled) return;
+      subStatusRef.current = row.subscription_status ?? 'trial';
+      await getAllFlags(user.id);
+      if (cancelled) return;
+      if (getFlag('bernard_06') === 'true' && !SUBBED.includes(subStatusRef.current)) {
+        window.dispatchEvent(new Event('praem:open-paywall'));
+      }
       setPosition({ level: row.level, dimension: 'purple' });
       currentLevelRef.current = row.level;
       setCredits(row.credits);
@@ -1421,6 +1428,7 @@ const Maze = () => {
 
       {paywallOpen && (
         <PaywallOverlay
+          userId={user?.id ?? ''}
           onContinue={() => {
             setPaywallOpen(false);
             window.dispatchEvent(new Event('praem:exit-maze-to-village'));

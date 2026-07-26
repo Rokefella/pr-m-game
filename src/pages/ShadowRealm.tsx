@@ -516,9 +516,6 @@ const ShadowRealm = () => {
       setOverlaySelectedTitle(row.title);
       if (row.aura_color) setAuraColor(row.aura_color);
       setRegistrationNumber(row.registration_number);
-      if (row.registration_number != null) {
-        localStorage.setItem('praem_registration_number', String(row.registration_number).padStart(4, '0'));
-      }
 
       if (row.levelup_pending) {
         const newLv = row.levelup_newlevel ?? row.level;

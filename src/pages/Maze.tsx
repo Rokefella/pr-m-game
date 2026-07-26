@@ -327,7 +327,7 @@ const Maze = () => {
   const currentLevelRef = useRef(1);
   const [levelLoaded, setLevelLoaded] = useState(false);
   const [credits, setCredits] = useState(50);
-  const [auraColor, setAuraColor] = useState<string>(() => (typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4');
+  const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationNumberRef = useRef(0);
   const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
@@ -471,14 +471,14 @@ const Maze = () => {
     if (!config) return;
     let spawn = { ...config.spawn };
     if (typeof window !== 'undefined') {
-      const rc = window.localStorage.getItem('praem_maze_return_col');
-      const rr = window.localStorage.getItem('praem_maze_return_row');
+      const rc = window.sessionStorage.getItem('praem_maze_return_col');
+      const rr = window.sessionStorage.getItem('praem_maze_return_row');
       if (rc !== null && rr !== null) {
         const c = parseInt(rc, 10);
         const r = parseInt(rr, 10);
         if (!Number.isNaN(c) && !Number.isNaN(r)) spawn = { col: c, row: r };
-        window.localStorage.removeItem('praem_maze_return_col');
-        window.localStorage.removeItem('praem_maze_return_row');
+        window.sessionStorage.removeItem('praem_maze_return_col');
+        window.sessionStorage.removeItem('praem_maze_return_row');
       }
     }
     posRef.current = { ...spawn };
@@ -558,9 +558,6 @@ const Maze = () => {
       if (row.aura_color) setAuraColor(row.aura_color);
       setRegistrationNumber(row.registration_number);
       registrationNumberRef.current = row.registration_number;
-      if (row.registration_number != null) {
-        localStorage.setItem('praem_registration_number', String(row.registration_number).padStart(4, '0'));
-      }
       const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;
       stepsRemainingRef.current = startSteps;
       setStepsRemaining(startSteps);

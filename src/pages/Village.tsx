@@ -906,9 +906,14 @@ const Village = () => {
           }
         });
 
+        whisperCellsRef.current = cells
+          .filter((c) => c && c.type === 'WHISPER')
+          .map((c) => ({ key: `${c.col},${c.row}`, x: c.col * CELL, y: c.row * CELL }));
+
         if (!cancelled) {
           setDynamicBuildings({ typeA, typeB, typeC, forest, npcs, eyeCenter });
         }
+
       } catch (e) {
         console.warn('[Village] dynamic layout load failed', e);
       }

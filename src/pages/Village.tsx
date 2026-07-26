@@ -826,6 +826,85 @@ const Village = () => {
     refetchUser();
   }, [user, authLoading, navigate, refetchUser]);
 
+  // ---- Dynamic village layout from Supabase (falls back to hardcoded arrays) ----
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let cancelled = false;
+
+    const loadVillage = async () => {
+      try {
+        const { data: villageRow } = await supabase
+          .from('levels' as never)
+          .select('data')
+          .eq('mode', 'village')
+          .eq('is_active', true)
+          .order('published_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (cancelled || !villageRow) return;
+        const cells = ((villageRow as { data?: { cells?: VillageCell[] } })?.data?.cells) ?? [];
+        if (!Array.isArray(cells) || cells.length === 0) return;
+
+        const CELL = 20;
+        const typeA: typeof TYPE_A = [];
+        const typeB: Rect[] = [];
+        const typeC: Rect[] = [];
+        const forest: ForestBlock[] = [];
+        const npcs: { x: number; y: number; name: string }[] = [];
+        let eyeCenter: { x: number; y: number } | null = null;
+
+        cells.forEach((cell, i) => {
+          if (!cell || typeof cell.col !== 'number' || typeof cell.row !== 'number') return;
+          const x = cell.col * CELL;
+          const y = cell.row * CELL;
+          switch (cell.type) {
+            case 'BUILDING_S':
+              typeC.push({ id: `dc-${i}`, x, y, w: 24, h: 20 });
+              break;
+            case 'BUILDING_M':
+              typeC.push({ id: `dc-${i}`, x, y, w: 32, h: 26 });
+              break;
+            case 'BUILDING_L':
+              typeB.push({ id: `db-${i}`, x, y, w: 44, h: 36 });
+              break;
+            case 'BUILDING_23':
+              typeA.push({ ...A_23, x, y, w: 70, h: 50 });
+              break;
+            case 'BUILDING_47':
+              typeA.push({ ...A_47, x, y, w: 70, h: 50 });
+              break;
+            case 'BUILDING_89':
+              typeA.push({ ...A_89, x, y, w: 90, h: 70 });
+              break;
+            case 'FOREST':
+              forest.push({ x, y, w: 18, h: 15 });
+              break;
+            case 'NPC':
+              npcs.push({ x, y, name: cell.npc_name || '' });
+              break;
+            case 'EYE':
+              eyeCenter = { x, y };
+              break;
+            default:
+              break;
+          }
+        });
+
+        if (!cancelled) {
+          setDynamicBuildings({ typeA, typeB, typeC, forest, npcs, eyeCenter });
+        }
+      } catch (e) {
+        console.warn('[Village] dynamic layout load failed', e);
+      }
+    };
+
+    void loadVillage();
+    return () => { cancelled = true; };
+  }, [user, authLoading]);
+
+
+
   // Ghost players — initial fetch + realtime subscription
   useEffect(() => {
     if (authLoading || !user) return;

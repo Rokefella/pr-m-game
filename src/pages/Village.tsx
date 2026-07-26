@@ -26,6 +26,15 @@ const MERCHANT_LINES = [
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
+type VillageCell = { col: number; row: number; type: string; npc_name?: string };
+type DynamicVillage = {
+  typeA: typeof TYPE_A;
+  typeB: Rect[];
+  typeC: Rect[];
+  forest: ForestBlock[];
+  npcs: { x: number; y: number; name: string }[];
+  eyeCenter: { x: number; y: number } | null;
+};
 
 const MAP_W = 2200;
 const MAP_H = 1400;
@@ -442,6 +451,7 @@ const Village = () => {
   const lastTrailPushRef = useRef<{ x: number; y: number } | null>(null);
 
   const [trail, setTrail] = useState<Trail[]>([]);
+  const [dynamicBuildings, setDynamicBuildings] = useState<DynamicVillage | null>(null);
   const eyePupilRef = useRef({ x: 0, y: 0 });
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });
@@ -825,6 +835,85 @@ const Village = () => {
     }
     refetchUser();
   }, [user, authLoading, navigate, refetchUser]);
+
+  // ---- Dynamic village layout from Supabase (falls back to hardcoded arrays) ----
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let cancelled = false;
+
+    const loadVillage = async () => {
+      try {
+        const { data: villageRow } = await supabase
+          .from('levels' as never)
+          .select('data')
+          .eq('mode', 'village')
+          .eq('is_active', true)
+          .order('published_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (cancelled || !villageRow) return;
+        const cells = ((villageRow as { data?: { cells?: VillageCell[] } })?.data?.cells) ?? [];
+        if (!Array.isArray(cells) || cells.length === 0) return;
+
+        const CELL = 20;
+        const typeA: typeof TYPE_A = [];
+        const typeB: Rect[] = [];
+        const typeC: Rect[] = [];
+        const forest: ForestBlock[] = [];
+        const npcs: { x: number; y: number; name: string }[] = [];
+        let eyeCenter: { x: number; y: number } | null = null;
+
+        cells.forEach((cell, i) => {
+          if (!cell || typeof cell.col !== 'number' || typeof cell.row !== 'number') return;
+          const x = cell.col * CELL;
+          const y = cell.row * CELL;
+          switch (cell.type) {
+            case 'BUILDING_S':
+              typeC.push({ id: `dc-${i}`, x, y, w: 24, h: 20 });
+              break;
+            case 'BUILDING_M':
+              typeC.push({ id: `dc-${i}`, x, y, w: 32, h: 26 });
+              break;
+            case 'BUILDING_L':
+              typeB.push({ id: `db-${i}`, x, y, w: 44, h: 36 });
+              break;
+            case 'BUILDING_23':
+              typeA.push({ ...A_23, x, y, w: 70, h: 50 });
+              break;
+            case 'BUILDING_47':
+              typeA.push({ ...A_47, x, y, w: 70, h: 50 });
+              break;
+            case 'BUILDING_89':
+              typeA.push({ ...A_89, x, y, w: 90, h: 70 });
+              break;
+            case 'FOREST':
+              forest.push({ x, y, w: 18, h: 15 });
+              break;
+            case 'NPC':
+              npcs.push({ x, y, name: cell.npc_name || '' });
+              break;
+            case 'EYE':
+              eyeCenter = { x, y };
+              break;
+            default:
+              break;
+          }
+        });
+
+        if (!cancelled) {
+          setDynamicBuildings({ typeA, typeB, typeC, forest, npcs, eyeCenter });
+        }
+      } catch (e) {
+        console.warn('[Village] dynamic layout load failed', e);
+      }
+    };
+
+    void loadVillage();
+    return () => { cancelled = true; };
+  }, [user, authLoading]);
+
+
 
   // Ghost players — initial fetch + realtime subscription
   useEffect(() => {
@@ -1375,7 +1464,7 @@ const Village = () => {
         />
 
         {/* Forest blocks (outside outermost ring) */}
-        {FOREST.map((f, i) => (
+        {(dynamicBuildings ? dynamicBuildings.forest : FOREST).map((f, i) => (
           <div
             key={`f-${i}`}
             style={{
@@ -1418,8 +1507,8 @@ const Village = () => {
 
         {/* Watching eye in town square */}
         <CharacterEye
-          cx={CX}
-          cy={CY}
+          cx={dynamicBuildings?.eyeCenter ? dynamicBuildings.eyeCenter.x : CX}
+          cy={dynamicBuildings?.eyeCenter ? dynamicBuildings.eyeCenter.y : CY}
           color="#5b4fd4"
           size="small"
           playerPosition={player}
@@ -1444,7 +1533,7 @@ const Village = () => {
         ))}
 
         {/* Type C buildings */}
-        {TYPE_C.map((b) => (
+        {(dynamicBuildings ? dynamicBuildings.typeC : TYPE_C).map((b) => (
           <div
             key={`c-${b.id}`}
             style={{
@@ -1465,7 +1554,7 @@ const Village = () => {
         ))}
 
         {/* Type B buildings */}
-        {TYPE_B.map((b) => (
+        {(dynamicBuildings ? dynamicBuildings.typeB : TYPE_B).map((b) => (
           <div
             key={`b-${b.id}`}
             style={{
@@ -1486,9 +1575,15 @@ const Village = () => {
         ))}
 
         {/* Type A buildings */}
-        {renderTypeA(A_23, false)}
-        {renderTypeA(A_47, false)}
-        {renderTypeA(A_89, true)}
+        {dynamicBuildings
+          ? dynamicBuildings.typeA.map((b) => renderTypeA(b, b.id === 89))
+          : (
+            <>
+              {renderTypeA(A_23, false)}
+              {renderTypeA(A_47, false)}
+              {renderTypeA(A_89, true)}
+            </>
+          )}
 
         {/* Trail glowing polyline (last 80 positions, fades to tail) */}
         {trail.length >= 2 && (

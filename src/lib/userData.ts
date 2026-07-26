@@ -17,6 +17,9 @@ export type UserRow = {
   total_maze_steps: number
   total_maze_time: number
   first_launch_at: string
+  subscription_status: string
+  subscription_tier: string | null
+  trial_end: string
 }
 
 const DEFAULTS: Omit<UserRow, 'id'> = {
@@ -35,6 +38,9 @@ const DEFAULTS: Omit<UserRow, 'id'> = {
   total_maze_steps: 0,
   total_maze_time: 0,
   first_launch_at: new Date().toISOString(),
+  subscription_status: 'trial',
+  subscription_tier: null,
+  trial_end: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
 }
 
 export async function fetchOrCreateUser(userId: string): Promise<UserRow> {

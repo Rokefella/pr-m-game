@@ -280,7 +280,7 @@ const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: P
       username: newName,
     });
     setAccountRow({ ...accountRow, credits: accountRow.credits - 10000, username: newName });
-    localStorage.setItem('praem_username', newName);
+    await updateUser(user.id, { username: newName });
     setNameMsg('Name changed.');
     setNameMsgColor('rgba(160,140,200,0.5)');
     setNameStep('input');

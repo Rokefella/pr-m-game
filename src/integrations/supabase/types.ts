@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      library: {
+        Row: {
+          id: string
+          image_data: string | null
+          level: number
+          prime_number: number
+          transferred_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          image_data?: string | null
+          level: number
+          prime_number: number
+          transferred_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          image_data?: string | null
+          level?: number
+          prime_number?: number
+          transferred_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       quest_flags: {
         Row: {
           flag_key: string

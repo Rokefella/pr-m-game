@@ -20,6 +20,8 @@ type SubStatus = 'dev' | 'trial' | 'active' | 'lifetime' | 'beta' | 'expired' | 
 type AccountUserRow = {
   username: string | null;
   credits: number;
+  steps_remaining: number;
+  registration_number: number | null;
   subscription_status: SubStatus;
   subscription_tier: string | null;
   trial_end: string | null;
@@ -74,7 +76,7 @@ const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: P
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head')
+      .select('username, credits, steps_remaining, registration_number, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {

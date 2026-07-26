@@ -1575,9 +1575,15 @@ const Village = () => {
         ))}
 
         {/* Type A buildings */}
-        {renderTypeA(A_23, false)}
-        {renderTypeA(A_47, false)}
-        {renderTypeA(A_89, true)}
+        {dynamicBuildings
+          ? dynamicBuildings.typeA.map((b) => renderTypeA(b, b.id === 89))
+          : (
+            <>
+              {renderTypeA(A_23, false)}
+              {renderTypeA(A_47, false)}
+              {renderTypeA(A_89, true)}
+            </>
+          )}
 
         {/* Trail glowing polyline (last 80 positions, fades to tail) */}
         {trail.length >= 2 && (

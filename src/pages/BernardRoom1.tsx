@@ -127,8 +127,8 @@ const BernardRoom1 = () => {
 
     // return tile
     if (RETURN_CELLS.has(`${nc},${nr}`)) {
-      localStorage.setItem('praem_maze_return_col', '2');
-      localStorage.setItem('praem_maze_return_row', '14');
+      sessionStorage.setItem('praem_maze_return_col', '2');
+      sessionStorage.setItem('praem_maze_return_row', '14');
       navigate('/maze');
     }
   };
@@ -211,8 +211,8 @@ const BernardRoom1 = () => {
     let cancelled = false;
     (async () => {
       const stage = parseInt(getFlag('bernard_stage') || '0', 10);
-      // Shadow Realm completion signal (set by ShadowRealm.tsx — out of scope to migrate).
-      const srDone = localStorage.getItem('praem_bernard_03_complete') === 'true';
+      // Shadow Realm completion signal (quest flag).
+      const srDone = getFlag('bernard_03_complete') === 'true';
 
       let fragmentCount = 0;
       if (stage < 3) {
@@ -430,8 +430,8 @@ const BernardRoom1 = () => {
             left: pos.col * CELL + CELL / 2 - 4,
             top: pos.row * CELL + CELL / 2 - 4,
             width: 8, height: 8, borderRadius: '50%',
-            background: (typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4',
-            boxShadow: `0 0 10px ${((typeof window !== 'undefined' && localStorage.getItem('praem_aura_color')) || '#5b4fd4')}b3`,
+            background: auraColor,
+            boxShadow: `0 0 10px ${auraColor}b3`,
             transition: 'left 130ms linear, top 130ms linear',
           }}
         />

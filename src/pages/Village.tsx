@@ -26,6 +26,15 @@ const MERCHANT_LINES = [
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
+type VillageCell = { col: number; row: number; type: string; npc_name?: string };
+type DynamicVillage = {
+  typeA: typeof TYPE_A;
+  typeB: Rect[];
+  typeC: Rect[];
+  forest: ForestBlock[];
+  npcs: { x: number; y: number; name: string }[];
+  eyeCenter: { x: number; y: number } | null;
+};
 
 const MAP_W = 2200;
 const MAP_H = 1400;

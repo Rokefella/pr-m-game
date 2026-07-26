@@ -486,6 +486,7 @@ const Village = () => {
   const [levelUpHandled, setLevelUpHandled] = useState(false);
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [username, setUsername] = useState<string>('');
+  const usernameRef = useRef<string>('');
   const [unlockedTitles, setUnlockedTitles] = useState<string[]>([]);
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);
   const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);

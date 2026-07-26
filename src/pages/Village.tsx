@@ -545,6 +545,19 @@ const Village = () => {
   const [merchantOpen, setMerchantOpen] = useState(false);
   const merchantTriggerLockRef = useRef(false);
 
+  // ── Ghost players (real-time positions of other players) ──
+  const userIdRef = useRef<string | null>(null);
+  useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
+  const lastPositionWriteRef = useRef(0);
+  const [ghostDots, setGhostDots] = useState<
+    { user_id: string; x: number; y: number; village_level: number }[]
+  >([]);
+  const [tooltipState, setTooltipState] = useState<{
+    visible: boolean; x: number; y: number; level: number;
+  }>({ visible: false, x: 0, y: 0, level: 1 });
+
+
+
   // Bernard quest state
   const [bernardOpen, setBernardOpen] = useState(false);
   const bernardLockRef = useRef(false);

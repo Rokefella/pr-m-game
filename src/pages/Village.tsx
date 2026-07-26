@@ -1590,6 +1590,32 @@ const Village = () => {
         </span>
 
 
+        {/* Ghost players */}
+        {ghostDots.map((ghost) => (
+          <div
+            key={ghost.user_id}
+            onMouseEnter={(e) => setTooltipState({
+              visible: true,
+              x: e.clientX + 10,
+              y: e.clientY - 24,
+              level: ghost.village_level,
+            })}
+            onMouseLeave={() => setTooltipState((t) => ({ ...t, visible: false }))}
+            style={{
+              position: 'absolute',
+              left: ghost.x - 3,
+              top: ghost.y - 3,
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: 'rgba(91,79,212,0.18)',
+              pointerEvents: 'auto',
+              zIndex: 2,
+              cursor: 'default',
+            }}
+          />
+        ))}
+
         {/* Player dot */}
         <div
           style={{

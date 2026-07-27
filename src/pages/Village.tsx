@@ -1223,18 +1223,21 @@ const Village = () => {
       }
     }
 
-    // Hard ellipse boundary: clamp to outermost ellipse +20px buffer
-    const BX = OUTERMOST_RX + 20;
-    const BY = OUTERMOST_RY + 20;
+    // Hard ellipse boundary: hardcoded village only (dynamic uses the rect clamp above)
     let fx = nx, fy = ny;
-    const ex = (fx - CX) / BX;
-    const ey = (fy - CY) / BY;
-    const e2 = ex * ex + ey * ey;
-    if (e2 > 1) {
-      const mag = Math.sqrt(e2);
-      fx = CX + (fx - CX) / mag;
-      fy = CY + (fy - CY) / mag;
+    if (!dynamicBuildings) {
+      const BX = OUTERMOST_RX + 20;
+      const BY = OUTERMOST_RY + 20;
+      const ex = (fx - CX) / BX;
+      const ey = (fy - CY) / BY;
+      const e2 = ex * ex + ey * ey;
+      if (e2 > 1) {
+        const mag = Math.sqrt(e2);
+        fx = CX + (fx - CX) / mag;
+        fy = CY + (fy - CY) / mag;
+      }
     }
+
 
     // Commit target
     playerTargetRef.current = { x: fx, y: fy };
@@ -1584,20 +1587,23 @@ const Village = () => {
           }}
         />
 
-        {/* Outermost ring outline */}
-        <div
-          style={{
-            position: 'absolute',
-            left: CX - OUTERMOST_RX,
-            top: CY - OUTERMOST_RY,
-            width: OUTERMOST_RX * 2,
-            height: OUTERMOST_RY * 2,
-            border: '0.5px solid rgba(100,80,160,0.05)',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
+        {/* Outermost ring outline (hardcoded village only) */}
+        {!dynamicBuildings && (
+          <div
+            style={{
+              position: 'absolute',
+              left: CX - OUTERMOST_RX,
+              top: CY - OUTERMOST_RY,
+              width: OUTERMOST_RX * 2,
+              height: OUTERMOST_RY * 2,
+              border: '0.5px solid rgba(100,80,160,0.05)',
+              borderRadius: '50%',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
+        )}
+
         {/* Outer ring outline */}
         <div
           style={{
@@ -1670,8 +1676,9 @@ const Village = () => {
 
         {/* Watching eye in town square */}
         <CharacterEye
-          cx={dynamicBuildings?.eyeCenter ? dynamicBuildings.eyeCenter.x : CX}
-          cy={dynamicBuildings?.eyeCenter ? dynamicBuildings.eyeCenter.y : CY}
+          cx={dynamicBuildings ? (dynamicBuildings.eyeCenter ? dynamicBuildings.eyeCenter.x : mapW / 2) : CX}
+          cy={dynamicBuildings ? (dynamicBuildings.eyeCenter ? dynamicBuildings.eyeCenter.y : mapH / 2) : CY}
+
           color="#5b4fd4"
           size="small"
           playerPosition={player}

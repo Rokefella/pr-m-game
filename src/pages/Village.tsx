@@ -808,17 +808,15 @@ const Village = () => {
   );
   const activeVillagers = dynamicBuildings ? [] : villagers;
 
-  const villagersRef = useRef<Villager[]>(villagers);
-  useEffect(() => { villagersRef.current = villagers; }, [villagers]);
+  const villagersRef = useRef<Villager[]>(activeVillagers);
+  useEffect(() => { villagersRef.current = activeVillagers; }, [activeVillagers]);
   const lastVillagerWhisperRef = useRef<Map<number, number>>(new Map());
   const [villagerWhisper, setVillagerWhisper] = useState<string | null>(null);
   const villagerWhisperTimer = useRef<number | null>(null);
 
   useEffect(() => {
+    if (dynamicBuildings) return;
     const timers: number[] = [];
-    VILLAGERS_DATA.forEach((v) => {
-      console.log('Villager', v.id, 'at map px:', v.col * 40, v.row * 40, '(MAP_W:', MAP_W, 'MAP_H:', MAP_H, ')');
-    });
     VILLAGERS_DATA.forEach((v) => {
       const baseX = v.col * 40;
       const baseY = v.row * 40;
@@ -838,7 +836,8 @@ const Village = () => {
       timers.push(id);
     });
     return () => { timers.forEach((t) => window.clearInterval(t)); };
-  }, []);
+  }, [dynamicBuildings]);
+
 
   const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];
 

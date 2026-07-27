@@ -103,6 +103,141 @@ const CLUSTER_FILL: Record<ClusterKind, string> = {
   L: '#1e3a6b',
 };
 
+// Deterministic pseudo-random from cluster position (stable across renders)
+function clusterRand(seed: number) {
+  let s = seed * 9301 + 49297;
+  return () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+// One grouped building image, sized to the cluster's bounding box.
+// Rooftop detail density scales with the cluster's total cell count.
+function ClusterBuilding({ cluster }: { cluster: BuildingCluster }) {
+  const { x, y, w, h, cols, rows, cells, kind } = cluster;
+  const fill = CLUSTER_FILL[kind];
+  const rnd = clusterRand(x * 31 + y * 17 + cells);
+
+  // Detail counts interpolate with area
+  const ventCount = Math.max(1, Math.min(10, Math.round(cells * 0.8)));
+  const ventSize = Math.max(3, Math.min(8, Math.round(3 + Math.sqrt(cells))));
+  const skyW = Math.max(6, Math.min(w - 8, Math.round(6 + cells * 1.4)));
+  const skyH = Math.max(4, Math.min(h - 8, Math.round(4 + cells * 0.9)));
+  const hatch = Math.max(3, Math.min(7, Math.round(2 + Math.sqrt(cells))));
+
+  const vents = Array.from({ length: ventCount }, (_, i) => ({
+    i,
+    vx: 3 + rnd() * Math.max(1, w - ventSize - 6),
+    vy: 3 + rnd() * Math.max(1, h - ventSize - 6),
+  }));
+
+  const seams: React.ReactNode[] = [];
+  for (let c = 1; c < cols; c++) {
+    seams.push(
+      <div
+        key={`sv-${c}`}
+        style={{
+          position: 'absolute',
+          left: c * 20,
+          top: 0,
+          width: 1,
+          height: h,
+          background: 'rgba(0,0,0,0.28)',
+        }}
+      />,
+    );
+  }
+  for (let r = 1; r < rows; r++) {
+    seams.push(
+      <div
+        key={`sh-${r}`}
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: r * 20,
+          width: w,
+          height: 1,
+          background: 'rgba(0,0,0,0.28)',
+        }}
+      />,
+    );
+  }
+
+  return (
+    <>
+      {/* dark offset shadow behind footprint */}
+      <div
+        style={{
+          position: 'absolute',
+          left: x + 3,
+          top: y + 3,
+          width: w,
+          height: h,
+          background: 'rgba(2,2,10,0.65)',
+          pointerEvents: 'none',
+          zIndex: 2,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: x,
+          top: y,
+          width: w,
+          height: h,
+          background: fill,
+          border: '1px solid rgba(4,4,10,0.55)',
+          pointerEvents: 'none',
+          zIndex: 3,
+          overflow: 'hidden',
+        }}
+      >
+        {seams}
+        {/* rooftop HVAC vents */}
+        {vents.map((v) => (
+          <div
+            key={`v-${v.i}`}
+            style={{
+              position: 'absolute',
+              left: v.vx,
+              top: v.vy,
+              width: ventSize,
+              height: ventSize,
+              background: 'rgba(10,14,26,0.85)',
+            }}
+          />
+        ))}
+        {/* skylight panel */}
+        <div
+          style={{
+            position: 'absolute',
+            left: Math.max(3, (w - skyW) / 2),
+            top: Math.max(3, (h - skyH) / 2),
+            width: skyW,
+            height: skyH,
+            background: 'rgba(226,240,250,0.55)',
+            border: '1px solid rgba(10,14,26,0.5)',
+          }}
+        />
+        {/* access hatch */}
+        <div
+          style={{
+            position: 'absolute',
+            right: 3,
+            bottom: 3,
+            width: hatch,
+            height: hatch,
+            background: 'rgba(20,26,40,0.9)',
+          }}
+        />
+      </div>
+    </>
+  );
+}
+
+
+
 
 // Decorative ground tile colors (muted, atmospheric — no border radius)
 const GROUND_TILE_COLORS: Record<GroundTile['kind'], string> = {

@@ -1429,10 +1429,17 @@ const Village = () => {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  // Camera offset for one axis: center the map when it's smaller than the
+  // viewport, otherwise follow the player with the usual clamp.
+  const camAxis = (viewSize: number, mapSize: number, playerPos: number) =>
+    mapSize <= viewSize
+      ? (viewSize - mapSize) / 2
+      : Math.min(0, Math.max(viewSize - mapSize, viewSize / 2 - playerPos));
+
   // Smooth camera (lerp via rAF)
   const initialCam = (() => {
-    const tx = Math.min(0, Math.max(view.w - mapW, view.w / 2 - player.x));
-    const ty = Math.min(0, Math.max(view.h - mapH, view.h / 2 - player.y));
+    const tx = camAxis(view.w, mapW, player.x);
+    const ty = camAxis(view.h, mapH, player.y);
     return { x: tx, y: ty };
   })();
   const cameraRef = useRef(initialCam);
@@ -1441,8 +1448,9 @@ const Village = () => {
   useEffect(() => {
     let raf = 0;
     const loop = () => {
-      const targetX = Math.min(0, Math.max(view.w - mapSizeRef.current.w, view.w / 2 - playerRef.current.x));
-      const targetY = Math.min(0, Math.max(view.h - mapSizeRef.current.h, view.h / 2 - playerRef.current.y));
+      const targetX = camAxis(view.w, mapSizeRef.current.w, playerRef.current.x);
+      const targetY = camAxis(view.h, mapSizeRef.current.h, playerRef.current.y);
+
       const dx = targetX - cameraRef.current.x;
       const dy = targetY - cameraRef.current.y;
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {

@@ -922,7 +922,7 @@ const Village = () => {
           .maybeSingle();
 
         if (cancelled || !villageRow) return;
-        const cells = ((villageRow as { data?: { cells?: VillageCell[] } })?.data?.cells) ?? [];
+        const cells = ((villageRow as { data?: { extraCells?: VillageCell[] } })?.data?.extraCells) ?? [];
         if (!Array.isArray(cells) || cells.length === 0) return;
 
         const CELL = 20;

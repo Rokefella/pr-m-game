@@ -39,10 +39,9 @@ export async function loadLevelFromSupabase(
   dimension: Dimension = 'purple',
 ): Promise<LoadedLevelConfig | null> {
   const { data, error } = await supabase
-    .from('levels' as never)
+    .from('mazes' as never)
     .select('level_number, level_name, grid_size, data')
     .eq('level_number', levelNumber)
-    .eq('mode', 'maze')
     .maybeSingle();
 
   if (error) {

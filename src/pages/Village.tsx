@@ -915,12 +915,9 @@ const Village = () => {
     const loadVillage = async () => {
       try {
         const { data: villageRow } = await supabase
-          .from('levels' as never)
+          .from('special_locations' as never)
           .select('data')
-          .eq('mode', 'village')
-          .eq('is_active', true)
-          .order('published_at', { ascending: false })
-          .limit(1)
+          .eq('location_key', 'village')
           .maybeSingle();
 
         if (cancelled || !villageRow) return;

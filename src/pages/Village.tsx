@@ -1587,20 +1587,23 @@ const Village = () => {
           }}
         />
 
-        {/* Outermost ring outline */}
-        <div
-          style={{
-            position: 'absolute',
-            left: CX - OUTERMOST_RX,
-            top: CY - OUTERMOST_RY,
-            width: OUTERMOST_RX * 2,
-            height: OUTERMOST_RY * 2,
-            border: '0.5px solid rgba(100,80,160,0.05)',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
+        {/* Outermost ring outline (hardcoded village only) */}
+        {!dynamicBuildings && (
+          <div
+            style={{
+              position: 'absolute',
+              left: CX - OUTERMOST_RX,
+              top: CY - OUTERMOST_RY,
+              width: OUTERMOST_RX * 2,
+              height: OUTERMOST_RY * 2,
+              border: '0.5px solid rgba(100,80,160,0.05)',
+              borderRadius: '50%',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
+        )}
+
         {/* Outer ring outline */}
         <div
           style={{

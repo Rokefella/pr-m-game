@@ -1186,9 +1186,11 @@ const Village = () => {
   );
 
   const move = (dx: number, dy: number) => {
+    console.log('[move] dynamicBuildings truthy?', !!dynamicBuildings);
     const prev = playerTargetRef.current;
     const nx = Math.max(0, Math.min(mapSizeRef.current.w, prev.x + dx));
     const ny = Math.max(0, Math.min(mapSizeRef.current.h, prev.y + dy));
+
 
     // Type A: bumping fires response but cancels move
     for (const a of (dynamicBuildings ? dynamicBuildings.typeA : TYPE_A)) {

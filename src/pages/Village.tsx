@@ -1196,7 +1196,7 @@ const Village = () => {
     // Type A: bumping fires response but cancels move
     for (const a of (dynamicBuildings ? dynamicBuildings.typeA : TYPE_A)) {
       if (inside(nx, ny, a)) {
-        triggerA(nx, ny);
+        triggerA(nx, ny, a);
         return;
       }
     }

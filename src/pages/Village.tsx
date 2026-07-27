@@ -917,7 +917,7 @@ const Village = () => {
         const { data: villageRow } = await supabase
           .from('special_locations' as never)
           .select('data')
-          .eq('level_number', user.level)
+          .eq('level_number', currentLevel)
           .eq('location_key', 'village')
           .maybeSingle();
 

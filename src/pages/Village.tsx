@@ -1139,7 +1139,7 @@ const Village = () => {
     const ny = Math.max(0, Math.min(MAP_H, prev.y + dy));
 
     // Type A: bumping fires response but cancels move
-    for (const a of TYPE_A) {
+    for (const a of (dynamicBuildings ? dynamicBuildings.typeA : TYPE_A)) {
       if (inside(nx, ny, a)) {
         triggerA(nx, ny);
         return;
@@ -1147,24 +1147,26 @@ const Village = () => {
     }
 
     // Obstacles (B + C + RIM) with 2px padding — also check whisper trigger on any whispered building
-    for (const o of OBSTACLES) {
+    for (const o of activeObstacles) {
       if (
         nx >= o.x - 2 &&
         nx <= o.x + o.w + 2 &&
         ny >= o.y - 2 &&
         ny <= o.y + o.h + 2
       ) {
-        const msg = WHISPER_BY_RECT.get(o);
-        if (msg !== undefined) {
-          const oIdx = OBSTACLES.indexOf(o);
-          if (lastWhisperIdxRef.current !== oIdx) {
-            lastWhisperIdxRef.current = oIdx;
-            setWhisper(msg);
-            if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
-            whisperTimer.current = window.setTimeout(() => {
-              setWhisper(null);
-              lastWhisperIdxRef.current = null;
-            }, 2500);
+        if (!dynamicBuildings) {
+          const msg = WHISPER_BY_RECT.get(o);
+          if (msg !== undefined) {
+            const oIdx = activeObstacles.indexOf(o);
+            if (lastWhisperIdxRef.current !== oIdx) {
+              lastWhisperIdxRef.current = oIdx;
+              setWhisper(msg);
+              if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
+              whisperTimer.current = window.setTimeout(() => {
+                setWhisper(null);
+                lastWhisperIdxRef.current = null;
+              }, 2500);
+            }
           }
         }
         return;

@@ -1095,7 +1095,14 @@ const Village = () => {
               ? { col: rawStart.col, row: rawStart.row }
               : null;
 
-          setDynamicBuildings({ typeA, typeB, typeC, forest, groundTiles, npcs, eyeCenter, gridSize, start });
+          const clusters = [
+            ...clusterCells('S', sCells),
+            ...clusterCells('M', mCells),
+            ...clusterCells('L', lCells),
+          ];
+
+          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, npcs, eyeCenter, gridSize, start });
+
 
           // Reposition the player once, when the dynamic village loads
           if (!dynSpawnDoneRef.current) {

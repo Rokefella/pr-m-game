@@ -997,6 +997,13 @@ const Village = () => {
             case 'EYE':
               eyeCenter = { x, y };
               break;
+            case 'PATH':
+            case 'ROAD':
+            case 'SQUARE':
+            case 'LANDMARK':
+              groundTiles.push({ x, y, kind: cell.type });
+              break;
+
             default:
               break;
           }

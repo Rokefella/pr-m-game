@@ -1832,8 +1832,13 @@ const Village = () => {
             />
           ))}
 
-        {/* Type C buildings */}
-        {(dynamicBuildings ? dynamicBuildings.typeC : TYPE_C).map((b) => (
+        {/* Clustered dynamic buildings (grouped by type, one image per cluster) */}
+        {dynamicBuildings?.clusters.map((c) => (
+          <ClusterBuilding key={c.id} cluster={c} />
+        ))}
+
+        {/* Type C buildings (hardcoded village only) */}
+        {!dynamicBuildings && TYPE_C.map((b) => (
           <div
             key={`c-${b.id}`}
             style={{
@@ -1853,8 +1858,8 @@ const Village = () => {
           />
         ))}
 
-        {/* Type B buildings */}
-        {(dynamicBuildings ? dynamicBuildings.typeB : TYPE_B).map((b) => (
+        {/* Type B buildings (hardcoded village only) */}
+        {!dynamicBuildings && TYPE_B.map((b) => (
           <div
             key={`b-${b.id}`}
             style={{
@@ -1874,15 +1879,55 @@ const Village = () => {
           />
         ))}
 
-        {/* Type A buildings */}
+        {/* Type A — doors: pulsating gold markers in dynamic villages, boxes in hardcoded */}
         {dynamicBuildings
-          ? dynamicBuildings.typeA.map((b) => renderTypeA(b, b.id === 89))
+          ? dynamicBuildings.typeA.map((b) => (
+              <div
+                key={`door-${b.id}-${b.x}-${b.y}`}
+                style={{
+                  position: 'absolute',
+                  left: b.x,
+                  top: b.y,
+                  width: 20,
+                  height: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(244,197,66,0.22)',
+                  border: '1px solid rgba(244,197,66,0.85)',
+                  boxShadow: '0 0 10px rgba(244,197,66,0.55)',
+                  animation: 'villagePulse 1.8s ease-in-out infinite',
+                  pointerEvents: 'none',
+                  zIndex: 6,
+                }}
+              >
+                <span className="font-mono" style={{ fontSize: 9, color: '#f4c542' }}>
+                  {b.id}
+                </span>
+                {(b.id === 23 || b.id === 47) && feedback.id === b.id && (
+                  <p
+                    className="font-fell italic"
+                    style={{
+                      position: 'absolute',
+                      top: 22,
+                      fontSize: 14,
+                      color: 'rgba(160,140,200,0.5)',
+                      whiteSpace: 'nowrap',
+                      animation: 'villageNotYet 1.5s ease-out forwards',
+                    }}
+                  >
+                    Not yet.
+                  </p>
+                )}
+              </div>
+            ))
           : (
             <>
               {renderTypeA(A_23, false)}
               {renderTypeA(A_47, false)}
               {renderTypeA(A_89, true)}
             </>
+
           )}
 
         {/* Trail glowing polyline (last 80 positions, fades to tail) */}

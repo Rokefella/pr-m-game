@@ -806,6 +806,8 @@ const Village = () => {
       whisper: v.whisper,
     })),
   );
+  const activeVillagers = dynamicBuildings ? [] : villagers;
+
   const villagersRef = useRef<Villager[]>(villagers);
   useEffect(() => { villagersRef.current = villagers; }, [villagers]);
   const lastVillagerWhisperRef = useRef<Map<number, number>>(new Map());

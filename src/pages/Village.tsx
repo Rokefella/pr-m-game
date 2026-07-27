@@ -1428,18 +1428,11 @@ const Village = () => {
 
   // Smooth camera (lerp via rAF)
   const initialCam = (() => {
-    const tx = Math.min(0, Math.max(view.w - MAP_W, view.w / 2 - player.x));
-    const ty = Math.min(0, Math.max(view.h - MAP_H, view.h / 2 - player.y));
-    return { x: tx, y: ty };
-  })();
-  const cameraRef = useRef(initialCam);
-  const [camera, setCamera] = useState(initialCam);
-
-  useEffect(() => {
-    let raf = 0;
-    const loop = () => {
-      const targetX = Math.min(0, Math.max(view.w - MAP_W, view.w / 2 - playerRef.current.x));
-      const targetY = Math.min(0, Math.max(view.h - MAP_H, view.h / 2 - playerRef.current.y));
+    const tx = Math.min(0, Math.max(view.w - mapW, view.w / 2 - player.x));
+    const ty = Math.min(0, Math.max(view.h - mapH, view.h / 2 - player.y));
+...
+      const targetX = Math.min(0, Math.max(view.w - mapSizeRef.current.w, view.w / 2 - playerRef.current.x));
+      const targetY = Math.min(0, Math.max(view.h - mapSizeRef.current.h, view.h / 2 - playerRef.current.y));
       const dx = targetX - cameraRef.current.x;
       const dy = targetY - cameraRef.current.y;
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {

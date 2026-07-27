@@ -1134,8 +1134,8 @@ const Village = () => {
 
 
 
-  const triggerA = (nx: number, ny: number) => {
-    if (inside(nx, ny, A_89)) {
+  const triggerA = (nx: number, ny: number, a: { id: number | string }) => {
+    if (a.id === 89) {
       if (user) void setFlag(user.id, 'touched_89', 'true');
       const unlocked = parseInt(getFlag('bernard_stage') || '0', 10) >= 2;
       if (!unlocked) {
@@ -1150,7 +1150,7 @@ const Village = () => {
       }
       return true;
     }
-    if (inside(nx, ny, A_23)) {
+    if (a.id === 23) {
       if (user) void setFlag(user.id, 'touched_23', 'true');
       const lv = currentLevelRef.current;
       if (lv < 3) {
@@ -1162,7 +1162,7 @@ const Village = () => {
       feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);
       return true;
     }
-    if (inside(nx, ny, A_47)) {
+    if (a.id === 47) {
       if (user) void setFlag(user.id, 'touched_47', 'true');
       const lv = currentLevelRef.current;
       if (lv < 3) {
@@ -1176,6 +1176,7 @@ const Village = () => {
     }
     return false;
   };
+
 
   const activeObstacles = useMemo<Rect[]>(
     () =>

@@ -27,16 +27,27 @@ const MERCHANT_LINES = [
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
 type VillageCell = { col: number; row: number; type: string; npc_name?: string };
+type GroundTile = { x: number; y: number; kind: 'PATH' | 'ROAD' | 'SQUARE' | 'LANDMARK' };
 type DynamicVillage = {
   typeA: typeof TYPE_A;
   typeB: Rect[];
   typeC: Rect[];
   forest: ForestBlock[];
+  groundTiles: GroundTile[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
   gridSize: number;
   start: { col: number; row: number } | null;
 };
+
+// Decorative ground tile colors (muted, atmospheric — no border radius)
+const GROUND_TILE_COLORS: Record<GroundTile['kind'], string> = {
+  PATH: 'rgba(224,221,213,0.045)',
+  ROAD: 'rgba(224,221,213,0.075)',
+  SQUARE: 'rgba(169,140,255,0.07)',
+  LANDMARK: 'rgba(200,148,58,0.12)',
+};
+
 
 const MAP_W = 2200;
 const MAP_H = 1400;

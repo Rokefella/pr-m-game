@@ -28,10 +28,23 @@ type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
 type VillageCell = { col: number; row: number; type: string; npc_name?: string };
 type GroundTile = { x: number; y: number; kind: 'PATH' | 'ROAD' | 'SQUARE' | 'LANDMARK' };
+type ClusterKind = 'S' | 'M' | 'L';
+type BuildingCluster = {
+  id: string;
+  kind: ClusterKind;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  cols: number;
+  rows: number;
+  cells: number;
+};
 type DynamicVillage = {
   typeA: typeof TYPE_A;
   typeB: Rect[];
   typeC: Rect[];
+  clusters: BuildingCluster[];
   forest: ForestBlock[];
   groundTiles: GroundTile[];
   npcs: { x: number; y: number; name: string }[];
@@ -39,6 +52,192 @@ type DynamicVillage = {
   gridSize: number;
   start: { col: number; row: number } | null;
 };
+
+// Flood-fill orthogonally-contiguous same-type cells into bounding-box clusters
+function clusterCells(kind: ClusterKind, cells: { col: number; row: number }[]): BuildingCluster[] {
+  const remaining = new Set(cells.map((c) => `${c.col},${c.row}`));
+  const out: BuildingCluster[] = [];
+  let n = 0;
+  for (const key of Array.from(remaining)) {
+    if (!remaining.has(key)) continue;
+    const stack = [key];
+    remaining.delete(key);
+    let minCol = Infinity, minRow = Infinity, maxCol = -Infinity, maxRow = -Infinity;
+    let count = 0;
+    while (stack.length) {
+      const cur = stack.pop() as string;
+      const [c, r] = cur.split(',').map(Number);
+      count++;
+      if (c < minCol) minCol = c;
+      if (c > maxCol) maxCol = c;
+      if (r < minRow) minRow = r;
+      if (r > maxRow) maxRow = r;
+      for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const nk = `${c + dc},${r + dr}`;
+        if (remaining.has(nk)) {
+          remaining.delete(nk);
+          stack.push(nk);
+        }
+      }
+    }
+    const cols = maxCol - minCol + 1;
+    const rows = maxRow - minRow + 1;
+    out.push({
+      id: `cl-${kind}-${n++}`,
+      kind,
+      x: minCol * 20,
+      y: minRow * 20,
+      w: cols * 20,
+      h: rows * 20,
+      cols,
+      rows,
+      cells: count,
+    });
+  }
+  return out;
+}
+
+const CLUSTER_FILL: Record<ClusterKind, string> = {
+  S: '#7ec8e3',
+  M: '#3a86c4',
+  L: '#1e3a6b',
+};
+
+// Deterministic pseudo-random from cluster position (stable across renders)
+function clusterRand(seed: number) {
+  let s = seed * 9301 + 49297;
+  return () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+
+// One grouped building image, sized to the cluster's bounding box.
+// Rooftop detail density scales with the cluster's total cell count.
+function ClusterBuilding({ cluster }: { cluster: BuildingCluster }) {
+  const { x, y, w, h, cols, rows, cells, kind } = cluster;
+  const fill = CLUSTER_FILL[kind];
+  const rnd = clusterRand(x * 31 + y * 17 + cells);
+
+  // Detail counts interpolate with area
+  const ventCount = Math.max(1, Math.min(10, Math.round(cells * 0.8)));
+  const ventSize = Math.max(3, Math.min(8, Math.round(3 + Math.sqrt(cells))));
+  const skyW = Math.max(6, Math.min(w - 8, Math.round(6 + cells * 1.4)));
+  const skyH = Math.max(4, Math.min(h - 8, Math.round(4 + cells * 0.9)));
+  const hatch = Math.max(3, Math.min(7, Math.round(2 + Math.sqrt(cells))));
+
+  const vents = Array.from({ length: ventCount }, (_, i) => ({
+    i,
+    vx: 3 + rnd() * Math.max(1, w - ventSize - 6),
+    vy: 3 + rnd() * Math.max(1, h - ventSize - 6),
+  }));
+
+  const seams: React.ReactNode[] = [];
+  for (let c = 1; c < cols; c++) {
+    seams.push(
+      <div
+        key={`sv-${c}`}
+        style={{
+          position: 'absolute',
+          left: c * 20,
+          top: 0,
+          width: 1,
+          height: h,
+          background: 'rgba(0,0,0,0.28)',
+        }}
+      />,
+    );
+  }
+  for (let r = 1; r < rows; r++) {
+    seams.push(
+      <div
+        key={`sh-${r}`}
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: r * 20,
+          width: w,
+          height: 1,
+          background: 'rgba(0,0,0,0.28)',
+        }}
+      />,
+    );
+  }
+
+  return (
+    <>
+      {/* dark offset shadow behind footprint */}
+      <div
+        style={{
+          position: 'absolute',
+          left: x + 3,
+          top: y + 3,
+          width: w,
+          height: h,
+          background: 'rgba(2,2,10,0.65)',
+          pointerEvents: 'none',
+          zIndex: 2,
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          left: x,
+          top: y,
+          width: w,
+          height: h,
+          background: fill,
+          border: '1px solid rgba(4,4,10,0.55)',
+          pointerEvents: 'none',
+          zIndex: 3,
+          overflow: 'hidden',
+        }}
+      >
+        {seams}
+        {/* rooftop HVAC vents */}
+        {vents.map((v) => (
+          <div
+            key={`v-${v.i}`}
+            style={{
+              position: 'absolute',
+              left: v.vx,
+              top: v.vy,
+              width: ventSize,
+              height: ventSize,
+              background: 'rgba(10,14,26,0.85)',
+            }}
+          />
+        ))}
+        {/* skylight panel */}
+        <div
+          style={{
+            position: 'absolute',
+            left: Math.max(3, (w - skyW) / 2),
+            top: Math.max(3, (h - skyH) / 2),
+            width: skyW,
+            height: skyH,
+            background: 'rgba(226,240,250,0.55)',
+            border: '1px solid rgba(10,14,26,0.5)',
+          }}
+        />
+        {/* access hatch */}
+        <div
+          style={{
+            position: 'absolute',
+            right: 3,
+            bottom: 3,
+            width: hatch,
+            height: hatch,
+            background: 'rgba(20,26,40,0.9)',
+          }}
+        />
+      </div>
+    </>
+  );
+}
+
+
+
 
 // Decorative ground tile colors (muted, atmospheric — no border radius)
 const GROUND_TILE_COLORS: Record<GroundTile['kind'], string> = {
@@ -959,6 +1158,9 @@ const Village = () => {
         const typeA: typeof TYPE_A = [];
         const typeB: Rect[] = [];
         const typeC: Rect[] = [];
+        const sCells: { col: number; row: number }[] = [];
+        const mCells: { col: number; row: number }[] = [];
+        const lCells: { col: number; row: number }[] = [];
         const forest: ForestBlock[] = [];
         const groundTiles: GroundTile[] = [];
         const npcs: { x: number; y: number; name: string }[] = [];
@@ -971,14 +1173,15 @@ const Village = () => {
           const y = cell.row * CELL;
           switch (cell.type) {
             case 'BUILDING_S':
-              typeC.push({ id: `dc-${i}`, x, y, w: 24, h: 20 });
+              sCells.push({ col: cell.col, row: cell.row });
               break;
             case 'BUILDING_M':
-              typeC.push({ id: `dc-${i}`, x, y, w: 32, h: 26 });
+              mCells.push({ col: cell.col, row: cell.row });
               break;
             case 'BUILDING_L':
-              typeB.push({ id: `db-${i}`, x, y, w: 44, h: 36 });
+              lCells.push({ col: cell.col, row: cell.row });
               break;
+
             case 'BUILDING_23':
               typeA.push({ ...A_23, x, y, w: 70, h: 50 });
               break;
@@ -1027,7 +1230,14 @@ const Village = () => {
               ? { col: rawStart.col, row: rawStart.row }
               : null;
 
-          setDynamicBuildings({ typeA, typeB, typeC, forest, groundTiles, npcs, eyeCenter, gridSize, start });
+          const clusters = [
+            ...clusterCells('S', sCells),
+            ...clusterCells('M', mCells),
+            ...clusterCells('L', lCells),
+          ];
+
+          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, npcs, eyeCenter, gridSize, start });
+
 
           // Reposition the player once, when the dynamic village loads
           if (!dynSpawnDoneRef.current) {
@@ -1201,7 +1411,7 @@ const Village = () => {
   const activeObstacles = useMemo<Rect[]>(
     () =>
       dynamicBuildings
-        ? [...dynamicBuildings.typeB, ...dynamicBuildings.typeC]
+        ? [...dynamicBuildings.clusters.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h }))]
         : OBSTACLES,
     [dynamicBuildings],
   );
@@ -1757,8 +1967,13 @@ const Village = () => {
             />
           ))}
 
-        {/* Type C buildings */}
-        {(dynamicBuildings ? dynamicBuildings.typeC : TYPE_C).map((b) => (
+        {/* Clustered dynamic buildings (grouped by type, one image per cluster) */}
+        {dynamicBuildings?.clusters.map((c) => (
+          <ClusterBuilding key={c.id} cluster={c} />
+        ))}
+
+        {/* Type C buildings (hardcoded village only) */}
+        {!dynamicBuildings && TYPE_C.map((b) => (
           <div
             key={`c-${b.id}`}
             style={{
@@ -1778,8 +1993,8 @@ const Village = () => {
           />
         ))}
 
-        {/* Type B buildings */}
-        {(dynamicBuildings ? dynamicBuildings.typeB : TYPE_B).map((b) => (
+        {/* Type B buildings (hardcoded village only) */}
+        {!dynamicBuildings && TYPE_B.map((b) => (
           <div
             key={`b-${b.id}`}
             style={{
@@ -1799,15 +2014,55 @@ const Village = () => {
           />
         ))}
 
-        {/* Type A buildings */}
+        {/* Type A — doors: pulsating gold markers in dynamic villages, boxes in hardcoded */}
         {dynamicBuildings
-          ? dynamicBuildings.typeA.map((b) => renderTypeA(b, b.id === 89))
+          ? dynamicBuildings.typeA.map((b) => (
+              <div
+                key={`door-${b.id}-${b.x}-${b.y}`}
+                style={{
+                  position: 'absolute',
+                  left: b.x,
+                  top: b.y,
+                  width: 20,
+                  height: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(244,197,66,0.22)',
+                  border: '1px solid rgba(244,197,66,0.85)',
+                  boxShadow: '0 0 10px rgba(244,197,66,0.55)',
+                  animation: 'villagePulse 1.8s ease-in-out infinite',
+                  pointerEvents: 'none',
+                  zIndex: 6,
+                }}
+              >
+                <span className="font-mono" style={{ fontSize: 9, color: '#f4c542' }}>
+                  {b.id}
+                </span>
+                {(b.id === 23 || b.id === 47) && feedback.id === b.id && (
+                  <p
+                    className="font-fell italic"
+                    style={{
+                      position: 'absolute',
+                      top: 22,
+                      fontSize: 14,
+                      color: 'rgba(160,140,200,0.5)',
+                      whiteSpace: 'nowrap',
+                      animation: 'villageNotYet 1.5s ease-out forwards',
+                    }}
+                  >
+                    Not yet.
+                  </p>
+                )}
+              </div>
+            ))
           : (
             <>
               {renderTypeA(A_23, false)}
               {renderTypeA(A_47, false)}
               {renderTypeA(A_89, true)}
             </>
+
           )}
 
         {/* Trail glowing polyline (last 80 positions, fades to tail) */}

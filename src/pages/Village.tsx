@@ -1604,25 +1604,27 @@ const Village = () => {
           <ForestTreeCell key={`f-${i}`} x={f.x} y={f.y} w={f.w} h={f.h} />
         ))}
 
-        {/* Forest atmosphere text fragments */}
-        {FOREST_TEXTS.map((ft, i) => (
-          <span
-            key={`ft-${i}`}
-            className="font-fell italic"
-            style={{
-              position: 'absolute',
-              left: ft.x,
-              top: ft.y,
-              fontSize: 14,
-              color: 'rgba(40,100,60,0.20)',
-              pointerEvents: 'none',
-              zIndex: 1,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {ft.t}
-          </span>
-        ))}
+        {/* Forest atmosphere text fragments (hardcoded village only) */}
+        {!dynamicBuildings &&
+          FOREST_TEXTS.map((ft, i) => (
+            <span
+              key={`ft-${i}`}
+              className="font-fell italic"
+              style={{
+                position: 'absolute',
+                left: ft.x,
+                top: ft.y,
+                fontSize: 14,
+                color: 'rgba(40,100,60,0.20)',
+                pointerEvents: 'none',
+                zIndex: 1,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {ft.t}
+            </span>
+          ))}
+
 
         {/* Watching eye in town square */}
         <CharacterEye

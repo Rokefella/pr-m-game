@@ -1352,9 +1352,10 @@ const Village = () => {
           kdy *= 0.707;
         }
         if (kdx !== 0 || kdy !== 0) {
-          move(kdx, kdy);
+          moveRef.current(kdx, kdy);
         }
       }
+
 
       const target = playerTargetRef.current;
       const cur = playerRef.current;

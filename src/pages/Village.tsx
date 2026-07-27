@@ -985,7 +985,7 @@ const Village = () => {
 
     void loadVillage();
     return () => { cancelled = true; };
-  }, [user, authLoading]);
+  }, [user, authLoading, currentLevel]);
 
 
 

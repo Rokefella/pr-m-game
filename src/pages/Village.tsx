@@ -1133,6 +1133,14 @@ const Village = () => {
     return false;
   };
 
+  const activeObstacles = useMemo<Rect[]>(
+    () =>
+      dynamicBuildings
+        ? [...dynamicBuildings.typeB, ...dynamicBuildings.typeC, ...TYPE_RIM]
+        : OBSTACLES,
+    [dynamicBuildings],
+  );
+
   const move = (dx: number, dy: number) => {
     const prev = playerTargetRef.current;
     const nx = Math.max(0, Math.min(MAP_W, prev.x + dx));

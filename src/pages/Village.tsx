@@ -1023,6 +1023,9 @@ const Village = () => {
         const typeA: typeof TYPE_A = [];
         const typeB: Rect[] = [];
         const typeC: Rect[] = [];
+        const sCells: { col: number; row: number }[] = [];
+        const mCells: { col: number; row: number }[] = [];
+        const lCells: { col: number; row: number }[] = [];
         const forest: ForestBlock[] = [];
         const groundTiles: GroundTile[] = [];
         const npcs: { x: number; y: number; name: string }[] = [];
@@ -1035,14 +1038,15 @@ const Village = () => {
           const y = cell.row * CELL;
           switch (cell.type) {
             case 'BUILDING_S':
-              typeC.push({ id: `dc-${i}`, x, y, w: 24, h: 20 });
+              sCells.push({ col: cell.col, row: cell.row });
               break;
             case 'BUILDING_M':
-              typeC.push({ id: `dc-${i}`, x, y, w: 32, h: 26 });
+              mCells.push({ col: cell.col, row: cell.row });
               break;
             case 'BUILDING_L':
-              typeB.push({ id: `db-${i}`, x, y, w: 44, h: 36 });
+              lCells.push({ col: cell.col, row: cell.row });
               break;
+
             case 'BUILDING_23':
               typeA.push({ ...A_23, x, y, w: 70, h: 50 });
               break;

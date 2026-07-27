@@ -1742,7 +1742,7 @@ const Village = () => {
         )}
 
         {/* Villagers — rendered inside map div, positioned in map pixel coords */}
-        {villagers.map((v) => (
+        {activeVillagers.map((v) => (
           <div
             key={`villager-${v.id}`}
             style={{
@@ -1755,6 +1755,26 @@ const Village = () => {
               background: 'rgba(255,255,255,0.8)',
               boxShadow: '0 0 8px rgba(255,255,255,0.5)',
               transition: 'left 1500ms ease-in-out, top 1500ms ease-in-out',
+              pointerEvents: 'none',
+              zIndex: 4,
+            }}
+          />
+        ))}
+
+        {/* Dynamic NPCs — static markers from the loaded village layout */}
+        {dynamicBuildings?.npcs.map((n, i) => (
+          <div
+            key={`dnpc-${i}`}
+            title={n.name || undefined}
+            style={{
+              position: 'absolute',
+              left: n.x,
+              top: n.y,
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.8)',
+              boxShadow: '0 0 8px rgba(255,255,255,0.5)',
               pointerEvents: 'none',
               zIndex: 4,
             }}

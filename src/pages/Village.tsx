@@ -520,6 +520,12 @@ const Village = () => {
 
   const [trail, setTrail] = useState<Trail[]>([]);
   const [dynamicBuildings, setDynamicBuildings] = useState<DynamicVillage | null>(null);
+  const dynSpawnDoneRef = useRef(false);
+  // Active map bounds: dynamic village size when present, hardcoded map otherwise
+  const mapW = dynamicBuildings ? dynamicBuildings.gridSize * 20 : MAP_W;
+  const mapH = dynamicBuildings ? dynamicBuildings.gridSize * 20 : MAP_H;
+  const mapSizeRef = useRef({ w: mapW, h: mapH });
+  mapSizeRef.current = { w: mapW, h: mapH };
   const eyePupilRef = useRef({ x: 0, y: 0 });
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });

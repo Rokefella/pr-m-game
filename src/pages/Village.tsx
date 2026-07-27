@@ -1941,21 +1941,26 @@ const Village = () => {
         />
 
         {/* Decorative ground tiles (paths, roads, squares, landmarks) — non-blocking */}
-        {dynamicBuildings?.groundTiles.map((g, i) => (
-          <div
-            key={`gt-${i}`}
-            style={{
-              position: 'absolute',
-              left: g.x,
-              top: g.y,
-              width: 20,
-              height: 20,
-              background: GROUND_TILE_COLORS[g.kind],
-              pointerEvents: 'none',
-              zIndex: 2,
-            }}
-          />
-        ))}
+        {dynamicBuildings?.groundTiles.map((g, i) => {
+          const paved = g.kind === 'PATH' || g.kind === 'ROAD';
+          return (
+            <div
+              key={`gt-${i}`}
+              style={{
+                position: 'absolute',
+                left: g.x,
+                top: g.y,
+                width: 20,
+                height: 20,
+                background: paved ? undefined : GROUND_TILE_COLORS[g.kind],
+                pointerEvents: 'none',
+                zIndex: 2,
+              }}
+            >
+              {paved && <PavingCell col={Math.round(g.x / 20)} row={Math.round(g.y / 20)} />}
+            </div>
+          );
+        })}
 
         {/* Forest blocks (outside outermost ring) */}
 

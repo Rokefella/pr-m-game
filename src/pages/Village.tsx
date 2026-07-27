@@ -1178,7 +1178,7 @@ const Village = () => {
   const activeObstacles = useMemo<Rect[]>(
     () =>
       dynamicBuildings
-        ? [...dynamicBuildings.typeB, ...dynamicBuildings.typeC, ...TYPE_RIM]
+        ? [...dynamicBuildings.typeB, ...dynamicBuildings.typeC]
         : OBSTACLES,
     [dynamicBuildings],
   );

@@ -521,6 +521,8 @@ const Village = () => {
   const [trail, setTrail] = useState<Trail[]>([]);
   const [dynamicBuildings, setDynamicBuildings] = useState<DynamicVillage | null>(null);
   const dynSpawnDoneRef = useRef(false);
+  const moveRef = useRef<(dx: number, dy: number) => void>(() => {});
+
   // Active map bounds: dynamic village size when present, hardcoded map otherwise
   const mapW = dynamicBuildings ? dynamicBuildings.gridSize * 20 : MAP_W;
   const mapH = dynamicBuildings ? dynamicBuildings.gridSize * 20 : MAP_H;
@@ -1185,8 +1187,10 @@ const Village = () => {
 
   const move = (dx: number, dy: number) => {
     const prev = playerTargetRef.current;
+
     const nx = Math.max(0, Math.min(mapSizeRef.current.w, prev.x + dx));
     const ny = Math.max(0, Math.min(mapSizeRef.current.h, prev.y + dy));
+
 
     // Type A: bumping fires response but cancels move
     for (const a of (dynamicBuildings ? dynamicBuildings.typeA : TYPE_A)) {
@@ -1304,8 +1308,10 @@ const Village = () => {
       bernardLockRef.current = false;
     }
   };
+  moveRef.current = move;
 
   // Keyboard arrow keys — held-keys system for smooth diagonal movement
+
   const heldKeysRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const ARROWS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
@@ -1346,9 +1352,10 @@ const Village = () => {
           kdy *= 0.707;
         }
         if (kdx !== 0 || kdy !== 0) {
-          move(kdx, kdy);
+          moveRef.current(kdx, kdy);
         }
       }
+
 
       const target = playerTargetRef.current;
       const cur = playerRef.current;

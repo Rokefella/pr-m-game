@@ -909,7 +909,7 @@ const Village = () => {
 
   // ---- Dynamic village layout from Supabase (falls back to hardcoded arrays) ----
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !user || !currentLevel) return;
     let cancelled = false;
 
     const loadVillage = async () => {

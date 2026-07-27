@@ -1636,22 +1636,23 @@ const Village = () => {
           zIndex={1}
         />
 
-        {/* Outermost rim buildings */}
-        {TYPE_RIM.map((b) => (
-          <div
-            key={`rim-${b.id}`}
-            style={{
-              position: 'absolute',
-              left: b.x,
-              top: b.y,
-              width: b.w,
-              height: b.h,
-              border: '0.5px solid rgba(100,80,160,0.25)',
-              background: 'rgba(100,80,160,0.07)',
-              zIndex: 1,
-            }}
-          />
-        ))}
+        {/* Outermost rim buildings (hardcoded village only) */}
+        {!dynamicBuildings &&
+          TYPE_RIM.map((b) => (
+            <div
+              key={`rim-${b.id}`}
+              style={{
+                position: 'absolute',
+                left: b.x,
+                top: b.y,
+                width: b.w,
+                height: b.h,
+                border: '0.5px solid rgba(100,80,160,0.25)',
+                background: 'rgba(100,80,160,0.07)',
+                zIndex: 1,
+              }}
+            />
+          ))}
 
         {/* Type C buildings */}
         {(dynamicBuildings ? dynamicBuildings.typeC : TYPE_C).map((b) => (

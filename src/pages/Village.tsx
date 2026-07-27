@@ -1308,8 +1308,10 @@ const Village = () => {
       bernardLockRef.current = false;
     }
   };
+  moveRef.current = move;
 
   // Keyboard arrow keys — held-keys system for smooth diagonal movement
+
   const heldKeysRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     const ARROWS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);

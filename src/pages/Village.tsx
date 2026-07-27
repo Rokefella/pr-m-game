@@ -1683,7 +1683,25 @@ const Village = () => {
           }}
         />
 
+        {/* Decorative ground tiles (paths, roads, squares, landmarks) — non-blocking */}
+        {dynamicBuildings?.groundTiles.map((g, i) => (
+          <div
+            key={`gt-${i}`}
+            style={{
+              position: 'absolute',
+              left: g.x,
+              top: g.y,
+              width: 20,
+              height: 20,
+              background: GROUND_TILE_COLORS[g.kind],
+              pointerEvents: 'none',
+              zIndex: 2,
+            }}
+          />
+        ))}
+
         {/* Forest blocks (outside outermost ring) */}
+
         {(dynamicBuildings ? dynamicBuildings.forest : FOREST).map((f, i) => (
           <ForestTreeCell key={`f-${i}`} x={f.x} y={f.y} w={f.w} h={f.h} />
         ))}

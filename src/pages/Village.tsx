@@ -986,7 +986,33 @@ const Village = () => {
           .map((c) => ({ key: `${c.col},${c.row}`, x: c.col * CELL, y: c.row * CELL }));
 
         if (!cancelled) {
-          setDynamicBuildings({ typeA, typeB, typeC, forest, npcs, eyeCenter });
+          let gridSize = Number(vData?.grid_size ?? vData?.gridSize ?? 0);
+          if (!Number.isFinite(gridSize) || gridSize <= 0) {
+            gridSize = cells.reduce(
+              (m, c) => Math.max(m, (c?.col ?? 0) + 1, (c?.row ?? 0) + 1),
+              1,
+            );
+          }
+          const rawStart = vData?.start;
+          const start =
+            rawStart && typeof rawStart.col === 'number' && typeof rawStart.row === 'number'
+              ? { col: rawStart.col, row: rawStart.row }
+              : null;
+
+          setDynamicBuildings({ typeA, typeB, typeC, forest, npcs, eyeCenter, gridSize, start });
+
+          // Reposition the player once, when the dynamic village loads
+          if (!dynSpawnDoneRef.current) {
+            dynSpawnDoneRef.current = true;
+            const dynW = gridSize * CELL;
+            const dynH = gridSize * CELL;
+            const sp = start
+              ? { x: start.col * CELL, y: start.row * CELL }
+              : { x: dynW / 2, y: dynH / 2 };
+            playerRef.current = sp;
+            playerTargetRef.current = sp;
+            setPlayer(sp);
+          }
         }
 
       } catch (e) {

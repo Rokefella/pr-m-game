@@ -28,10 +28,23 @@ type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
 type VillageCell = { col: number; row: number; type: string; npc_name?: string };
 type GroundTile = { x: number; y: number; kind: 'PATH' | 'ROAD' | 'SQUARE' | 'LANDMARK' };
+type ClusterKind = 'S' | 'M' | 'L';
+type BuildingCluster = {
+  id: string;
+  kind: ClusterKind;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  cols: number;
+  rows: number;
+  cells: number;
+};
 type DynamicVillage = {
   typeA: typeof TYPE_A;
   typeB: Rect[];
   typeC: Rect[];
+  clusters: BuildingCluster[];
   forest: ForestBlock[];
   groundTiles: GroundTile[];
   npcs: { x: number; y: number; name: string }[];
@@ -39,6 +52,57 @@ type DynamicVillage = {
   gridSize: number;
   start: { col: number; row: number } | null;
 };
+
+// Flood-fill orthogonally-contiguous same-type cells into bounding-box clusters
+function clusterCells(kind: ClusterKind, cells: { col: number; row: number }[]): BuildingCluster[] {
+  const remaining = new Set(cells.map((c) => `${c.col},${c.row}`));
+  const out: BuildingCluster[] = [];
+  let n = 0;
+  for (const key of Array.from(remaining)) {
+    if (!remaining.has(key)) continue;
+    const stack = [key];
+    remaining.delete(key);
+    let minCol = Infinity, minRow = Infinity, maxCol = -Infinity, maxRow = -Infinity;
+    let count = 0;
+    while (stack.length) {
+      const cur = stack.pop() as string;
+      const [c, r] = cur.split(',').map(Number);
+      count++;
+      if (c < minCol) minCol = c;
+      if (c > maxCol) maxCol = c;
+      if (r < minRow) minRow = r;
+      if (r > maxRow) maxRow = r;
+      for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        const nk = `${c + dc},${r + dr}`;
+        if (remaining.has(nk)) {
+          remaining.delete(nk);
+          stack.push(nk);
+        }
+      }
+    }
+    const cols = maxCol - minCol + 1;
+    const rows = maxRow - minRow + 1;
+    out.push({
+      id: `cl-${kind}-${n++}`,
+      kind,
+      x: minCol * 20,
+      y: minRow * 20,
+      w: cols * 20,
+      h: rows * 20,
+      cols,
+      rows,
+      cells: count,
+    });
+  }
+  return out;
+}
+
+const CLUSTER_FILL: Record<ClusterKind, string> = {
+  S: '#7ec8e3',
+  M: '#3a86c4',
+  L: '#1e3a6b',
+};
+
 
 // Decorative ground tile colors (muted, atmospheric — no border radius)
 const GROUND_TILE_COLORS: Record<GroundTile['kind'], string> = {

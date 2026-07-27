@@ -909,7 +909,7 @@ const Village = () => {
 
   // ---- Dynamic village layout from Supabase (falls back to hardcoded arrays) ----
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (authLoading || !user || !currentLevel) return;
     let cancelled = false;
 
     const loadVillage = async () => {
@@ -917,7 +917,7 @@ const Village = () => {
         const { data: villageRow } = await supabase
           .from('special_locations' as never)
           .select('data')
-          .eq('level_number', user.level)
+          .eq('level_number', currentLevel)
           .eq('location_key', 'village')
           .maybeSingle();
 
@@ -985,7 +985,7 @@ const Village = () => {
 
     void loadVillage();
     return () => { cancelled = true; };
-  }, [user, authLoading]);
+  }, [user, authLoading, currentLevel]);
 
 
 

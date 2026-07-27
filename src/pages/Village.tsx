@@ -925,7 +925,15 @@ const Village = () => {
           .maybeSingle();
 
         if (cancelled || !villageRow) return;
-        const cells = ((villageRow as { data?: { extraCells?: VillageCell[] } })?.data?.extraCells) ?? [];
+        const vData = (villageRow as {
+          data?: {
+            extraCells?: VillageCell[];
+            grid_size?: number;
+            gridSize?: number;
+            start?: { col?: number; row?: number } | null;
+          };
+        })?.data;
+        const cells = vData?.extraCells ?? [];
         if (!Array.isArray(cells) || cells.length === 0) return;
 
         const CELL = 20;

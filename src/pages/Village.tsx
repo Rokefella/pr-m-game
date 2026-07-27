@@ -806,17 +806,17 @@ const Village = () => {
       whisper: v.whisper,
     })),
   );
-  const villagersRef = useRef<Villager[]>(villagers);
-  useEffect(() => { villagersRef.current = villagers; }, [villagers]);
+  const activeVillagers = dynamicBuildings ? [] : villagers;
+
+  const villagersRef = useRef<Villager[]>(activeVillagers);
+  useEffect(() => { villagersRef.current = activeVillagers; }, [activeVillagers]);
   const lastVillagerWhisperRef = useRef<Map<number, number>>(new Map());
   const [villagerWhisper, setVillagerWhisper] = useState<string | null>(null);
   const villagerWhisperTimer = useRef<number | null>(null);
 
   useEffect(() => {
+    if (dynamicBuildings) return;
     const timers: number[] = [];
-    VILLAGERS_DATA.forEach((v) => {
-      console.log('Villager', v.id, 'at map px:', v.col * 40, v.row * 40, '(MAP_W:', MAP_W, 'MAP_H:', MAP_H, ')');
-    });
     VILLAGERS_DATA.forEach((v) => {
       const baseX = v.col * 40;
       const baseY = v.row * 40;
@@ -836,7 +836,8 @@ const Village = () => {
       timers.push(id);
     });
     return () => { timers.forEach((t) => window.clearInterval(t)); };
-  }, []);
+  }, [dynamicBuildings]);
+
 
   const AURA_COLORS = ['#5b4fd4', '#4a9eff', '#1d9e75', '#c8963a', '#22c55e'];
 
@@ -1132,13 +1133,21 @@ const Village = () => {
     return false;
   };
 
+  const activeObstacles = useMemo<Rect[]>(
+    () =>
+      dynamicBuildings
+        ? [...dynamicBuildings.typeB, ...dynamicBuildings.typeC, ...TYPE_RIM]
+        : OBSTACLES,
+    [dynamicBuildings],
+  );
+
   const move = (dx: number, dy: number) => {
     const prev = playerTargetRef.current;
     const nx = Math.max(0, Math.min(MAP_W, prev.x + dx));
     const ny = Math.max(0, Math.min(MAP_H, prev.y + dy));
 
     // Type A: bumping fires response but cancels move
-    for (const a of TYPE_A) {
+    for (const a of (dynamicBuildings ? dynamicBuildings.typeA : TYPE_A)) {
       if (inside(nx, ny, a)) {
         triggerA(nx, ny);
         return;
@@ -1146,24 +1155,26 @@ const Village = () => {
     }
 
     // Obstacles (B + C + RIM) with 2px padding — also check whisper trigger on any whispered building
-    for (const o of OBSTACLES) {
+    for (const o of activeObstacles) {
       if (
         nx >= o.x - 2 &&
         nx <= o.x + o.w + 2 &&
         ny >= o.y - 2 &&
         ny <= o.y + o.h + 2
       ) {
-        const msg = WHISPER_BY_RECT.get(o);
-        if (msg !== undefined) {
-          const oIdx = OBSTACLES.indexOf(o);
-          if (lastWhisperIdxRef.current !== oIdx) {
-            lastWhisperIdxRef.current = oIdx;
-            setWhisper(msg);
-            if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
-            whisperTimer.current = window.setTimeout(() => {
-              setWhisper(null);
-              lastWhisperIdxRef.current = null;
-            }, 2500);
+        if (!dynamicBuildings) {
+          const msg = WHISPER_BY_RECT.get(o);
+          if (msg !== undefined) {
+            const oIdx = activeObstacles.indexOf(o);
+            if (lastWhisperIdxRef.current !== oIdx) {
+              lastWhisperIdxRef.current = oIdx;
+              setWhisper(msg);
+              if (whisperTimer.current) window.clearTimeout(whisperTimer.current);
+              whisperTimer.current = window.setTimeout(() => {
+                setWhisper(null);
+                lastWhisperIdxRef.current = null;
+              }, 2500);
+            }
           }
         }
         return;
@@ -1731,7 +1742,7 @@ const Village = () => {
         )}
 
         {/* Villagers — rendered inside map div, positioned in map pixel coords */}
-        {villagers.map((v) => (
+        {activeVillagers.map((v) => (
           <div
             key={`villager-${v.id}`}
             style={{
@@ -1744,6 +1755,26 @@ const Village = () => {
               background: 'rgba(255,255,255,0.8)',
               boxShadow: '0 0 8px rgba(255,255,255,0.5)',
               transition: 'left 1500ms ease-in-out, top 1500ms ease-in-out',
+              pointerEvents: 'none',
+              zIndex: 4,
+            }}
+          />
+        ))}
+
+        {/* Dynamic NPCs — static markers from the loaded village layout */}
+        {dynamicBuildings?.npcs.map((n, i) => (
+          <div
+            key={`dnpc-${i}`}
+            title={n.name || undefined}
+            style={{
+              position: 'absolute',
+              left: n.x,
+              top: n.y,
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.8)',
+              boxShadow: '0 0 8px rgba(255,255,255,0.5)',
               pointerEvents: 'none',
               zIndex: 4,
             }}

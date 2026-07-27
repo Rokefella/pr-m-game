@@ -34,6 +34,8 @@ type DynamicVillage = {
   forest: ForestBlock[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
+  gridSize: number;
+  start: { col: number; row: number } | null;
 };
 
 const MAP_W = 2200;
@@ -518,6 +520,12 @@ const Village = () => {
 
   const [trail, setTrail] = useState<Trail[]>([]);
   const [dynamicBuildings, setDynamicBuildings] = useState<DynamicVillage | null>(null);
+  const dynSpawnDoneRef = useRef(false);
+  // Active map bounds: dynamic village size when present, hardcoded map otherwise
+  const mapW = dynamicBuildings ? dynamicBuildings.gridSize * 20 : MAP_W;
+  const mapH = dynamicBuildings ? dynamicBuildings.gridSize * 20 : MAP_H;
+  const mapSizeRef = useRef({ w: mapW, h: mapH });
+  mapSizeRef.current = { w: mapW, h: mapH };
   const eyePupilRef = useRef({ x: 0, y: 0 });
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });
@@ -923,7 +931,15 @@ const Village = () => {
           .maybeSingle();
 
         if (cancelled || !villageRow) return;
-        const cells = ((villageRow as { data?: { extraCells?: VillageCell[] } })?.data?.extraCells) ?? [];
+        const vData = (villageRow as {
+          data?: {
+            extraCells?: VillageCell[];
+            grid_size?: number;
+            gridSize?: number;
+            start?: { col?: number; row?: number } | null;
+          };
+        })?.data;
+        const cells = vData?.extraCells ?? [];
         if (!Array.isArray(cells) || cells.length === 0) return;
 
         const CELL = 20;
@@ -976,7 +992,33 @@ const Village = () => {
           .map((c) => ({ key: `${c.col},${c.row}`, x: c.col * CELL, y: c.row * CELL }));
 
         if (!cancelled) {
-          setDynamicBuildings({ typeA, typeB, typeC, forest, npcs, eyeCenter });
+          let gridSize = Number(vData?.grid_size ?? vData?.gridSize ?? 0);
+          if (!Number.isFinite(gridSize) || gridSize <= 0) {
+            gridSize = cells.reduce(
+              (m, c) => Math.max(m, (c?.col ?? 0) + 1, (c?.row ?? 0) + 1),
+              1,
+            );
+          }
+          const rawStart = vData?.start;
+          const start =
+            rawStart && typeof rawStart.col === 'number' && typeof rawStart.row === 'number'
+              ? { col: rawStart.col, row: rawStart.row }
+              : null;
+
+          setDynamicBuildings({ typeA, typeB, typeC, forest, npcs, eyeCenter, gridSize, start });
+
+          // Reposition the player once, when the dynamic village loads
+          if (!dynSpawnDoneRef.current) {
+            dynSpawnDoneRef.current = true;
+            const dynW = gridSize * CELL;
+            const dynH = gridSize * CELL;
+            const sp = start
+              ? { x: start.col * CELL, y: start.row * CELL }
+              : { x: dynW / 2, y: dynH / 2 };
+            playerRef.current = sp;
+            playerTargetRef.current = sp;
+            setPlayer(sp);
+          }
         }
 
       } catch (e) {
@@ -1143,8 +1185,8 @@ const Village = () => {
 
   const move = (dx: number, dy: number) => {
     const prev = playerTargetRef.current;
-    const nx = Math.max(0, Math.min(MAP_W, prev.x + dx));
-    const ny = Math.max(0, Math.min(MAP_H, prev.y + dy));
+    const nx = Math.max(0, Math.min(mapSizeRef.current.w, prev.x + dx));
+    const ny = Math.max(0, Math.min(mapSizeRef.current.h, prev.y + dy));
 
     // Type A: bumping fires response but cancels move
     for (const a of (dynamicBuildings ? dynamicBuildings.typeA : TYPE_A)) {
@@ -1386,8 +1428,8 @@ const Village = () => {
 
   // Smooth camera (lerp via rAF)
   const initialCam = (() => {
-    const tx = Math.min(0, Math.max(view.w - MAP_W, view.w / 2 - player.x));
-    const ty = Math.min(0, Math.max(view.h - MAP_H, view.h / 2 - player.y));
+    const tx = Math.min(0, Math.max(view.w - mapW, view.w / 2 - player.x));
+    const ty = Math.min(0, Math.max(view.h - mapH, view.h / 2 - player.y));
     return { x: tx, y: ty };
   })();
   const cameraRef = useRef(initialCam);
@@ -1396,8 +1438,8 @@ const Village = () => {
   useEffect(() => {
     let raf = 0;
     const loop = () => {
-      const targetX = Math.min(0, Math.max(view.w - MAP_W, view.w / 2 - playerRef.current.x));
-      const targetY = Math.min(0, Math.max(view.h - MAP_H, view.h / 2 - playerRef.current.y));
+      const targetX = Math.min(0, Math.max(view.w - mapSizeRef.current.w, view.w / 2 - playerRef.current.x));
+      const targetY = Math.min(0, Math.max(view.h - mapSizeRef.current.h, view.h / 2 - playerRef.current.y));
       const dx = targetX - cameraRef.current.x;
       const dy = targetY - cameraRef.current.y;
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {

@@ -34,6 +34,8 @@ type DynamicVillage = {
   forest: ForestBlock[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
+  gridSize: number;
+  start: { col: number; row: number } | null;
 };
 
 const MAP_W = 2200;

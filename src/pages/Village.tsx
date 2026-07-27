@@ -247,6 +247,53 @@ const GROUND_TILE_COLORS: Record<GroundTile['kind'], string> = {
   LANDMARK: 'rgba(200,148,58,0.12)',
 };
 
+// Kasseien-style paving block tile for PATH/ROAD cells
+const PAVING_BLOCKS: Array<{ x: number; y: number; w: number; h: number; rx: number; fill: string }> = [
+  { x: 0.5, y: 0.5, w: 5, h: 6, rx: 0.8, fill: 'rgba(75,80,100,0.35)' },
+  { x: 6, y: 0.5, w: 6.5, h: 5.5, rx: 0.8, fill: 'rgba(68,72,92,0.35)' },
+  { x: 13, y: 0.5, w: 4, h: 6.5, rx: 0.8, fill: 'rgba(80,85,105,0.35)' },
+  { x: 17.3, y: 0.5, w: 2.2, h: 6, rx: 0.6, fill: 'rgba(70,74,94,0.35)' },
+  { x: 0.5, y: 7.3, w: 4, h: 6, rx: 0.8, fill: 'rgba(72,76,96,0.35)' },
+  { x: 4.8, y: 7, w: 5.5, h: 6.3, rx: 0.8, fill: 'rgba(80,85,105,0.35)' },
+  { x: 10.6, y: 7.3, w: 7, h: 5.7, rx: 0.8, fill: 'rgba(66,70,90,0.35)' },
+  { x: 17.9, y: 7, w: 1.8, h: 6.2, rx: 0.5, fill: 'rgba(76,80,100,0.35)' },
+  { x: 0.5, y: 13.7, w: 6, h: 6, rx: 0.8, fill: 'rgba(70,74,94,0.35)' },
+  { x: 6.8, y: 13.9, w: 4.2, h: 5.8, rx: 0.8, fill: 'rgba(82,87,107,0.35)' },
+  { x: 11.3, y: 13.6, w: 5.2, h: 6.1, rx: 0.8, fill: 'rgba(74,78,98,0.35)' },
+  { x: 16.8, y: 13.9, w: 2.7, h: 5.8, rx: 0.6, fill: 'rgba(78,82,102,0.35)' },
+];
+
+function PavingCell({ col, row }: { col: number; row: number }) {
+  const v = (col + row) % 4;
+  const sx = v === 1 || v === 3 ? -1 : 1;
+  const sy = v === 2 || v === 3 ? -1 : 1;
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+    >
+      <rect width="20" height="20" fill="rgba(15,18,28,0.4)" />
+      <g transform={`translate(${sx === -1 ? 20 : 0} ${sy === -1 ? 20 : 0}) scale(${sx} ${sy})`}>
+        {PAVING_BLOCKS.map((b, i) => (
+          <rect
+            key={i}
+            x={b.x}
+            y={b.y}
+            width={b.w}
+            height={b.h}
+            rx={b.rx}
+            fill={b.fill}
+            stroke="rgba(140,150,190,0.15)"
+            strokeWidth={0.3}
+          />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
 
 const MAP_W = 2200;
 const MAP_H = 1400;

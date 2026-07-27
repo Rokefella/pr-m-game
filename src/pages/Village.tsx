@@ -1501,6 +1501,7 @@ const Village = () => {
       <style>{`
         @keyframes villagePulse { 0%,100% { opacity:.4 } 50% { opacity:1 } }
         @keyframes villageIdle  { 0%,100% { transform: scale(1) } 50% { transform: scale(1.15) } }
+        @keyframes playerPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
         @keyframes villageNotYet { 0% { opacity:.6 } 80% { opacity:.6 } 100% { opacity:0 } }
         @keyframes merchantSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
@@ -1829,7 +1830,7 @@ const Village = () => {
             borderRadius: '50%',
             background: auraColor,
             boxShadow: `0 0 8px ${auraColor}`,
-            animation: 'villageIdle 1.5s ease-in-out infinite',
+            animation: 'playerPulse 1.6s ease-in-out infinite',
             pointerEvents: 'none',
             zIndex: 5,
           }}

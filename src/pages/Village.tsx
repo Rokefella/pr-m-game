@@ -27,16 +27,27 @@ const MERCHANT_LINES = [
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type Trail = { x: number; y: number; id: number };
 type VillageCell = { col: number; row: number; type: string; npc_name?: string };
+type GroundTile = { x: number; y: number; kind: 'PATH' | 'ROAD' | 'SQUARE' | 'LANDMARK' };
 type DynamicVillage = {
   typeA: typeof TYPE_A;
   typeB: Rect[];
   typeC: Rect[];
   forest: ForestBlock[];
+  groundTiles: GroundTile[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
   gridSize: number;
   start: { col: number; row: number } | null;
 };
+
+// Decorative ground tile colors (muted, atmospheric — no border radius)
+const GROUND_TILE_COLORS: Record<GroundTile['kind'], string> = {
+  PATH: 'rgba(224,221,213,0.045)',
+  ROAD: 'rgba(224,221,213,0.075)',
+  SQUARE: 'rgba(169,140,255,0.07)',
+  LANDMARK: 'rgba(200,148,58,0.12)',
+};
+
 
 const MAP_W = 2200;
 const MAP_H = 1400;
@@ -949,7 +960,9 @@ const Village = () => {
         const typeB: Rect[] = [];
         const typeC: Rect[] = [];
         const forest: ForestBlock[] = [];
+        const groundTiles: GroundTile[] = [];
         const npcs: { x: number; y: number; name: string }[] = [];
+
         let eyeCenter: { x: number; y: number } | null = null;
 
         cells.forEach((cell, i) => {
@@ -984,6 +997,13 @@ const Village = () => {
             case 'EYE':
               eyeCenter = { x, y };
               break;
+            case 'PATH':
+            case 'ROAD':
+            case 'SQUARE':
+            case 'LANDMARK':
+              groundTiles.push({ x, y, kind: cell.type });
+              break;
+
             default:
               break;
           }
@@ -1007,7 +1027,7 @@ const Village = () => {
               ? { col: rawStart.col, row: rawStart.row }
               : null;
 
-          setDynamicBuildings({ typeA, typeB, typeC, forest, npcs, eyeCenter, gridSize, start });
+          setDynamicBuildings({ typeA, typeB, typeC, forest, groundTiles, npcs, eyeCenter, gridSize, start });
 
           // Reposition the player once, when the dynamic village loads
           if (!dynSpawnDoneRef.current) {
@@ -1134,8 +1154,8 @@ const Village = () => {
 
 
 
-  const triggerA = (nx: number, ny: number) => {
-    if (inside(nx, ny, A_89)) {
+  const triggerA = (nx: number, ny: number, a: { id: number | string }) => {
+    if (a.id === 89) {
       if (user) void setFlag(user.id, 'touched_89', 'true');
       const unlocked = parseInt(getFlag('bernard_stage') || '0', 10) >= 2;
       if (!unlocked) {
@@ -1150,7 +1170,7 @@ const Village = () => {
       }
       return true;
     }
-    if (inside(nx, ny, A_23)) {
+    if (a.id === 23) {
       if (user) void setFlag(user.id, 'touched_23', 'true');
       const lv = currentLevelRef.current;
       if (lv < 3) {
@@ -1162,7 +1182,7 @@ const Village = () => {
       feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);
       return true;
     }
-    if (inside(nx, ny, A_47)) {
+    if (a.id === 47) {
       if (user) void setFlag(user.id, 'touched_47', 'true');
       const lv = currentLevelRef.current;
       if (lv < 3) {
@@ -1176,6 +1196,7 @@ const Village = () => {
     }
     return false;
   };
+
 
   const activeObstacles = useMemo<Rect[]>(
     () =>
@@ -1195,7 +1216,7 @@ const Village = () => {
     // Type A: bumping fires response but cancels move
     for (const a of (dynamicBuildings ? dynamicBuildings.typeA : TYPE_A)) {
       if (inside(nx, ny, a)) {
-        triggerA(nx, ny);
+        triggerA(nx, ny, a);
         return;
       }
     }
@@ -1662,7 +1683,25 @@ const Village = () => {
           }}
         />
 
+        {/* Decorative ground tiles (paths, roads, squares, landmarks) — non-blocking */}
+        {dynamicBuildings?.groundTiles.map((g, i) => (
+          <div
+            key={`gt-${i}`}
+            style={{
+              position: 'absolute',
+              left: g.x,
+              top: g.y,
+              width: 20,
+              height: 20,
+              background: GROUND_TILE_COLORS[g.kind],
+              pointerEvents: 'none',
+              zIndex: 2,
+            }}
+          />
+        ))}
+
         {/* Forest blocks (outside outermost ring) */}
+
         {(dynamicBuildings ? dynamicBuildings.forest : FOREST).map((f, i) => (
           <ForestTreeCell key={`f-${i}`} x={f.x} y={f.y} w={f.w} h={f.h} />
         ))}

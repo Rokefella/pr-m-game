@@ -960,7 +960,9 @@ const Village = () => {
         const typeB: Rect[] = [];
         const typeC: Rect[] = [];
         const forest: ForestBlock[] = [];
+        const groundTiles: GroundTile[] = [];
         const npcs: { x: number; y: number; name: string }[] = [];
+
         let eyeCenter: { x: number; y: number } | null = null;
 
         cells.forEach((cell, i) => {

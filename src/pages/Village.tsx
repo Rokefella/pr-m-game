@@ -1276,7 +1276,7 @@ const Village = () => {
   const activeObstacles = useMemo<Rect[]>(
     () =>
       dynamicBuildings
-        ? [...dynamicBuildings.typeB, ...dynamicBuildings.typeC]
+        ? [...dynamicBuildings.clusters.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h }))]
         : OBSTACLES,
     [dynamicBuildings],
   );

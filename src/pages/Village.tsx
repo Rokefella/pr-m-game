@@ -50,6 +50,8 @@ type DynamicVillage = {
   furnitureTiles?: Rect[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
+  bernardCenter: { x: number; y: number } | null;
+  merchantCenter: { x: number; y: number } | null;
   gridSize: number;
   start: { col: number; row: number } | null;
 };
@@ -804,6 +806,13 @@ const Village = () => {
   const mapH = dynamicBuildings ? dynamicBuildings.gridSize * 20 : MAP_H;
   const mapSizeRef = useRef({ w: mapW, h: mapH });
   mapSizeRef.current = { w: mapW, h: mapH };
+  // Bernard/Merchant positions: dynamic village cells with safe fallbacks
+  const bernardPos = dynamicBuildings
+    ? (dynamicBuildings.bernardCenter ?? { x: mapW / 2, y: mapH / 2 })
+    : BERNARD_VILLAGE;
+  const merchantPos = dynamicBuildings
+    ? (dynamicBuildings.merchantCenter ?? { x: mapW / 2, y: mapH / 2 })
+    : MERCHANT;
   const eyePupilRef = useRef({ x: 0, y: 0 });
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });
@@ -1431,6 +1440,8 @@ const Village = () => {
         const npcs: { x: number; y: number; name: string }[] = [];
 
         let eyeCenter: { x: number; y: number } | null = null;
+        let bernardCenter: { x: number; y: number } | null = null;
+        let merchantCenter: { x: number; y: number } | null = null;
 
         cells.forEach((cell, i) => {
           if (!cell || typeof cell.col !== 'number' || typeof cell.row !== 'number') return;
@@ -1464,6 +1475,12 @@ const Village = () => {
               break;
             case 'EYE':
               eyeCenter = { x, y };
+              break;
+            case 'BERNARD':
+              bernardCenter = { x, y };
+              break;
+            case 'MERCHANT':
+              merchantCenter = { x, y };
               break;
             case 'PATH':
             case 'ROAD':
@@ -1507,7 +1524,7 @@ const Village = () => {
             ...clusterCells('L', lCells),
           ];
 
-          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, npcs, eyeCenter, gridSize, start });
+          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
 
 
           // Reposition the player once, when the dynamic village loads
@@ -1803,7 +1820,9 @@ const Village = () => {
     }
 
     // Merchant proximity → open overlay (40px)
-    const dm = Math.hypot(fx - MERCHANT.x, fy - MERCHANT.y);
+    const merchX = dynamicBuildings ? (dynamicBuildings.merchantCenter ? dynamicBuildings.merchantCenter.x : mapSizeRef.current.w / 2) : MERCHANT.x;
+    const merchY = dynamicBuildings ? (dynamicBuildings.merchantCenter ? dynamicBuildings.merchantCenter.y : mapSizeRef.current.h / 2) : MERCHANT.y;
+    const dm = Math.hypot(fx - merchX, fy - merchY);
     if (dm <= 40) {
       if (!merchantTriggerLockRef.current) {
         merchantTriggerLockRef.current = true;
@@ -1814,7 +1833,9 @@ const Village = () => {
     }
 
     // Bernard proximity → open dialogue (40px)
-    const db = Math.hypot(fx - BERNARD_VILLAGE.x, fy - BERNARD_VILLAGE.y);
+    const bernX = dynamicBuildings ? (dynamicBuildings.bernardCenter ? dynamicBuildings.bernardCenter.x : mapSizeRef.current.w / 2) : BERNARD_VILLAGE.x;
+    const bernY = dynamicBuildings ? (dynamicBuildings.bernardCenter ? dynamicBuildings.bernardCenter.y : mapSizeRef.current.h / 2) : BERNARD_VILLAGE.y;
+    const db = Math.hypot(fx - bernX, fy - bernY);
     if (db <= 40) {
       if (!bernardLockRef.current) {
         bernardLockRef.current = true;
@@ -2532,14 +2553,14 @@ const Village = () => {
         ))}
 
         {/* Merchant character */}
-        <MerchantCharacter x={MERCHANT.x} y={MERCHANT.y} palette="green" />
+        <MerchantCharacter x={merchantPos.x} y={merchantPos.y} palette="green" />
 
         {/* Bernard — gold dot in town square with bell-ring pulse */}
         <div
           style={{
             position: 'absolute',
-            left: BERNARD_VILLAGE.x - 6,
-            top: BERNARD_VILLAGE.y - 6,
+            left: bernardPos.x - 6,
+            top: bernardPos.y - 6,
             width: 12, height: 12, borderRadius: '50%',
             background: '#c8963a',
             boxShadow: '0 0 12px rgba(200,150,58,0.7)',
@@ -2549,8 +2570,8 @@ const Village = () => {
         <div
           style={{
             position: 'absolute',
-            left: BERNARD_VILLAGE.x - 6,
-            top: BERNARD_VILLAGE.y - 6,
+            left: bernardPos.x - 6,
+            top: bernardPos.y - 6,
             width: 12, height: 12, borderRadius: '50%',
             border: '1px solid rgba(200,150,58,0.6)',
             animation: 'bernardBellRing 8s ease-out infinite',
@@ -2562,8 +2583,8 @@ const Village = () => {
           className="font-mono"
           style={{
             position: 'absolute',
-            left: BERNARD_VILLAGE.x - 4,
-            top: BERNARD_VILLAGE.y - 24,
+            left: bernardPos.x - 4,
+            top: bernardPos.y - 24,
             fontSize: 14,
             color: 'rgba(200,150,58,0.6)',
             pointerEvents: 'none',

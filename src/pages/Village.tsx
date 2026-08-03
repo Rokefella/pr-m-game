@@ -1765,7 +1765,7 @@ const Village = () => {
     return { x: tx, y: ty };
   })();
   const cameraRef = useRef(initialCam);
-  const [camera, setCamera] = useState(initialCam);
+  const mapRef = useRef<HTMLDivElement | null>(null);
 
   // ---- Viewport culling (rendering only; collision uses the full dataset) ----
   // Quantize the camera to 100px steps (5 cells) so the memo recomputes ~5x less
@@ -1773,8 +1773,15 @@ const Village = () => {
   // nothing pops in/out with the coarser step.
   const CULL_STEP = 100;
   const CULL_MARGIN = 220;
-  const cullQx = Math.floor(-camera.x / CULL_STEP);
-  const cullQy = Math.floor(-camera.y / CULL_STEP);
+  // Camera position lives in a ref (written straight to the DOM each frame);
+  // only crossing a cull-step boundary commits state and triggers a re-render.
+  const [cullAnchor, setCullAnchor] = useState(() => ({
+    qx: Math.floor(-initialCam.x / 100),
+    qy: Math.floor(-initialCam.y / 100),
+  }));
+  const cullQx = cullAnchor.qx;
+  const cullQy = cullAnchor.qy;
+
   const visible = useMemo(() => {
     if (!dynamicBuildings) return null;
     const left = cullQx * CULL_STEP - CULL_MARGIN;
@@ -1845,17 +1852,22 @@ const Village = () => {
       const dx = targetX - cameraRef.current.x;
       const dy = targetY - cameraRef.current.y;
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
-        if (cameraRef.current.x !== targetX || cameraRef.current.y !== targetY) {
-          cameraRef.current = { x: targetX, y: targetY };
-          setCamera(cameraRef.current);
-        }
+        cameraRef.current = { x: targetX, y: targetY };
       } else {
         cameraRef.current = {
           x: cameraRef.current.x + dx * 0.12,
           y: cameraRef.current.y + dy * 0.12,
         };
-        setCamera(cameraRef.current);
       }
+      // Write the camera transform straight to the DOM — no React re-render.
+      if (mapRef.current) {
+        mapRef.current.style.transform = `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px)`;
+      }
+      // Commit state only when the quantized cull cell changes.
+      const qx = Math.floor(-cameraRef.current.x / CULL_STEP);
+      const qy = Math.floor(-cameraRef.current.y / CULL_STEP);
+      setCullAnchor((prev) => (prev.qx === qx && prev.qy === qy ? prev : { qx, qy }));
+
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -1965,16 +1977,18 @@ const Village = () => {
         <>
           {/* Map layer */}
           <div
+            ref={mapRef}
             style={{
               position: 'absolute',
               left: 0,
               top: 0,
               width: MAP_W,
               height: MAP_H,
-              transform: `translate(${camera.x}px, ${camera.y}px)`,
+              transform: `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px)`,
               willChange: 'transform',
             }}
           >
+
 
         {/* Grid overlay */}
         <div

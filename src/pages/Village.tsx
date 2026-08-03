@@ -1797,17 +1797,19 @@ const Village = () => {
   const [camera, setCamera] = useState(initialCam);
 
   // ---- Viewport culling (rendering only; collision uses the full dataset) ----
-  // Quantize the camera to 20px cells so the memo doesn't recompute every frame
-  // of the lerp, and pad the visible box by 3 cells so cells don't pop in.
-  const CULL_MARGIN = 60;
-  const cullQx = Math.floor(-camera.x / 20);
-  const cullQy = Math.floor(-camera.y / 20);
+  // Quantize the camera to 100px steps (5 cells) so the memo recomputes ~5x less
+  // often during sustained movement, and pad the visible box by 11 cells so
+  // nothing pops in/out with the coarser step.
+  const CULL_STEP = 100;
+  const CULL_MARGIN = 220;
+  const cullQx = Math.floor(-camera.x / CULL_STEP);
+  const cullQy = Math.floor(-camera.y / CULL_STEP);
   const visible = useMemo(() => {
     if (!dynamicBuildings) return null;
-    const left = cullQx * 20 - CULL_MARGIN;
-    const top = cullQy * 20 - CULL_MARGIN;
-    const right = cullQx * 20 + view.w + CULL_MARGIN;
-    const bottom = cullQy * 20 + view.h + CULL_MARGIN;
+    const left = cullQx * CULL_STEP - CULL_MARGIN;
+    const top = cullQy * CULL_STEP - CULL_MARGIN;
+    const right = cullQx * CULL_STEP + view.w + CULL_MARGIN;
+    const bottom = cullQy * CULL_STEP + view.h + CULL_MARGIN;
     const inBox = (x: number, y: number, w = 20, h = 20) =>
       x + w >= left && x <= right && y + h >= top && y <= bottom;
     return {

@@ -47,8 +47,8 @@ type DynamicVillage = {
   clusters: BuildingCluster[];
   forest: ForestBlock[];
   groundTiles: GroundTile[];
-  wallTiles: Rect[];
-  furnitureTiles: Rect[];
+  wallTiles?: Rect[];
+  furnitureTiles?: Rect[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
   gridSize: number;
@@ -1519,8 +1519,8 @@ const Village = () => {
             ...dynamicBuildings.clusters.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h })),
             ...dynamicBuildings.typeB,
             ...dynamicBuildings.typeC,
-            ...dynamicBuildings.wallTiles,
-            ...dynamicBuildings.furnitureTiles,
+            ...(dynamicBuildings.wallTiles ?? []),
+            ...(dynamicBuildings.furnitureTiles ?? []),
           ]
         : OBSTACLES,
     [dynamicBuildings],
@@ -1813,8 +1813,8 @@ const Village = () => {
       clusters: dynamicBuildings.clusters.filter((c) => inBox(c.x, c.y, c.w, c.h)),
       forest: dynamicBuildings.forest.filter((f) => inBox(f.x, f.y, f.w, f.h)),
       groundTiles: dynamicBuildings.groundTiles.filter((g) => inBox(g.x, g.y)),
-      wallTiles: dynamicBuildings.wallTiles.filter((w) => inBox(w.x, w.y)),
-      furnitureTiles: dynamicBuildings.furnitureTiles.filter((f) => inBox(f.x, f.y)),
+      wallTiles: (dynamicBuildings.wallTiles ?? []).filter((w) => inBox(w.x, w.y)),
+      furnitureTiles: (dynamicBuildings.furnitureTiles ?? []).filter((f) => inBox(f.x, f.y)),
       npcs: dynamicBuildings.npcs.filter((n) => inBox(n.x, n.y, 6, 6)),
       typeA: dynamicBuildings.typeA.filter((b) => inBox(b.x, b.y, b.w, b.h)),
     };

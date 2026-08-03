@@ -50,6 +50,8 @@ type DynamicVillage = {
   furnitureTiles?: Rect[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
+  bernardCenter: { x: number; y: number } | null;
+  merchantCenter: { x: number; y: number } | null;
   gridSize: number;
   start: { col: number; row: number } | null;
 };
@@ -1431,6 +1433,8 @@ const Village = () => {
         const npcs: { x: number; y: number; name: string }[] = [];
 
         let eyeCenter: { x: number; y: number } | null = null;
+        let bernardCenter: { x: number; y: number } | null = null;
+        let merchantCenter: { x: number; y: number } | null = null;
 
         cells.forEach((cell, i) => {
           if (!cell || typeof cell.col !== 'number' || typeof cell.row !== 'number') return;
@@ -1464,6 +1468,12 @@ const Village = () => {
               break;
             case 'EYE':
               eyeCenter = { x, y };
+              break;
+            case 'BERNARD':
+              bernardCenter = { x, y };
+              break;
+            case 'MERCHANT':
+              merchantCenter = { x, y };
               break;
             case 'PATH':
             case 'ROAD':

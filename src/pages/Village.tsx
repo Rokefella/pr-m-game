@@ -1485,7 +1485,8 @@ const Village = () => {
     if (a.id === 23) {
       if (user) void setFlag(user.id, 'touched_23', 'true');
       const lv = currentLevelRef.current;
-      if (lv < 3) {
+      // TEMP: lowered for testing, revert to lv < 3 before release
+      if (lv < 1) {
         showLockWhisper('The Library opens later.');
         return true;
       }

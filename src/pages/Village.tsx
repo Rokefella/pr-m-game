@@ -777,8 +777,12 @@ const Village = () => {
 
   const [trail, setTrail] = useState<Trail[]>([]);
   const [dynamicBuildings, setDynamicBuildings] = useState<DynamicVillage | null>(null);
+  const [villageLoading, setVillageLoading] = useState(true);
+  const villageLoadingRef = useRef(true);
+  useEffect(() => { villageLoadingRef.current = villageLoading; }, [villageLoading]);
   const dynSpawnDoneRef = useRef(false);
   const moveRef = useRef<(dx: number, dy: number) => void>(() => {});
+
 
   // Active map bounds: dynamic village size when present, hardcoded map otherwise
   const mapW = dynamicBuildings ? dynamicBuildings.gridSize * 20 : MAP_W;
@@ -1181,6 +1185,7 @@ const Village = () => {
     let cancelled = false;
 
     const loadVillage = async () => {
+      setVillageLoading(true);
       try {
         const { data: villageRow } = await supabase
           .from('special_locations' as never)
@@ -1189,7 +1194,10 @@ const Village = () => {
           .eq('location_key', 'village')
           .maybeSingle();
 
-        if (cancelled || !villageRow) return;
+        if (cancelled || !villageRow) {
+          if (!cancelled) setVillageLoading(false);
+          return;
+        }
         const vData = (villageRow as {
           data?: {
             extraCells?: VillageCell[];
@@ -1199,7 +1207,10 @@ const Village = () => {
           };
         })?.data;
         const cells = vData?.extraCells ?? [];
-        if (!Array.isArray(cells) || cells.length === 0) return;
+        if (!Array.isArray(cells) || cells.length === 0) {
+          if (!cancelled) setVillageLoading(false);
+          return;
+        }
 
         const CELL = 20;
         const typeA: typeof TYPE_A = [];
@@ -1298,12 +1309,15 @@ const Village = () => {
             playerTargetRef.current = sp;
             setPlayer(sp);
           }
+          setVillageLoading(false);
         }
 
       } catch (e) {
+        if (!cancelled) setVillageLoading(false);
         console.warn('[Village] dynamic layout load failed', e);
       }
     };
+
 
     void loadVillage();
     return () => { cancelled = true; };
@@ -1464,7 +1478,9 @@ const Village = () => {
   );
 
   const move = (dx: number, dy: number) => {
+    if (villageLoadingRef.current) return;
     const prev = playerTargetRef.current;
+
 
     const nx = Math.max(0, Math.min(mapSizeRef.current.w, prev.x + dx));
     const ny = Math.max(0, Math.min(mapSizeRef.current.h, prev.y + dy));
@@ -1879,18 +1895,21 @@ const Village = () => {
         @keyframes merchantSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
 
-      {/* Map layer */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          width: MAP_W,
-          height: MAP_H,
-          transform: `translate(${camera.x}px, ${camera.y}px)`,
-          willChange: 'transform',
-        }}
-      >
+      {!villageLoading && (
+        <>
+          {/* Map layer */}
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: MAP_W,
+              height: MAP_H,
+              transform: `translate(${camera.x}px, ${camera.y}px)`,
+              willChange: 'transform',
+            }}
+          >
+
         {/* Grid overlay */}
         <div
           style={{
@@ -2304,6 +2323,35 @@ const Village = () => {
           }}
         />
       </div>
+      </>
+    )}
+
+    {villageLoading && (
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 5,
+        }}
+      >
+        <div
+          className="font-cinzel"
+          style={{
+            fontSize: 14,
+            letterSpacing: '0.2em',
+            color: 'rgba(160,140,200,0.5)',
+            animation: 'villagePulse 2s ease-in-out infinite',
+          }}
+        >
+          LOADING
+        </div>
+      </div>
+    )}
+
+
 
       {/* Ghost hover tooltip */}
       {tooltipState.visible && (

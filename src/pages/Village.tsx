@@ -557,7 +557,7 @@ const ForestTreeCell = memo(({ x, y, w, h }: { x: number; y: number; w: number; 
       </svg>
     </div>
   );
-};
+});
 const generateForest = (): ForestBlock[] => {
   const rng = makeRng(0xF0FE57);
   const blocks: ForestBlock[] = [];

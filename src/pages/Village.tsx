@@ -1300,10 +1300,10 @@ const Village = () => {
               groundTiles.push({ x, y, kind: cell.type });
               break;
             case 'WALL':
-              wallTiles.push({ x, y, w: 20, h: 20 });
+              wallTiles.push({ id: `wall-${cell.col}-${cell.row}`, x, y, w: 20, h: 20 });
               break;
             case 'FURNITURE':
-              furnitureTiles.push({ x, y, w: 20, h: 20 });
+              furnitureTiles.push({ id: `furn-${cell.col}-${cell.row}`, x, y, w: 20, h: 20 });
               break;
 
             default:
@@ -1335,7 +1335,7 @@ const Village = () => {
             ...clusterCells('L', lCells),
           ];
 
-          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, npcs, eyeCenter, gridSize, start });
+          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, npcs, eyeCenter, gridSize, start });
 
 
           // Reposition the player once, when the dynamic village loads
@@ -1515,7 +1515,13 @@ const Village = () => {
   const activeObstacles = useMemo<Rect[]>(
     () =>
       dynamicBuildings
-        ? [...dynamicBuildings.clusters.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h }))]
+        ? [
+            ...dynamicBuildings.clusters.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h })),
+            ...dynamicBuildings.typeB,
+            ...dynamicBuildings.typeC,
+            ...dynamicBuildings.wallTiles,
+            ...dynamicBuildings.furnitureTiles,
+          ]
         : OBSTACLES,
     [dynamicBuildings],
   );
@@ -1807,6 +1813,8 @@ const Village = () => {
       clusters: dynamicBuildings.clusters.filter((c) => inBox(c.x, c.y, c.w, c.h)),
       forest: dynamicBuildings.forest.filter((f) => inBox(f.x, f.y, f.w, f.h)),
       groundTiles: dynamicBuildings.groundTiles.filter((g) => inBox(g.x, g.y)),
+      wallTiles: dynamicBuildings.wallTiles.filter((w) => inBox(w.x, w.y)),
+      furnitureTiles: dynamicBuildings.furnitureTiles.filter((f) => inBox(f.x, f.y)),
       npcs: dynamicBuildings.npcs.filter((n) => inBox(n.x, n.y, 6, 6)),
       typeA: dynamicBuildings.typeA.filter((b) => inBox(b.x, b.y, b.w, b.h)),
     };
@@ -2047,6 +2055,24 @@ const Village = () => {
             </div>
           );
         })}
+
+        {/* Interior walls & furniture (solid) */}
+        {visible?.wallTiles.map((w) => (
+          <div
+            key={`wall-${w.x}-${w.y}`}
+            style={{ position: 'absolute', left: w.x, top: w.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 3 }}
+          >
+            <WallCell />
+          </div>
+        ))}
+        {visible?.furnitureTiles.map((f) => (
+          <div
+            key={`furn-${f.x}-${f.y}`}
+            style={{ position: 'absolute', left: f.x, top: f.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 3 }}
+          >
+            <FurnitureCell />
+          </div>
+        ))}
 
         {/* Forest blocks (outside outermost ring) */}
 

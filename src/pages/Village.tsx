@@ -136,34 +136,17 @@ const ClusterBuilding = memo(function ClusterBuilding({ cluster }: { cluster: Bu
   const seams: React.ReactNode[] = [];
   for (let c = 1; c < cols; c++) {
     seams.push(
-      <div
-        key={`sv-${c}`}
-        style={{
-          position: 'absolute',
-          left: c * 20,
-          top: 0,
-          width: 1,
-          height: h,
-          background: 'rgba(0,0,0,0.28)',
-        }}
-      />,
+      <rect key={`sv-${c}`} x={c * 20} y={0} width={1} height={h} fill="rgba(0,0,0,0.28)" />,
     );
   }
   for (let r = 1; r < rows; r++) {
     seams.push(
-      <div
-        key={`sh-${r}`}
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: r * 20,
-          width: w,
-          height: 1,
-          background: 'rgba(0,0,0,0.28)',
-        }}
-      />,
+      <rect key={`sh-${r}`} x={0} y={r * 20} width={w} height={1} fill="rgba(0,0,0,0.28)" />,
     );
   }
+
+  const skyX = Math.max(3, (w - skyW) / 2);
+  const skyY = Math.max(3, (h - skyH) / 2);
 
   return (
     <>
@@ -180,59 +163,62 @@ const ClusterBuilding = memo(function ClusterBuilding({ cluster }: { cluster: Bu
           zIndex: 2,
         }}
       />
-      <div
+      <svg
+        width={w}
+        height={h}
+        viewBox={`0 0 ${w} ${h}`}
         style={{
           position: 'absolute',
           left: x,
           top: y,
-          width: w,
-          height: h,
-          background: fill,
-          border: '1px solid rgba(4,4,10,0.55)',
           pointerEvents: 'none',
           zIndex: 3,
+          display: 'block',
           overflow: 'hidden',
         }}
       >
+        <rect x={0} y={0} width={w} height={h} fill={fill} />
         {seams}
         {/* rooftop HVAC vents */}
         {vents.map((v) => (
-          <div
+          <rect
             key={`v-${v.i}`}
-            style={{
-              position: 'absolute',
-              left: v.vx,
-              top: v.vy,
-              width: ventSize,
-              height: ventSize,
-              background: 'rgba(10,14,26,0.85)',
-            }}
+            x={v.vx}
+            y={v.vy}
+            width={ventSize}
+            height={ventSize}
+            fill="rgba(10,14,26,0.85)"
           />
         ))}
         {/* skylight panel */}
-        <div
-          style={{
-            position: 'absolute',
-            left: Math.max(3, (w - skyW) / 2),
-            top: Math.max(3, (h - skyH) / 2),
-            width: skyW,
-            height: skyH,
-            background: 'rgba(226,240,250,0.55)',
-            border: '1px solid rgba(10,14,26,0.5)',
-          }}
+        <rect
+          x={skyX + 0.5}
+          y={skyY + 0.5}
+          width={Math.max(0, skyW - 1)}
+          height={Math.max(0, skyH - 1)}
+          fill="rgba(226,240,250,0.55)"
+          stroke="rgba(10,14,26,0.5)"
+          strokeWidth={1}
         />
         {/* access hatch */}
-        <div
-          style={{
-            position: 'absolute',
-            right: 3,
-            bottom: 3,
-            width: hatch,
-            height: hatch,
-            background: 'rgba(20,26,40,0.9)',
-          }}
+        <rect
+          x={w - 3 - hatch}
+          y={h - 3 - hatch}
+          width={hatch}
+          height={hatch}
+          fill="rgba(20,26,40,0.9)"
         />
-      </div>
+        {/* outer border */}
+        <rect
+          x={0.5}
+          y={0.5}
+          width={Math.max(0, w - 1)}
+          height={Math.max(0, h - 1)}
+          fill="none"
+          stroke="rgba(4,4,10,0.55)"
+          strokeWidth={1}
+        />
+      </svg>
     </>
   );
 });

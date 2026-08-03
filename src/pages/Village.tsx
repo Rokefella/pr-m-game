@@ -25,7 +25,6 @@ const MERCHANT_LINES = [
 ];
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
-type Trail = { x: number; y: number; id: number };
 type VillageCell = { col: number; row: number; type: string; npc_name?: string };
 type GroundTile = { x: number; y: number; kind: 'PATH' | 'ROAD' | 'SQUARE' | 'LANDMARK' };
 type ClusterKind = 'S' | 'M' | 'L';
@@ -795,7 +794,6 @@ const Village = () => {
   const { user, loading: authLoading } = useAuth();
   const navigatedRef = useRef(false);
   const feedbackTimer = useRef<number | null>(null);
-  const trailIdRef = useRef(0);
 
   // Validated random spawn (computed once)
   const initialPosRef = useRef<{ x: number; y: number } | null>(null);
@@ -806,9 +804,7 @@ const Village = () => {
   const [player, setPlayer] = useState(initialPos);
   const playerRef = useRef(initialPos);
   const playerTargetRef = useRef(initialPos);
-  const lastTrailPushRef = useRef<{ x: number; y: number } | null>(null);
 
-  const [trail, setTrail] = useState<Trail[]>([]);
   const [dynamicBuildings, setDynamicBuildings] = useState<DynamicVillage | null>(null);
   const [villageLoading, setVillageLoading] = useState(true);
   const villageLoadingRef = useRef(true);
@@ -1722,17 +1718,6 @@ const Village = () => {
         setPlayer(playerRef.current);
       }
 
-      // Push previous visual position to trail on every frame the player moves
-      if (moved) {
-        const id = ++trailIdRef.current;
-        const px = cur.x;
-        const py = cur.y;
-        setTrail((t) => {
-          const next = [...t, { x: px, y: py, id }];
-          return next.length > 80 ? next.slice(next.length - 80) : next;
-        });
-      }
-
       // Eye pupil tracking
       const pv = playerRef.current;
       const evx = pv.x - CX;
@@ -2272,43 +2257,6 @@ const Village = () => {
             </>
 
           )}
-
-        {/* Trail glowing polyline (last 80 positions, fades to tail) */}
-        {trail.length >= 2 && (
-          <svg
-            width={MAP_W}
-            height={MAP_H}
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              pointerEvents: 'none',
-              zIndex: 2,
-            }}
-          >
-            <defs>
-              <linearGradient
-                id="trailGrad"
-                gradientUnits="userSpaceOnUse"
-                x1={trail[0].x}
-                y1={trail[0].y}
-                x2={player.x}
-                y2={player.y}
-              >
-                <stop offset="0%" stopColor={auraColor} stopOpacity={0} />
-                <stop offset="100%" stopColor={auraColor} stopOpacity={0.8} />
-              </linearGradient>
-            </defs>
-            <polyline
-              points={[...trail.map((p) => `${p.x},${p.y}`), `${player.x},${player.y}`].join(' ')}
-              fill="none"
-              stroke="url(#trailGrad)"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        )}
 
         {/* Villagers — rendered inside map div, positioned in map pixel coords */}
         {activeVillagers.map((v) => (

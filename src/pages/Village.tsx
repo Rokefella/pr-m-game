@@ -2326,6 +2326,32 @@ const Village = () => {
       </>
     )}
 
+    {villageLoading && (
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 5,
+        }}
+      >
+        <div
+          className="font-cinzel"
+          style={{
+            fontSize: 14,
+            letterSpacing: '0.2em',
+            color: 'rgba(160,140,200,0.5)',
+            animation: 'villagePulse 2s ease-in-out infinite',
+          }}
+        >
+          LOADING
+        </div>
+      </div>
+    )}
+
+
 
       {/* Ghost hover tooltip */}
       {tooltipState.visible && (

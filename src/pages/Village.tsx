@@ -1519,8 +1519,8 @@ const Village = () => {
             ...dynamicBuildings.clusters.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h })),
             ...dynamicBuildings.typeB,
             ...dynamicBuildings.typeC,
-            ...dynamicBuildings.wallTiles,
-            ...dynamicBuildings.furnitureTiles,
+            ...(dynamicBuildings.wallTiles ?? []),
+            ...(dynamicBuildings.furnitureTiles ?? []),
           ]
         : OBSTACLES,
     [dynamicBuildings],

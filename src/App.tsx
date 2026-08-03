@@ -10,6 +10,7 @@ import ProfileSetup from "./pages/ProfileSetup.tsx";
 import Village from "./pages/Village.tsx";
 import Door from "./pages/Door.tsx";
 import LibraryDoor from "./pages/LibraryDoor.tsx";
+import LibraryRoom from "./pages/LibraryRoom.tsx";
 import ExchangeDoor from "./pages/ExchangeDoor.tsx";
 import Maze from "./pages/Maze.tsx";
 import ShadowRealm from "./pages/ShadowRealm.tsx";

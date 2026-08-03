@@ -1977,16 +1977,18 @@ const Village = () => {
         <>
           {/* Map layer */}
           <div
+            ref={mapRef}
             style={{
               position: 'absolute',
               left: 0,
               top: 0,
               width: MAP_W,
               height: MAP_H,
-              transform: `translate(${camera.x}px, ${camera.y}px)`,
+              transform: `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px)`,
               willChange: 'transform',
             }}
           >
+
 
         {/* Grid overlay */}
         <div

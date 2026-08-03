@@ -1198,8 +1198,7 @@ const Village = () => {
       '7. stage=5, alexandra not active': 'accept_alexandra_quest',
     };
 
-    console.log('%c[Bernard parity check] 7 states', 'font-weight:bold');
-    for (const c of cases) {
+    const rows: ParityRow[] = cases.map((c) => {
       const override = (k: string) => c.flags[k] ?? null;
       const stage = parseInt(override('bernard_stage') || '0', 10);
       const nw = getBernardDialogue(override);
@@ -1217,30 +1216,21 @@ const Village = () => {
         Boolean(nw.buttonAction) === Boolean(old.buttonAction) &&
         Boolean(nw.onShow) === Boolean(old.onShow);
       const actionKeyMatch = wiredKey === expected;
-      const ok = textMatch && labelMatch && actionPresenceMatch && actionKeyMatch;
 
-      console.log(
-        `${ok ? 'MATCH   ' : 'MISMATCH'} — ${c.label}`,
-        {
-          new: {
-            text: nw.text,
-            button_label: nw.buttonLabel,
-            hasButtonAction: Boolean(nw.buttonAction),
-            hasOnShow: Boolean(nw.onShow),
-            actionKey: wiredKey,
-            stage_key: row?.stage_key ?? null,
-          },
-          old: {
-            text: old.text,
-            button_label: old.buttonLabel,
-            hasButtonAction: Boolean(old.buttonAction),
-            hasOnShow: Boolean(old.onShow),
-            expectedActionKey: expected,
-          },
-          diff: { textMatch, labelMatch, actionPresenceMatch, actionKeyMatch },
-        },
-      );
-    }
+      return {
+        label: c.label,
+        ok: textMatch && labelMatch && actionPresenceMatch && actionKeyMatch,
+        newText: nw.text,
+        oldText: old.text,
+        newLabel: nw.buttonLabel ?? null,
+        oldLabel: old.buttonLabel ?? null,
+        newActionKey: wiredKey,
+        oldActionKey: expected ?? null,
+        flags: { textMatch, labelMatch, actionPresenceMatch, actionKeyMatch },
+      };
+    });
+
+    setParityRows(rows);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, bernardStages]);
 

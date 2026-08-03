@@ -178,9 +178,42 @@ const LibraryRoom = () => {
 
         const layout: RoomLayout = { wallTiles, furnitureTiles, exitTiles, gridSize, start };
 
-        const sp = start
-          ? { x: start.col * CELL, y: start.row * CELL }
-          : { x: (gridSize * CELL) / 2, y: (gridSize * CELL) / 2 };
+        // Spawn safety net: pick the nearest open cell (expanding ring search)
+        // around the preferred origin so we never spawn inside walls/furniture.
+        const solids = [...wallTiles, ...furnitureTiles];
+        const isOpenCell = (col: number, row: number) => {
+          if (col < 0 || row < 0 || col >= gridSize || row >= gridSize) return false;
+          const px = col * CELL + CELL / 2;
+          const py = row * CELL + CELL / 2;
+          return !solids.some(
+            (o) => px >= o.x - 2 && px <= o.x + o.w + 2 && py >= o.y - 2 && py <= o.y + o.h + 2,
+          );
+        };
+
+        const originCol = start ? start.col : Math.floor(gridSize / 2);
+        const originRow = start ? start.row : Math.floor(gridSize / 2);
+
+        let spawnCol = originCol;
+        let spawnRow = originRow;
+        if (!isOpenCell(originCol, originRow)) {
+          let found = false;
+          for (let r = 1; r <= gridSize && !found; r++) {
+            for (let dy = -r; dy <= r && !found; dy++) {
+              for (let dx = -r; dx <= r && !found; dx++) {
+                if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+                const c = originCol + dx;
+                const rw = originRow + dy;
+                if (isOpenCell(c, rw)) {
+                  spawnCol = c;
+                  spawnRow = rw;
+                  found = true;
+                }
+              }
+            }
+          }
+        }
+
+        const sp = { x: spawnCol * CELL + CELL / 2, y: spawnRow * CELL + CELL / 2 };
         playerRef.current = sp;
         playerTargetRef.current = sp;
 

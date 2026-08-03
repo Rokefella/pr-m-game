@@ -1730,6 +1730,30 @@ const Village = () => {
   const cameraRef = useRef(initialCam);
   const [camera, setCamera] = useState(initialCam);
 
+  // ---- Viewport culling (rendering only; collision uses the full dataset) ----
+  // Quantize the camera to 20px cells so the memo doesn't recompute every frame
+  // of the lerp, and pad the visible box by 3 cells so cells don't pop in.
+  const CULL_MARGIN = 60;
+  const cullQx = Math.floor(-camera.x / 20);
+  const cullQy = Math.floor(-camera.y / 20);
+  const visible = useMemo(() => {
+    if (!dynamicBuildings) return null;
+    const left = cullQx * 20 - CULL_MARGIN;
+    const top = cullQy * 20 - CULL_MARGIN;
+    const right = cullQx * 20 + view.w + CULL_MARGIN;
+    const bottom = cullQy * 20 + view.h + CULL_MARGIN;
+    const inBox = (x: number, y: number, w = 20, h = 20) =>
+      x + w >= left && x <= right && y + h >= top && y <= bottom;
+    return {
+      clusters: dynamicBuildings.clusters.filter((c) => inBox(c.x, c.y, c.w, c.h)),
+      forest: dynamicBuildings.forest.filter((f) => inBox(f.x, f.y, f.w, f.h)),
+      groundTiles: dynamicBuildings.groundTiles.filter((g) => inBox(g.x, g.y)),
+      npcs: dynamicBuildings.npcs.filter((n) => inBox(n.x, n.y, 6, 6)),
+      typeA: dynamicBuildings.typeA.filter((b) => inBox(b.x, b.y, b.w, b.h)),
+    };
+  }, [dynamicBuildings, cullQx, cullQy, view.w, view.h]);
+
+
   useEffect(() => {
     let raf = 0;
     const loop = () => {
@@ -1941,7 +1965,7 @@ const Village = () => {
         />
 
         {/* Decorative ground tiles (paths, roads, squares, landmarks) — non-blocking */}
-        {dynamicBuildings?.groundTiles.map((g, i) => {
+        {visible?.groundTiles.map((g, i) => {
           const paved = g.kind === 'PATH' || g.kind === 'ROAD';
           return (
             <div
@@ -1964,7 +1988,7 @@ const Village = () => {
 
         {/* Forest blocks (outside outermost ring) */}
 
-        {(dynamicBuildings ? dynamicBuildings.forest : FOREST).map((f, i) => (
+        {(visible ? visible.forest : FOREST).map((f, i) => (
           <ForestTreeCell key={`f-${i}`} x={f.x} y={f.y} w={f.w} h={f.h} />
         ))}
 
@@ -2020,7 +2044,7 @@ const Village = () => {
           ))}
 
         {/* Clustered dynamic buildings (grouped by type, one image per cluster) */}
-        {dynamicBuildings?.clusters.map((c) => (
+        {visible?.clusters.map((c) => (
           <ClusterBuilding key={c.id} cluster={c} />
         ))}
 
@@ -2067,8 +2091,8 @@ const Village = () => {
         ))}
 
         {/* Type A — doors: pulsating gold markers in dynamic villages, boxes in hardcoded */}
-        {dynamicBuildings
-          ? dynamicBuildings.typeA.map((b) => (
+        {visible
+          ? visible.typeA.map((b) => (
               <div
                 key={`door-${b.id}-${b.x}-${b.y}`}
                 style={{
@@ -2175,7 +2199,7 @@ const Village = () => {
         ))}
 
         {/* Dynamic NPCs — static markers from the loaded village layout */}
-        {dynamicBuildings?.npcs.map((n, i) => (
+        {visible?.npcs.map((n, i) => (
           <div
             key={`dnpc-${i}`}
             title={n.name || undefined}

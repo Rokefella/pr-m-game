@@ -970,7 +970,113 @@ const Village = () => {
     onShow?: () => void;
   };
 
+  // ── Data-driven Bernard dialogue (npc_dialogue_stages) ──
+  type BernardStageRow = {
+    stage_key: string;
+    text: string;
+    button_label: string | null;
+    button_action_key: string | null;
+    on_show_action_key: string | null;
+    order_index: number;
+    condition: {
+      stage?: number;
+      requires_flags?: Record<string, string>;
+      flags_equal?: boolean;
+    } | null;
+  };
+
+  const [bernardStages, setBernardStages] = useState<BernardStageRow[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: npcRow, error: npcErr } = await supabase
+        .from('npcs')
+        .select('id')
+        .eq('npc_key', 'bernard')
+        .maybeSingle();
+      if (npcErr || !npcRow) {
+        if (npcErr) console.error('[Village] bernard npc lookup failed', npcErr);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('npc_dialogue_stages')
+        .select('stage_key, text, button_label, button_action_key, on_show_action_key, order_index, condition')
+        .eq('npc_id', (npcRow as { id: string }).id)
+        .order('order_index', { ascending: true });
+      if (error) {
+        console.error('[Village] bernard dialogue stages fetch failed', error);
+        return;
+      }
+      if (!cancelled) setBernardStages((data as BernardStageRow[]) || []);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Evaluates a dialogue row's condition against the current stage + quest flags.
+  const conditionsMet = (
+    stage: number,
+    condition: BernardStageRow['condition'],
+    flags: (key: string) => string | null,
+  ): boolean => {
+    if (!condition) return false;
+    if (condition.stage !== stage) return false;
+    const requires = condition.requires_flags;
+    if (!requires) return true;
+    const keys = Object.keys(requires);
+    const allMatch = keys.every((k) => flags(k) === requires[k]);
+    return condition.flags_equal === false ? !allMatch : allMatch;
+  };
+
+  // Maps action keys from the database to the existing handlers in this file.
+  const bernardActions: Record<string, () => void> = {
+    advance_to_1: () => { advanceBernardStage(1); },
+    grant_credits_30_advance_2: () => {
+      if (!user) return;
+      const next = credits + 30;
+      setCredits(next);
+      updateUser(user.id, { credits: next });
+      advanceBernardStage(2);
+    },
+    grant_wanderer_title: async () => {
+      if (!user) return;
+      const credNum = credits + 100;
+      setCredits(credNum);
+      await updateUser(user.id, {
+        credits: credNum,
+        title: 'Wanderer',
+        unlocked_titles: ['Wanderer'],
+      });
+      setCurrentTitle('Wanderer');
+      setUnlockedTitles(['Wanderer']);
+      await advanceBernardStage(5);
+      setEyeMessage('You are a Wanderer.');
+      window.setTimeout(() => setEyeMessage(null), 3000);
+    },
+    accept_alexandra_quest: () => { acceptAlexandraQuest(); },
+  };
+
   const getBernardDialogue = (): BernardDialogueData => {
+    if (typeof window === 'undefined' || !user) {
+      return { text: '', buttonLabel: null };
+    }
+    const stage = getBernardStage();
+    const match =
+      bernardStages.find((row) => conditionsMet(stage, row.condition, getFlag)) ??
+      bernardStages.find((row) => row.stage_key === 'stage_6_followup');
+    if (!match) return { text: '', buttonLabel: null };
+    return {
+      text: match.text,
+      buttonLabel: match.button_label,
+      buttonAction: match.button_action_key ? bernardActions[match.button_action_key] : undefined,
+      onShow: match.on_show_action_key ? bernardActions[match.on_show_action_key] : undefined,
+    };
+  };
+
+  // DEPRECATED — kept for manual parity testing across bernard_stage 0-6. Unused.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const getBernardDialogueLegacy = (): BernardDialogueData => {
+
     if (typeof window === 'undefined' || !user) {
       return { text: '', buttonLabel: null };
     }

@@ -1478,7 +1478,9 @@ const Village = () => {
   );
 
   const move = (dx: number, dy: number) => {
+    if (villageLoadingRef.current) return;
     const prev = playerTargetRef.current;
+
 
     const nx = Math.max(0, Math.min(mapSizeRef.current.w, prev.x + dx));
     const ny = Math.max(0, Math.min(mapSizeRef.current.h, prev.y + dy));

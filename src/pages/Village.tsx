@@ -1895,18 +1895,21 @@ const Village = () => {
         @keyframes merchantSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
 
-      {/* Map layer */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          top: 0,
-          width: MAP_W,
-          height: MAP_H,
-          transform: `translate(${camera.x}px, ${camera.y}px)`,
-          willChange: 'transform',
-        }}
-      >
+      {!villageLoading && (
+        <>
+          {/* Map layer */}
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: MAP_W,
+              height: MAP_H,
+              transform: `translate(${camera.x}px, ${camera.y}px)`,
+              willChange: 'transform',
+            }}
+          >
+
         {/* Grid overlay */}
         <div
           style={{

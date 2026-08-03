@@ -494,7 +494,7 @@ const OBSTACLES: Rect[] = [...TYPE_B, ...TYPE_C, ...TYPE_RIM];
 type ForestBlock = { x: number; y: number; w: number; h: number };
 
 // SVG tree rendered for every forest block/cell. Size variant derived from grid position.
-const ForestTreeCell = ({ x, y, w, h }: { x: number; y: number; w: number; h: number }) => {
+const ForestTreeCell = memo(({ x, y, w, h }: { x: number; y: number; w: number; h: number }) => {
   const col = Math.floor(x / 20);
   const row = Math.floor(y / 20);
   const v = (col + row) % 3;

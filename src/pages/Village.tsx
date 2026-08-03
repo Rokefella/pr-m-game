@@ -1461,9 +1461,10 @@ const Village = () => {
         showLockWhisper('The Exchange opens later.');
         return true;
       }
-      setFeedback({ id: 47 });
-      if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
-      feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);
+      if (!navigatedRef.current) {
+        navigatedRef.current = true;
+        window.setTimeout(() => navigate('/exchange-door'), 600);
+      }
       return true;
     }
     return false;

@@ -39,6 +39,7 @@ const App = () => (
             <Route path="/village" element={<Village />} />
             <Route path="/door" element={<Door />} />
             <Route path="/library-door" element={<LibraryDoor />} />
+            <Route path="/library" element={<LibraryRoom />} />
             <Route path="/exchange-door" element={<ExchangeDoor />} />
             <Route path="/maze" element={<Maze />} />
             <Route path="/shadow" element={<ShadowRealm />} />

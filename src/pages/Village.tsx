@@ -1965,11 +1965,11 @@ const Village = () => {
         />
 
         {/* Decorative ground tiles (paths, roads, squares, landmarks) — non-blocking */}
-        {visible?.groundTiles.map((g, i) => {
+        {visible?.groundTiles.map((g) => {
           const paved = g.kind === 'PATH' || g.kind === 'ROAD';
           return (
             <div
-              key={`gt-${i}`}
+              key={`gt-${g.x}-${g.y}`}
               style={{
                 position: 'absolute',
                 left: g.x,
@@ -1988,8 +1988,8 @@ const Village = () => {
 
         {/* Forest blocks (outside outermost ring) */}
 
-        {(visible ? visible.forest : FOREST).map((f, i) => (
-          <ForestTreeCell key={`f-${i}`} x={f.x} y={f.y} w={f.w} h={f.h} />
+        {(visible ? visible.forest : FOREST).map((f) => (
+          <ForestTreeCell key={`f-${f.x}-${f.y}`} x={f.x} y={f.y} w={f.w} h={f.h} />
         ))}
 
         {/* Forest atmosphere text fragments (hardcoded village only) */}
@@ -2199,9 +2199,9 @@ const Village = () => {
         ))}
 
         {/* Dynamic NPCs — static markers from the loaded village layout */}
-        {visible?.npcs.map((n, i) => (
+        {visible?.npcs.map((n) => (
           <div
-            key={`dnpc-${i}`}
+            key={`dnpc-${n.x}-${n.y}`}
             title={n.name || undefined}
             style={{
               position: 'absolute',

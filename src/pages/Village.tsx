@@ -1797,17 +1797,19 @@ const Village = () => {
   const [camera, setCamera] = useState(initialCam);
 
   // ---- Viewport culling (rendering only; collision uses the full dataset) ----
-  // Quantize the camera to 20px cells so the memo doesn't recompute every frame
-  // of the lerp, and pad the visible box by 3 cells so cells don't pop in.
-  const CULL_MARGIN = 60;
-  const cullQx = Math.floor(-camera.x / 20);
-  const cullQy = Math.floor(-camera.y / 20);
+  // Quantize the camera to 100px steps (5 cells) so the memo recomputes ~5x less
+  // often during sustained movement, and pad the visible box by 11 cells so
+  // nothing pops in/out with the coarser step.
+  const CULL_STEP = 100;
+  const CULL_MARGIN = 220;
+  const cullQx = Math.floor(-camera.x / CULL_STEP);
+  const cullQy = Math.floor(-camera.y / CULL_STEP);
   const visible = useMemo(() => {
     if (!dynamicBuildings) return null;
-    const left = cullQx * 20 - CULL_MARGIN;
-    const top = cullQy * 20 - CULL_MARGIN;
-    const right = cullQx * 20 + view.w + CULL_MARGIN;
-    const bottom = cullQy * 20 + view.h + CULL_MARGIN;
+    const left = cullQx * CULL_STEP - CULL_MARGIN;
+    const top = cullQy * CULL_STEP - CULL_MARGIN;
+    const right = cullQx * CULL_STEP + view.w + CULL_MARGIN;
+    const bottom = cullQy * CULL_STEP + view.h + CULL_MARGIN;
     const inBox = (x: number, y: number, w = 20, h = 20) =>
       x + w >= left && x <= right && y + h >= top && y <= bottom;
     return {
@@ -1820,6 +1822,47 @@ const Village = () => {
       typeA: dynamicBuildings.typeA.filter((b) => inBox(b.x, b.y, b.w, b.h)),
     };
   }, [dynamicBuildings, cullQx, cullQy, view.w, view.h]);
+
+  // ===== TEMPORARY DEV PERF READOUT — remove once culling perf is confirmed =====
+  const perfEnabled =
+    registrationNumber === 1 ||
+    new URLSearchParams(window.location.search).get('dev') === '1';
+  const [perfStats, setPerfStats] = useState({ fps: 0, vis: 0, total: 0 });
+  const perfCountsRef = useRef({ vis: 0, total: 0 });
+  perfCountsRef.current = {
+    vis: visible
+      ? visible.forest.length + visible.groundTiles.length + visible.clusters.length +
+        visible.npcs.length + visible.typeA.length
+      : 0,
+    total: dynamicBuildings
+      ? dynamicBuildings.forest.length + dynamicBuildings.groundTiles.length +
+        dynamicBuildings.clusters.length + dynamicBuildings.npcs.length +
+        dynamicBuildings.typeA.length
+      : 0,
+  };
+  useEffect(() => {
+    if (!perfEnabled) return;
+    let raf = 0;
+    let frames = 0;
+    let last = performance.now();
+    const tick = () => {
+      frames++;
+      const now = performance.now();
+      if (now - last >= 1000) {
+        setPerfStats({
+          fps: Math.round((frames * 1000) / (now - last)),
+          vis: perfCountsRef.current.vis,
+          total: perfCountsRef.current.total,
+        });
+        frames = 0;
+        last = now;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [perfEnabled]);
+  // ===== END TEMPORARY DEV PERF READOUT =====
 
 
   useEffect(() => {
@@ -2632,6 +2675,30 @@ const Village = () => {
       >
         #{registrationNumber !== null ? String(registrationNumber).padStart(4, '0') : '????'}
       </div>
+
+      {/* TEMPORARY dev perf readout — strip this block once culling perf is confirmed */}
+      {perfEnabled && (
+        <div
+          className="font-mono"
+          style={{
+            position: 'fixed',
+            top: 40,
+            right: 14,
+            zIndex: 400,
+            fontSize: 11,
+            lineHeight: 1.5,
+            textAlign: 'right',
+            color: 'rgba(200,148,58,0.85)',
+            pointerEvents: 'none',
+            userSelect: 'none',
+          }}
+        >
+          <div>FPS {perfStats.fps}</div>
+          <div>VIS {perfStats.vis}</div>
+          <div>TOT {perfStats.total}</div>
+        </div>
+      )}
+
 
       {devOverlay && (
         <div

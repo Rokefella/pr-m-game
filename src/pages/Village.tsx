@@ -1852,17 +1852,22 @@ const Village = () => {
       const dx = targetX - cameraRef.current.x;
       const dy = targetY - cameraRef.current.y;
       if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
-        if (cameraRef.current.x !== targetX || cameraRef.current.y !== targetY) {
-          cameraRef.current = { x: targetX, y: targetY };
-          setCamera(cameraRef.current);
-        }
+        cameraRef.current = { x: targetX, y: targetY };
       } else {
         cameraRef.current = {
           x: cameraRef.current.x + dx * 0.12,
           y: cameraRef.current.y + dy * 0.12,
         };
-        setCamera(cameraRef.current);
       }
+      // Write the camera transform straight to the DOM — no React re-render.
+      if (mapRef.current) {
+        mapRef.current.style.transform = `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px)`;
+      }
+      // Commit state only when the quantized cull cell changes.
+      const qx = Math.floor(-cameraRef.current.x / CULL_STEP);
+      const qy = Math.floor(-cameraRef.current.y / CULL_STEP);
+      setCullAnchor((prev) => (prev.qx === qx && prev.qy === qy ? prev : { qx, qy }));
+
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);

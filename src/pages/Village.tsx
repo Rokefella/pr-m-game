@@ -1167,6 +1167,83 @@ const Village = () => {
     };
   };
 
+  // ─────────────────────────────────────────────────────────────
+  // TEMPORARY DEBUG — Bernard dialogue parity check (?bernardParityCheck=1)
+  // Compares the new data-driven getBernardDialogue() against
+  // getBernardDialogueLegacy() across 7 states. REMOVE once verified.
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (typeof window === 'undefined' || !user) return;
+    if (new URLSearchParams(window.location.search).get('bernardParityCheck') !== '1') return;
+    if (!bernardStages.length) return;
+
+    const cases: { label: string; flags: Record<string, string> }[] = [
+      { label: '1. stage=0, flags={}', flags: { bernard_stage: '0' } },
+      { label: '2. stage=1, none touched', flags: { bernard_stage: '1', touched_23: 'false', touched_47: 'false', touched_89: 'false' } },
+      { label: '3. stage=1, all touched', flags: { bernard_stage: '1', touched_23: 'true', touched_47: 'true', touched_89: 'true' } },
+      { label: '4. stage=2, flags={}', flags: { bernard_stage: '2' } },
+      { label: '5. stage=3, flags={}', flags: { bernard_stage: '3' } },
+      { label: '6. stage=4, flags={}', flags: { bernard_stage: '4' } },
+      { label: '7. stage=5, alexandra not active', flags: { bernard_stage: '5' } },
+    ];
+
+    // Expected action key per state, used to verify the wired action matches the old logic.
+    const expectedActionKey: Record<string, string | null> = {
+      '1. stage=0, flags={}': 'advance_to_1',
+      '2. stage=1, none touched': null,
+      '3. stage=1, all touched': 'grant_credits_30_advance_2',
+      '4. stage=2, flags={}': null,
+      '5. stage=3, flags={}': null,
+      '6. stage=4, flags={}': 'grant_wanderer_title',
+      '7. stage=5, alexandra not active': 'accept_alexandra_quest',
+    };
+
+    console.log('%c[Bernard parity check] 7 states', 'font-weight:bold');
+    for (const c of cases) {
+      const override = (k: string) => c.flags[k] ?? null;
+      const stage = parseInt(override('bernard_stage') || '0', 10);
+      const nw = getBernardDialogue(override);
+      const old = getBernardDialogueLegacy(override);
+
+      const row =
+        bernardStages.find((r) => conditionsMet(stage, r.condition, override)) ??
+        bernardStages.find((r) => r.stage_key === 'stage_6_followup');
+      const wiredKey = row?.button_action_key ?? row?.on_show_action_key ?? null;
+      const expected = expectedActionKey[c.label];
+
+      const textMatch = nw.text === old.text;
+      const labelMatch = nw.buttonLabel === old.buttonLabel;
+      const actionPresenceMatch =
+        Boolean(nw.buttonAction) === Boolean(old.buttonAction) &&
+        Boolean(nw.onShow) === Boolean(old.onShow);
+      const actionKeyMatch = wiredKey === expected;
+      const ok = textMatch && labelMatch && actionPresenceMatch && actionKeyMatch;
+
+      console.log(
+        `${ok ? 'MATCH   ' : 'MISMATCH'} — ${c.label}`,
+        {
+          new: {
+            text: nw.text,
+            button_label: nw.buttonLabel,
+            hasButtonAction: Boolean(nw.buttonAction),
+            hasOnShow: Boolean(nw.onShow),
+            actionKey: wiredKey,
+            stage_key: row?.stage_key ?? null,
+          },
+          old: {
+            text: old.text,
+            button_label: old.buttonLabel,
+            hasButtonAction: Boolean(old.buttonAction),
+            hasOnShow: Boolean(old.onShow),
+            expectedActionKey: expected,
+          },
+          diff: { textMatch, labelMatch, actionPresenceMatch, actionKeyMatch },
+        },
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, bernardStages]);
+
 
   const openBernardDialog = () => {
     setBernardOpen(true);

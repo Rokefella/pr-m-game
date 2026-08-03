@@ -1965,7 +1965,7 @@ const Village = () => {
         />
 
         {/* Decorative ground tiles (paths, roads, squares, landmarks) — non-blocking */}
-        {dynamicBuildings?.groundTiles.map((g, i) => {
+        {visible?.groundTiles.map((g, i) => {
           const paved = g.kind === 'PATH' || g.kind === 'ROAD';
           return (
             <div
@@ -1988,7 +1988,7 @@ const Village = () => {
 
         {/* Forest blocks (outside outermost ring) */}
 
-        {(dynamicBuildings ? dynamicBuildings.forest : FOREST).map((f, i) => (
+        {(visible ? visible.forest : FOREST).map((f, i) => (
           <ForestTreeCell key={`f-${i}`} x={f.x} y={f.y} w={f.w} h={f.h} />
         ))}
 
@@ -2044,7 +2044,7 @@ const Village = () => {
           ))}
 
         {/* Clustered dynamic buildings (grouped by type, one image per cluster) */}
-        {dynamicBuildings?.clusters.map((c) => (
+        {visible?.clusters.map((c) => (
           <ClusterBuilding key={c.id} cluster={c} />
         ))}
 
@@ -2091,8 +2091,8 @@ const Village = () => {
         ))}
 
         {/* Type A — doors: pulsating gold markers in dynamic villages, boxes in hardcoded */}
-        {dynamicBuildings
-          ? dynamicBuildings.typeA.map((b) => (
+        {visible
+          ? visible.typeA.map((b) => (
               <div
                 key={`door-${b.id}-${b.x}-${b.y}`}
                 style={{
@@ -2199,7 +2199,7 @@ const Village = () => {
         ))}
 
         {/* Dynamic NPCs — static markers from the loaded village layout */}
-        {dynamicBuildings?.npcs.map((n, i) => (
+        {visible?.npcs.map((n, i) => (
           <div
             key={`dnpc-${i}`}
             title={n.name || undefined}

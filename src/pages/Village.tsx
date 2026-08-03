@@ -47,6 +47,8 @@ type DynamicVillage = {
   clusters: BuildingCluster[];
   forest: ForestBlock[];
   groundTiles: GroundTile[];
+  wallTiles: Rect[];
+  furnitureTiles: Rect[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
   gridSize: number;
@@ -293,6 +295,37 @@ const PavingCell = memo(({ col, row }: { col: number; row: number }) => {
     </svg>
   );
 });
+
+const WallCell = memo(() => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <rect width="20" height="20" fill="#3a3548" />
+    <rect x="0.3" y="0.3" width="19.4" height="19.4" fill="none" stroke="rgba(140,120,200,0.25)" strokeWidth="0.4" />
+    <line x1="0" y1="6.5" x2="20" y2="6.5" stroke="rgba(15,12,25,0.5)" strokeWidth="0.6" />
+    <line x1="0" y1="13.5" x2="20" y2="13.5" stroke="rgba(15,12,25,0.5)" strokeWidth="0.6" />
+    <rect x="0" y="0" width="20" height="1.2" fill="rgba(170,150,220,0.18)" />
+  </svg>
+));
+
+const FurnitureCell = memo(() => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <rect width="20" height="20" fill="rgba(15,18,28,0.3)" />
+    <rect x="2" y="3" width="16" height="14" rx="1.2" fill="#6b4a2e" stroke="#8a6540" strokeWidth="0.5" />
+    <path d="M2,6 Q10,5 18,6" fill="none" stroke="rgba(140,100,60,0.5)" strokeWidth="0.4" />
+    <path d="M2,9.5 Q10,8.7 18,9.5" fill="none" stroke="rgba(140,100,60,0.4)" strokeWidth="0.4" />
+    <path d="M2,13 Q10,12.3 18,13" fill="none" stroke="rgba(140,100,60,0.4)" strokeWidth="0.4" />
+    <rect x="2" y="3" width="16" height="2.2" rx="1" fill="rgba(200,160,110,0.25)" />
+  </svg>
+));
 
 
 const MAP_W = 2200;
@@ -1221,6 +1254,8 @@ const Village = () => {
         const lCells: { col: number; row: number }[] = [];
         const forest: ForestBlock[] = [];
         const groundTiles: GroundTile[] = [];
+        const wallTiles: Rect[] = [];
+        const furnitureTiles: Rect[] = [];
         const npcs: { x: number; y: number; name: string }[] = [];
 
         let eyeCenter: { x: number; y: number } | null = null;
@@ -1264,6 +1299,12 @@ const Village = () => {
             case 'LANDMARK':
               groundTiles.push({ x, y, kind: cell.type });
               break;
+            case 'WALL':
+              wallTiles.push({ id: `wall-${cell.col}-${cell.row}`, x, y, w: 20, h: 20 });
+              break;
+            case 'FURNITURE':
+              furnitureTiles.push({ id: `furn-${cell.col}-${cell.row}`, x, y, w: 20, h: 20 });
+              break;
 
             default:
               break;
@@ -1294,7 +1335,7 @@ const Village = () => {
             ...clusterCells('L', lCells),
           ];
 
-          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, npcs, eyeCenter, gridSize, start });
+          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, npcs, eyeCenter, gridSize, start });
 
 
           // Reposition the player once, when the dynamic village loads
@@ -1474,7 +1515,13 @@ const Village = () => {
   const activeObstacles = useMemo<Rect[]>(
     () =>
       dynamicBuildings
-        ? [...dynamicBuildings.clusters.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h }))]
+        ? [
+            ...dynamicBuildings.clusters.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h })),
+            ...dynamicBuildings.typeB,
+            ...dynamicBuildings.typeC,
+            ...dynamicBuildings.wallTiles,
+            ...dynamicBuildings.furnitureTiles,
+          ]
         : OBSTACLES,
     [dynamicBuildings],
   );
@@ -1766,6 +1813,8 @@ const Village = () => {
       clusters: dynamicBuildings.clusters.filter((c) => inBox(c.x, c.y, c.w, c.h)),
       forest: dynamicBuildings.forest.filter((f) => inBox(f.x, f.y, f.w, f.h)),
       groundTiles: dynamicBuildings.groundTiles.filter((g) => inBox(g.x, g.y)),
+      wallTiles: dynamicBuildings.wallTiles.filter((w) => inBox(w.x, w.y)),
+      furnitureTiles: dynamicBuildings.furnitureTiles.filter((f) => inBox(f.x, f.y)),
       npcs: dynamicBuildings.npcs.filter((n) => inBox(n.x, n.y, 6, 6)),
       typeA: dynamicBuildings.typeA.filter((b) => inBox(b.x, b.y, b.w, b.h)),
     };
@@ -2006,6 +2055,24 @@ const Village = () => {
             </div>
           );
         })}
+
+        {/* Interior walls & furniture (solid) */}
+        {visible?.wallTiles.map((w) => (
+          <div
+            key={`wall-${w.x}-${w.y}`}
+            style={{ position: 'absolute', left: w.x, top: w.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 3 }}
+          >
+            <WallCell />
+          </div>
+        ))}
+        {visible?.furnitureTiles.map((f) => (
+          <div
+            key={`furn-${f.x}-${f.y}`}
+            style={{ position: 'absolute', left: f.x, top: f.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 3 }}
+          >
+            <FurnitureCell />
+          </div>
+        ))}
 
         {/* Forest blocks (outside outermost ring) */}
 

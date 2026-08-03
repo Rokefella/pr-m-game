@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 // player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
@@ -114,7 +114,7 @@ function clusterRand(seed: number) {
 
 // One grouped building image, sized to the cluster's bounding box.
 // Rooftop detail density scales with the cluster's total cell count.
-function ClusterBuilding({ cluster }: { cluster: BuildingCluster }) {
+const ClusterBuilding = memo(function ClusterBuilding({ cluster }: { cluster: BuildingCluster }) {
   const { x, y, w, h, cols, rows, cells, kind } = cluster;
   const fill = CLUSTER_FILL[kind];
   const rnd = clusterRand(x * 31 + y * 17 + cells);
@@ -234,7 +234,7 @@ function ClusterBuilding({ cluster }: { cluster: BuildingCluster }) {
       </div>
     </>
   );
-}
+});
 
 
 
@@ -263,7 +263,7 @@ const PAVING_BLOCKS: Array<{ x: number; y: number; w: number; h: number; rx: num
   { x: 16.8, y: 13.9, w: 2.7, h: 5.8, rx: 0.6, fill: 'rgba(78,82,102,0.35)' },
 ];
 
-function PavingCell({ col, row }: { col: number; row: number }) {
+const PavingCell = memo(({ col, row }: { col: number; row: number }) => {
   const v = (col + row) % 4;
   const sx = v === 1 || v === 3 ? -1 : 1;
   const sy = v === 2 || v === 3 ? -1 : 1;
@@ -292,7 +292,7 @@ function PavingCell({ col, row }: { col: number; row: number }) {
       </g>
     </svg>
   );
-}
+});
 
 
 const MAP_W = 2200;
@@ -494,7 +494,7 @@ const OBSTACLES: Rect[] = [...TYPE_B, ...TYPE_C, ...TYPE_RIM];
 type ForestBlock = { x: number; y: number; w: number; h: number };
 
 // SVG tree rendered for every forest block/cell. Size variant derived from grid position.
-const ForestTreeCell = ({ x, y, w, h }: { x: number; y: number; w: number; h: number }) => {
+const ForestTreeCell = memo(({ x, y, w, h }: { x: number; y: number; w: number; h: number }) => {
   const col = Math.floor(x / 20);
   const row = Math.floor(y / 20);
   const v = (col + row) % 3;
@@ -557,7 +557,7 @@ const ForestTreeCell = ({ x, y, w, h }: { x: number; y: number; w: number; h: nu
       </svg>
     </div>
   );
-};
+});
 const generateForest = (): ForestBlock[] => {
   const rng = makeRng(0xF0FE57);
   const blocks: ForestBlock[] = [];

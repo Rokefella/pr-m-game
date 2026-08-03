@@ -12,6 +12,18 @@ const Door = () => {
         overflow: 'hidden',
       }}
     >
+      {/* Animation keyframes */}
+      <style>{`
+        @keyframes doorGlow {
+          0%, 100% { opacity: 0.6; transform: translate(-50%, -50%) scale(0.96); }
+          50% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+        }
+        @keyframes doorSeam {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 0.9; }
+        }
+      `}</style>
+
       {/* Purple grid overlay (same as Village) */}
       <div
         style={{
@@ -30,7 +42,7 @@ const Door = () => {
         className="font-fell italic"
         style={{
           position: 'absolute',
-          top: '12%',
+          top: '23%',
           left: 0,
           right: 0,
           textAlign: 'center',
@@ -43,6 +55,109 @@ const Door = () => {
       >
         See you on the other side?
       </p>
+
+      {/* Arched door centerpiece */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -58%)',
+          width: 260,
+          height: 360,
+          zIndex: 1,
+          pointerEvents: 'none',
+        }}
+      >
+        {/* Breathing glow behind the door */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: 260,
+            height: 260,
+            borderRadius: '50%',
+            background:
+              'radial-gradient(circle, rgba(169,140,255,0.55) 0%, rgba(200,150,58,0.25) 45%, transparent 70%)',
+            animation: 'doorGlow 3.4s ease-in-out infinite',
+          }}
+        />
+
+        {/* Arched double-door SVG */}
+        <svg
+          width={220}
+          height={320}
+          viewBox="0 0 220 320"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <defs>
+            <linearGradient id="doorFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3a2f6e" stopOpacity="0.92" />
+              <stop offset="50%" stopColor="#1a1440" stopOpacity="0.92" />
+              <stop offset="100%" stopColor="#0a0820" stopOpacity="0.92" />
+            </linearGradient>
+            <linearGradient id="doorStroke" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#c8963a" />
+              <stop offset="50%" stopColor="#e8cf7a" />
+              <stop offset="100%" stopColor="#c8963a" />
+            </linearGradient>
+            <filter id="doorGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="3" />
+            </filter>
+          </defs>
+
+          {/* Outer arch fill */}
+          <path
+            d="M20,320 L20,110 Q20,20 110,20 Q200,20 200,110 L200,320"
+            fill="url(#doorFill)"
+            stroke="none"
+          />
+          {/* Outer arch gold stroke with glow */}
+          <path
+            d="M20,320 L20,110 Q20,20 110,20 Q200,20 200,110 L200,320"
+            fill="none"
+            stroke="url(#doorStroke)"
+            strokeWidth="2"
+            filter="url(#doorGlow)"
+          />
+          {/* Inset arch outline */}
+          <path
+            d="M34,320 L34,124 Q34,34 110,34 Q176,34 176,124 L176,320"
+            fill="none"
+            stroke="rgba(232,207,122,0.35)"
+            strokeWidth="1"
+          />
+          {/* Center seam */}
+          <line
+            x1="110"
+            y1="20"
+            x2="110"
+            y2="320"
+            stroke="rgba(232,207,122,0.18)"
+            strokeWidth="1"
+          />
+          {/* Door handles */}
+          <circle cx="96" cy="178" r="4" fill="rgba(232,207,122,0.55)" />
+          <circle cx="124" cy="178" r="4" fill="rgba(232,207,122,0.55)" />
+          {/* Pulsing light seeping through the seam */}
+          <line
+            x1="110"
+            y1="20"
+            x2="110"
+            y2="320"
+            stroke="rgba(232,207,122,0.55)"
+            strokeWidth="3"
+            filter="url(#doorGlow)"
+            style={{ animation: 'doorSeam 2.6s ease-in-out infinite' }}
+          />
+        </svg>
+      </div>
 
       {/* Bottom buttons */}
       <div

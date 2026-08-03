@@ -1254,6 +1254,8 @@ const Village = () => {
         const lCells: { col: number; row: number }[] = [];
         const forest: ForestBlock[] = [];
         const groundTiles: GroundTile[] = [];
+        const wallTiles: Rect[] = [];
+        const furnitureTiles: Rect[] = [];
         const npcs: { x: number; y: number; name: string }[] = [];
 
         let eyeCenter: { x: number; y: number } | null = null;

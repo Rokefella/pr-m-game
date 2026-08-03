@@ -2323,6 +2323,9 @@ const Village = () => {
           }}
         />
       </div>
+      </>
+    )}
+
 
       {/* Ghost hover tooltip */}
       {tooltipState.visible && (

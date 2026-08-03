@@ -2163,6 +2163,49 @@ const Village = () => {
         @keyframes merchantSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
 
+      {/* TEMPORARY DEBUG — Bernard parity panel (?bernardParityCheck=1). REMOVE once verified. */}
+      {parityRows.length > 0 && (
+        <div
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+            background: 'rgba(6,6,12,0.96)', color: '#fff',
+            font: '12px/1.5 monospace', padding: '10px 12px',
+            maxHeight: '55vh', overflowY: 'auto',
+            borderBottom: '1px solid #444',
+          }}
+        >
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>
+            BERNARD PARITY CHECK — {parityRows.filter((r) => r.ok).length}/{parityRows.length} MATCH
+          </div>
+          {parityRows.map((r) => (
+            <div key={r.label} style={{ padding: '4px 0', borderTop: '1px solid #222' }}>
+              <div>
+                <span style={{ color: r.ok ? '#4ade80' : '#f87171', fontWeight: 700 }}>
+                  {r.ok ? 'MATCH' : 'MISMATCH'}
+                </span>{' '}
+                — {r.label}
+              </div>
+              {!r.ok && (
+                <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: '#93c5fd' }}>NEW</div>
+                    <div>text: {r.newText}</div>
+                    <div>button: {String(r.newLabel)}</div>
+                    <div>action: {String(r.newActionKey)}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: '#fcd34d' }}>OLD</div>
+                    <div>text: {r.oldText}</div>
+                    <div>button: {String(r.oldLabel)}</div>
+                    <div>action: {String(r.oldActionKey)}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
       {!villageLoading && (
         <>
           {/* Map layer */}

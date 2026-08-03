@@ -47,8 +47,8 @@ type DynamicVillage = {
   clusters: BuildingCluster[];
   forest: ForestBlock[];
   groundTiles: GroundTile[];
-  wallTiles: Rect[];
-  furnitureTiles: Rect[];
+  wallTiles?: Rect[];
+  furnitureTiles?: Rect[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
   gridSize: number;

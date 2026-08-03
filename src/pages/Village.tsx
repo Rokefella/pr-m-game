@@ -1813,8 +1813,8 @@ const Village = () => {
       clusters: dynamicBuildings.clusters.filter((c) => inBox(c.x, c.y, c.w, c.h)),
       forest: dynamicBuildings.forest.filter((f) => inBox(f.x, f.y, f.w, f.h)),
       groundTiles: dynamicBuildings.groundTiles.filter((g) => inBox(g.x, g.y)),
-      wallTiles: dynamicBuildings.wallTiles.filter((w) => inBox(w.x, w.y)),
-      furnitureTiles: dynamicBuildings.furnitureTiles.filter((f) => inBox(f.x, f.y)),
+      wallTiles: (dynamicBuildings.wallTiles ?? []).filter((w) => inBox(w.x, w.y)),
+      furnitureTiles: (dynamicBuildings.furnitureTiles ?? []).filter((f) => inBox(f.x, f.y)),
       npcs: dynamicBuildings.npcs.filter((n) => inBox(n.x, n.y, 6, 6)),
       typeA: dynamicBuildings.typeA.filter((b) => inBox(b.x, b.y, b.w, b.h)),
     };

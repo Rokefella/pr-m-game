@@ -1813,7 +1813,9 @@ const Village = () => {
     }
 
     // Merchant proximity → open overlay (40px)
-    const dm = Math.hypot(fx - MERCHANT.x, fy - MERCHANT.y);
+    const merchX = dynamicBuildings ? (dynamicBuildings.merchantCenter ? dynamicBuildings.merchantCenter.x : mapSizeRef.current.w / 2) : MERCHANT.x;
+    const merchY = dynamicBuildings ? (dynamicBuildings.merchantCenter ? dynamicBuildings.merchantCenter.y : mapSizeRef.current.h / 2) : MERCHANT.y;
+    const dm = Math.hypot(fx - merchX, fy - merchY);
     if (dm <= 40) {
       if (!merchantTriggerLockRef.current) {
         merchantTriggerLockRef.current = true;
@@ -1824,7 +1826,9 @@ const Village = () => {
     }
 
     // Bernard proximity → open dialogue (40px)
-    const db = Math.hypot(fx - BERNARD_VILLAGE.x, fy - BERNARD_VILLAGE.y);
+    const bernX = dynamicBuildings ? (dynamicBuildings.bernardCenter ? dynamicBuildings.bernardCenter.x : mapSizeRef.current.w / 2) : BERNARD_VILLAGE.x;
+    const bernY = dynamicBuildings ? (dynamicBuildings.bernardCenter ? dynamicBuildings.bernardCenter.y : mapSizeRef.current.h / 2) : BERNARD_VILLAGE.y;
+    const db = Math.hypot(fx - bernX, fy - bernY);
     if (db <= 40) {
       if (!bernardLockRef.current) {
         bernardLockRef.current = true;

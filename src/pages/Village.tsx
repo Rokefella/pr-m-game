@@ -294,6 +294,37 @@ const PavingCell = memo(({ col, row }: { col: number; row: number }) => {
   );
 });
 
+const WallCell = memo(() => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <rect width="20" height="20" fill="#3a3548" />
+    <rect x="0.3" y="0.3" width="19.4" height="19.4" fill="none" stroke="rgba(140,120,200,0.25)" strokeWidth="0.4" />
+    <line x1="0" y1="6.5" x2="20" y2="6.5" stroke="rgba(15,12,25,0.5)" strokeWidth="0.6" />
+    <line x1="0" y1="13.5" x2="20" y2="13.5" stroke="rgba(15,12,25,0.5)" strokeWidth="0.6" />
+    <rect x="0" y="0" width="20" height="1.2" fill="rgba(170,150,220,0.18)" />
+  </svg>
+));
+
+const FurnitureCell = memo(() => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <rect width="20" height="20" fill="rgba(15,18,28,0.3)" />
+    <rect x="2" y="3" width="16" height="14" rx="1.2" fill="#6b4a2e" stroke="#8a6540" strokeWidth="0.5" />
+    <path d="M2,6 Q10,5 18,6" fill="none" stroke="rgba(140,100,60,0.5)" strokeWidth="0.4" />
+    <path d="M2,9.5 Q10,8.7 18,9.5" fill="none" stroke="rgba(140,100,60,0.4)" strokeWidth="0.4" />
+    <path d="M2,13 Q10,12.3 18,13" fill="none" stroke="rgba(140,100,60,0.4)" strokeWidth="0.4" />
+    <rect x="2" y="3" width="16" height="2.2" rx="1" fill="rgba(200,160,110,0.25)" />
+  </svg>
+));
+
 
 const MAP_W = 2200;
 const MAP_H = 1400;

@@ -114,7 +114,7 @@ function clusterRand(seed: number) {
 
 // One grouped building image, sized to the cluster's bounding box.
 // Rooftop detail density scales with the cluster's total cell count.
-function ClusterBuilding({ cluster }: { cluster: BuildingCluster }) {
+const ClusterBuilding = memo(function ClusterBuilding({ cluster }: { cluster: BuildingCluster }) {
   const { x, y, w, h, cols, rows, cells, kind } = cluster;
   const fill = CLUSTER_FILL[kind];
   const rnd = clusterRand(x * 31 + y * 17 + cells);
@@ -234,7 +234,7 @@ function ClusterBuilding({ cluster }: { cluster: BuildingCluster }) {
       </div>
     </>
   );
-}
+});
 
 
 

@@ -777,8 +777,12 @@ const Village = () => {
 
   const [trail, setTrail] = useState<Trail[]>([]);
   const [dynamicBuildings, setDynamicBuildings] = useState<DynamicVillage | null>(null);
+  const [villageLoading, setVillageLoading] = useState(true);
+  const villageLoadingRef = useRef(true);
+  useEffect(() => { villageLoadingRef.current = villageLoading; }, [villageLoading]);
   const dynSpawnDoneRef = useRef(false);
   const moveRef = useRef<(dx: number, dy: number) => void>(() => {});
+
 
   // Active map bounds: dynamic village size when present, hardcoded map otherwise
   const mapW = dynamicBuildings ? dynamicBuildings.gridSize * 20 : MAP_W;

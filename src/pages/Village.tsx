@@ -1185,6 +1185,7 @@ const Village = () => {
     let cancelled = false;
 
     const loadVillage = async () => {
+      setVillageLoading(true);
       try {
         const { data: villageRow } = await supabase
           .from('special_locations' as never)
@@ -1193,7 +1194,10 @@ const Village = () => {
           .eq('location_key', 'village')
           .maybeSingle();
 
-        if (cancelled || !villageRow) return;
+        if (cancelled || !villageRow) {
+          if (!cancelled) setVillageLoading(false);
+          return;
+        }
         const vData = (villageRow as {
           data?: {
             extraCells?: VillageCell[];
@@ -1203,7 +1207,10 @@ const Village = () => {
           };
         })?.data;
         const cells = vData?.extraCells ?? [];
-        if (!Array.isArray(cells) || cells.length === 0) return;
+        if (!Array.isArray(cells) || cells.length === 0) {
+          if (!cancelled) setVillageLoading(false);
+          return;
+        }
 
         const CELL = 20;
         const typeA: typeof TYPE_A = [];
@@ -1302,12 +1309,15 @@ const Village = () => {
             playerTargetRef.current = sp;
             setPlayer(sp);
           }
+          setVillageLoading(false);
         }
 
       } catch (e) {
+        if (!cancelled) setVillageLoading(false);
         console.warn('[Village] dynamic layout load failed', e);
       }
     };
+
 
     void loadVillage();
     return () => { cancelled = true; };

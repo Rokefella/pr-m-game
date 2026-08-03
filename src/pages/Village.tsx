@@ -1167,6 +1167,20 @@ const Village = () => {
     };
   };
 
+  // TEMPORARY DEBUG types/state — remove with the parity check block below.
+  type ParityRow = {
+    label: string;
+    ok: boolean;
+    newText: string;
+    oldText: string;
+    newLabel: string | null;
+    oldLabel: string | null;
+    newActionKey: string | null;
+    oldActionKey: string | null;
+    flags: { textMatch: boolean; labelMatch: boolean; actionPresenceMatch: boolean; actionKeyMatch: boolean };
+  };
+  const [parityRows, setParityRows] = useState<ParityRow[]>([]);
+
   // ─────────────────────────────────────────────────────────────
   // TEMPORARY DEBUG — Bernard dialogue parity check (?bernardParityCheck=1)
   // Compares the new data-driven getBernardDialogue() against

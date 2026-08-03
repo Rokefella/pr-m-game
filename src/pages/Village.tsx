@@ -1299,6 +1299,12 @@ const Village = () => {
             case 'LANDMARK':
               groundTiles.push({ x, y, kind: cell.type });
               break;
+            case 'WALL':
+              wallTiles.push({ x, y, w: 20, h: 20 });
+              break;
+            case 'FURNITURE':
+              furnitureTiles.push({ x, y, w: 20, h: 20 });
+              break;
 
             default:
               break;

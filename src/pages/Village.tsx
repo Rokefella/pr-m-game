@@ -806,6 +806,13 @@ const Village = () => {
   const mapH = dynamicBuildings ? dynamicBuildings.gridSize * 20 : MAP_H;
   const mapSizeRef = useRef({ w: mapW, h: mapH });
   mapSizeRef.current = { w: mapW, h: mapH };
+  // Bernard/Merchant positions: dynamic village cells with safe fallbacks
+  const bernardPos = dynamicBuildings
+    ? (dynamicBuildings.bernardCenter ?? { x: mapW / 2, y: mapH / 2 })
+    : BERNARD_VILLAGE;
+  const merchantPos = dynamicBuildings
+    ? (dynamicBuildings.merchantCenter ?? { x: mapW / 2, y: mapH / 2 })
+    : MERCHANT;
   const eyePupilRef = useRef({ x: 0, y: 0 });
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });

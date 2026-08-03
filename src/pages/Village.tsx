@@ -1167,6 +1167,20 @@ const Village = () => {
     };
   };
 
+  // TEMPORARY DEBUG types/state — remove with the parity check block below.
+  type ParityRow = {
+    label: string;
+    ok: boolean;
+    newText: string;
+    oldText: string;
+    newLabel: string | null;
+    oldLabel: string | null;
+    newActionKey: string | null;
+    oldActionKey: string | null;
+    flags: { textMatch: boolean; labelMatch: boolean; actionPresenceMatch: boolean; actionKeyMatch: boolean };
+  };
+  const [parityRows, setParityRows] = useState<ParityRow[]>([]);
+
   // ─────────────────────────────────────────────────────────────
   // TEMPORARY DEBUG — Bernard dialogue parity check (?bernardParityCheck=1)
   // Compares the new data-driven getBernardDialogue() against
@@ -1198,8 +1212,7 @@ const Village = () => {
       '7. stage=5, alexandra not active': 'accept_alexandra_quest',
     };
 
-    console.log('%c[Bernard parity check] 7 states', 'font-weight:bold');
-    for (const c of cases) {
+    const rows: ParityRow[] = cases.map((c) => {
       const override = (k: string) => c.flags[k] ?? null;
       const stage = parseInt(override('bernard_stage') || '0', 10);
       const nw = getBernardDialogue(override);
@@ -1217,30 +1230,21 @@ const Village = () => {
         Boolean(nw.buttonAction) === Boolean(old.buttonAction) &&
         Boolean(nw.onShow) === Boolean(old.onShow);
       const actionKeyMatch = wiredKey === expected;
-      const ok = textMatch && labelMatch && actionPresenceMatch && actionKeyMatch;
 
-      console.log(
-        `${ok ? 'MATCH   ' : 'MISMATCH'} — ${c.label}`,
-        {
-          new: {
-            text: nw.text,
-            button_label: nw.buttonLabel,
-            hasButtonAction: Boolean(nw.buttonAction),
-            hasOnShow: Boolean(nw.onShow),
-            actionKey: wiredKey,
-            stage_key: row?.stage_key ?? null,
-          },
-          old: {
-            text: old.text,
-            button_label: old.buttonLabel,
-            hasButtonAction: Boolean(old.buttonAction),
-            hasOnShow: Boolean(old.onShow),
-            expectedActionKey: expected,
-          },
-          diff: { textMatch, labelMatch, actionPresenceMatch, actionKeyMatch },
-        },
-      );
-    }
+      return {
+        label: c.label,
+        ok: textMatch && labelMatch && actionPresenceMatch && actionKeyMatch,
+        newText: nw.text,
+        oldText: old.text,
+        newLabel: nw.buttonLabel ?? null,
+        oldLabel: old.buttonLabel ?? null,
+        newActionKey: wiredKey,
+        oldActionKey: expected ?? null,
+        flags: { textMatch, labelMatch, actionPresenceMatch, actionKeyMatch },
+      };
+    });
+
+    setParityRows(rows);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, bernardStages]);
 
@@ -2158,6 +2162,49 @@ const Village = () => {
         @keyframes villageNotYet { 0% { opacity:.6 } 80% { opacity:.6 } 100% { opacity:0 } }
         @keyframes merchantSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
+
+      {/* TEMPORARY DEBUG — Bernard parity panel (?bernardParityCheck=1). REMOVE once verified. */}
+      {parityRows.length > 0 && (
+        <div
+          style={{
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+            background: 'rgba(6,6,12,0.96)', color: '#fff',
+            font: '12px/1.5 monospace', padding: '10px 12px',
+            maxHeight: '55vh', overflowY: 'auto',
+            borderBottom: '1px solid #444',
+          }}
+        >
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>
+            BERNARD PARITY CHECK — {parityRows.filter((r) => r.ok).length}/{parityRows.length} MATCH
+          </div>
+          {parityRows.map((r) => (
+            <div key={r.label} style={{ padding: '4px 0', borderTop: '1px solid #222' }}>
+              <div>
+                <span style={{ color: r.ok ? '#4ade80' : '#f87171', fontWeight: 700 }}>
+                  {r.ok ? 'MATCH' : 'MISMATCH'}
+                </span>{' '}
+                — {r.label}
+              </div>
+              {!r.ok && (
+                <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: '#93c5fd' }}>NEW</div>
+                    <div>text: {r.newText}</div>
+                    <div>button: {String(r.newLabel)}</div>
+                    <div>action: {String(r.newActionKey)}</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: '#fcd34d' }}>OLD</div>
+                    <div>text: {r.oldText}</div>
+                    <div>button: {String(r.oldLabel)}</div>
+                    <div>action: {String(r.oldActionKey)}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {!villageLoading && (
         <>

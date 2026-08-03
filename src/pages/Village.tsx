@@ -1056,13 +1056,14 @@ const Village = () => {
     accept_alexandra_quest: () => { acceptAlexandraQuest(); },
   };
 
-  const getBernardDialogue = (): BernardDialogueData => {
+  const getBernardDialogue = (flagOverride?: (k: string) => string | null): BernardDialogueData => {
     if (typeof window === 'undefined' || !user) {
       return { text: '', buttonLabel: null };
     }
-    const stage = getBernardStage();
+    const f = flagOverride ?? getFlag;
+    const stage = parseInt(f('bernard_stage') || '0', 10);
     const match =
-      bernardStages.find((row) => conditionsMet(stage, row.condition, getFlag)) ??
+      bernardStages.find((row) => conditionsMet(stage, row.condition, f)) ??
       bernardStages.find((row) => row.stage_key === 'stage_6_followup');
     if (!match) return { text: '', buttonLabel: null };
     return {
@@ -1075,17 +1076,19 @@ const Village = () => {
 
   // DEPRECATED — kept for manual parity testing across bernard_stage 0-6. Unused.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const getBernardDialogueLegacy = (): BernardDialogueData => {
+  const getBernardDialogueLegacy = (flagOverride?: (k: string) => string | null): BernardDialogueData => {
 
     if (typeof window === 'undefined' || !user) {
       return { text: '', buttonLabel: null };
     }
-    const stage = getBernardStage();
-    const alexandra = getFlag('alexandra_quest') === 'active';
-    const t23 = getFlag('touched_23') === 'true';
-    const t47 = getFlag('touched_47') === 'true';
-    const t89 = getFlag('touched_89') === 'true';
+    const f = flagOverride ?? getFlag;
+    const stage = parseInt(f('bernard_stage') || '0', 10);
+    const alexandra = f('alexandra_quest') === 'active';
+    const t23 = f('touched_23') === 'true';
+    const t47 = f('touched_47') === 'true';
+    const t89 = f('touched_89') === 'true';
     const allTouched = t23 && t47 && t89;
+
 
     // Stage 0 — first meeting: greet, then advance to stage 1 (arrival complete).
     if (stage === 0) {

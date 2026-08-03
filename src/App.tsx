@@ -9,6 +9,7 @@ import EntityQuestions from "./pages/EntityQuestions.tsx";
 import ProfileSetup from "./pages/ProfileSetup.tsx";
 import Village from "./pages/Village.tsx";
 import Door from "./pages/Door.tsx";
+import LibraryDoor from "./pages/LibraryDoor.tsx";
 import Maze from "./pages/Maze.tsx";
 import ShadowRealm from "./pages/ShadowRealm.tsx";
 import Paywall from "./pages/Paywall.tsx";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/profile-setup" element={<ProfileSetup />} />
             <Route path="/village" element={<Village />} />
             <Route path="/door" element={<Door />} />
+            <Route path="/library-door" element={<LibraryDoor />} />
             <Route path="/maze" element={<Maze />} />
             <Route path="/shadow" element={<ShadowRealm />} />
             <Route path="/paywall" element={<Paywall />} />

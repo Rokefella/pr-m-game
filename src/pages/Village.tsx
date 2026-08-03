@@ -1448,9 +1448,10 @@ const Village = () => {
         showLockWhisper('The Library opens later.');
         return true;
       }
-      setFeedback({ id: 23 });
-      if (feedbackTimer.current) window.clearTimeout(feedbackTimer.current);
-      feedbackTimer.current = window.setTimeout(() => setFeedback({ id: null }), 1500);
+      if (!navigatedRef.current) {
+        navigatedRef.current = true;
+        window.setTimeout(() => navigate('/library-door'), 600);
+      }
       return true;
     }
     if (a.id === 47) {

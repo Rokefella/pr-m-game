@@ -1765,7 +1765,7 @@ const Village = () => {
     return { x: tx, y: ty };
   })();
   const cameraRef = useRef(initialCam);
-  const [camera, setCamera] = useState(initialCam);
+  const mapRef = useRef<HTMLDivElement | null>(null);
 
   // ---- Viewport culling (rendering only; collision uses the full dataset) ----
   // Quantize the camera to 100px steps (5 cells) so the memo recomputes ~5x less
@@ -1773,8 +1773,15 @@ const Village = () => {
   // nothing pops in/out with the coarser step.
   const CULL_STEP = 100;
   const CULL_MARGIN = 220;
-  const cullQx = Math.floor(-camera.x / CULL_STEP);
-  const cullQy = Math.floor(-camera.y / CULL_STEP);
+  // Camera position lives in a ref (written straight to the DOM each frame);
+  // only crossing a cull-step boundary commits state and triggers a re-render.
+  const [cullAnchor, setCullAnchor] = useState(() => ({
+    qx: Math.floor(-initialCam.x / 100),
+    qy: Math.floor(-initialCam.y / 100),
+  }));
+  const cullQx = cullAnchor.qx;
+  const cullQy = cullAnchor.qy;
+
   const visible = useMemo(() => {
     if (!dynamicBuildings) return null;
     const left = cullQx * CULL_STEP - CULL_MARGIN;

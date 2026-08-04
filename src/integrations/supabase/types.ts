@@ -137,6 +137,7 @@ export type Database = {
           levelup_pending: boolean
           maze_completed_level: number
           registration_number: number
+          social: number
           steps_remaining: number
           subscription_status: string
           subscription_tier: string | null
@@ -160,6 +161,7 @@ export type Database = {
           levelup_pending?: boolean
           maze_completed_level?: number
           registration_number?: number
+          social?: number
           steps_remaining?: number
           subscription_status?: string
           subscription_tier?: string | null
@@ -183,6 +185,7 @@ export type Database = {
           levelup_pending?: boolean
           maze_completed_level?: number
           registration_number?: number
+          social?: number
           steps_remaining?: number
           subscription_status?: string
           subscription_tier?: string | null

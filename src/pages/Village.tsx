@@ -1042,6 +1042,7 @@ const Village = () => {
     advanceBernardStage,
     getBernardDialogue,
     bumpFlags,
+    resetBernardBucket,
   } = useBernardDialogue({
     user,
     currentLevel,

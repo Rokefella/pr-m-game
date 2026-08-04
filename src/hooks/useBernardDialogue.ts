@@ -97,6 +97,8 @@ export type UseBernardDialogueOptions = {
   onAcceptAlexandraQuest?: () => void;
   /** Called when a book option is a dead end — host should close the dialogue. */
   onCloseDialogue?: () => void;
+  /** Host's open state; when it becomes true the hook resolves a single stable node. */
+  isOpen?: boolean;
 };
 
 

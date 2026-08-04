@@ -357,6 +357,16 @@ export function useBernardDialogue({
     };
   };
 
+  // Stable resolved node: re-roll only when the dialogue opens or the bucket changes,
+  // never because the host re-rendered (e.g. camera animation loop).
+  const [resolvedDialogue, setResolvedDialogue] = useState<BernardDialogueData | null>(null);
+  const getBernardDialogueRef = useRef(getBernardDialogue);
+  getBernardDialogueRef.current = getBernardDialogue;
+  useEffect(() => {
+    if (!isOpen) return;
+    setResolvedDialogue(getBernardDialogueRef.current());
+  }, [isOpen, currentBucket]);
+
   return {
     bernardStages,
     bernardBookEntries,
@@ -368,6 +378,7 @@ export function useBernardDialogue({
     bernardActions,
     advanceBernardStage,
     getBernardDialogue,
+    resolvedDialogue,
     bumpFlags,
   };
 

@@ -2414,6 +2414,16 @@ const Village = () => {
           );
         })}
 
+        {/* Rugs — decorative floor overlay, above base ground, below solids */}
+        {visible?.rugTiles.map((r) => (
+          <div
+            key={`rug-${r.x}-${r.y}`}
+            style={{ position: 'absolute', left: r.x, top: r.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 2 }}
+          >
+            <RugCell trim={r.trim} />
+          </div>
+        ))}
+
         {/* Interior walls & furniture (solid) */}
         {visible?.wallTiles.map((w) => (
           <div
@@ -2437,6 +2447,14 @@ const Village = () => {
             style={{ position: 'absolute', left: b.x, top: b.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 3 }}
           >
             <BookcaseCell col={Math.round(b.x / 20)} row={Math.round(b.y / 20)} />
+          </div>
+        ))}
+        {visible?.lightTiles.map((l) => (
+          <div
+            key={`light-${l.x}-${l.y}`}
+            style={{ position: 'absolute', left: l.x, top: l.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 3 }}
+          >
+            <LightCell />
           </div>
         ))}
 

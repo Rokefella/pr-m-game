@@ -13,6 +13,10 @@ type Props = {
   onClose: () => void;
   context?: 'village' | 'maze';
   runProgress?: { collected: number; required: number };
+  growthPoints?: number;
+  socialStat?: number;
+  perceptionStat?: number;
+  tradeStat?: number;
 };
 
 type SubStatus = 'dev' | 'trial' | 'active' | 'lifetime' | 'beta' | 'expired' | string;

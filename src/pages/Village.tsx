@@ -1076,6 +1076,8 @@ const Village = () => {
       stage?: number;
       requires_flags?: Record<string, string>;
       flags_equal?: boolean;
+      min_level?: number;
+      min_social?: number;
     } | null;
   };
 

@@ -3370,7 +3370,15 @@ const Village = () => {
         );
       })()}
 
-      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} context="village" />
+      <ProfileOverlay
+        isOpen={profileOpenDisplay}
+        onClose={closeProfile}
+        context="village"
+        growthPoints={growthPoints}
+        socialStat={socialStat}
+        perceptionStat={perceptionStat}
+        tradeStat={tradeStat}
+      />
 
       {paywallOpen && (
         <PaywallOverlay

@@ -937,6 +937,7 @@ const Village = () => {
     10: 'First One Through',
   };
   const [currentLevel, setCurrentLevel] = useState(1);
+  const [socialStatus, setSocialStatus] = useState(0);
   const currentLevelRef = useRef(1);
   useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
   const [currentTitle, setCurrentTitle] = useState('');

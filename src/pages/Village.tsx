@@ -982,6 +982,9 @@ const Village = () => {
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
   const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
   const [devOverlay, setDevOverlay] = useState(false);
+  const [devVillageLevel, setDevVillageLevel] = useState('1');
+  const [devMazeLevel, setDevMazeLevel] = useState('1');
+  const [devStageNote, setDevStageNote] = useState<string | null>(null);
   const devTapCountRef = useRef(0);
   const devLastTapRef = useRef(0);
   const registrationNumberRef = useRef<number | null>(null);
@@ -3061,6 +3064,69 @@ const Village = () => {
             <button type="button" onClick={async () => { setDevOverlay(false); if (user) await updateUser(user.id, { level: 1 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L1</button>
             <button type="button" onClick={async () => { setDevOverlay(false); if (user) await updateUser(user.id, { level: 2 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L2</button>
             <button type="button" onClick={() => { setDevOverlay(false); navigate('/shadow'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → SHADOW</button>
+
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input
+                type="number" min={1} max={30} value={devVillageLevel}
+                onChange={(e) => setDevVillageLevel(e.target.value)}
+                style={{ background: '#000', border: '1px solid rgba(169,140,255,0.4)', color: '#a98cff', padding: '6px 8px', width: 64, fontFamily: 'inherit', fontSize: 13 }}
+              />
+              <button type="button" onClick={async () => {
+                const n = Math.min(30, Math.max(1, parseInt(devVillageLevel, 10) || 1));
+                setDevOverlay(false);
+                if (user) await updateUser(user.id, { level: n });
+                navigate('/village');
+              }} style={{ flex: 1, background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → VILLAGE L#</button>
+            </div>
+
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <input
+                type="number" min={1} max={30} value={devMazeLevel}
+                onChange={(e) => setDevMazeLevel(e.target.value)}
+                style={{ background: '#000', border: '1px solid rgba(169,140,255,0.4)', color: '#a98cff', padding: '6px 8px', width: 64, fontFamily: 'inherit', fontSize: 13 }}
+              />
+              <button type="button" onClick={async () => {
+                const n = Math.min(30, Math.max(1, parseInt(devMazeLevel, 10) || 1));
+                setDevOverlay(false);
+                if (user) await updateUser(user.id, { level: n });
+                navigate('/maze');
+              }} style={{ flex: 1, background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L#</button>
+            </div>
+
+            <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
+            <div style={{ opacity: 0.7, fontSize: 11 }}>BERNARD STAGE</div>
+            {devStageNote && <div style={{ fontSize: 11, color: '#c8963a' }}>{devStageNote}</div>}
+            {([
+              { label: 'stage_0', stage: 0, touched: null as boolean | null },
+              { label: 'stage_1 (pending)', stage: 1, touched: false },
+              { label: 'stage_1 (ready)', stage: 1, touched: true },
+              { label: 'stage_2', stage: 2, touched: null },
+              { label: 'stage_3', stage: 3, touched: null },
+              { label: 'stage_4', stage: 4, touched: null },
+              { label: 'stage_5', stage: 5, touched: null },
+              { label: 'stage_6', stage: 6, touched: null },
+            ]).map((s) => (
+              <button
+                key={s.label}
+                type="button"
+                onClick={async () => {
+                  if (!user) return;
+                  await setFlag(user.id, 'bernard_stage', String(s.stage));
+                  if (s.touched !== null) {
+                    const v = s.touched ? 'true' : 'false';
+                    await setFlag(user.id, 'touched_23', v);
+                    await setFlag(user.id, 'touched_47', v);
+                    await setFlag(user.id, 'touched_89', v);
+                  }
+                  setDevStageNote(`SET → ${s.label}`);
+                }}
+                style={{ background: 'transparent', border: '1px solid rgba(169,140,255,0.5)', color: '#a98cff', padding: '6px 10px', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer', textAlign: 'left' }}
+              >
+                {s.label}
+              </button>
+            ))}
+
+
 
             <button type="button" onClick={() => setDevOverlay(false)} style={{ background: 'transparent', border: '1px solid rgba(169,140,255,0.4)', color: 'rgba(169,140,255,0.7)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Close</button>
           </div>

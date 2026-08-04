@@ -357,15 +357,17 @@ export function useBernardDialogue({
     };
   };
 
-  // Stable resolved node: re-roll only when the dialogue opens or the bucket changes,
-  // never because the host re-rendered (e.g. camera animation loop).
+  // Stable resolved node: re-roll only when the dialogue opens, the bucket changes,
+  // or a Bernard action changes the underlying quest flags (e.g. advancing a stage
+  // while the dialogue stays open) — never because the host re-rendered (e.g. camera
+  // animation loop).
   const [resolvedDialogue, setResolvedDialogue] = useState<BernardDialogueData | null>(null);
   const getBernardDialogueRef = useRef(getBernardDialogue);
   getBernardDialogueRef.current = getBernardDialogue;
   useEffect(() => {
     if (!isOpen) return;
     setResolvedDialogue(getBernardDialogueRef.current());
-  }, [isOpen, currentBucket]);
+  }, [isOpen, currentBucket, flagsVersion]);
 
   return {
     bernardStages,

@@ -3301,7 +3301,29 @@ const Village = () => {
         const d = getBernardDialogue();
         return (
           <BernardDialogue text={d.text} onShow={d.onShow}>
-            {d.buttonLabel && (
+            {(d.options ?? []).map((o, i) => (
+              <button
+                key={`${o.label}-${i}`}
+                type="button"
+                className="font-cinzel"
+                onClick={() => {
+                  o.onSelect();
+                  if (o.closes) setBernardOpen(false);
+                }}
+                style={{
+                  background: 'rgba(200,150,58,0.18)',
+                  border: '0.5px solid rgba(200,150,58,0.5)',
+                  color: '#c8963a',
+                  padding: '8px 18px',
+                  fontSize: 16,
+                  letterSpacing: '0.3em',
+                  cursor: 'pointer',
+                }}
+              >
+                {o.label.toUpperCase()}
+              </button>
+            ))}
+            {!(d.options ?? []).length && d.buttonLabel && (
               <button
                 type="button"
                 className="font-cinzel"
@@ -3322,6 +3344,7 @@ const Village = () => {
                 {d.buttonLabel.toUpperCase()}
               </button>
             )}
+
             <button
               type="button"
               className="font-cinzel"

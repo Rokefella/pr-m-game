@@ -1821,6 +1821,7 @@ const Village = () => {
             ...(dynamicBuildings.wallTiles ?? []),
             ...(dynamicBuildings.furnitureTiles ?? []),
             ...(dynamicBuildings.bookcaseTiles ?? []),
+            ...(dynamicBuildings.lightTiles ?? []),
           ]
         : OBSTACLES,
     [dynamicBuildings],

@@ -3024,9 +3024,12 @@ const Village = () => {
               background: '#000', border: '1px solid #a98cff', padding: 20,
               minWidth: 240, display: 'flex', flexDirection: 'column', gap: 10,
               color: '#a98cff', fontSize: 13, letterSpacing: '0.1em',
+              maxHeight: 'calc(100vh - 40px)', overflowY: 'auto',
             }}
           >
             <div style={{ opacity: 0.7, marginBottom: 6 }}>DEV MENU</div>
+
+            <div style={{ opacity: 0.7, fontSize: 11 }}>PROFILE</div>
             <button type="button" onClick={handleDevReset} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Reset profile</button>
             <button type="button" onClick={async () => {
               Object.keys(localStorage).filter(k => k.startsWith('praem_')).forEach(k => localStorage.removeItem(k));
@@ -3050,8 +3053,6 @@ const Village = () => {
               await supabase.auth.signOut();
               navigate('/');
             }} style={{ background: 'transparent', border: '1px solid #ff6b6b', color: '#ff6b6b', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>FULL RESET</button>
-            <button type="button" onClick={() => { setDevOverlay(false); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Maze</button>
-            <button type="button" onClick={() => { setDevOverlay(false); navigate('/door'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Door</button>
 
             <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
             <div style={{ opacity: 0.7, fontSize: 11 }}>SUBSCRIPTION OVERRIDES</div>
@@ -3060,11 +3061,7 @@ const Village = () => {
             <button type="button" onClick={() => { sessionStorage.removeItem('dev_sub_override'); setDevOverlay(false); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>CLEAR OVERRIDE</button>
 
             <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
-            <div style={{ opacity: 0.7, fontSize: 11 }}>NAVIGATION</div>
-            <button type="button" onClick={async () => { setDevOverlay(false); if (user) await updateUser(user.id, { level: 1 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L1</button>
-            <button type="button" onClick={async () => { setDevOverlay(false); if (user) await updateUser(user.id, { level: 2 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L2</button>
-            <button type="button" onClick={() => { setDevOverlay(false); navigate('/shadow'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → SHADOW</button>
-
+            <div style={{ opacity: 0.7, fontSize: 11 }}>LEVEL JUMP</div>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               <input
                 type="number" min={1} max={30} value={devVillageLevel}
@@ -3119,12 +3116,21 @@ const Village = () => {
                     await setFlag(user.id, 'touched_89', v);
                   }
                   setDevStageNote(`SET → ${s.label}`);
+                  setDevOverlay(false);
                 }}
                 style={{ background: 'transparent', border: '1px solid rgba(169,140,255,0.5)', color: '#a98cff', padding: '6px 10px', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer', textAlign: 'left' }}
               >
                 {s.label}
               </button>
             ))}
+
+            <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
+            <div style={{ opacity: 0.7, fontSize: 11 }}>NAVIGATION</div>
+            <button type="button" onClick={() => { setDevOverlay(false); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Maze</button>
+            <button type="button" onClick={() => { setDevOverlay(false); navigate('/door'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Door</button>
+            <button type="button" onClick={async () => { setDevOverlay(false); if (user) await updateUser(user.id, { level: 1 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L1</button>
+            <button type="button" onClick={async () => { setDevOverlay(false); if (user) await updateUser(user.id, { level: 2 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L2</button>
+            <button type="button" onClick={() => { setDevOverlay(false); navigate('/shadow'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → SHADOW</button>
 
 
 

@@ -73,30 +73,36 @@ export type Database = {
       }
       npc_book_entries: {
         Row: {
+          bucket_key: string | null
           condition: Json | null
           created_at: string
           id: string
           npc_key: string
+          options: Json
           page: number
           text: string
           updated_at: string
           weight: number
         }
         Insert: {
+          bucket_key?: string | null
           condition?: Json | null
           created_at?: string
           id?: string
           npc_key: string
+          options?: Json
           page?: number
           text: string
           updated_at?: string
           weight?: number
         }
         Update: {
+          bucket_key?: string | null
           condition?: Json | null
           created_at?: string
           id?: string
           npc_key?: string
+          options?: Json
           page?: number
           text?: string
           updated_at?: string

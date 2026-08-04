@@ -80,15 +80,19 @@ const BernardRoom1 = () => {
   }, [user]);
 
   // Shared Bernard spine — this room reflects it and never advances it on its own.
-  const { getBernardDialogue } = useBernardDialogue({
+  const { getBernardDialogue, resetBernardBucket } = useBernardDialogue({
     user,
     currentLevel: stats.level,
     socialStat: stats.social,
+    perceptionStat: stats.perception,
+    tradeStat: stats.trade,
     credits: stats.credits,
     growthPoints: stats.growthPoints,
     onCreditsChange: (next) => setStats((s) => ({ ...s, credits: next })),
     onGrowthPointsChange: (next) => setStats((s) => ({ ...s, growthPoints: next })),
+    onCloseDialogue: () => { lastDialogCloseRef.current = Date.now(); setDialogOpen(false); },
   });
+
 
   const [pos, setPos] = useState<Cell>(SPAWN);
   const posRef = useRef<Cell>(SPAWN);

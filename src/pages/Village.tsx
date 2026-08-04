@@ -1584,6 +1584,12 @@ const Village = () => {
             case 'BOOKCASE':
               bookcaseTiles.push({ id: `book-${cell.col}-${cell.row}`, x, y, w: 20, h: 20 });
               break;
+            case 'LIGHT':
+              lightTiles.push({ id: `light-${cell.col}-${cell.row}`, x, y, w: 20, h: 20 });
+              break;
+            case 'RUG':
+              rugCells.push({ col: cell.col, row: cell.row });
+              break;
 
             default:
               break;

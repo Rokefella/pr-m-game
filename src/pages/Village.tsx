@@ -3076,7 +3076,7 @@ const Village = () => {
                 setDevOverlay(false);
                 if (user) await updateUser(user.id, { level: n });
                 navigate('/village');
-              }} style={{ flex: 1, background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → VILLAGE Lн</button>
+              }} style={{ flex: 1, background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → VILLAGE L#</button>
             </div>
 
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -3090,7 +3090,7 @@ const Village = () => {
                 setDevOverlay(false);
                 if (user) await updateUser(user.id, { level: n });
                 navigate('/maze');
-              }} style={{ flex: 1, background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE Lн</button>
+              }} style={{ flex: 1, background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L#</button>
             </div>
 
             <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />

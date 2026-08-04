@@ -1047,10 +1047,13 @@ const Village = () => {
     user,
     currentLevel,
     socialStat,
+    perceptionStat,
+    tradeStat,
     credits,
     growthPoints,
     onCreditsChange: setCredits,
     onGrowthPointsChange: setGrowthPoints,
+    onCloseDialogue: () => setBernardOpen(false),
     onTitleGranted: (title, unlocked) => {
       setCurrentTitle(title);
       setUnlockedTitles(unlocked);

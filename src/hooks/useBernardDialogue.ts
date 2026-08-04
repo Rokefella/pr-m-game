@@ -1,0 +1,243 @@
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { getFlag, setFlag } from '@/lib/questFlags';
+import { updateUser } from '@/lib/userData';
+
+export type BernardDialogueData = {
+  text: string;
+  buttonLabel: string | null;
+  buttonAction?: () => void;
+  onShow?: () => void;
+};
+
+export type BernardStageRow = {
+  stage_key: string;
+  text: string;
+  button_label: string | null;
+  button_action_key: string | null;
+  on_show_action_key: string | null;
+  order_index: number;
+  condition: {
+    stage?: number;
+    requires_flags?: Record<string, string>;
+    flags_equal?: boolean;
+    min_level?: number;
+    min_social?: number;
+  } | null;
+};
+
+export type BernardBookEntry = {
+  id: string;
+  page: number;
+  text: string;
+  weight: number;
+  condition: { requires_flags?: Record<string, string>; flags_equal?: boolean } | null;
+};
+
+export type UseBernardDialogueOptions = {
+  user: { id: string } | null;
+  /** Player level — drives min_level gates and book page unlocks. */
+  currentLevel?: number;
+  /** Social affinity — drives min_social gates and book page unlocks. */
+  socialStat?: number;
+  credits?: number;
+  growthPoints?: number;
+  onCreditsChange?: (next: number) => void;
+  onGrowthPointsChange?: (next: number) => void;
+  onTitleGranted?: (title: string, unlockedTitles: string[]) => void;
+  onMessage?: (message: string) => void;
+  /** Host decides whether the quest can be accepted (subscription gate / paywall). */
+  onAcceptAlexandraQuest?: () => void;
+};
+
+/**
+ * Shared Bernard dialogue spine — data-driven stages (npc_dialogue_stages),
+ * his book (npc_book_entries), condition matching and stage advancement.
+ * Every surface that talks to Bernard must go through this hook so the
+ * quest state never advances independently in one room.
+ */
+export function useBernardDialogue({
+  user,
+  currentLevel = 1,
+  socialStat = 0,
+  credits = 0,
+  growthPoints = 0,
+  onCreditsChange,
+  onGrowthPointsChange,
+  onTitleGranted,
+  onMessage,
+  onAcceptAlexandraQuest,
+}: UseBernardDialogueOptions) {
+  const [bernardStages, setBernardStages] = useState<BernardStageRow[]>([]);
+  const [bernardBookEntries, setBernardBookEntries] = useState<BernardBookEntry[]>([]);
+  // Forces re-render of Bernard dialogue when quest flags change.
+  const [, setFlagsVersion] = useState(0);
+  const bumpFlags = useCallback(() => setFlagsVersion((v) => v + 1), []);
+
+  // Pages unlock with level progress and social affinity.
+  const unlockedPage = Math.floor(currentLevel / 5) + socialStat;
+
+  const advanceBernardStage = useCallback(
+    async (stage: number) => {
+      if (!user) return;
+      await setFlag(user.id, 'bernard_stage', String(stage));
+      bumpFlags();
+    },
+    [user, bumpFlags],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('npc_book_entries')
+        .select('id, page, text, weight, condition')
+        .eq('npc_key', 'bernard')
+        .lte('page', unlockedPage)
+        .order('page', { ascending: true });
+      if (error) {
+        console.error('[useBernardDialogue] bernard book entries fetch failed', error);
+        return;
+      }
+      if (cancelled) return;
+      const rows = (data as BernardBookEntry[]) || [];
+      // Reuse the dialogue flag-matching semantics for requires_flags/flags_equal.
+      const eligible = rows.filter((r) => {
+        const requires = r.condition?.requires_flags;
+        if (!requires) return true;
+        const allMatch = Object.keys(requires).every((k) => getFlag(k) === requires[k]);
+        return r.condition?.flags_equal === false ? !allMatch : allMatch;
+      });
+      setBernardBookEntries(eligible);
+    })();
+    return () => { cancelled = true; };
+  }, [unlockedPage]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: npcRow, error: npcErr } = await supabase
+        .from('npcs')
+        .select('id')
+        .eq('npc_key', 'bernard')
+        .maybeSingle();
+      if (npcErr || !npcRow) {
+        if (npcErr) console.error('[useBernardDialogue] bernard npc lookup failed', npcErr);
+        return;
+      }
+      const { data, error } = await supabase
+        .from('npc_dialogue_stages')
+        .select('stage_key, text, button_label, button_action_key, on_show_action_key, order_index, condition')
+        .eq('npc_id', (npcRow as { id: string }).id)
+        .order('order_index', { ascending: true });
+      if (error) {
+        console.error('[useBernardDialogue] bernard dialogue stages fetch failed', error);
+        return;
+      }
+      if (!cancelled) setBernardStages((data as BernardStageRow[]) || []);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const pickBookEntry = (): BernardBookEntry | null => {
+    if (!bernardBookEntries.length) return null;
+    const total = bernardBookEntries.reduce((s, e) => s + Math.max(0, e.weight || 0), 0);
+    if (total <= 0) return bernardBookEntries[Math.floor(Math.random() * bernardBookEntries.length)];
+    let roll = Math.random() * total;
+    for (const e of bernardBookEntries) {
+      roll -= Math.max(0, e.weight || 0);
+      if (roll <= 0) return e;
+    }
+    return bernardBookEntries[bernardBookEntries.length - 1];
+  };
+
+  // Evaluates a dialogue row's condition against the current stage + quest flags.
+  const conditionsMet = (
+    stage: number,
+    condition: BernardStageRow['condition'],
+    flags: (key: string) => string | null,
+  ): boolean => {
+    if (!condition) return false;
+    if (condition.stage !== stage) return false;
+    // Numeric-threshold gates — independent of the flag checks below.
+    if (typeof condition.min_level === 'number' && currentLevel < condition.min_level) return false;
+    if (typeof condition.min_social === 'number' && socialStat < condition.min_social) return false;
+    const requires = condition.requires_flags;
+    if (!requires) return true;
+    const keys = Object.keys(requires);
+    const allMatch = keys.every((k) => flags(k) === requires[k]);
+    return condition.flags_equal === false ? !allMatch : allMatch;
+  };
+
+  // Maps action keys from the database to concrete handlers.
+  const bernardActions: Record<string, () => void> = {
+    advance_to_1: () => { advanceBernardStage(1); },
+    grant_credits_30_advance_2: () => {
+      if (!user) return;
+      const next = credits + 30;
+      onCreditsChange?.(next);
+      updateUser(user.id, { credits: next });
+      advanceBernardStage(2);
+    },
+    grant_growth_point_1: () => {
+      if (!user) return;
+      const nextGp = growthPoints + 1;
+      onGrowthPointsChange?.(nextGp);
+      updateUser(user.id, { growth_points: nextGp } as never);
+      advanceBernardStage(3);
+    },
+    grant_wanderer_title: async () => {
+      if (!user) return;
+      const credNum = credits + 100;
+      onCreditsChange?.(credNum);
+      await updateUser(user.id, {
+        credits: credNum,
+        title: 'Wanderer',
+        unlocked_titles: ['Wanderer'],
+      });
+      onTitleGranted?.('Wanderer', ['Wanderer']);
+      await advanceBernardStage(5);
+      onMessage?.('You are a Wanderer.');
+    },
+    accept_alexandra_quest: () => { onAcceptAlexandraQuest?.(); },
+  };
+
+  const getBernardDialogue = (flagOverride?: (k: string) => string | null): BernardDialogueData => {
+    if (typeof window === 'undefined' || !user) {
+      return { text: '', buttonLabel: null };
+    }
+    const f = flagOverride ?? getFlag;
+    const stage = parseInt(f('bernard_stage') || '0', 10);
+    const match =
+      bernardStages.find((row) => conditionsMet(stage, row.condition, f)) ??
+      bernardStages.find((row) => row.stage_key === 'stage_6_followup');
+    if (!match) return { text: '', buttonLabel: null };
+
+    // A revisit = the matched stage neither advances the spine nor grants anything.
+    const isRevisit = !match.button_action_key && !match.on_show_action_key;
+    if (isRevisit) {
+      const entry = pickBookEntry();
+      // Empty book → fall through to the fixed stage text below.
+      if (entry) return { text: entry.text, buttonLabel: match.button_label };
+    }
+
+    return {
+      text: match.text,
+      buttonLabel: match.button_label,
+      buttonAction: match.button_action_key ? bernardActions[match.button_action_key] : undefined,
+      onShow: match.on_show_action_key ? bernardActions[match.on_show_action_key] : undefined,
+    };
+  };
+
+  return {
+    bernardStages,
+    bernardBookEntries,
+    conditionsMet,
+    bernardActions,
+    advanceBernardStage,
+    getBernardDialogue,
+    bumpFlags,
+  };
+}
+
+export default useBernardDialogue;

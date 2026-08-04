@@ -1141,6 +1141,13 @@ const Village = () => {
       updateUser(user.id, { credits: next });
       advanceBernardStage(2);
     },
+    grant_growth_point_1: () => {
+      if (!user) return;
+      const nextGp = growthPoints + 1;
+      setGrowthPoints(nextGp);
+      updateUser(user.id, { growth_points: nextGp } as never);
+      advanceBernardStage(2);
+    },
     grant_wanderer_title: async () => {
       if (!user) return;
       const credNum = credits + 100;

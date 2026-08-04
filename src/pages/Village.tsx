@@ -27,6 +27,8 @@ const MERCHANT_LINES = [
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type VillageCell = { col: number; row: number; type: string; npc_name?: string };
 type GroundTile = { x: number; y: number; kind: 'PATH' | 'ROAD' | 'SQUARE' | 'LANDMARK' };
+type RugTrim = { top: boolean; bottom: boolean; left: boolean; right: boolean };
+type RugTile = { id: string; x: number; y: number; trim: RugTrim };
 type ClusterKind = 'S' | 'M' | 'L';
 type BuildingCluster = {
   id: string;
@@ -49,6 +51,8 @@ type DynamicVillage = {
   wallTiles?: Rect[];
   furnitureTiles?: Rect[];
   bookcaseTiles?: Rect[];
+  lightTiles?: Rect[];
+  rugTiles?: RugTile[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
   bernardCenter: { x: number; y: number } | null;
@@ -348,6 +352,49 @@ const BookcaseCell = memo(({ col, row }: { col: number; row: number }) => {
     </svg>
   );
 });
+
+const LightCell = memo(() => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <defs>
+      <radialGradient id="lampGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stopColor="#f4d78a" stopOpacity="0.5" />
+        <stop offset="45%" stopColor="#e8b84a" stopOpacity="0.2" />
+        <stop offset="100%" stopColor="#e8b84a" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <ellipse
+      cx="10"
+      cy="10"
+      rx="9"
+      ry="9"
+      fill="url(#lampGlow)"
+      style={{ animation: 'glowPulse 3.2s ease-in-out infinite', transformOrigin: '10px 10px' }}
+    />
+    <rect x="7" y="7" width="6" height="6" rx="1" fill="#3a2f1a" stroke="#7a5535" strokeWidth="0.5" />
+    <rect x="8.5" y="8.3" width="3" height="3.4" rx="0.4" fill="#f4d78a" fillOpacity="0.75" />
+  </svg>
+));
+
+const RugCell = memo(({ trim }: { trim: RugTrim }) => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <rect width="20" height="20" fill="#5a2020" fillOpacity="0.4" />
+    <path d="M10,5 L14,10 L10,15 L6,10 Z" fill="none" stroke="rgba(200,160,110,0.18)" strokeWidth="0.3" />
+    {trim.top && <line x1="0.6" y1="0.6" x2="19.4" y2="0.6" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+    {trim.bottom && <line x1="0.6" y1="19.4" x2="19.4" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+    {trim.left && <line x1="0.6" y1="0.6" x2="0.6" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+    {trim.right && <line x1="19.4" y1="0.6" x2="19.4" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+  </svg>
+));
 
 
 
@@ -1475,6 +1522,8 @@ const Village = () => {
         const wallTiles: Rect[] = [];
         const furnitureTiles: Rect[] = [];
         const bookcaseTiles: Rect[] = [];
+        const lightTiles: Rect[] = [];
+        const rugCells: { col: number; row: number }[] = [];
         const npcs: { x: number; y: number; name: string }[] = [];
 
         let eyeCenter: { x: number; y: number } | null = null;
@@ -1535,6 +1584,12 @@ const Village = () => {
             case 'BOOKCASE':
               bookcaseTiles.push({ id: `book-${cell.col}-${cell.row}`, x, y, w: 20, h: 20 });
               break;
+            case 'LIGHT':
+              lightTiles.push({ id: `light-${cell.col}-${cell.row}`, x, y, w: 20, h: 20 });
+              break;
+            case 'RUG':
+              rugCells.push({ col: cell.col, row: cell.row });
+              break;
 
             default:
               break;
@@ -1565,7 +1620,21 @@ const Village = () => {
             ...clusterCells('L', lCells),
           ];
 
-          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
+          // Rug trim: only draw the border on the outer edge of a connected rug area
+          const rugSet = new Set(rugCells.map((c) => `${c.col},${c.row}`));
+          const rugTiles: RugTile[] = rugCells.map((c) => ({
+            id: `rug-${c.col}-${c.row}`,
+            x: c.col * CELL,
+            y: c.row * CELL,
+            trim: {
+              top: !rugSet.has(`${c.col},${c.row - 1}`),
+              bottom: !rugSet.has(`${c.col},${c.row + 1}`),
+              left: !rugSet.has(`${c.col - 1},${c.row}`),
+              right: !rugSet.has(`${c.col + 1},${c.row}`),
+            },
+          }));
+
+          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
 
 
           // Reposition the player once, when the dynamic village loads
@@ -1752,6 +1821,7 @@ const Village = () => {
             ...(dynamicBuildings.wallTiles ?? []),
             ...(dynamicBuildings.furnitureTiles ?? []),
             ...(dynamicBuildings.bookcaseTiles ?? []),
+            ...(dynamicBuildings.lightTiles ?? []),
           ]
         : OBSTACLES,
     [dynamicBuildings],
@@ -2049,6 +2119,8 @@ const Village = () => {
       wallTiles: (dynamicBuildings.wallTiles ?? []).filter((w) => inBox(w.x, w.y)),
       furnitureTiles: (dynamicBuildings.furnitureTiles ?? []).filter((f) => inBox(f.x, f.y)),
       bookcaseTiles: (dynamicBuildings.bookcaseTiles ?? []).filter((b) => inBox(b.x, b.y)),
+      lightTiles: (dynamicBuildings.lightTiles ?? []).filter((l) => inBox(l.x, l.y)),
+      rugTiles: (dynamicBuildings.rugTiles ?? []).filter((r) => inBox(r.x, r.y)),
       npcs: dynamicBuildings.npcs.filter((n) => inBox(n.x, n.y, 6, 6)),
       typeA: dynamicBuildings.typeA.filter((b) => inBox(b.x, b.y, b.w, b.h)),
     };
@@ -2184,6 +2256,7 @@ const Village = () => {
         @keyframes playerPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
         @keyframes villageNotYet { 0% { opacity:.6 } 80% { opacity:.6 } 100% { opacity:0 } }
         @keyframes merchantSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes glowPulse { 0%, 100% { opacity: 0.55; transform: scale(0.94); } 50% { opacity: 0.9; transform: scale(1.06); } }
       `}</style>
 
       {/* TEMPORARY DEBUG — Bernard parity panel (?bernardParityCheck=1). REMOVE once verified. */}
@@ -2341,6 +2414,16 @@ const Village = () => {
           );
         })}
 
+        {/* Rugs — decorative floor overlay, above base ground, below solids */}
+        {visible?.rugTiles.map((r) => (
+          <div
+            key={`rug-${r.x}-${r.y}`}
+            style={{ position: 'absolute', left: r.x, top: r.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 2 }}
+          >
+            <RugCell trim={r.trim} />
+          </div>
+        ))}
+
         {/* Interior walls & furniture (solid) */}
         {visible?.wallTiles.map((w) => (
           <div
@@ -2364,6 +2447,14 @@ const Village = () => {
             style={{ position: 'absolute', left: b.x, top: b.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 3 }}
           >
             <BookcaseCell col={Math.round(b.x / 20)} row={Math.round(b.y / 20)} />
+          </div>
+        ))}
+        {visible?.lightTiles.map((l) => (
+          <div
+            key={`light-${l.x}-${l.y}`}
+            style={{ position: 'absolute', left: l.x, top: l.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 3 }}
+          >
+            <LightCell />
           </div>
         ))}
 

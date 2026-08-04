@@ -8,6 +8,8 @@ const CELL = 20;
 const STEP = 12;
 
 type Rect = { id: string; x: number; y: number; w: number; h: number };
+type RugTrim = { top: boolean; bottom: boolean; left: boolean; right: boolean };
+type RugTile = { id: string; x: number; y: number; trim: RugTrim };
 type RoomCell = {
   col: number;
   row: number;
@@ -19,6 +21,8 @@ type RoomLayout = {
   wallTiles: Rect[];
   furnitureTiles: Rect[];
   bookcaseTiles: Rect[];
+  lightTiles: Rect[];
+  rugTiles: RugTile[];
   exitTiles: ExitTile[];
   gridSize: number;
   start: { col: number; row: number } | null;
@@ -89,6 +93,49 @@ const BookcaseCell = memo(({ col, row }: { col: number; row: number }) => {
     </svg>
   );
 });
+
+const LightCell = memo(() => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <defs>
+      <radialGradient id="lampGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stopColor="#f4d78a" stopOpacity="0.5" />
+        <stop offset="45%" stopColor="#e8b84a" stopOpacity="0.2" />
+        <stop offset="100%" stopColor="#e8b84a" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <ellipse
+      cx="10"
+      cy="10"
+      rx="9"
+      ry="9"
+      fill="url(#lampGlow)"
+      style={{ animation: 'glowPulse 3.2s ease-in-out infinite', transformOrigin: '10px 10px' }}
+    />
+    <rect x="7" y="7" width="6" height="6" rx="1" fill="#3a2f1a" stroke="#7a5535" strokeWidth="0.5" />
+    <rect x="8.5" y="8.3" width="3" height="3.4" rx="0.4" fill="#f4d78a" fillOpacity="0.75" />
+  </svg>
+));
+
+const RugCell = memo(({ trim }: { trim: RugTrim }) => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <rect width="20" height="20" fill="#5a2020" fillOpacity="0.4" />
+    <path d="M10,5 L14,10 L10,15 L6,10 Z" fill="none" stroke="rgba(200,160,110,0.18)" strokeWidth="0.3" />
+    {trim.top && <line x1="0.6" y1="0.6" x2="19.4" y2="0.6" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+    {trim.bottom && <line x1="0.6" y1="19.4" x2="19.4" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+    {trim.left && <line x1="0.6" y1="0.6" x2="0.6" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+    {trim.right && <line x1="19.4" y1="0.6" x2="19.4" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+  </svg>
+));
 
 const EXIT_ROUTES: Record<string, string> = {
   village: '/village',
@@ -171,6 +218,8 @@ const LibraryRoom = () => {
         const wallTiles: Rect[] = [];
         const furnitureTiles: Rect[] = [];
         const bookcaseTiles: Rect[] = [];
+        const lightTiles: Rect[] = [];
+        const rugCells: { col: number; row: number }[] = [];
         const exitTiles: ExitTile[] = [];
 
         cells.forEach((cell) => {
@@ -186,6 +235,12 @@ const LibraryRoom = () => {
               break;
             case 'BOOKCASE':
               bookcaseTiles.push({ id: `book-${cell.col}-${cell.row}`, x, y, w: CELL, h: CELL });
+              break;
+            case 'LIGHT':
+              lightTiles.push({ id: `light-${cell.col}-${cell.row}`, x, y, w: CELL, h: CELL });
+              break;
+            case 'RUG':
+              rugCells.push({ col: cell.col, row: cell.row });
               break;
             case 'ROOM_EXIT':
               exitTiles.push({
@@ -215,11 +270,25 @@ const LibraryRoom = () => {
             ? { col: rawStart.col, row: rawStart.row }
             : null;
 
-        const layout: RoomLayout = { wallTiles, furnitureTiles, bookcaseTiles, exitTiles, gridSize, start };
+        // Rug trim: only draw the border on the outer edge of a connected rug area
+        const rugSet = new Set(rugCells.map((c) => `${c.col},${c.row}`));
+        const rugTiles: RugTile[] = rugCells.map((c) => ({
+          id: `rug-${c.col}-${c.row}`,
+          x: c.col * CELL,
+          y: c.row * CELL,
+          trim: {
+            top: !rugSet.has(`${c.col},${c.row - 1}`),
+            bottom: !rugSet.has(`${c.col},${c.row + 1}`),
+            left: !rugSet.has(`${c.col - 1},${c.row}`),
+            right: !rugSet.has(`${c.col + 1},${c.row}`),
+          },
+        }));
+
+        const layout: RoomLayout = { wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, exitTiles, gridSize, start };
 
         // Spawn safety net: pick the nearest open cell (expanding ring search)
         // around the preferred origin so we never spawn inside walls/furniture.
-        const solids = [...wallTiles, ...furnitureTiles, ...bookcaseTiles];
+        const solids = [...wallTiles, ...furnitureTiles, ...bookcaseTiles, ...lightTiles];
         const isOpenCell = (col: number, row: number) => {
           if (col < 0 || row < 0 || col >= gridSize || row >= gridSize) return false;
           const px = col * CELL + CELL / 2;
@@ -272,7 +341,12 @@ const LibraryRoom = () => {
   }, [user, authLoading, currentLevel]);
 
   const obstacles = useMemo<Rect[]>(
-    () => [...(room?.wallTiles ?? []), ...(room?.furnitureTiles ?? []), ...(room?.bookcaseTiles ?? [])],
+    () => [
+      ...(room?.wallTiles ?? []),
+      ...(room?.furnitureTiles ?? []),
+      ...(room?.bookcaseTiles ?? []),
+      ...(room?.lightTiles ?? []),
+    ],
     [room],
   );
 
@@ -373,6 +447,7 @@ const LibraryRoom = () => {
       <style>{`
         @keyframes playerPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
         @keyframes roomPulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.9; } }
+        @keyframes glowPulse { 0%, 100% { opacity: 0.55; transform: scale(0.94); } 50% { opacity: 0.9; transform: scale(1.06); } }
       `}</style>
 
       {/* Header */}
@@ -476,6 +551,16 @@ const LibraryRoom = () => {
             }}
           />
 
+          {/* Rugs — decorative, non-blocking */}
+          {(room.rugTiles ?? []).map((r) => (
+            <div
+              key={`rug-${r.x}-${r.y}`}
+              style={{ position: 'absolute', left: r.x, top: r.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 1 }}
+            >
+              <RugCell trim={r.trim} />
+            </div>
+          ))}
+
           {/* Exits */}
           {room.exitTiles.map((ex) => (
             <div
@@ -518,6 +603,14 @@ const LibraryRoom = () => {
               style={{ position: 'absolute', left: b.x, top: b.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 3 }}
             >
               <BookcaseCell col={Math.round(b.x / CELL)} row={Math.round(b.y / CELL)} />
+            </div>
+          ))}
+          {(room.lightTiles ?? []).map((l) => (
+            <div
+              key={`light-${l.x}-${l.y}`}
+              style={{ position: 'absolute', left: l.x, top: l.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 3 }}
+            >
+              <LightCell />
             </div>
           ))}
 

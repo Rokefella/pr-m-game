@@ -156,33 +156,43 @@ export function useBernardDialogue({
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const { data: npcRow, error: npcErr } = await supabase
+        .from('npcs')
+        .select('id')
+        .eq('npc_key', 'bernard')
+        .maybeSingle();
+      if (npcErr || !npcRow) {
+        if (npcErr) console.error('[useBernardDialogue] bernard npc lookup failed', npcErr);
+        return;
+      }
       const { data, error } = await supabase
         .from('npc_book_entries')
-        .select('id, page, text, weight, bucket_key, options, condition')
-        .eq('npc_key', 'bernard')
-        .order('page', { ascending: true });
+        .select(
+          'id, node_key, bucket_key, topic, text, weight, min_level, min_social, min_perception, min_trade, requires_flags, flags_equal, option_a_label, option_a_target, option_a_action_key, option_b_label, option_b_target, option_b_action_key',
+        )
+        .eq('npc_id', (npcRow as { id: string }).id);
       if (error) {
         console.error('[useBernardDialogue] bernard book entries fetch failed', error);
         return;
       }
       if (cancelled) return;
-      const rows = (data as BernardBookEntry[]) || [];
-      // Per-entry gating: stat thresholds + the dialogue flag-matching semantics.
+      const rows = (data as unknown as BernardBookEntry[]) || [];
+      // Per-entry gating: flat stat thresholds + the dialogue flag-matching semantics.
       const eligible = rows.filter((r) => {
-        const c = r.condition;
-        if (typeof c?.min_level === 'number' && currentLevel < c.min_level) return false;
-        if (typeof c?.min_social === 'number' && socialStat < c.min_social) return false;
-        if (typeof c?.min_perception === 'number' && perceptionStat < c.min_perception) return false;
-        if (typeof c?.min_trade === 'number' && tradeStat < c.min_trade) return false;
-        const requires = c?.requires_flags;
-        if (!requires) return true;
+        if (typeof r.min_level === 'number' && currentLevel < r.min_level) return false;
+        if (typeof r.min_social === 'number' && socialStat < r.min_social) return false;
+        if (typeof r.min_perception === 'number' && perceptionStat < r.min_perception) return false;
+        if (typeof r.min_trade === 'number' && tradeStat < r.min_trade) return false;
+        const requires = r.requires_flags;
+        if (!requires || Object.keys(requires).length === 0) return true;
         const allMatch = Object.keys(requires).every((k) => getFlag(k) === requires[k]);
-        return c?.flags_equal === false ? !allMatch : allMatch;
+        return r.flags_equal === false ? !allMatch : allMatch;
       });
       setBernardBookEntries(eligible);
     })();
     return () => { cancelled = true; };
   }, [currentLevel, socialStat, perceptionStat, tradeStat]);
+
 
   // Eligible entries indexed by bucket_key.
   const bucketIndex = useMemo(() => {

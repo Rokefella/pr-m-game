@@ -938,6 +938,10 @@ const Village = () => {
   };
   const [currentLevel, setCurrentLevel] = useState(1);
   const [socialStatus, setSocialStatus] = useState(0);
+  const [growthPoints, setGrowthPoints] = useState(0);
+  const [socialStat, setSocialStat] = useState(0);
+  const [perceptionStat, setPerceptionStat] = useState(0);
+  const [tradeStat, setTradeStat] = useState(0);
   const currentLevelRef = useRef(1);
   useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
   const [currentTitle, setCurrentTitle] = useState('');

@@ -982,6 +982,9 @@ const Village = () => {
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
   const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
   const [devOverlay, setDevOverlay] = useState(false);
+  const [devVillageLevel, setDevVillageLevel] = useState('1');
+  const [devMazeLevel, setDevMazeLevel] = useState('1');
+  const [devStageNote, setDevStageNote] = useState<string | null>(null);
   const devTapCountRef = useRef(0);
   const devLastTapRef = useRef(0);
   const registrationNumberRef = useRef<number | null>(null);

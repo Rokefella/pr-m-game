@@ -937,6 +937,7 @@ const Village = () => {
     10: 'First One Through',
   };
   const [currentLevel, setCurrentLevel] = useState(1);
+  const [socialStatus, setSocialStatus] = useState(0);
   const currentLevelRef = useRef(1);
   useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
   const [currentTitle, setCurrentTitle] = useState('');
@@ -1075,6 +1076,8 @@ const Village = () => {
       stage?: number;
       requires_flags?: Record<string, string>;
       flags_equal?: boolean;
+      min_level?: number;
+      min_social?: number;
     } | null;
   };
 
@@ -1114,6 +1117,9 @@ const Village = () => {
   ): boolean => {
     if (!condition) return false;
     if (condition.stage !== stage) return false;
+    // Numeric-threshold gates — independent of the flag checks below.
+    if (typeof condition.min_level === 'number' && currentLevel < condition.min_level) return false;
+    if (typeof condition.min_social === 'number' && socialStatus < condition.min_social) return false;
     const requires = condition.requires_flags;
     if (!requires) return true;
     const keys = Object.keys(requires);
@@ -1416,6 +1422,7 @@ const Village = () => {
     const row = await fetchOrCreateUser(user.id);
     console.log('[Village] user row:', row);
     setCurrentLevel(row.level);
+    setSocialStatus(((row as unknown as { social?: number }).social) ?? 0);
     setCurrentTitle(row.title);
     setOverlaySelectedTitle(row.title);
     setRegistrationNumber(row.registration_number);
@@ -3174,6 +3181,7 @@ const Village = () => {
             onClick={async () => {
               setLevelUpHandled(true);
               const newLv = levelUpOverlay.newLevel;
+              const newSocial = socialStatus + 1; // fixed gain per level-up
               if (user) {
                 await restUpdate(
                   'users',
@@ -3182,10 +3190,12 @@ const Village = () => {
                     levelup_pending: false,
                     levelup_newlevel: 0,
                     level: newLv,
+                    social: newSocial,
                   },
                   'id',
                   user.id,
                 );
+                setSocialStatus(newSocial);
               }
               setCurrentLevel(newLv);
               setLevelUpOverlay(null);

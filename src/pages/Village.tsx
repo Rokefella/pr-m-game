@@ -1146,7 +1146,7 @@ const Village = () => {
       const nextGp = growthPoints + 1;
       setGrowthPoints(nextGp);
       updateUser(user.id, { growth_points: nextGp } as never);
-      advanceBernardStage(2);
+      advanceBernardStage(3);
     },
     grant_wanderer_title: async () => {
       if (!user) return;

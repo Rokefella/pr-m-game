@@ -211,17 +211,22 @@ export function useBernardDialogue({
     return () => { cancelled = true; };
   }, []);
 
-  const pickBookEntry = (): BernardBookEntry | null => {
-    if (!bernardBookEntries.length) return null;
-    const total = bernardBookEntries.reduce((s, e) => s + Math.max(0, e.weight || 0), 0);
-    if (total <= 0) return bernardBookEntries[Math.floor(Math.random() * bernardBookEntries.length)];
+  // Weighted-random pick within a pool of eligible entries.
+  const pickWeighted = (pool: BernardBookEntry[]): BernardBookEntry | null => {
+    if (!pool.length) return null;
+    const total = pool.reduce((s, e) => s + Math.max(0, e.weight || 0), 0);
+    if (total <= 0) return pool[Math.floor(Math.random() * pool.length)];
     let roll = Math.random() * total;
-    for (const e of bernardBookEntries) {
+    for (const e of pool) {
       roll -= Math.max(0, e.weight || 0);
       if (roll <= 0) return e;
     }
-    return bernardBookEntries[bernardBookEntries.length - 1];
+    return pool[pool.length - 1];
   };
+
+  const pickBookEntry = (): BernardBookEntry | null =>
+    pickWeighted(bucketIndex[currentBucket] || []) ?? pickWeighted(bernardBookEntries);
+
 
   // Evaluates a dialogue row's condition against the current stage + quest flags.
   const conditionsMet = (

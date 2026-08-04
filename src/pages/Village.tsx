@@ -1090,6 +1090,58 @@ const Village = () => {
 
   const [bernardStages, setBernardStages] = useState<BernardStageRow[]>([]);
 
+  // ── Bernard's book (npc_book_entries) — idle/revisit lines ──
+  type BernardBookEntry = {
+    id: string;
+    page: number;
+    text: string;
+    weight: number;
+    condition: { requires_flags?: Record<string, string>; flags_equal?: boolean } | null;
+  };
+
+  // Pages unlock with level progress and social affinity.
+  const unlockedPage = Math.floor(currentLevel / 5) + socialStat;
+  const [bernardBookEntries, setBernardBookEntries] = useState<BernardBookEntry[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('npc_book_entries')
+        .select('id, page, text, weight, condition')
+        .eq('npc_key', 'bernard')
+        .lte('page', unlockedPage)
+        .order('page', { ascending: true });
+      if (error) {
+        console.error('[Village] bernard book entries fetch failed', error);
+        return;
+      }
+      if (cancelled) return;
+      const rows = (data as BernardBookEntry[]) || [];
+      // Reuse the dialogue flag-matching semantics for requires_flags/flags_equal.
+      const eligible = rows.filter((r) => {
+        const requires = r.condition?.requires_flags;
+        if (!requires) return true;
+        const allMatch = Object.keys(requires).every((k) => getFlag(k) === requires[k]);
+        return r.condition?.flags_equal === false ? !allMatch : allMatch;
+      });
+      setBernardBookEntries(eligible);
+    })();
+    return () => { cancelled = true; };
+  }, [unlockedPage]);
+
+  const pickBookEntry = (): BernardBookEntry | null => {
+    if (!bernardBookEntries.length) return null;
+    const total = bernardBookEntries.reduce((s, e) => s + Math.max(0, e.weight || 0), 0);
+    if (total <= 0) return bernardBookEntries[Math.floor(Math.random() * bernardBookEntries.length)];
+    let roll = Math.random() * total;
+    for (const e of bernardBookEntries) {
+      roll -= Math.max(0, e.weight || 0);
+      if (roll <= 0) return e;
+    }
+    return bernardBookEntries[bernardBookEntries.length - 1];
+  };
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -1179,6 +1231,15 @@ const Village = () => {
       bernardStages.find((row) => conditionsMet(stage, row.condition, f)) ??
       bernardStages.find((row) => row.stage_key === 'stage_6_followup');
     if (!match) return { text: '', buttonLabel: null };
+
+    // A revisit = the matched stage neither advances the spine nor grants anything.
+    const isRevisit = !match.button_action_key && !match.on_show_action_key;
+    if (isRevisit) {
+      const entry = pickBookEntry();
+      // Empty book → fall through to the fixed stage text below.
+      if (entry) return { text: entry.text, buttonLabel: match.button_label };
+    }
+
     return {
       text: match.text,
       buttonLabel: match.button_label,

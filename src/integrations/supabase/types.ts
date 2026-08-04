@@ -131,11 +131,13 @@ export type Database = {
           credits: number
           entity_answer: string | null
           first_launch_at: string
+          growth_points: number
           id: string
           level: number
           levelup_newlevel: number | null
           levelup_pending: boolean
           maze_completed_level: number
+          perception: number
           registration_number: number
           social: number
           steps_remaining: number
@@ -144,6 +146,7 @@ export type Database = {
           title: string
           total_maze_steps: number
           total_maze_time: number
+          trade: number
           trial_end: string
           unlocked_titles: string[]
           updated_at: string
@@ -155,11 +158,13 @@ export type Database = {
           credits?: number
           entity_answer?: string | null
           first_launch_at?: string
+          growth_points?: number
           id: string
           level?: number
           levelup_newlevel?: number | null
           levelup_pending?: boolean
           maze_completed_level?: number
+          perception?: number
           registration_number?: number
           social?: number
           steps_remaining?: number
@@ -168,6 +173,7 @@ export type Database = {
           title?: string
           total_maze_steps?: number
           total_maze_time?: number
+          trade?: number
           trial_end?: string
           unlocked_titles?: string[]
           updated_at?: string
@@ -179,11 +185,13 @@ export type Database = {
           credits?: number
           entity_answer?: string | null
           first_launch_at?: string
+          growth_points?: number
           id?: string
           level?: number
           levelup_newlevel?: number | null
           levelup_pending?: boolean
           maze_completed_level?: number
+          perception?: number
           registration_number?: number
           social?: number
           steps_remaining?: number
@@ -192,6 +200,7 @@ export type Database = {
           title?: string
           total_maze_steps?: number
           total_maze_time?: number
+          trade?: number
           trial_end?: string
           unlocked_titles?: string[]
           updated_at?: string

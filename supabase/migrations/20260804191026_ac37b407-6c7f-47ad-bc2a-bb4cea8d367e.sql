@@ -1,0 +1,4 @@
+ALTER TABLE public.users
+  ADD COLUMN IF NOT EXISTS growth_points integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS perception integer NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS trade integer NOT NULL DEFAULT 0;

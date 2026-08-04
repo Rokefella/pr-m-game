@@ -2119,6 +2119,8 @@ const Village = () => {
       wallTiles: (dynamicBuildings.wallTiles ?? []).filter((w) => inBox(w.x, w.y)),
       furnitureTiles: (dynamicBuildings.furnitureTiles ?? []).filter((f) => inBox(f.x, f.y)),
       bookcaseTiles: (dynamicBuildings.bookcaseTiles ?? []).filter((b) => inBox(b.x, b.y)),
+      lightTiles: (dynamicBuildings.lightTiles ?? []).filter((l) => inBox(l.x, l.y)),
+      rugTiles: (dynamicBuildings.rugTiles ?? []).filter((r) => inBox(r.x, r.y)),
       npcs: dynamicBuildings.npcs.filter((n) => inBox(n.x, n.y, 6, 6)),
       typeA: dynamicBuildings.typeA.filter((b) => inBox(b.x, b.y, b.w, b.h)),
     };

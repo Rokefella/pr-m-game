@@ -295,7 +295,23 @@ export function useBernardDialogue({
     if (isRevisit) {
       const entry = pickBookEntry();
       // Empty book → fall through to the fixed stage text below.
-      if (entry) return { text: entry.text, buttonLabel: match.button_label };
+      if (entry) {
+        const raw = Array.isArray(entry.options) ? entry.options.slice(0, 2) : [];
+        const options: BernardResolvedOption[] = raw.map((o) => ({
+          label: o.label,
+          closes: !o.leads_to && !o.action_key,
+          onSelect: () => {
+            if (o.action_key) bernardActions[o.action_key]?.();
+            if (o.leads_to) {
+              // Walk deeper into the graph without closing the dialogue.
+              setCurrentBucket(o.leads_to);
+              return;
+            }
+            if (!o.action_key) onCloseDialogue?.();
+          },
+        }));
+        return { text: entry.text, buttonLabel: match.button_label, options };
+      }
     }
 
     return {
@@ -309,12 +325,17 @@ export function useBernardDialogue({
   return {
     bernardStages,
     bernardBookEntries,
+    bucketIndex,
+    currentBucket,
+    setCurrentBucket,
+    resetBernardBucket,
     conditionsMet,
     bernardActions,
     advanceBernardStage,
     getBernardDialogue,
     bumpFlags,
   };
+
 }
 
 export default useBernardDialogue;

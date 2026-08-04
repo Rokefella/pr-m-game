@@ -3181,6 +3181,7 @@ const Village = () => {
             onClick={async () => {
               setLevelUpHandled(true);
               const newLv = levelUpOverlay.newLevel;
+              const newSocial = socialStatus + 1; // fixed gain per level-up
               if (user) {
                 await restUpdate(
                   'users',
@@ -3189,10 +3190,12 @@ const Village = () => {
                     levelup_pending: false,
                     levelup_newlevel: 0,
                     level: newLv,
+                    social: newSocial,
                   },
                   'id',
                   user.id,
                 );
+                setSocialStatus(newSocial);
               }
               setCurrentLevel(newLv);
               setLevelUpOverlay(null);

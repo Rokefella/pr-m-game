@@ -1422,6 +1422,7 @@ const Village = () => {
     const row = await fetchOrCreateUser(user.id);
     console.log('[Village] user row:', row);
     setCurrentLevel(row.level);
+    setSocialStatus(((row as unknown as { social?: number }).social) ?? 0);
     setCurrentTitle(row.title);
     setOverlaySelectedTitle(row.title);
     setRegistrationNumber(row.registration_number);

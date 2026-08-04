@@ -38,11 +38,37 @@ type AccountUserRow = {
   avatar_head: string | null;
 };
 
-const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: Props) => {
+const ProfileOverlay = ({
+  isOpen,
+  onClose,
+  context = 'village',
+  runProgress,
+  growthPoints: growthPointsProp = 0,
+  socialStat: socialStatProp = 0,
+  perceptionStat: perceptionStatProp = 0,
+  tradeStat: tradeStatProp = 0,
+}: Props) => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [mainTab, setMainTab] = useState<'profile' | 'quests' | 'account' | 'growth' | 'folder'>('profile');
   const [growthOpen, setGrowthOpen] = useState<{ social: boolean; perception: boolean; trade: boolean }>({ social: false, perception: false, trade: false });
+  const [growthPoints, setGrowthPoints] = useState(growthPointsProp);
+  const [stats, setStats] = useState({ social: socialStatProp, perception: perceptionStatProp, trade: tradeStatProp });
+  useEffect(() => { setGrowthPoints(growthPointsProp); }, [growthPointsProp]);
+  useEffect(() => {
+    setStats({ social: socialStatProp, perception: perceptionStatProp, trade: tradeStatProp });
+  }, [socialStatProp, perceptionStatProp, tradeStatProp]);
+
+  const commitGrowthPoint = (key: 'social' | 'perception' | 'trade') => {
+    if (!user) return;
+    if (growthPoints <= 0 || stats[key] >= 5) return;
+    const nextGp = growthPoints - 1;
+    const nextVal = stats[key] + 1;
+    setGrowthPoints(nextGp);
+    setStats((s) => ({ ...s, [key]: nextVal }));
+    updateUser(user.id, { growth_points: nextGp, [key]: nextVal } as never);
+  };
+
   const [folderFragments, setFolderFragments] = useState<Array<{ id: string; prime_number: number }>>([]);
   const [folderTooltip, setFolderTooltip] = useState<string | null>(null);
   const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');

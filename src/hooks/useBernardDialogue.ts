@@ -129,6 +129,8 @@ export function useBernardDialogue({
 
   /** Entry point for casual conversation: quest root until the three buildings are done. */
   const defaultBucket = useCallback((): string => {
+    const stage = getFlag('bernard_stage');
+    if (stage === '1') return 'quest_check_status';
     const done =
       getFlag('touched_23') === 'true' &&
       getFlag('touched_47') === 'true' &&

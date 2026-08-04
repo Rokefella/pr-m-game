@@ -127,7 +127,7 @@ export function useBernardDialogue({
   const [bernardStages, setBernardStages] = useState<BernardStageRow[]>([]);
   const [bernardBookEntries, setBernardBookEntries] = useState<BernardBookEntry[]>([]);
   // Forces re-render of Bernard dialogue when quest flags change.
-  const [, setFlagsVersion] = useState(0);
+  const [flagsVersion, setFlagsVersion] = useState(0);
   const bumpFlags = useCallback(() => setFlagsVersion((v) => v + 1), []);
 
   /** Entry point for casual conversation: quest root until the three buildings are done. */

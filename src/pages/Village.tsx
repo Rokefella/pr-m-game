@@ -1117,6 +1117,9 @@ const Village = () => {
   ): boolean => {
     if (!condition) return false;
     if (condition.stage !== stage) return false;
+    // Numeric-threshold gates — independent of the flag checks below.
+    if (typeof condition.min_level === 'number' && currentLevel < condition.min_level) return false;
+    if (typeof condition.min_social === 'number' && socialStatus < condition.min_social) return false;
     const requires = condition.requires_flags;
     if (!requires) return true;
     const keys = Object.keys(requires);

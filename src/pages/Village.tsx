@@ -1522,6 +1522,8 @@ const Village = () => {
         const wallTiles: Rect[] = [];
         const furnitureTiles: Rect[] = [];
         const bookcaseTiles: Rect[] = [];
+        const lightTiles: Rect[] = [];
+        const rugCells: { col: number; row: number }[] = [];
         const npcs: { x: number; y: number; name: string }[] = [];
 
         let eyeCenter: { x: number; y: number } | null = null;

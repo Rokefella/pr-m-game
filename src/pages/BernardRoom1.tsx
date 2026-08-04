@@ -62,13 +62,16 @@ const BernardRoom1 = () => {
         const row = await fetchOrCreateUser(user.id);
         if (cancelled) return;
         if (row.aura_color) setAuraColor(row.aura_color);
-        const r = row as unknown as { level?: number; social?: number; credits?: number; growth_points?: number };
+        const r = row as unknown as { level?: number; social?: number; perception?: number; trade?: number; credits?: number; growth_points?: number };
         setStats({
           level: r.level ?? 1,
           social: r.social ?? 0,
+          perception: r.perception ?? 0,
+          trade: r.trade ?? 0,
           credits: r.credits ?? 0,
           growthPoints: r.growth_points ?? 0,
         });
+
       } catch (e) {
         console.error('[BernardRoom1] fetchOrCreateUser failed', e);
       }

@@ -53,13 +53,25 @@ export type BernardBookCondition = {
 
 export type BernardBookEntry = {
   id: string;
-  page: number;
+  node_key: string | null;
+  bucket_key: string | null;
+  topic: string | null;
   text: string;
   weight: number;
-  bucket_key: string | null;
-  options: BernardOption[] | null;
-  condition: BernardBookCondition;
+  min_level: number | null;
+  min_social: number | null;
+  min_perception: number | null;
+  min_trade: number | null;
+  requires_flags: Record<string, string> | null;
+  flags_equal: boolean | null;
+  option_a_label: string | null;
+  option_a_target: string | null;
+  option_a_action_key: string | null;
+  option_b_label: string | null;
+  option_b_target: string | null;
+  option_b_action_key: string | null;
 };
+
 
 /** Entry-point buckets for casual conversation. */
 export const BERNARD_QUEST_ROOT = 'quest_intro_root';

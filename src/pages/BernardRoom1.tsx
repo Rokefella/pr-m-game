@@ -49,8 +49,9 @@ const BernardRoom1 = () => {
   const { user } = useAuth();
   const [flagsReady, setFlagsReady] = useState(false);
   const [auraColor, setAuraColor] = useState('#5b4fd4');
-  // Stats feed the shared dialogue hook (level/social gates, credit grants).
-  const [stats, setStats] = useState({ level: 1, social: 0, credits: 0, growthPoints: 0 });
+  // Stats feed the shared dialogue hook (level/social/perception/trade gates, credit grants).
+  const [stats, setStats] = useState({ level: 1, social: 0, perception: 0, trade: 0, credits: 0, growthPoints: 0 });
+
   useEffect(() => {
     if (!user) return;
     let cancelled = false;

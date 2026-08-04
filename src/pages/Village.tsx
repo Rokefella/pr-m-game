@@ -1043,6 +1043,7 @@ const Village = () => {
     getBernardDialogue,
     bumpFlags,
     resetBernardBucket,
+    resolvedDialogue,
   } = useBernardDialogue({
     user,
     currentLevel,
@@ -1051,6 +1052,7 @@ const Village = () => {
     tradeStat,
     credits,
     growthPoints,
+    isOpen: bernardOpen,
     onCreditsChange: setCredits,
     onGrowthPointsChange: setGrowthPoints,
     onCloseDialogue: () => setBernardOpen(false),
@@ -3297,73 +3299,70 @@ const Village = () => {
       `}</style>
 
       {/* Bernard dialogue overlay */}
-      {bernardOpen && (() => {
-        const d = getBernardDialogue();
-        return (
-          <BernardDialogue text={d.text} onShow={d.onShow}>
-            {(d.options ?? []).map((o, i) => (
-              <button
-                key={`${o.label}-${i}`}
-                type="button"
-                className="font-cinzel"
-                onClick={() => {
-                  o.onSelect();
-                  if (o.closes) setBernardOpen(false);
-                }}
-                style={{
-                  background: 'rgba(200,150,58,0.18)',
-                  border: '0.5px solid rgba(200,150,58,0.5)',
-                  color: '#c8963a',
-                  padding: '8px 18px',
-                  fontSize: 16,
-                  letterSpacing: '0.3em',
-                  cursor: 'pointer',
-                }}
-              >
-                {o.label.toUpperCase()}
-              </button>
-            ))}
-            {!(d.options ?? []).length && d.buttonLabel && (
-              <button
-                type="button"
-                className="font-cinzel"
-                onClick={() => {
-                  d.buttonAction?.();
-                  setBernardOpen(false);
-                }}
-                style={{
-                  background: 'rgba(200,150,58,0.18)',
-                  border: '0.5px solid rgba(200,150,58,0.5)',
-                  color: '#c8963a',
-                  padding: '8px 18px',
-                  fontSize: 16,
-                  letterSpacing: '0.3em',
-                  cursor: 'pointer',
-                }}
-              >
-                {d.buttonLabel.toUpperCase()}
-              </button>
-            )}
-
+      {bernardOpen && resolvedDialogue && (
+        <BernardDialogue text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>
+          {(resolvedDialogue.options ?? []).map((o, i) => (
             <button
+              key={`${o.label}-${i}`}
               type="button"
               className="font-cinzel"
-              onClick={() => setBernardOpen(false)}
+              onClick={() => {
+                o.onSelect();
+                if (o.closes) setBernardOpen(false);
+              }}
               style={{
-                background: 'transparent',
-                border: '0.5px solid rgba(160,140,200,0.3)',
-                color: 'rgba(160,140,200,0.5)',
+                background: 'rgba(200,150,58,0.18)',
+                border: '0.5px solid rgba(200,150,58,0.5)',
+                color: '#c8963a',
                 padding: '8px 18px',
                 fontSize: 16,
                 letterSpacing: '0.3em',
                 cursor: 'pointer',
               }}
             >
-              CLOSE
+              {o.label.toUpperCase()}
             </button>
-          </BernardDialogue>
-        );
-      })()}
+          ))}
+          {!(resolvedDialogue.options ?? []).length && resolvedDialogue.buttonLabel && (
+            <button
+              type="button"
+              className="font-cinzel"
+              onClick={() => {
+                resolvedDialogue.buttonAction?.();
+                setBernardOpen(false);
+              }}
+              style={{
+                background: 'rgba(200,150,58,0.18)',
+                border: '0.5px solid rgba(200,150,58,0.5)',
+                color: '#c8963a',
+                padding: '8px 18px',
+                fontSize: 16,
+                letterSpacing: '0.3em',
+                cursor: 'pointer',
+              }}
+            >
+              {resolvedDialogue.buttonLabel.toUpperCase()}
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="font-cinzel"
+            onClick={() => setBernardOpen(false)}
+            style={{
+              background: 'transparent',
+              border: '0.5px solid rgba(160,140,200,0.3)',
+              color: 'rgba(160,140,200,0.5)',
+              padding: '8px 18px',
+              fontSize: 16,
+              letterSpacing: '0.3em',
+              cursor: 'pointer',
+            }}
+          >
+            CLOSE
+          </button>
+        </BernardDialogue>
+      )}
 
       <ProfileOverlay
         isOpen={profileOpenDisplay}

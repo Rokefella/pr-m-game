@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getFlag, setFlag } from '@/lib/questFlags';
 import { updateUser } from '@/lib/userData';
@@ -97,6 +97,8 @@ export type UseBernardDialogueOptions = {
   onAcceptAlexandraQuest?: () => void;
   /** Called when a book option is a dead end — host should close the dialogue. */
   onCloseDialogue?: () => void;
+  /** Host's open state; when it becomes true the hook resolves a single stable node. */
+  isOpen?: boolean;
 };
 
 
@@ -120,11 +122,12 @@ export function useBernardDialogue({
   onMessage,
   onAcceptAlexandraQuest,
   onCloseDialogue,
+  isOpen,
 }: UseBernardDialogueOptions) {
   const [bernardStages, setBernardStages] = useState<BernardStageRow[]>([]);
   const [bernardBookEntries, setBernardBookEntries] = useState<BernardBookEntry[]>([]);
   // Forces re-render of Bernard dialogue when quest flags change.
-  const [, setFlagsVersion] = useState(0);
+  const [flagsVersion, setFlagsVersion] = useState(0);
   const bumpFlags = useCallback(() => setFlagsVersion((v) => v + 1), []);
 
   /** Entry point for casual conversation: quest root until the three buildings are done. */
@@ -354,6 +357,18 @@ export function useBernardDialogue({
     };
   };
 
+  // Stable resolved node: re-roll only when the dialogue opens, the bucket changes,
+  // or a Bernard action changes the underlying quest flags (e.g. advancing a stage
+  // while the dialogue stays open) — never because the host re-rendered (e.g. camera
+  // animation loop).
+  const [resolvedDialogue, setResolvedDialogue] = useState<BernardDialogueData | null>(null);
+  const getBernardDialogueRef = useRef(getBernardDialogue);
+  getBernardDialogueRef.current = getBernardDialogue;
+  useEffect(() => {
+    if (!isOpen) return;
+    setResolvedDialogue(getBernardDialogueRef.current());
+  }, [isOpen, currentBucket, flagsVersion]);
+
   return {
     bernardStages,
     bernardBookEntries,
@@ -365,6 +380,7 @@ export function useBernardDialogue({
     bernardActions,
     advanceBernardStage,
     getBernardDialogue,
+    resolvedDialogue,
     bumpFlags,
   };
 

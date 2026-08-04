@@ -4,9 +4,10 @@ import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import BernardDialogue from '@/components/BernardDialogue';
 import CharacterEye from '@/components/CharacterEye';
 import { useAuth } from '@/context/AuthContext';
-import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
-import { supabase } from '@/lib/supabase';
+import { getAllFlags } from '@/lib/questFlags';
 import { fetchOrCreateUser } from '@/lib/userData';
+import { useBernardDialogue } from '@/hooks/useBernardDialogue';
+
 
 
 const CELL = 56;

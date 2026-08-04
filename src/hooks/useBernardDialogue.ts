@@ -318,10 +318,18 @@ export function useBernardDialogue({
       const entry = pickBookEntry();
       // Empty book → fall through to the fixed stage text below.
       if (entry) {
-        const raw = Array.isArray(entry.options) ? entry.options.slice(0, 2) : [];
+        const raw: BernardOption[] = [
+          entry.option_a_label
+            ? { label: entry.option_a_label, leads_to: entry.option_a_target, action_key: entry.option_a_action_key }
+            : null,
+          entry.option_b_label
+            ? { label: entry.option_b_label, leads_to: entry.option_b_target, action_key: entry.option_b_action_key }
+            : null,
+        ].filter(Boolean) as BernardOption[];
         const options: BernardResolvedOption[] = raw.map((o) => ({
           label: o.label,
           closes: !o.leads_to && !o.action_key,
+
           onSelect: () => {
             if (o.action_key) bernardActions[o.action_key]?.();
             if (o.leads_to) {

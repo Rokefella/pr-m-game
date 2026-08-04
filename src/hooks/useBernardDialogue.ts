@@ -31,7 +31,12 @@ export type BernardBookEntry = {
   page: number;
   text: string;
   weight: number;
-  condition: { requires_flags?: Record<string, string>; flags_equal?: boolean } | null;
+  condition: {
+    requires_flags?: Record<string, string>;
+    flags_equal?: boolean;
+    min_level?: number;
+    min_social?: number;
+  } | null;
 };
 
 export type UseBernardDialogueOptions = {
@@ -74,9 +79,6 @@ export function useBernardDialogue({
   const [, setFlagsVersion] = useState(0);
   const bumpFlags = useCallback(() => setFlagsVersion((v) => v + 1), []);
 
-  // Pages unlock with level progress and social affinity.
-  const unlockedPage = Math.floor(currentLevel / 5) + socialStat;
-
   const advanceBernardStage = useCallback(
     async (stage: number) => {
       if (!user) return;
@@ -93,7 +95,6 @@ export function useBernardDialogue({
         .from('npc_book_entries')
         .select('id, page, text, weight, condition')
         .eq('npc_key', 'bernard')
-        .lte('page', unlockedPage)
         .order('page', { ascending: true });
       if (error) {
         console.error('[useBernardDialogue] bernard book entries fetch failed', error);
@@ -101,17 +102,21 @@ export function useBernardDialogue({
       }
       if (cancelled) return;
       const rows = (data as BernardBookEntry[]) || [];
-      // Reuse the dialogue flag-matching semantics for requires_flags/flags_equal.
+      // Per-entry gating: level/social thresholds + the dialogue flag-matching semantics.
       const eligible = rows.filter((r) => {
-        const requires = r.condition?.requires_flags;
+        const c = r.condition;
+        if (typeof c?.min_level === 'number' && currentLevel < c.min_level) return false;
+        if (typeof c?.min_social === 'number' && socialStat < c.min_social) return false;
+        const requires = c?.requires_flags;
         if (!requires) return true;
         const allMatch = Object.keys(requires).every((k) => getFlag(k) === requires[k]);
-        return r.condition?.flags_equal === false ? !allMatch : allMatch;
+        return c?.flags_equal === false ? !allMatch : allMatch;
       });
       setBernardBookEntries(eligible);
     })();
     return () => { cancelled = true; };
-  }, [unlockedPage]);
+  }, [currentLevel, socialStat]);
+
 
   useEffect(() => {
     let cancelled = false;

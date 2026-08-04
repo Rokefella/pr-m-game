@@ -237,8 +237,10 @@ const BernardRoom1 = () => {
     if (Date.now() - lastDialogCloseRef.current < 3000) return;
     const dist = Math.max(Math.abs(pos.col - bernardCell.col), Math.abs(pos.row - bernardCell.row));
     if (dist > 2) return;
+    // Fresh conversation → back to the book graph's entry point.
+    resetBernardBucket();
     setDialogOpen(true);
-  }, [pos, nearBernard, bernardCell, dialogOpen, flagsReady, user]);
+  }, [pos, nearBernard, bernardCell, dialogOpen, flagsReady, user, resetBernardBucket]);
 
   // Bernard pupil offset toward player
   const pupilOffset = nearBernard
@@ -256,17 +258,32 @@ const BernardRoom1 = () => {
     const d = getBernardDialogue();
     if (!d.text) return null;
 
-    const actions: { label: string; onClick: () => void }[] = [];
-    if (d.buttonLabel) {
+    const actions: { label: string; onClick: () => void; primary: boolean }[] = [];
+    const bookOptions = d.options ?? [];
+    if (bookOptions.length) {
+      // Branching book node — up to two option buttons.
+      for (const o of bookOptions) {
+        actions.push({
+          label: o.label.toUpperCase(),
+          primary: true,
+          onClick: () => {
+            o.onSelect();
+            if (o.closes) closeDialog();
+          },
+        });
+      }
+    } else if (d.buttonLabel) {
       actions.push({
         label: d.buttonLabel.toUpperCase(),
+        primary: true,
         onClick: () => {
           d.buttonAction?.();
           closeDialog();
         },
       });
     }
-    actions.push({ label: 'CLOSE', onClick: closeDialog });
+    actions.push({ label: 'CLOSE', onClick: closeDialog, primary: false });
+
 
     return (
       <BernardDialogue text={d.text} onShow={d.onShow}>

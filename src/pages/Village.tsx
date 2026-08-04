@@ -1256,8 +1256,11 @@ const Village = () => {
 
 
   const openBernardDialog = () => {
+    // Always start a fresh conversation at the book graph's entry point.
+    resetBernardBucket();
     setBernardOpen(true);
   };
+
 
 
   // Listen for global "open paywall" event (dispatched from ProfileOverlay etc.)

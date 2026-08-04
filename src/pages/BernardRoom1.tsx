@@ -44,13 +44,13 @@ const isWall = (c: number, r: number) => {
   return false;
 };
 
-type DialogStage = 'intro' | 'whatToLook' | 'fragmentQuest' | 'reportFragment' | 'goldenDoor' | 'returnToVillage' | 'complete' | null;
-
 const BernardRoom1 = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [flagsReady, setFlagsReady] = useState(false);
   const [auraColor, setAuraColor] = useState('#5b4fd4');
+  // Stats feed the shared dialogue hook (level/social gates, credit grants).
+  const [stats, setStats] = useState({ level: 1, social: 0, credits: 0, growthPoints: 0 });
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
@@ -59,13 +59,33 @@ const BernardRoom1 = () => {
       if (!cancelled) setFlagsReady(true);
       try {
         const row = await fetchOrCreateUser(user.id);
-        if (!cancelled && row.aura_color) setAuraColor(row.aura_color);
+        if (cancelled) return;
+        if (row.aura_color) setAuraColor(row.aura_color);
+        const r = row as unknown as { level?: number; social?: number; credits?: number; growth_points?: number };
+        setStats({
+          level: r.level ?? 1,
+          social: r.social ?? 0,
+          credits: r.credits ?? 0,
+          growthPoints: r.growth_points ?? 0,
+        });
       } catch (e) {
         console.error('[BernardRoom1] fetchOrCreateUser failed', e);
       }
     })();
     return () => { cancelled = true; };
   }, [user]);
+
+  // Shared Bernard spine — this room reflects it and never advances it on its own.
+  const { getBernardDialogue } = useBernardDialogue({
+    user,
+    currentLevel: stats.level,
+    socialStat: stats.social,
+    credits: stats.credits,
+    growthPoints: stats.growthPoints,
+    onCreditsChange: (next) => setStats((s) => ({ ...s, credits: next })),
+    onGrowthPointsChange: (next) => setStats((s) => ({ ...s, growthPoints: next })),
+  });
+
   const [pos, setPos] = useState<Cell>(SPAWN);
   const posRef = useRef<Cell>(SPAWN);
   const heldKeysRef = useRef<Set<string>>(new Set());
@@ -79,7 +99,7 @@ const BernardRoom1 = () => {
   const lastWaypointTimeRef = useRef(Date.now());
 
   const [nearBernard, setNearBernard] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState<DialogStage>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const profileOpenRef = useRef(false);
   const [profileOpenDisplay, setProfileOpenDisplay] = useState(false);
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
@@ -88,8 +108,9 @@ const BernardRoom1 = () => {
   const lastDialogCloseRef = useRef(0);
   const closeDialog = useCallback(() => {
     lastDialogCloseRef.current = Date.now();
-    setDialogOpen(null);
+    setDialogOpen(false);
   }, []);
+
 
   // One-time whispers on session entry — no quest-flag side effects here.
 

@@ -2837,28 +2837,6 @@ const Village = () => {
         #{registrationNumber !== null ? String(registrationNumber).padStart(4, '0') : '????'}
       </div>
 
-      {/* TEMPORARY dev perf readout — strip this block once culling perf is confirmed */}
-      {perfEnabled && (
-        <div
-          className="font-mono"
-          style={{
-            position: 'fixed',
-            top: 40,
-            right: 14,
-            zIndex: 400,
-            fontSize: 11,
-            lineHeight: 1.5,
-            textAlign: 'right',
-            color: 'rgba(200,148,58,0.85)',
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
-        >
-          <div>FPS {perfStats.fps}</div>
-          <div>VIS {perfStats.vis}</div>
-          <div>TOT {perfStats.total}</div>
-        </div>
-      )}
 
 
       {devOverlay && (

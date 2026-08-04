@@ -48,6 +48,7 @@ type DynamicVillage = {
   groundTiles: GroundTile[];
   wallTiles?: Rect[];
   furnitureTiles?: Rect[];
+  bookcaseTiles?: Rect[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
   bernardCenter: { x: number; y: number } | null;
@@ -313,6 +314,42 @@ const FurnitureCell = memo(() => (
     <rect x="2" y="3" width="16" height="2.2" rx="1" fill="rgba(200,160,110,0.25)" />
   </svg>
 ));
+
+const BOOKCASE_SPINE_COLORS = ['#8a3a3a', '#3a6a5a', '#c8963a', '#3a4a7a', '#7a5535'];
+
+const BookcaseCell = memo(({ col, row }: { col: number; row: number }) => {
+  // Deterministic per-cell pseudo-random spine layout (stable across re-renders)
+  let seed = (col * 73856093) ^ (row * 19349663);
+  const rand = () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+  const spines: { x: number; w: number; fill: string }[] = [];
+  let x = 2.5;
+  for (let i = 0; i < 9; i++) {
+    const w = 1.2 + rand() * 0.6;
+    if (x + w > 17.4) break;
+    spines.push({ x, w, fill: BOOKCASE_SPINE_COLORS[Math.floor(rand() * BOOKCASE_SPINE_COLORS.length)] });
+    x += w + 0.45;
+  }
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+    >
+      <rect width="20" height="20" fill="rgba(15,18,28,0.3)" />
+      <rect x="1.5" y="2" width="17" height="16" rx="1" fill="#5a3d24" stroke="#7a5535" strokeWidth="0.5" />
+      {spines.map((s) => (
+        <rect key={s.x} x={s.x} y={3.2} width={s.w} height={13.6} fill={s.fill} />
+      ))}
+      <rect x="1.5" y="2" width="17" height="1.3" rx="0.5" fill="rgba(200,160,110,0.3)" />
+    </svg>
+  );
+});
+
+
 
 
 const MAP_W = 2200;

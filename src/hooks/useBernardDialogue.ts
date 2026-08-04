@@ -1,13 +1,29 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getFlag, setFlag } from '@/lib/questFlags';
 import { updateUser } from '@/lib/userData';
+
+export type BernardOption = {
+  label: string;
+  leads_to?: string | null;
+  action_key?: string | null;
+};
+
+export type BernardResolvedOption = {
+  label: string;
+  /** Tap handler — fires the action, walks to leads_to, or closes the dialogue. */
+  onSelect: () => void;
+  /** True when the option is a dead end and the dialogue should close. */
+  closes: boolean;
+};
 
 export type BernardDialogueData = {
   text: string;
   buttonLabel: string | null;
   buttonAction?: () => void;
   onShow?: () => void;
+  /** Branching book options (up to two) when the current node comes from the book graph. */
+  options?: BernardResolvedOption[];
 };
 
 export type BernardStageRow = {
@@ -26,18 +42,28 @@ export type BernardStageRow = {
   } | null;
 };
 
+export type BernardBookCondition = {
+  requires_flags?: Record<string, string>;
+  flags_equal?: boolean;
+  min_level?: number;
+  min_social?: number;
+  min_perception?: number;
+  min_trade?: number;
+} | null;
+
 export type BernardBookEntry = {
   id: string;
   page: number;
   text: string;
   weight: number;
-  condition: {
-    requires_flags?: Record<string, string>;
-    flags_equal?: boolean;
-    min_level?: number;
-    min_social?: number;
-  } | null;
+  bucket_key: string | null;
+  options: BernardOption[] | null;
+  condition: BernardBookCondition;
 };
+
+/** Entry-point buckets for casual conversation. */
+export const BERNARD_QUEST_ROOT = 'quest_intro_root';
+export const BERNARD_CHAR_ROOT = 'char_temper_root';
 
 export type UseBernardDialogueOptions = {
   user: { id: string } | null;
@@ -45,6 +71,10 @@ export type UseBernardDialogueOptions = {
   currentLevel?: number;
   /** Social affinity — drives min_social gates and book page unlocks. */
   socialStat?: number;
+  /** Perception affinity — drives min_perception gates. */
+  perceptionStat?: number;
+  /** Trade affinity — drives min_trade gates. */
+  tradeStat?: number;
   credits?: number;
   growthPoints?: number;
   onCreditsChange?: (next: number) => void;
@@ -53,7 +83,10 @@ export type UseBernardDialogueOptions = {
   onMessage?: (message: string) => void;
   /** Host decides whether the quest can be accepted (subscription gate / paywall). */
   onAcceptAlexandraQuest?: () => void;
+  /** Called when a book option is a dead end — host should close the dialogue. */
+  onCloseDialogue?: () => void;
 };
+
 
 /**
  * Shared Bernard dialogue spine — data-driven stages (npc_dialogue_stages),
@@ -65,6 +98,8 @@ export function useBernardDialogue({
   user,
   currentLevel = 1,
   socialStat = 0,
+  perceptionStat = 0,
+  tradeStat = 0,
   credits = 0,
   growthPoints = 0,
   onCreditsChange,
@@ -72,12 +107,30 @@ export function useBernardDialogue({
   onTitleGranted,
   onMessage,
   onAcceptAlexandraQuest,
+  onCloseDialogue,
 }: UseBernardDialogueOptions) {
   const [bernardStages, setBernardStages] = useState<BernardStageRow[]>([]);
   const [bernardBookEntries, setBernardBookEntries] = useState<BernardBookEntry[]>([]);
   // Forces re-render of Bernard dialogue when quest flags change.
   const [, setFlagsVersion] = useState(0);
   const bumpFlags = useCallback(() => setFlagsVersion((v) => v + 1), []);
+
+  /** Entry point for casual conversation: quest root until the three buildings are done. */
+  const defaultBucket = useCallback((): string => {
+    const done =
+      getFlag('touched_23') === 'true' &&
+      getFlag('touched_47') === 'true' &&
+      getFlag('touched_89') === 'true';
+    return done ? BERNARD_CHAR_ROOT : BERNARD_QUEST_ROOT;
+  }, []);
+
+  // Where in the branching book graph this conversation currently sits.
+  const [currentBucket, setCurrentBucket] = useState<string>(() => defaultBucket());
+
+  /** Reset conversation position — call whenever the dialogue is (re)opened. */
+  const resetBernardBucket = useCallback(() => {
+    setCurrentBucket(defaultBucket());
+  }, [defaultBucket]);
 
   const advanceBernardStage = useCallback(
     async (stage: number) => {
@@ -93,7 +146,7 @@ export function useBernardDialogue({
     (async () => {
       const { data, error } = await supabase
         .from('npc_book_entries')
-        .select('id, page, text, weight, condition')
+        .select('id, page, text, weight, bucket_key, options, condition')
         .eq('npc_key', 'bernard')
         .order('page', { ascending: true });
       if (error) {
@@ -102,11 +155,13 @@ export function useBernardDialogue({
       }
       if (cancelled) return;
       const rows = (data as BernardBookEntry[]) || [];
-      // Per-entry gating: level/social thresholds + the dialogue flag-matching semantics.
+      // Per-entry gating: stat thresholds + the dialogue flag-matching semantics.
       const eligible = rows.filter((r) => {
         const c = r.condition;
         if (typeof c?.min_level === 'number' && currentLevel < c.min_level) return false;
         if (typeof c?.min_social === 'number' && socialStat < c.min_social) return false;
+        if (typeof c?.min_perception === 'number' && perceptionStat < c.min_perception) return false;
+        if (typeof c?.min_trade === 'number' && tradeStat < c.min_trade) return false;
         const requires = c?.requires_flags;
         if (!requires) return true;
         const allMatch = Object.keys(requires).every((k) => getFlag(k) === requires[k]);
@@ -115,7 +170,19 @@ export function useBernardDialogue({
       setBernardBookEntries(eligible);
     })();
     return () => { cancelled = true; };
-  }, [currentLevel, socialStat]);
+  }, [currentLevel, socialStat, perceptionStat, tradeStat]);
+
+  // Eligible entries indexed by bucket_key.
+  const bucketIndex = useMemo(() => {
+    const map: Record<string, BernardBookEntry[]> = {};
+    for (const e of bernardBookEntries) {
+      const key = e.bucket_key || '';
+      if (!key) continue;
+      (map[key] ||= []).push(e);
+    }
+    return map;
+  }, [bernardBookEntries]);
+
 
 
   useEffect(() => {
@@ -144,17 +211,22 @@ export function useBernardDialogue({
     return () => { cancelled = true; };
   }, []);
 
-  const pickBookEntry = (): BernardBookEntry | null => {
-    if (!bernardBookEntries.length) return null;
-    const total = bernardBookEntries.reduce((s, e) => s + Math.max(0, e.weight || 0), 0);
-    if (total <= 0) return bernardBookEntries[Math.floor(Math.random() * bernardBookEntries.length)];
+  // Weighted-random pick within a pool of eligible entries.
+  const pickWeighted = (pool: BernardBookEntry[]): BernardBookEntry | null => {
+    if (!pool.length) return null;
+    const total = pool.reduce((s, e) => s + Math.max(0, e.weight || 0), 0);
+    if (total <= 0) return pool[Math.floor(Math.random() * pool.length)];
     let roll = Math.random() * total;
-    for (const e of bernardBookEntries) {
+    for (const e of pool) {
       roll -= Math.max(0, e.weight || 0);
       if (roll <= 0) return e;
     }
-    return bernardBookEntries[bernardBookEntries.length - 1];
+    return pool[pool.length - 1];
   };
+
+  const pickBookEntry = (): BernardBookEntry | null =>
+    pickWeighted(bucketIndex[currentBucket] || []) ?? pickWeighted(bernardBookEntries);
+
 
   // Evaluates a dialogue row's condition against the current stage + quest flags.
   const conditionsMet = (
@@ -223,7 +295,23 @@ export function useBernardDialogue({
     if (isRevisit) {
       const entry = pickBookEntry();
       // Empty book → fall through to the fixed stage text below.
-      if (entry) return { text: entry.text, buttonLabel: match.button_label };
+      if (entry) {
+        const raw = Array.isArray(entry.options) ? entry.options.slice(0, 2) : [];
+        const options: BernardResolvedOption[] = raw.map((o) => ({
+          label: o.label,
+          closes: !o.leads_to && !o.action_key,
+          onSelect: () => {
+            if (o.action_key) bernardActions[o.action_key]?.();
+            if (o.leads_to) {
+              // Walk deeper into the graph without closing the dialogue.
+              setCurrentBucket(o.leads_to);
+              return;
+            }
+            if (!o.action_key) onCloseDialogue?.();
+          },
+        }));
+        return { text: entry.text, buttonLabel: match.button_label, options };
+      }
     }
 
     return {
@@ -237,12 +325,17 @@ export function useBernardDialogue({
   return {
     bernardStages,
     bernardBookEntries,
+    bucketIndex,
+    currentBucket,
+    setCurrentBucket,
+    resetBernardBucket,
     conditionsMet,
     bernardActions,
     advanceBernardStage,
     getBernardDialogue,
     bumpFlags,
   };
+
 }
 
 export default useBernardDialogue;

@@ -49,8 +49,9 @@ const BernardRoom1 = () => {
   const { user } = useAuth();
   const [flagsReady, setFlagsReady] = useState(false);
   const [auraColor, setAuraColor] = useState('#5b4fd4');
-  // Stats feed the shared dialogue hook (level/social gates, credit grants).
-  const [stats, setStats] = useState({ level: 1, social: 0, credits: 0, growthPoints: 0 });
+  // Stats feed the shared dialogue hook (level/social/perception/trade gates, credit grants).
+  const [stats, setStats] = useState({ level: 1, social: 0, perception: 0, trade: 0, credits: 0, growthPoints: 0 });
+
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
@@ -61,13 +62,16 @@ const BernardRoom1 = () => {
         const row = await fetchOrCreateUser(user.id);
         if (cancelled) return;
         if (row.aura_color) setAuraColor(row.aura_color);
-        const r = row as unknown as { level?: number; social?: number; credits?: number; growth_points?: number };
+        const r = row as unknown as { level?: number; social?: number; perception?: number; trade?: number; credits?: number; growth_points?: number };
         setStats({
           level: r.level ?? 1,
           social: r.social ?? 0,
+          perception: r.perception ?? 0,
+          trade: r.trade ?? 0,
           credits: r.credits ?? 0,
           growthPoints: r.growth_points ?? 0,
         });
+
       } catch (e) {
         console.error('[BernardRoom1] fetchOrCreateUser failed', e);
       }
@@ -76,15 +80,19 @@ const BernardRoom1 = () => {
   }, [user]);
 
   // Shared Bernard spine — this room reflects it and never advances it on its own.
-  const { getBernardDialogue } = useBernardDialogue({
+  const { getBernardDialogue, resetBernardBucket } = useBernardDialogue({
     user,
     currentLevel: stats.level,
     socialStat: stats.social,
+    perceptionStat: stats.perception,
+    tradeStat: stats.trade,
     credits: stats.credits,
     growthPoints: stats.growthPoints,
     onCreditsChange: (next) => setStats((s) => ({ ...s, credits: next })),
     onGrowthPointsChange: (next) => setStats((s) => ({ ...s, growthPoints: next })),
+    onCloseDialogue: () => { lastDialogCloseRef.current = Date.now(); setDialogOpen(false); },
   });
+
 
   const [pos, setPos] = useState<Cell>(SPAWN);
   const posRef = useRef<Cell>(SPAWN);
@@ -229,8 +237,10 @@ const BernardRoom1 = () => {
     if (Date.now() - lastDialogCloseRef.current < 3000) return;
     const dist = Math.max(Math.abs(pos.col - bernardCell.col), Math.abs(pos.row - bernardCell.row));
     if (dist > 2) return;
+    // Fresh conversation → back to the book graph's entry point.
+    resetBernardBucket();
     setDialogOpen(true);
-  }, [pos, nearBernard, bernardCell, dialogOpen, flagsReady, user]);
+  }, [pos, nearBernard, bernardCell, dialogOpen, flagsReady, user, resetBernardBucket]);
 
   // Bernard pupil offset toward player
   const pupilOffset = nearBernard
@@ -248,17 +258,32 @@ const BernardRoom1 = () => {
     const d = getBernardDialogue();
     if (!d.text) return null;
 
-    const actions: { label: string; onClick: () => void }[] = [];
-    if (d.buttonLabel) {
+    const actions: { label: string; onClick: () => void; primary: boolean }[] = [];
+    const bookOptions = d.options ?? [];
+    if (bookOptions.length) {
+      // Branching book node — up to two option buttons.
+      for (const o of bookOptions) {
+        actions.push({
+          label: o.label.toUpperCase(),
+          primary: true,
+          onClick: () => {
+            o.onSelect();
+            if (o.closes) closeDialog();
+          },
+        });
+      }
+    } else if (d.buttonLabel) {
       actions.push({
         label: d.buttonLabel.toUpperCase(),
+        primary: true,
         onClick: () => {
           d.buttonAction?.();
           closeDialog();
         },
       });
     }
-    actions.push({ label: 'CLOSE', onClick: closeDialog });
+    actions.push({ label: 'CLOSE', onClick: closeDialog, primary: false });
+
 
     return (
       <BernardDialogue text={d.text} onShow={d.onShow}>
@@ -269,9 +294,10 @@ const BernardRoom1 = () => {
             onClick={a.onClick}
             className="font-cinzel"
             style={{
-              background: i === 0 && d.buttonLabel ? 'rgba(169,140,255,0.15)' : 'transparent',
+              background: a.primary ? 'rgba(169,140,255,0.15)' : 'transparent',
               border: '0.5px solid rgba(169,140,255,0.4)',
-              color: i === 0 && d.buttonLabel ? '#a98cff' : 'rgba(160,140,200,0.6)',
+              color: a.primary ? '#a98cff' : 'rgba(160,140,200,0.6)',
+
               padding: '8px 18px', fontSize: 16, letterSpacing: '0.3em',
               cursor: 'pointer',
             }}

@@ -3,11 +3,27 @@ import { supabase } from '@/lib/supabase';
 import { getFlag, setFlag } from '@/lib/questFlags';
 import { updateUser } from '@/lib/userData';
 
+export type BernardOption = {
+  label: string;
+  leads_to?: string | null;
+  action_key?: string | null;
+};
+
+export type BernardResolvedOption = {
+  label: string;
+  /** Tap handler — fires the action, walks to leads_to, or closes the dialogue. */
+  onSelect: () => void;
+  /** True when the option is a dead end and the dialogue should close. */
+  closes: boolean;
+};
+
 export type BernardDialogueData = {
   text: string;
   buttonLabel: string | null;
   buttonAction?: () => void;
   onShow?: () => void;
+  /** Branching book options (up to two) when the current node comes from the book graph. */
+  options?: BernardResolvedOption[];
 };
 
 export type BernardStageRow = {
@@ -26,18 +42,28 @@ export type BernardStageRow = {
   } | null;
 };
 
+export type BernardBookCondition = {
+  requires_flags?: Record<string, string>;
+  flags_equal?: boolean;
+  min_level?: number;
+  min_social?: number;
+  min_perception?: number;
+  min_trade?: number;
+} | null;
+
 export type BernardBookEntry = {
   id: string;
   page: number;
   text: string;
   weight: number;
-  condition: {
-    requires_flags?: Record<string, string>;
-    flags_equal?: boolean;
-    min_level?: number;
-    min_social?: number;
-  } | null;
+  bucket_key: string | null;
+  options: BernardOption[] | null;
+  condition: BernardBookCondition;
 };
+
+/** Entry-point buckets for casual conversation. */
+export const BERNARD_QUEST_ROOT = 'quest_intro_root';
+export const BERNARD_CHAR_ROOT = 'char_temper_root';
 
 export type UseBernardDialogueOptions = {
   user: { id: string } | null;
@@ -45,6 +71,10 @@ export type UseBernardDialogueOptions = {
   currentLevel?: number;
   /** Social affinity — drives min_social gates and book page unlocks. */
   socialStat?: number;
+  /** Perception affinity — drives min_perception gates. */
+  perceptionStat?: number;
+  /** Trade affinity — drives min_trade gates. */
+  tradeStat?: number;
   credits?: number;
   growthPoints?: number;
   onCreditsChange?: (next: number) => void;
@@ -53,7 +83,10 @@ export type UseBernardDialogueOptions = {
   onMessage?: (message: string) => void;
   /** Host decides whether the quest can be accepted (subscription gate / paywall). */
   onAcceptAlexandraQuest?: () => void;
+  /** Called when a book option is a dead end — host should close the dialogue. */
+  onCloseDialogue?: () => void;
 };
+
 
 /**
  * Shared Bernard dialogue spine — data-driven stages (npc_dialogue_stages),

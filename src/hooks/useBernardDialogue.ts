@@ -122,6 +122,7 @@ export function useBernardDialogue({
   onMessage,
   onAcceptAlexandraQuest,
   onCloseDialogue,
+  isOpen,
 }: UseBernardDialogueOptions) {
   const [bernardStages, setBernardStages] = useState<BernardStageRow[]>([]);
   const [bernardBookEntries, setBernardBookEntries] = useState<BernardBookEntry[]>([]);

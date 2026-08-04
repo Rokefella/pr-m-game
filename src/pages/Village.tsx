@@ -353,6 +353,49 @@ const BookcaseCell = memo(({ col, row }: { col: number; row: number }) => {
   );
 });
 
+const LightCell = memo(() => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <defs>
+      <radialGradient id="lampGlow" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stopColor="#f4d78a" stopOpacity="0.5" />
+        <stop offset="45%" stopColor="#e8b84a" stopOpacity="0.2" />
+        <stop offset="100%" stopColor="#e8b84a" stopOpacity="0" />
+      </radialGradient>
+    </defs>
+    <ellipse
+      cx="10"
+      cy="10"
+      rx="9"
+      ry="9"
+      fill="url(#lampGlow)"
+      style={{ animation: 'glowPulse 3.2s ease-in-out infinite', transformOrigin: '10px 10px' }}
+    />
+    <rect x="7" y="7" width="6" height="6" rx="1" fill="#3a2f1a" stroke="#7a5535" strokeWidth="0.5" />
+    <rect x="8.5" y="8.3" width="3" height="3.4" rx="0.4" fill="#f4d78a" fillOpacity="0.75" />
+  </svg>
+));
+
+const RugCell = memo(({ trim }: { trim: RugTrim }) => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <rect width="20" height="20" fill="#5a2020" fillOpacity="0.4" />
+    <path d="M10,5 L14,10 L10,15 L6,10 Z" fill="none" stroke="rgba(200,160,110,0.18)" strokeWidth="0.3" />
+    {trim.top && <line x1="0.6" y1="0.6" x2="19.4" y2="0.6" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+    {trim.bottom && <line x1="0.6" y1="19.4" x2="19.4" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+    {trim.left && <line x1="0.6" y1="0.6" x2="0.6" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+    {trim.right && <line x1="19.4" y1="0.6" x2="19.4" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+  </svg>
+));
+
 
 
 

@@ -71,6 +71,39 @@ export type Database = {
         }
         Relationships: []
       }
+      npc_book_entries: {
+        Row: {
+          condition: Json | null
+          created_at: string
+          id: string
+          npc_key: string
+          page: number
+          text: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          condition?: Json | null
+          created_at?: string
+          id?: string
+          npc_key: string
+          page?: number
+          text: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          condition?: Json | null
+          created_at?: string
+          id?: string
+          npc_key?: string
+          page?: number
+          text?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
       player_positions: {
         Row: {
           last_seen: string

@@ -1427,6 +1427,13 @@ const Village = () => {
     console.log('[Village] user row:', row);
     setCurrentLevel(row.level);
     setSocialStatus(((row as unknown as { social?: number }).social) ?? 0);
+    {
+      const r = row as unknown as { social?: number; growth_points?: number; perception?: number; trade?: number };
+      setGrowthPoints(r.growth_points ?? 0);
+      setSocialStat(r.social ?? 0);
+      setPerceptionStat(r.perception ?? 0);
+      setTradeStat(r.trade ?? 0);
+    }
     setCurrentTitle(row.title);
     setOverlaySelectedTitle(row.title);
     setRegistrationNumber(row.registration_number);

@@ -31,7 +31,12 @@ export type BernardBookEntry = {
   page: number;
   text: string;
   weight: number;
-  condition: { requires_flags?: Record<string, string>; flags_equal?: boolean } | null;
+  condition: {
+    requires_flags?: Record<string, string>;
+    flags_equal?: boolean;
+    min_level?: number;
+    min_social?: number;
+  } | null;
 };
 
 export type UseBernardDialogueOptions = {

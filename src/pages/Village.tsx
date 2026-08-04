@@ -27,6 +27,8 @@ const MERCHANT_LINES = [
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type VillageCell = { col: number; row: number; type: string; npc_name?: string };
 type GroundTile = { x: number; y: number; kind: 'PATH' | 'ROAD' | 'SQUARE' | 'LANDMARK' };
+type RugTrim = { top: boolean; bottom: boolean; left: boolean; right: boolean };
+type RugTile = { id: string; x: number; y: number; trim: RugTrim };
 type ClusterKind = 'S' | 'M' | 'L';
 type BuildingCluster = {
   id: string;

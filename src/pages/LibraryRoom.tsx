@@ -538,18 +538,21 @@ const LibraryRoom = () => {
             marginTop: 0,
           }}
         >
-          {/* Grid overlay */}
+          {/* Floor: subtle purple grid-line treatment, sized to the room's gridSize */}
           <div
             style={{
               position: 'absolute',
               inset: 0,
+              background: '#0a0812',
               backgroundImage:
                 'linear-gradient(rgba(100,80,160,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(100,80,160,0.08) 1px, transparent 1px)',
               backgroundSize: '40px 40px',
+              boxShadow: 'inset 0 0 60px rgba(0,0,0,0.6)',
               pointerEvents: 'none',
-              zIndex: 1,
+              zIndex: 0,
             }}
           />
+
 
           {/* Rugs — decorative, non-blocking */}
           {(room.rugTiles ?? []).map((r) => (

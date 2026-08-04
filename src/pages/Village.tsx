@@ -1620,7 +1620,21 @@ const Village = () => {
             ...clusterCells('L', lCells),
           ];
 
-          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
+          // Rug trim: only draw the border on the outer edge of a connected rug area
+          const rugSet = new Set(rugCells.map((c) => `${c.col},${c.row}`));
+          const rugTiles: RugTile[] = rugCells.map((c) => ({
+            id: `rug-${c.col}-${c.row}`,
+            x: c.col * CELL,
+            y: c.row * CELL,
+            trim: {
+              top: !rugSet.has(`${c.col},${c.row - 1}`),
+              bottom: !rugSet.has(`${c.col},${c.row + 1}`),
+              left: !rugSet.has(`${c.col - 1},${c.row}`),
+              right: !rugSet.has(`${c.col + 1},${c.row}`),
+            },
+          }));
+
+          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
 
 
           // Reposition the player once, when the dynamic village loads

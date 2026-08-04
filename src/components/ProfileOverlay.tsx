@@ -966,27 +966,47 @@ const ProfileOverlay = ({
                               width: 28,
                               height: 28,
                               borderRadius: '50%',
-                              background: n === 0 ? a.color : 'transparent',
-                              border: n === 0 ? 'none' : `1px solid ${a.borderRgba}`,
+                              background: n < stats[a.key] ? a.color : 'transparent',
+                              border: n < stats[a.key] ? 'none' : `1px solid ${a.borderRgba}`,
                               display: 'inline-block',
                             }}
                           />
                         ))}
                       </div>
                       <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.3)', margin: 0 }}>
-                        LEVEL 1 / 5
+                        LEVEL {stats[a.key]} / 5
                       </p>
-                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 12, color: 'rgba(160,140,200,0.2)', marginTop: 6 }}>
-                        Further progression locked.
-                      </p>
+                      {growthPoints > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => commitGrowthPoint(a.key)}
+                          disabled={stats[a.key] >= 5}
+                          className="font-cinzel"
+                          style={{
+                            display: 'block',
+                            margin: '12px auto 0',
+                            padding: '8px 16px',
+                            background: 'transparent',
+                            border: `1px solid ${stats[a.key] >= 5 ? 'rgba(160,140,200,0.15)' : a.borderRgba}`,
+                            color: stats[a.key] >= 5 ? 'rgba(160,140,200,0.25)' : a.color,
+                            fontSize: 10,
+                            letterSpacing: '0.2em',
+                            cursor: stats[a.key] >= 5 ? 'default' : 'pointer',
+                          }}
+                        >
+                          COMMIT A GROWTH POINT
+                        </button>
+                      ) : (
+                        <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 12, color: 'rgba(160,140,200,0.25)', marginTop: 8 }}>
+                          No growth points available — earn them by completing quests.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
               );
             })}
-            <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 10, color: 'rgba(160,140,200,0.2)', marginTop: 24 }}>
-              Your affinities emerge through play. They cannot be chosen.
-            </p>
+
           </div>
         )}
       </div>

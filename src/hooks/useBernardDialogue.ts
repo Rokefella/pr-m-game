@@ -98,6 +98,8 @@ export function useBernardDialogue({
   user,
   currentLevel = 1,
   socialStat = 0,
+  perceptionStat = 0,
+  tradeStat = 0,
   credits = 0,
   growthPoints = 0,
   onCreditsChange,
@@ -105,12 +107,30 @@ export function useBernardDialogue({
   onTitleGranted,
   onMessage,
   onAcceptAlexandraQuest,
+  onCloseDialogue,
 }: UseBernardDialogueOptions) {
   const [bernardStages, setBernardStages] = useState<BernardStageRow[]>([]);
   const [bernardBookEntries, setBernardBookEntries] = useState<BernardBookEntry[]>([]);
   // Forces re-render of Bernard dialogue when quest flags change.
   const [, setFlagsVersion] = useState(0);
   const bumpFlags = useCallback(() => setFlagsVersion((v) => v + 1), []);
+
+  /** Entry point for casual conversation: quest root until the three buildings are done. */
+  const defaultBucket = useCallback((): string => {
+    const done =
+      getFlag('touched_23') === 'true' &&
+      getFlag('touched_47') === 'true' &&
+      getFlag('touched_89') === 'true';
+    return done ? BERNARD_CHAR_ROOT : BERNARD_QUEST_ROOT;
+  }, []);
+
+  // Where in the branching book graph this conversation currently sits.
+  const [currentBucket, setCurrentBucket] = useState<string>(() => defaultBucket());
+
+  /** Reset conversation position — call whenever the dialogue is (re)opened. */
+  const resetBernardBucket = useCallback(() => {
+    setCurrentBucket(defaultBucket());
+  }, [defaultBucket]);
 
   const advanceBernardStage = useCallback(
     async (stage: number) => {
@@ -126,7 +146,7 @@ export function useBernardDialogue({
     (async () => {
       const { data, error } = await supabase
         .from('npc_book_entries')
-        .select('id, page, text, weight, condition')
+        .select('id, page, text, weight, bucket_key, options, condition')
         .eq('npc_key', 'bernard')
         .order('page', { ascending: true });
       if (error) {
@@ -135,11 +155,13 @@ export function useBernardDialogue({
       }
       if (cancelled) return;
       const rows = (data as BernardBookEntry[]) || [];
-      // Per-entry gating: level/social thresholds + the dialogue flag-matching semantics.
+      // Per-entry gating: stat thresholds + the dialogue flag-matching semantics.
       const eligible = rows.filter((r) => {
         const c = r.condition;
         if (typeof c?.min_level === 'number' && currentLevel < c.min_level) return false;
         if (typeof c?.min_social === 'number' && socialStat < c.min_social) return false;
+        if (typeof c?.min_perception === 'number' && perceptionStat < c.min_perception) return false;
+        if (typeof c?.min_trade === 'number' && tradeStat < c.min_trade) return false;
         const requires = c?.requires_flags;
         if (!requires) return true;
         const allMatch = Object.keys(requires).every((k) => getFlag(k) === requires[k]);
@@ -148,7 +170,19 @@ export function useBernardDialogue({
       setBernardBookEntries(eligible);
     })();
     return () => { cancelled = true; };
-  }, [currentLevel, socialStat]);
+  }, [currentLevel, socialStat, perceptionStat, tradeStat]);
+
+  // Eligible entries indexed by bucket_key.
+  const bucketIndex = useMemo(() => {
+    const map: Record<string, BernardBookEntry[]> = {};
+    for (const e of bernardBookEntries) {
+      const key = e.bucket_key || '';
+      if (!key) continue;
+      (map[key] ||= []).push(e);
+    }
+    return map;
+  }, [bernardBookEntries]);
+
 
 
   useEffect(() => {

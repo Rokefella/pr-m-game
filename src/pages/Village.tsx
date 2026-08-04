@@ -938,6 +938,10 @@ const Village = () => {
   };
   const [currentLevel, setCurrentLevel] = useState(1);
   const [socialStatus, setSocialStatus] = useState(0);
+  const [growthPoints, setGrowthPoints] = useState(0);
+  const [socialStat, setSocialStat] = useState(0);
+  const [perceptionStat, setPerceptionStat] = useState(0);
+  const [tradeStat, setTradeStat] = useState(0);
   const currentLevelRef = useRef(1);
   useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
   const [currentTitle, setCurrentTitle] = useState('');
@@ -1119,7 +1123,7 @@ const Village = () => {
     if (condition.stage !== stage) return false;
     // Numeric-threshold gates — independent of the flag checks below.
     if (typeof condition.min_level === 'number' && currentLevel < condition.min_level) return false;
-    if (typeof condition.min_social === 'number' && socialStatus < condition.min_social) return false;
+    if (typeof condition.min_social === 'number' && socialStat < condition.min_social) return false;
     const requires = condition.requires_flags;
     if (!requires) return true;
     const keys = Object.keys(requires);
@@ -1136,6 +1140,13 @@ const Village = () => {
       setCredits(next);
       updateUser(user.id, { credits: next });
       advanceBernardStage(2);
+    },
+    grant_growth_point_1: () => {
+      if (!user) return;
+      const nextGp = growthPoints + 1;
+      setGrowthPoints(nextGp);
+      updateUser(user.id, { growth_points: nextGp } as never);
+      advanceBernardStage(3);
     },
     grant_wanderer_title: async () => {
       if (!user) return;
@@ -1423,6 +1434,13 @@ const Village = () => {
     console.log('[Village] user row:', row);
     setCurrentLevel(row.level);
     setSocialStatus(((row as unknown as { social?: number }).social) ?? 0);
+    {
+      const r = row as unknown as { social?: number; growth_points?: number; perception?: number; trade?: number };
+      setGrowthPoints(r.growth_points ?? 0);
+      setSocialStat(r.social ?? 0);
+      setPerceptionStat(r.perception ?? 0);
+      setTradeStat(r.trade ?? 0);
+    }
     setCurrentTitle(row.title);
     setOverlaySelectedTitle(row.title);
     setRegistrationNumber(row.registration_number);
@@ -3352,7 +3370,15 @@ const Village = () => {
         );
       })()}
 
-      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} context="village" />
+      <ProfileOverlay
+        isOpen={profileOpenDisplay}
+        onClose={closeProfile}
+        context="village"
+        growthPoints={growthPoints}
+        socialStat={socialStat}
+        perceptionStat={perceptionStat}
+        tradeStat={tradeStat}
+      />
 
       {paywallOpen && (
         <PaywallOverlay

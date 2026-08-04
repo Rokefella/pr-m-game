@@ -13,6 +13,10 @@ type Props = {
   onClose: () => void;
   context?: 'village' | 'maze';
   runProgress?: { collected: number; required: number };
+  growthPoints?: number;
+  socialStat?: number;
+  perceptionStat?: number;
+  tradeStat?: number;
 };
 
 type SubStatus = 'dev' | 'trial' | 'active' | 'lifetime' | 'beta' | 'expired' | string;
@@ -34,11 +38,37 @@ type AccountUserRow = {
   avatar_head: string | null;
 };
 
-const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: Props) => {
+const ProfileOverlay = ({
+  isOpen,
+  onClose,
+  context = 'village',
+  runProgress,
+  growthPoints: growthPointsProp = 0,
+  socialStat: socialStatProp = 0,
+  perceptionStat: perceptionStatProp = 0,
+  tradeStat: tradeStatProp = 0,
+}: Props) => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const [mainTab, setMainTab] = useState<'profile' | 'quests' | 'account' | 'growth' | 'folder'>('profile');
   const [growthOpen, setGrowthOpen] = useState<{ social: boolean; perception: boolean; trade: boolean }>({ social: false, perception: false, trade: false });
+  const [growthPoints, setGrowthPoints] = useState(growthPointsProp);
+  const [stats, setStats] = useState({ social: socialStatProp, perception: perceptionStatProp, trade: tradeStatProp });
+  useEffect(() => { setGrowthPoints(growthPointsProp); }, [growthPointsProp]);
+  useEffect(() => {
+    setStats({ social: socialStatProp, perception: perceptionStatProp, trade: tradeStatProp });
+  }, [socialStatProp, perceptionStatProp, tradeStatProp]);
+
+  const commitGrowthPoint = (key: 'social' | 'perception' | 'trade') => {
+    if (!user) return;
+    if (growthPoints <= 0 || stats[key] >= 5) return;
+    const nextGp = growthPoints - 1;
+    const nextVal = stats[key] + 1;
+    setGrowthPoints(nextGp);
+    setStats((s) => ({ ...s, [key]: nextVal }));
+    updateUser(user.id, { growth_points: nextGp, [key]: nextVal } as never);
+  };
+
   const [folderFragments, setFolderFragments] = useState<Array<{ id: string; prime_number: number }>>([]);
   const [folderTooltip, setFolderTooltip] = useState<string | null>(null);
   const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
@@ -936,27 +966,47 @@ const ProfileOverlay = ({ isOpen, onClose, context = 'village', runProgress }: P
                               width: 28,
                               height: 28,
                               borderRadius: '50%',
-                              background: n === 0 ? a.color : 'transparent',
-                              border: n === 0 ? 'none' : `1px solid ${a.borderRgba}`,
+                              background: n < stats[a.key] ? a.color : 'transparent',
+                              border: n < stats[a.key] ? 'none' : `1px solid ${a.borderRgba}`,
                               display: 'inline-block',
                             }}
                           />
                         ))}
                       </div>
                       <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.3)', margin: 0 }}>
-                        LEVEL 1 / 5
+                        LEVEL {stats[a.key]} / 5
                       </p>
-                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 12, color: 'rgba(160,140,200,0.2)', marginTop: 6 }}>
-                        Further progression locked.
-                      </p>
+                      {growthPoints > 0 ? (
+                        <button
+                          type="button"
+                          onClick={() => commitGrowthPoint(a.key)}
+                          disabled={stats[a.key] >= 5}
+                          className="font-cinzel"
+                          style={{
+                            display: 'block',
+                            margin: '12px auto 0',
+                            padding: '8px 16px',
+                            background: 'transparent',
+                            border: `1px solid ${stats[a.key] >= 5 ? 'rgba(160,140,200,0.15)' : a.borderRgba}`,
+                            color: stats[a.key] >= 5 ? 'rgba(160,140,200,0.25)' : a.color,
+                            fontSize: 10,
+                            letterSpacing: '0.2em',
+                            cursor: stats[a.key] >= 5 ? 'default' : 'pointer',
+                          }}
+                        >
+                          COMMIT A GROWTH POINT
+                        </button>
+                      ) : (
+                        <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 12, color: 'rgba(160,140,200,0.25)', marginTop: 8 }}>
+                          No growth points available — earn them by completing quests.
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
               );
             })}
-            <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 10, color: 'rgba(160,140,200,0.2)', marginTop: 24 }}>
-              Your affinities emerge through play. They cannot be chosen.
-            </p>
+
           </div>
         )}
       </div>

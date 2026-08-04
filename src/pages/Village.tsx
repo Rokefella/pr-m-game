@@ -48,6 +48,7 @@ type DynamicVillage = {
   groundTiles: GroundTile[];
   wallTiles?: Rect[];
   furnitureTiles?: Rect[];
+  bookcaseTiles?: Rect[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
   bernardCenter: { x: number; y: number } | null;
@@ -313,6 +314,42 @@ const FurnitureCell = memo(() => (
     <rect x="2" y="3" width="16" height="2.2" rx="1" fill="rgba(200,160,110,0.25)" />
   </svg>
 ));
+
+const BOOKCASE_SPINE_COLORS = ['#8a3a3a', '#3a6a5a', '#c8963a', '#3a4a7a', '#7a5535'];
+
+const BookcaseCell = memo(({ col, row }: { col: number; row: number }) => {
+  // Deterministic per-cell pseudo-random spine layout (stable across re-renders)
+  let seed = (col * 73856093) ^ (row * 19349663);
+  const rand = () => {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  };
+  const spines: { x: number; w: number; fill: string }[] = [];
+  let x = 2.5;
+  for (let i = 0; i < 9; i++) {
+    const w = 1.2 + rand() * 0.6;
+    if (x + w > 17.4) break;
+    spines.push({ x, w, fill: BOOKCASE_SPINE_COLORS[Math.floor(rand() * BOOKCASE_SPINE_COLORS.length)] });
+    x += w + 0.45;
+  }
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+    >
+      <rect width="20" height="20" fill="rgba(15,18,28,0.3)" />
+      <rect x="1.5" y="2" width="17" height="16" rx="1" fill="#5a3d24" stroke="#7a5535" strokeWidth="0.5" />
+      {spines.map((s) => (
+        <rect key={s.x} x={s.x} y={3.2} width={s.w} height={13.6} fill={s.fill} />
+      ))}
+      <rect x="1.5" y="2" width="17" height="1.3" rx="0.5" fill="rgba(200,160,110,0.3)" />
+    </svg>
+  );
+});
+
+
 
 
 const MAP_W = 2200;
@@ -1437,6 +1474,7 @@ const Village = () => {
         const groundTiles: GroundTile[] = [];
         const wallTiles: Rect[] = [];
         const furnitureTiles: Rect[] = [];
+        const bookcaseTiles: Rect[] = [];
         const npcs: { x: number; y: number; name: string }[] = [];
 
         let eyeCenter: { x: number; y: number } | null = null;
@@ -1494,6 +1532,9 @@ const Village = () => {
             case 'FURNITURE':
               furnitureTiles.push({ id: `furn-${cell.col}-${cell.row}`, x, y, w: 20, h: 20 });
               break;
+            case 'BOOKCASE':
+              bookcaseTiles.push({ id: `book-${cell.col}-${cell.row}`, x, y, w: 20, h: 20 });
+              break;
 
             default:
               break;
@@ -1524,7 +1565,7 @@ const Village = () => {
             ...clusterCells('L', lCells),
           ];
 
-          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
+          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
 
 
           // Reposition the player once, when the dynamic village loads
@@ -1710,6 +1751,7 @@ const Village = () => {
             ...dynamicBuildings.typeC,
             ...(dynamicBuildings.wallTiles ?? []),
             ...(dynamicBuildings.furnitureTiles ?? []),
+            ...(dynamicBuildings.bookcaseTiles ?? []),
           ]
         : OBSTACLES,
     [dynamicBuildings],
@@ -2006,6 +2048,7 @@ const Village = () => {
       groundTiles: dynamicBuildings.groundTiles.filter((g) => inBox(g.x, g.y)),
       wallTiles: (dynamicBuildings.wallTiles ?? []).filter((w) => inBox(w.x, w.y)),
       furnitureTiles: (dynamicBuildings.furnitureTiles ?? []).filter((f) => inBox(f.x, f.y)),
+      bookcaseTiles: (dynamicBuildings.bookcaseTiles ?? []).filter((b) => inBox(b.x, b.y)),
       npcs: dynamicBuildings.npcs.filter((n) => inBox(n.x, n.y, 6, 6)),
       typeA: dynamicBuildings.typeA.filter((b) => inBox(b.x, b.y, b.w, b.h)),
     };
@@ -2313,6 +2356,14 @@ const Village = () => {
             style={{ position: 'absolute', left: f.x, top: f.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 3 }}
           >
             <FurnitureCell />
+          </div>
+        ))}
+        {visible?.bookcaseTiles.map((b) => (
+          <div
+            key={`book-${b.x}-${b.y}`}
+            style={{ position: 'absolute', left: b.x, top: b.y, width: 20, height: 20, pointerEvents: 'none', zIndex: 3 }}
+          >
+            <BookcaseCell col={Math.round(b.x / 20)} row={Math.round(b.y / 20)} />
           </div>
         ))}
 

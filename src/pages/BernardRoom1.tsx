@@ -294,9 +294,10 @@ const BernardRoom1 = () => {
             onClick={a.onClick}
             className="font-cinzel"
             style={{
-              background: i === 0 && d.buttonLabel ? 'rgba(169,140,255,0.15)' : 'transparent',
+              background: a.primary ? 'rgba(169,140,255,0.15)' : 'transparent',
               border: '0.5px solid rgba(169,140,255,0.4)',
-              color: i === 0 && d.buttonLabel ? '#a98cff' : 'rgba(160,140,200,0.6)',
+              color: a.primary ? '#a98cff' : 'rgba(160,140,200,0.6)',
+
               padding: '8px 18px', fontSize: 16, letterSpacing: '0.3em',
               cursor: 'pointer',
             }}

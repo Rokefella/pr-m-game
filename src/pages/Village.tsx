@@ -1043,6 +1043,7 @@ const Village = () => {
     getBernardDialogue,
     bumpFlags,
     resetBernardBucket,
+    resolvedDialogue,
   } = useBernardDialogue({
     user,
     currentLevel,
@@ -1051,6 +1052,7 @@ const Village = () => {
     tradeStat,
     credits,
     growthPoints,
+    isOpen: bernardOpen,
     onCreditsChange: setCredits,
     onGrowthPointsChange: setGrowthPoints,
     onCloseDialogue: () => setBernardOpen(false),

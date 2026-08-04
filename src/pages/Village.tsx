@@ -1231,6 +1231,15 @@ const Village = () => {
       bernardStages.find((row) => conditionsMet(stage, row.condition, f)) ??
       bernardStages.find((row) => row.stage_key === 'stage_6_followup');
     if (!match) return { text: '', buttonLabel: null };
+
+    // A revisit = the matched stage neither advances the spine nor grants anything.
+    const isRevisit = !match.button_action_key && !match.on_show_action_key;
+    if (isRevisit) {
+      const entry = pickBookEntry();
+      // Empty book → fall through to the fixed stage text below.
+      if (entry) return { text: entry.text, buttonLabel: match.button_label };
+    }
+
     return {
       text: match.text,
       buttonLabel: match.button_label,

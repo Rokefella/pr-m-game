@@ -49,6 +49,8 @@ type DynamicVillage = {
   wallTiles?: Rect[];
   furnitureTiles?: Rect[];
   bookcaseTiles?: Rect[];
+  lightTiles?: Rect[];
+  rugTiles?: RugTile[];
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
   bernardCenter: { x: number; y: number } | null;

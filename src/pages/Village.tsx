@@ -1674,8 +1674,7 @@ const Village = () => {
     if (a.id === 23) {
       if (user) void setFlag(user.id, 'touched_23', 'true');
       const lv = currentLevelRef.current;
-      // TEMP: lowered for testing, revert to lv < 3 before release
-      if (lv < 1) {
+      if (lv < 3) {
         showLockWhisper('The Library opens later.');
         return true;
       }
@@ -2012,46 +2011,6 @@ const Village = () => {
     };
   }, [dynamicBuildings, cullQx, cullQy, view.w, view.h]);
 
-  // ===== TEMPORARY DEV PERF READOUT — remove once culling perf is confirmed =====
-  const perfEnabled =
-    registrationNumber === 1 ||
-    new URLSearchParams(window.location.search).get('dev') === '1';
-  const [perfStats, setPerfStats] = useState({ fps: 0, vis: 0, total: 0 });
-  const perfCountsRef = useRef({ vis: 0, total: 0 });
-  perfCountsRef.current = {
-    vis: visible
-      ? visible.forest.length + visible.groundTiles.length + visible.clusters.length +
-        visible.npcs.length + visible.typeA.length
-      : 0,
-    total: dynamicBuildings
-      ? dynamicBuildings.forest.length + dynamicBuildings.groundTiles.length +
-        dynamicBuildings.clusters.length + dynamicBuildings.npcs.length +
-        dynamicBuildings.typeA.length
-      : 0,
-  };
-  useEffect(() => {
-    if (!perfEnabled) return;
-    let raf = 0;
-    let frames = 0;
-    let last = performance.now();
-    const tick = () => {
-      frames++;
-      const now = performance.now();
-      if (now - last >= 1000) {
-        setPerfStats({
-          fps: Math.round((frames * 1000) / (now - last)),
-          vis: perfCountsRef.current.vis,
-          total: perfCountsRef.current.total,
-        });
-        frames = 0;
-        last = now;
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [perfEnabled]);
-  // ===== END TEMPORARY DEV PERF READOUT =====
 
 
   useEffect(() => {

@@ -80,7 +80,7 @@ const BernardDialogue = ({ text, children, onShow }: Props) => {
             </div>
           )}
           <img
-            src={bernardImg}
+            src={bernardMarker}
             alt="Bernard"
             style={{
               height: 280,

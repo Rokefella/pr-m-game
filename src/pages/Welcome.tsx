@@ -39,7 +39,7 @@ const Welcome = () => {
         <button
           type="button"
           className="font-cinzel mt-16"
-          onClick={() => navigate('/entity-questions')}
+          onClick={() => navigate('/intro')}
           style={{
             fontSize: 14,
             letterSpacing: '0.3em',

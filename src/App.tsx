@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index.tsx";
-import EntityQuestions from "./pages/EntityQuestions.tsx";
+
 import ProfileSetup from "./pages/ProfileSetup.tsx";
 import Village from "./pages/Village.tsx";
 import Door from "./pages/Door.tsx";
@@ -37,7 +37,7 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/welcome" element={<Welcome />} />
-            <Route path="/entity-questions" element={<EntityQuestions />} />
+            
             <Route path="/intro" element={<Intro />} />
             <Route path="/profile-setup" element={<ProfileSetup />} />
             <Route path="/village" element={<Village />} />

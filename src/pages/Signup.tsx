@@ -44,7 +44,7 @@ const Signup = () => {
       setError('Signup failed. Please try again.');
       return;
     }
-    navigate('/welcome');
+    navigate('/intro');
   };
 
   return (

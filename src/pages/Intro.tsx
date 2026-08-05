@@ -45,25 +45,27 @@ const Intro = () => {
       style={{ backgroundColor: '#000000', cursor: 'pointer', outline: 'none' }}
     >
       <div key={index} className="relative z-10 flex flex-col items-center text-center animate-fade-in">
-        <img
-          src={screen.sigil}
-          alt=""
-          aria-hidden="true"
-          style={{
-            width: 132,
-            height: 132,
-            objectFit: 'contain',
-            animation: 'introPulse 4.5s ease-in-out infinite',
-          }}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
-          }}
-        />
+        {screen.sigil && (
+          <img
+            src={screen.sigil}
+            alt=""
+            aria-hidden="true"
+            style={{
+              width: 132,
+              height: 132,
+              objectFit: 'contain',
+              animation: 'introPulse 4.5s ease-in-out infinite',
+            }}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+            }}
+          />
+        )}
         <p
           className="font-fell italic"
           style={{
-            marginTop: 44,
-            maxWidth: 520,
+            marginTop: screen.sigil ? 44 : 0,
+            maxWidth: screen.sigil ? 520 : 640,
             fontSize: 22,
             lineHeight: 1.7,
             color: '#e0ddd5',
@@ -72,6 +74,19 @@ const Intro = () => {
         >
           {screen.text}
         </p>
+        {screen.attribution && (
+          <p
+            className="font-fell italic"
+            style={{
+              marginTop: 28,
+              fontSize: 14,
+              color: 'rgba(160,140,200,0.5)',
+              letterSpacing: '0.05em',
+            }}
+          >
+            {screen.attribution}
+          </p>
+        )}
       </div>
 
       {/* Progress */}

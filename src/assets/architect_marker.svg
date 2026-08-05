@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 24 24">
+  <style>
+    .flame-pulse { animation: flamePulse-architect 3.6s ease-in-out infinite; transform-origin: 12px 12px; }
+    @keyframes flamePulse-architect {
+      0%, 100% { opacity: 0.85; transform: scale(0.97); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+  </style>
+  <defs>
+    <radialGradient id="glow-architect" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#8a1a1a" stop-opacity="0.4"/>
+      <stop offset="55%" stop-color="#5a5a68" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#5a5a68" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="body-architect" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#c8c8d0"/>
+      <stop offset="45%" stop-color="#5a5a68"/>
+      <stop offset="100%" stop-color="#1a1a20"/>
+    </radialGradient>
+  </defs>
+  <g class="flame-pulse">
+    <circle cx="12" cy="12" r="11" fill="url(#glow-architect)"/>
+    <path d="M12,4 C15,6 16.5,9 15,12.5 C14,15 12.8,15.5 12,16 C11.2,15.5 10,15 9,12.5 C7.5,9 9,6 12,4 Z"
+          fill="url(#body-architect)" stroke="rgba(255,255,255,0.3)" stroke-width="0.3"/>
+    <path d="M12,7 C13.3,8.2 13.8,9.8 13,11.5 C12.5,12.6 12.2,12.9 12,13.1 C11.8,12.9 11.5,12.6 11,11.5 C10.2,9.8 10.7,8.2 12,7 Z"
+          fill="#8a1a1a" fill-opacity="0.5"/>
+    <circle cx="10.7" cy="10.5" r="0.55" fill="#8a1a1a"/>
+    <circle cx="13.3" cy="10.5" r="0.55" fill="#8a1a1a"/>
+    <path d="M12,17 L13.2,20 L12,19.2 L10.8,20 Z" fill="#5a5a68" fill-opacity="0.7"/><circle cx="12" cy="17" r="0.35" fill="#5a5a68"/>
+  </g>
+</svg>

@@ -21,7 +21,7 @@ const STARS = [
   { x: '85%', y: '25%', size: 1, opacity: 0.25, duration: 6.5, delay: 1.8 },
 ];
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -30,6 +30,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const redirecting = useRef(false);
+  const [redirectChecked, setRedirectChecked] = useState(false);
 
   const resolveDestination = async () => {
     if (loading) return;
@@ -52,9 +53,11 @@ const Index = () => {
   useEffect(() => {
     if (loading || redirecting.current) return;
     redirecting.current = true;
-    resolveDestination().catch(() => {
-      redirecting.current = false;
-    });
+    resolveDestination()
+      .catch(() => {
+        redirecting.current = false;
+      })
+      .finally(() => setRedirectChecked(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, user]);
 

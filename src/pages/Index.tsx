@@ -21,6 +21,7 @@ const STARS = [
   { x: '85%', y: '25%', size: 1, opacity: 0.25, duration: 6.5, delay: 1.8 },
 ];
 
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -28,12 +29,12 @@ import { supabase } from '@/lib/supabase';
 const Index = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const redirecting = useRef(false);
 
-  const handleEnter = async () => {
-    console.log('[handleEnter] user.id:', user?.id);
+  const resolveDestination = async () => {
     if (loading) return;
     if (!user) {
-      navigate('/signup');
+      navigate('/login', { replace: true });
       return;
     }
     const { data } = await supabase
@@ -41,12 +42,27 @@ const Index = () => {
       .select('entity_answer, username')
       .eq('id', user.id)
       .maybeSingle();
-    console.log('[handleEnter] supabase data:', data);
     if (!data || (!data.entity_answer && !data.username)) {
-      navigate('/entity-questions');
+      navigate('/welcome', { replace: true });
     } else {
-      navigate('/village');
+      navigate('/village', { replace: true });
     }
+  };
+
+  useEffect(() => {
+    if (loading || redirecting.current) return;
+    redirecting.current = true;
+    resolveDestination().catch(() => {
+      redirecting.current = false;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, user]);
+
+  const handleEnter = () => {
+    redirecting.current = true;
+    resolveDestination().catch(() => {
+      redirecting.current = false;
+    });
   };
 
   let filledIndex = 0;

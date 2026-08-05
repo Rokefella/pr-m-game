@@ -2715,19 +2715,7 @@ const Village = () => {
             maxWidth: 'min(720px, 84vw)',
           }}
         >
-          <p
-            className="font-fell italic"
-            style={{
-              textAlign: 'center',
-              fontSize: 20,
-              lineHeight: 1.5,
-              color: 'rgba(160,140,200,0.75)',
-              textShadow: '0 0 16px rgba(100,80,180,0.35)',
-              margin: 0,
-            }}
-          >
-            You will now enter The Instrument PRÆM. Numbers answer to nothing but themselves. And One. Remember where you came from. It guides your flow. Now enter The Instrument PRÆM to become part of it.
-          </p>
+          
           <div
             className="font-cinzel"
             style={{

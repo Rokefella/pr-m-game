@@ -2909,6 +2909,34 @@ const Village = () => {
         #{registrationNumber !== null ? String(registrationNumber).padStart(4, '0') : '????'}
       </div>
 
+      {/* Unspent growth points — top-right, below the registration number */}
+      {growthPoints > 0 && (
+        <div
+          className="font-mono"
+          style={{
+            position: 'fixed',
+            top: 40,
+            right: 14,
+            minWidth: 26,
+            padding: '3px 8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(200,150,58,0.16)',
+            border: '0.5px solid rgba(200,150,58,0.55)',
+            color: '#c8963a',
+            fontSize: 14,
+            letterSpacing: '0.12em',
+            zIndex: 15,
+            pointerEvents: 'none',
+            userSelect: 'none',
+          }}
+        >
+          +{growthPoints}
+        </div>
+      )}
+
+
 
 
       {devOverlay && (

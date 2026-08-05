@@ -238,6 +238,9 @@ export function useBernardDialogue({
     return () => { cancelled = true; };
   }, []);
 
+  // Node keys already shown during this conversation visit (in-memory only).
+  const shownNodeKeys = useRef<Set<string>>(new Set());
+
   // Weighted-random pick within a pool of eligible entries.
   const pickWeighted = (pool: BernardBookEntry[]): BernardBookEntry | null => {
     if (!pool.length) return null;
@@ -251,8 +254,17 @@ export function useBernardDialogue({
     return pool[pool.length - 1];
   };
 
+  /** Prefer unseen entries; only repeat when the whole pool has been shown. */
+  const pickFresh = (pool: BernardBookEntry[]): BernardBookEntry | null => {
+    const unseen = pool.filter((e) => !e.node_key || !shownNodeKeys.current.has(e.node_key));
+    const picked = pickWeighted(unseen.length ? unseen : pool);
+    if (picked?.node_key) shownNodeKeys.current.add(picked.node_key);
+    return picked;
+  };
+
   const pickBookEntry = (): BernardBookEntry | null =>
-    pickWeighted(bucketIndex[currentBucket] || []) ?? pickWeighted(bernardBookEntries);
+    pickFresh(bucketIndex[currentBucket] || []) ?? pickFresh(bernardBookEntries);
+
 
 
   // Evaluates a dialogue row's condition against the current stage + quest flags.

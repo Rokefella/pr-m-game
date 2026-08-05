@@ -883,6 +883,28 @@ const Village = () => {
   const [villageLoading, setVillageLoading] = useState(true);
   const villageLoadingRef = useRef(true);
   useEffect(() => { villageLoadingRef.current = villageLoading; }, [villageLoading]);
+  const villageLoadingStartRef = useRef(Date.now());
+  const villageLoadingTimerRef = useRef<number | null>(null);
+  const beginVillageLoading = () => {
+    villageLoadingStartRef.current = Date.now();
+    if (villageLoadingTimerRef.current) {
+      window.clearTimeout(villageLoadingTimerRef.current);
+      villageLoadingTimerRef.current = null;
+    }
+    setVillageLoading(true);
+  };
+  const finishVillageLoading = () => {
+    if (villageLoadingTimerRef.current) return;
+    const remaining = Math.max(0, 6000 - (Date.now() - villageLoadingStartRef.current));
+    if (remaining > 0) {
+      villageLoadingTimerRef.current = window.setTimeout(() => {
+        villageLoadingTimerRef.current = null;
+        setVillageLoading(false);
+      }, remaining);
+    } else {
+      setVillageLoading(false);
+    }
+  };
   const dynSpawnDoneRef = useRef(false);
   const moveRef = useRef<(dx: number, dy: number) => void>(() => {});
 
@@ -1413,7 +1435,7 @@ const Village = () => {
     let cancelled = false;
 
     const loadVillage = async () => {
-      setVillageLoading(true);
+      beginVillageLoading();
       try {
         const { data: villageRow } = await supabase
           .from('special_locations' as never)
@@ -1423,7 +1445,7 @@ const Village = () => {
           .maybeSingle();
 
         if (cancelled || !villageRow) {
-          if (!cancelled) setVillageLoading(false);
+          if (!cancelled) finishVillageLoading();
           return;
         }
         const vData = (villageRow as {
@@ -1436,7 +1458,7 @@ const Village = () => {
         })?.data;
         const cells = vData?.extraCells ?? [];
         if (!Array.isArray(cells) || cells.length === 0) {
-          if (!cancelled) setVillageLoading(false);
+          if (!cancelled) finishVillageLoading();
           return;
         }
 
@@ -1579,11 +1601,11 @@ const Village = () => {
             playerTargetRef.current = sp;
             setPlayer(sp);
           }
-          setVillageLoading(false);
+          finishVillageLoading();
         }
 
       } catch (e) {
-        if (!cancelled) setVillageLoading(false);
+        if (!cancelled) finishVillageLoading();
         console.warn('[Village] dynamic layout load failed', e);
       }
     };

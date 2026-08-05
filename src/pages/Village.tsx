@@ -12,6 +12,7 @@ import CharacterEye from '@/components/CharacterEye';
 import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { supabase } from '@/lib/supabase';
 import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
+import bernardMarkerUrl from '@/assets/bernard_marker.svg';
 import { useBernardDialogue, type BernardDialogueData } from '@/hooks/useBernardDialogue';
 
 

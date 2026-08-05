@@ -58,7 +58,7 @@ const EntityQuestions = () => {
         aura_color: color,
       });
     }
-    navigate('/profile-setup');
+    navigate('/intro');
   };
 
   const current = QUESTIONS[step];

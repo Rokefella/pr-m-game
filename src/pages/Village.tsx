@@ -3379,10 +3379,12 @@ const Village = () => {
                 background: 'rgba(200,150,58,0.18)',
                 border: '0.5px solid rgba(200,150,58,0.5)',
                 color: '#c8963a',
-                padding: '8px 18px',
+                padding: '10px 14px',
                 fontSize: 20,
-                letterSpacing: '0.3em',
+                letterSpacing: '0.02em',
                 cursor: 'pointer',
+                width: '100%',
+                boxSizing: 'border-box',
               }}
             >
               {resolvedDialogue.buttonLabel.toUpperCase()}

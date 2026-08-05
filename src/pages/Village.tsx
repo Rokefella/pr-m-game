@@ -3340,15 +3340,6 @@ const Village = () => {
         />
       )}
 
-      {/* Bernard bell-ring keyframe */}
-      <style>{`
-        @keyframes bernardBellRing {
-          0% { transform: scale(1); opacity: 1; }
-          80% { transform: scale(2.4); opacity: 0; }
-          100% { transform: scale(1); opacity: 0; }
-        }
-      `}</style>
-
       {/* Bernard dialogue overlay */}
       {bernardOpen && resolvedDialogue && (
         <BernardDialogue text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>

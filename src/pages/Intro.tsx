@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const SCREENS: { sigil: string; text: string }[] = [
+const QUOTE =
+  '“When atoms move straight downward through the void, at a time and place that cannot be foreseen, they swerve a little from their course — just enough to call it a change of direction.”';
+
+const SCREENS: { sigil?: string; text: string; attribution?: string }[] = [
+  { text: QUOTE, attribution: '— Lucretius, De Rerum Natura, Book II' },
   { sigil: '/assets/sigils/01-fire.svg', text: 'First, there was fire.' },
   { sigil: '/assets/sigils/02-gods.svg', text: 'Man could not explain it. So man made Gods.' },
   { sigil: '/assets/sigils/03-atoms.svg', text: 'Then man looked closer. Gods became atoms.' },
@@ -12,7 +16,6 @@ const SCREENS: { sigil: string; text: string }[] = [
   },
   { sigil: '/assets/sigils/06-swerve.svg', text: 'The further we reach, the less certain we become.' },
   { sigil: '/assets/sigils/07-praem.svg', text: 'This is where PRÆM begins.' },
-  { sigil: '/assets/sigils/08-instrument.svg', text: 'You will now enter The Instrument PRÆM.' },
 ];
 
 const Intro = () => {
@@ -42,25 +45,27 @@ const Intro = () => {
       style={{ backgroundColor: '#000000', cursor: 'pointer', outline: 'none' }}
     >
       <div key={index} className="relative z-10 flex flex-col items-center text-center animate-fade-in">
-        <img
-          src={screen.sigil}
-          alt=""
-          aria-hidden="true"
-          style={{
-            width: 132,
-            height: 132,
-            objectFit: 'contain',
-            animation: 'introPulse 4.5s ease-in-out infinite',
-          }}
-          onError={(e) => {
-            (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
-          }}
-        />
+        {screen.sigil && (
+          <img
+            src={screen.sigil}
+            alt=""
+            aria-hidden="true"
+            style={{
+              width: 132,
+              height: 132,
+              objectFit: 'contain',
+              animation: 'introPulse 4.5s ease-in-out infinite',
+            }}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+            }}
+          />
+        )}
         <p
           className="font-fell italic"
           style={{
-            marginTop: 44,
-            maxWidth: 520,
+            marginTop: screen.sigil ? 44 : 0,
+            maxWidth: screen.sigil ? 520 : 640,
             fontSize: 22,
             lineHeight: 1.7,
             color: '#e0ddd5',
@@ -69,6 +74,19 @@ const Intro = () => {
         >
           {screen.text}
         </p>
+        {screen.attribution && (
+          <p
+            className="font-fell italic"
+            style={{
+              marginTop: 28,
+              fontSize: 14,
+              color: 'rgba(160,140,200,0.5)',
+              letterSpacing: '0.05em',
+            }}
+          >
+            {screen.attribution}
+          </p>
+        )}
       </div>
 
       {/* Progress */}

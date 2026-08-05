@@ -2609,28 +2609,16 @@ const Village = () => {
         {/* Merchant character */}
         <MerchantCharacter x={merchantPos.x} y={merchantPos.y} palette="green" />
 
-        {/* Bernard — gold dot in town square with bell-ring pulse */}
-        <div
+        {/* Bernard marker */}
+        <img
+          src={bernardMarkerUrl}
+          width={24}
+          height={24}
           style={{
             position: 'absolute',
-            left: bernardPos.x - 6,
-            top: bernardPos.y - 6,
-            width: 12, height: 12, borderRadius: '50%',
-            background: '#c8963a',
-            boxShadow: '0 0 12px rgba(200,150,58,0.7)',
-            zIndex: 4,
-          }}
-        />
-        <div
-          style={{
-            position: 'absolute',
-            left: bernardPos.x - 6,
-            top: bernardPos.y - 6,
-            width: 12, height: 12, borderRadius: '50%',
-            border: '1px solid rgba(200,150,58,0.6)',
-            animation: 'bernardBellRing 8s ease-out infinite',
+            left: bernardPos.x - 12,
+            top: bernardPos.y - 12,
             pointerEvents: 'none',
-            zIndex: 4,
           }}
         />
         <span

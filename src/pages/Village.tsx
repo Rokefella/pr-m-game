@@ -3315,7 +3315,7 @@ const Village = () => {
                 border: '0.5px solid rgba(200,150,58,0.5)',
                 color: '#c8963a',
                 padding: '8px 18px',
-                fontSize: 16,
+                fontSize: 20,
                 letterSpacing: '0.3em',
                 cursor: 'pointer',
               }}
@@ -3336,7 +3336,7 @@ const Village = () => {
                 border: '0.5px solid rgba(200,150,58,0.5)',
                 color: '#c8963a',
                 padding: '8px 18px',
-                fontSize: 16,
+                fontSize: 20,
                 letterSpacing: '0.3em',
                 cursor: 'pointer',
               }}
@@ -3354,7 +3354,7 @@ const Village = () => {
               border: '0.5px solid rgba(160,140,200,0.3)',
               color: 'rgba(160,140,200,0.5)',
               padding: '8px 18px',
-              fontSize: 16,
+              fontSize: 20,
               letterSpacing: '0.3em',
               cursor: 'pointer',
             }}

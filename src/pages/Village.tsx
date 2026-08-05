@@ -1031,7 +1031,7 @@ const Village = () => {
       await updateUser(user.id, { entity_answer: null, username: null, aura_color: '#5b4fd4', level: 1 });
     }
     setDevOverlay(false);
-    navigate('/entity-questions');
+    navigate('/intro');
   }, [user, navigate]);
   const [credits, setCredits] = useState<number>(0);
   const [merchantOpen, setMerchantOpen] = useState(false);

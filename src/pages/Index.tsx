@@ -44,7 +44,7 @@ const Index = () => {
       .eq('id', user.id)
       .maybeSingle();
     if (!data || (!data.entity_answer && !data.username)) {
-      navigate('/welcome', { replace: true });
+      navigate('/intro', { replace: true });
     } else {
       navigate('/village', { replace: true });
     }
@@ -126,8 +126,14 @@ const Index = () => {
               width="80"
               height="48"
               className="object-contain"
-              style={{ opacity: 0.85 }}
+              style={{ animation: 'introPulse 4.5s ease-in-out infinite' }}
             />
+            <style>{`
+              @keyframes introPulse {
+                0%, 100% { transform: scale(1); opacity: 0.72; }
+                50% { transform: scale(1.07); opacity: 1; }
+              }
+            `}</style>
 
             {/* Wordmark */}
             <h1

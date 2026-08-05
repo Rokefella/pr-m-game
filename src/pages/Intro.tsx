@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const SCREENS: { sigil: string; text: string }[] = [
+const QUOTE =
+  '“When atoms move straight downward through the void, at a time and place that cannot be foreseen, they swerve a little from their course — just enough to call it a change of direction.”';
+
+const SCREENS: { sigil?: string; text: string; attribution?: string }[] = [
+  { text: QUOTE, attribution: '— Lucretius, De Rerum Natura, Book II' },
   { sigil: '/assets/sigils/01-fire.svg', text: 'First, there was fire.' },
   { sigil: '/assets/sigils/02-gods.svg', text: 'Man could not explain it. So man made Gods.' },
   { sigil: '/assets/sigils/03-atoms.svg', text: 'Then man looked closer. Gods became atoms.' },
@@ -12,7 +16,6 @@ const SCREENS: { sigil: string; text: string }[] = [
   },
   { sigil: '/assets/sigils/06-swerve.svg', text: 'The further we reach, the less certain we become.' },
   { sigil: '/assets/sigils/07-praem.svg', text: 'This is where PRÆM begins.' },
-  { sigil: '/assets/sigils/08-instrument.svg', text: 'You will now enter The Instrument PRÆM.' },
 ];
 
 const Intro = () => {

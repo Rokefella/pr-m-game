@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import AvatarPreview from "./pages/AvatarPreview.tsx";
+import Welcome from "./pages/Welcome.tsx";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +35,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/welcome" element={<Welcome />} />
             <Route path="/entity-questions" element={<EntityQuestions />} />
             <Route path="/profile-setup" element={<ProfileSetup />} />
             <Route path="/village" element={<Village />} />

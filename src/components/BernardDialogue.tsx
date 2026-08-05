@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from 'react';
-import bernardImg from '@/assets/bernard.png';
+import bernardMarker from '@/assets/bernard_marker.svg';
 
 interface Props {
   text: string;

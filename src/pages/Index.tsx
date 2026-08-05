@@ -120,17 +120,14 @@ const Index = () => {
 
           {/* Center Content */}
           <div className="relative z-10 flex flex-col items-center">
-            {/* Eye Sigil */}
-            <svg width="80" height="48" viewBox="0 0 80 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="40" cy="24" rx="38" ry="21" stroke="rgba(160,140,200,0.5)" strokeWidth="0.8" fill="none" />
-              <circle cx="40" cy="24" r="7" fill="rgba(91,79,212,0.15)" />
-              <circle cx="40" cy="24" r="5" fill="#5b4fd4" />
-              <circle cx="40" cy="24" r="2" fill="rgba(255,255,255,0.6)" />
-              <line x1="1" y1="24" x2="8" y2="24" stroke="rgba(160,140,200,0.3)" strokeWidth="0.7" />
-              <line x1="72" y1="24" x2="79" y2="24" stroke="rgba(160,140,200,0.3)" strokeWidth="0.7" />
-              <line x1="40" y1="1" x2="40" y2="8" stroke="rgba(160,140,200,0.3)" strokeWidth="0.7" />
-              <line x1="40" y1="40" x2="40" y2="47" stroke="rgba(160,140,200,0.3)" strokeWidth="0.7" />
-            </svg>
+            <img
+              src="/assets/sigils/PRAEM-logo-instrument-icon.svg"
+              alt="PRÆM"
+              width="80"
+              height="48"
+              className="object-contain"
+              style={{ opacity: 0.85 }}
+            />
 
             {/* Wordmark */}
             <h1

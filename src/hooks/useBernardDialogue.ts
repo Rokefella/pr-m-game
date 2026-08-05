@@ -377,7 +377,11 @@ export function useBernardDialogue({
   const getBernardDialogueRef = useRef(getBernardDialogue);
   getBernardDialogueRef.current = getBernardDialogue;
   useEffect(() => {
-    if (!isOpen) return;
+    // Closing the dialogue ends the visit — forget what was shown.
+    if (!isOpen) {
+      shownNodeKeys.current.clear();
+      return;
+    }
     setResolvedDialogue(getBernardDialogueRef.current());
   }, [isOpen, currentBucket, flagsVersion]);
 

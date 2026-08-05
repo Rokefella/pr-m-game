@@ -174,19 +174,13 @@ const ProfileSetup = () => {
           className="font-cinzel"
           style={{ fontSize: 18, color: '#9a9890' }}
         >
-          —
+          Wanderer
         </p>
         <p
           className="font-mono italic"
           style={{ fontSize: 14, color: '#5a5855', marginTop: 3 }}
         >
-          titles are earned · not chosen · first at level 5
-        </p>
-        <p
-          className="font-mono italic"
-          style={{ fontSize: 14, color: '#5a5855', marginTop: 2 }}
-        >
-          first 500 players receive a founding title
+          titles are earned · not chosen
         </p>
       </div>
 

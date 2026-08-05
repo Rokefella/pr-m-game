@@ -2684,15 +2684,39 @@ const Village = () => {
         }}
       >
         <div
-          className="font-cinzel"
           style={{
-            fontSize: 14,
-            letterSpacing: '0.2em',
-            color: 'rgba(160,140,200,0.5)',
-            animation: 'villagePulse 2s ease-in-out infinite',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 24,
+            maxWidth: 'min(720px, 84vw)',
           }}
         >
-          LOADING
+          <p
+            className="font-fell italic"
+            style={{
+              textAlign: 'center',
+              fontSize: 20,
+              lineHeight: 1.5,
+              color: 'rgba(160,140,200,0.75)',
+              textShadow: '0 0 16px rgba(100,80,180,0.35)',
+              margin: 0,
+            }}
+          >
+            You will now enter The Instrument PRÆM. Numbers answer to nothing but themselves. And One. Remember where you came from. It guides your flow. Now enter The Instrument PRÆM to become part of it.
+          </p>
+          <div
+            className="font-cinzel"
+            style={{
+              fontSize: 14,
+              letterSpacing: '0.2em',
+              color: 'rgba(160,140,200,0.5)',
+              animation: 'villagePulse 2s ease-in-out infinite',
+            }}
+          >
+            LOADING
+          </div>
         </div>
       </div>
     )}

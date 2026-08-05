@@ -7,10 +7,10 @@ const SCREENS: { sigil: string; text: string }[] = [
   { sigil: '/assets/sigils/03-atoms.svg', text: 'Then man looked closer. Gods became atoms.' },
   { sigil: '/assets/sigils/04-stars.svg', text: 'Atoms became stars. Stars became distance without end.' },
   {
-    sigil: '/assets/sigils/05-smaller.svg',
+    sigil: '/assets/sigils/05-quantum.svg',
     text: 'Then man looked the other way — smaller than atoms. And found the same uncertainty waiting there.',
   },
-  { sigil: '/assets/sigils/06-uncertainty.svg', text: 'The further we reach, the less certain we become.' },
+  { sigil: '/assets/sigils/06-swerve.svg', text: 'The further we reach, the less certain we become.' },
   { sigil: '/assets/sigils/07-praem.svg', text: 'This is where PRÆM begins.' },
   { sigil: '/assets/sigils/08-instrument.svg', text: 'You will now enter The Instrument PRÆM.' },
 ];

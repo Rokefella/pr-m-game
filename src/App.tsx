@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import AvatarPreview from "./pages/AvatarPreview.tsx";
+import Welcome from "./pages/Welcome.tsx";
 
 const queryClient = new QueryClient();
 

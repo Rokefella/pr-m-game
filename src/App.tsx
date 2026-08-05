@@ -21,6 +21,7 @@ import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import AvatarPreview from "./pages/AvatarPreview.tsx";
 import Welcome from "./pages/Welcome.tsx";
+import Intro from "./pages/Intro.tsx";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/welcome" element={<Welcome />} />
             <Route path="/entity-questions" element={<EntityQuestions />} />
+            <Route path="/intro" element={<Intro />} />
             <Route path="/profile-setup" element={<ProfileSetup />} />
             <Route path="/village" element={<Village />} />
             <Route path="/door" element={<Door />} />

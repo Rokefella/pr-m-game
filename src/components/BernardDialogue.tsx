@@ -24,11 +24,6 @@ const BernardDialogue = ({ text, children, onShow }: Props) => {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-6px); }
         }
-        @keyframes bernardBellFade {
-          0% { opacity: 0; transform: translate(-50%, 4px) scale(0.9); }
-          30% { opacity: 1; transform: translate(-50%, 0) scale(1); }
-          100% { opacity: 0; transform: translate(-50%, -4px) scale(1); }
-        }
       `}</style>
       <div
         style={{

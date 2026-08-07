@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect } from 'react';
 import bernardMarker from '@/assets/bernard_marker.svg';
 
 interface Props {
@@ -8,19 +8,9 @@ interface Props {
 }
 
 const BernardDialogue = ({ text, children, onShow }: Props) => {
-  const [showBell, setShowBell] = useState(false);
-
   useEffect(() => {
     onShow?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShowBell(true);
-      setTimeout(() => setShowBell(false), 600);
-    }, 8000);
-    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -33,11 +23,6 @@ const BernardDialogue = ({ text, children, onShow }: Props) => {
         @keyframes bernardImgFloat {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-6px); }
-        }
-        @keyframes bernardBellFade {
-          0% { opacity: 0; transform: translate(-50%, 4px) scale(0.9); }
-          30% { opacity: 1; transform: translate(-50%, 0) scale(1); }
-          100% { opacity: 0; transform: translate(-50%, -4px) scale(1); }
         }
       `}</style>
       <div
@@ -64,21 +49,6 @@ const BernardDialogue = ({ text, children, onShow }: Props) => {
             animation: 'bernardImgIn 600ms ease-out',
           }}
         >
-          {showBell && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 8,
-                left: '50%',
-                fontSize: 20,
-                animation: 'bernardBellFade 600ms ease-out',
-                pointerEvents: 'none',
-                filter: 'drop-shadow(0 0 6px rgba(200,150,58,0.6))',
-              }}
-            >
-              🔔
-            </div>
-          )}
           <img
             src={bernardMarker}
             alt="Bernard"

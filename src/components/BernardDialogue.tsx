@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect } from 'react';
 import bernardMarker from '@/assets/bernard_marker.svg';
 
 interface Props {
@@ -8,19 +8,9 @@ interface Props {
 }
 
 const BernardDialogue = ({ text, children, onShow }: Props) => {
-  const [showBell, setShowBell] = useState(false);
-
   useEffect(() => {
     onShow?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShowBell(true);
-      setTimeout(() => setShowBell(false), 600);
-    }, 8000);
-    return () => clearInterval(interval);
   }, []);
 
   return (

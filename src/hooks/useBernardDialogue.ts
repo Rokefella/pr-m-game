@@ -134,6 +134,9 @@ export function useBernardDialogue({
   const defaultBucket = useCallback((): string => {
     const stage = getFlag('bernard_stage');
     if (stage === '1') return 'quest_check_status';
+    if (stage === '3') return 'quest_stage3_root';
+    if (stage === '4') return 'quest_stage4_root';
+    if (stage === '6') return 'quest_stage6_root';
     const done =
       getFlag('touched_23') === 'true' &&
       getFlag('touched_47') === 'true' &&

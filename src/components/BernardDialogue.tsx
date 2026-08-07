@@ -49,21 +49,6 @@ const BernardDialogue = ({ text, children, onShow }: Props) => {
             animation: 'bernardImgIn 600ms ease-out',
           }}
         >
-          {showBell && (
-            <div
-              style={{
-                position: 'absolute',
-                top: 8,
-                left: '50%',
-                fontSize: 20,
-                animation: 'bernardBellFade 600ms ease-out',
-                pointerEvents: 'none',
-                filter: 'drop-shadow(0 0 6px rgba(200,150,58,0.6))',
-              }}
-            >
-              🔔
-            </div>
-          )}
           <img
             src={bernardMarker}
             alt="Bernard"

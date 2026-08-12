@@ -1108,6 +1108,7 @@ const Maze = () => {
               background: 'rgba(59,130,246,0.12)',
               border: '1px solid #3b82f6',
               animation: 'mazeBluePulse 1.5s ease-in-out infinite',
+              zIndex: 10,
               pointerEvents: 'none',
             }}
           />
@@ -1126,6 +1127,7 @@ const Maze = () => {
               background: '#c8963a',
               boxShadow: '0 0 8px rgba(200,150,58,0.8)',
               animation: 'mazeDotPulse 1.5s ease-in-out infinite',
+              zIndex: 10,
               pointerEvents: 'none',
             }}
           />
@@ -1144,6 +1146,7 @@ const Maze = () => {
               background: '#f97316',
               boxShadow: '0 0 8px rgba(249,115,22,0.8)',
               animation: 'mazeDotPulse 1.5s ease-in-out infinite',
+              zIndex: 10,
               pointerEvents: 'none',
             }}
           />

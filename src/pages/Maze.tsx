@@ -1075,6 +1075,7 @@ const Maze = () => {
               background: 'rgba(91,79,212,0.15)',
               border: '1px solid #5b4fd4',
               animation: 'mazePurplePulse 1.8s ease-in-out infinite',
+              zIndex: 10,
               pointerEvents: 'none',
             }}
           />
@@ -1090,6 +1091,7 @@ const Maze = () => {
             background: 'rgba(200,150,58,0.12)',
             border: '1px solid #c8963a',
             animation: 'mazeGoldPulse 2.2s ease-in-out infinite',
+            zIndex: 10,
             pointerEvents: 'none',
           }}
         />

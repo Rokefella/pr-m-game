@@ -1353,6 +1353,51 @@ const Maze = () => {
         </div>
       )}
 
+      {insufficientFragmentsOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(4,4,10,0.96)', zIndex: 100,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            animation: 'mazeDoorFade 600ms ease-in',
+          }}
+        >
+          <svg width={80} height={48} viewBox="-40 -24 80 48">
+            <ellipse cx={0} cy={0} rx={32} ry={19} stroke="rgba(200,150,58,0.5)" strokeWidth={1} fill="none" />
+            <circle cx={0} cy={0} r={5} fill="#c8963a" />
+          </svg>
+          <div
+            className="font-fell italic"
+            style={{ marginTop: 20, fontSize: 22, color: '#c8963a', textAlign: 'center', maxWidth: '85vw' }}
+          >
+            The Instrument does not answer.
+          </div>
+          <div
+            className="font-fell italic"
+            style={{ marginTop: 10, fontSize: 18, color: 'rgba(160,140,200,0.5)', textAlign: 'center', maxWidth: '85vw' }}
+          >
+            {(() => {
+              const requiredPrimes = config.fragments.map((f) => f.prime);
+              const have = requiredPrimes.filter((p) => collectedRef.current.has(p)).length;
+              const required = requiredPrimes.length;
+              return `You carry ${have} of ${required} fragments the Instrument requires.`;
+            })()}
+          </div>
+          <div style={{ display: 'flex', gap: 16, marginTop: 28 }}>
+            <button
+              className="font-cinzel"
+              onClick={() => setInsufficientFragmentsOpen(false)}
+              style={{
+                fontSize: 16, letterSpacing: '0.3em', background: 'transparent',
+                border: '0.5px solid rgba(160,140,200,0.3)', color: 'rgba(160,140,200,0.5)',
+                padding: '10px 24px', cursor: 'pointer',
+              }}
+            >
+              STAY
+            </button>
+          </div>
+        </div>
+      )}
+
       <div
         style={{
           position: 'fixed', bottom: 120, left: '50%', transform: 'translateX(-50%)',

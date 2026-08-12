@@ -35,6 +35,47 @@ type LevelConfig = {
   veilSet?: Set<string>;
 };
 
+const wallPalettes = {
+  purple: { core: '#4a3d78', edge: '#1a1430', seam: '#8a5fd4' },
+  amber: { core: '#78603d', edge: '#301f10', seam: '#d4a35f' },
+  teal: { core: '#2f6b5c', edge: '#0d2a22', seam: '#3dd4a8' },
+};
+
+const corrPalettes = {
+  purple: { glow: '#8a5fd4', line: '#c9a8f0' },
+  amber: { glow: '#d4a35f', line: '#f0d8a8' },
+  teal: { glow: '#3dd4a8', line: '#a8f0d8' },
+};
+
+const WallCell = memo(({ dimension }: { dimension: Dimension }) => {
+  const p = wallPalettes[dimension];
+  return (
+    <svg width={CELL} height={CELL} viewBox="0 0 20 20" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+      <rect width="20" height="20" fill={p.core} />
+      <rect x="0.4" y="0.4" width="19.2" height="19.2" fill="none" stroke={p.seam} strokeOpacity="0.3" strokeWidth="0.4" />
+      <line x1="0" y1="6.6" x2="20" y2="6.6" stroke={p.edge} strokeWidth="0.7" />
+      <line x1="0" y1="13.3" x2="20" y2="13.3" stroke={p.edge} strokeWidth="0.7" />
+      <line x1="6.6" y1="0" x2="6.6" y2="6.6" stroke={p.edge} strokeOpacity="0.7" strokeWidth="0.5" />
+      <line x1="13.3" y1="6.6" x2="13.3" y2="13.3" stroke={p.edge} strokeOpacity="0.7" strokeWidth="0.5" />
+      <line x1="6.6" y1="13.3" x2="6.6" y2="20" stroke={p.edge} strokeOpacity="0.7" strokeWidth="0.5" />
+      <rect x="0" y="0" width="20" height="1" fill={p.seam} fillOpacity="0.25" />
+    </svg>
+  );
+});
+
+const CorridorCell = memo(({ dimension }: { dimension: Dimension }) => {
+  const p = corrPalettes[dimension];
+  return (
+    <svg width={CELL} height={CELL} viewBox="0 0 20 20" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+      <rect width="20" height="20" fill="#08070c" />
+      <rect width="20" height="20" fill={p.glow} fillOpacity="0.04" />
+      <line x1="0" y1="10" x2="8" y2="10" stroke={p.line} strokeOpacity="0.3" strokeWidth="0.5" />
+      <line x1="12" y1="10" x2="20" y2="10" stroke={p.line} strokeOpacity="0.3" strokeWidth="0.5" />
+      <circle cx="10" cy="10" r="0.6" fill={p.glow} fillOpacity="0.5" />
+    </svg>
+  );
+});
+
 // =================== LEVEL 1 — corrected corridor layout ===================
 const LEVEL1_HINTS: Cell[] = [
   { col: 8, row: 26 },

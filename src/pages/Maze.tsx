@@ -372,6 +372,7 @@ const Maze = () => {
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationNumberRef = useRef(0);
   const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
+  const [insufficientFragmentsOpen, setInsufficientFragmentsOpen] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const profileOpenRef = useRef(false);
   const [profileOpenDisplay, setProfileOpenDisplay] = useState(false);

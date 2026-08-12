@@ -1001,6 +1001,29 @@ const Maze = () => {
           }}
         />
 
+        {config && Array.from(config.openSet).map((key) => {
+          const [c, r] = key.split(',').map(Number);
+          const x = c * CELL;
+          const y = r * CELL;
+          if (x + CELL < viewLeft || x > viewRight || y + CELL < viewTop || y > viewBottom) return null;
+          return (
+            <div
+              key={`c-${key}`}
+              style={{
+                position: 'absolute',
+                left: x,
+                top: y,
+                width: CELL,
+                height: CELL,
+                zIndex: 1,
+                pointerEvents: 'none',
+              }}
+            >
+              <CorridorCell dimension={dimension} />
+            </div>
+          );
+        })}
+
         {Array.from(wallSet).map((key) => {
           const [c, r] = key.split(',').map(Number);
           const x = c * CELL;
@@ -1015,13 +1038,14 @@ const Maze = () => {
                 top: y,
                 width: CELL,
                 height: CELL,
-                background: '#0d0d1a',
-                border: '1px solid #1a1a2e',
                 boxSizing: 'border-box',
                 zIndex: 2,
                 opacity: 1,
+                pointerEvents: 'none',
               }}
-            />
+            >
+              <WallCell dimension={dimension} />
+            </div>
           );
         })}
 

@@ -868,11 +868,7 @@ const Maze = () => {
       if (have >= required) {
         setDoorConfirmOpen(true);
       } else {
-        const remaining = required - have;
-        const msg = remaining === 1
-          ? 'One fragment remains. The door does not open.'
-          : `${remaining} fragments remain. The door does not open.`;
-        showWhisper(msg, 'rgba(200,150,58,0.7)', 2500);
+        setInsufficientFragmentsOpen(true);
       }
     }
 

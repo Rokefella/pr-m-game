@@ -36,9 +36,9 @@ type LevelConfig = {
 };
 
 const wallPalettes = {
-  purple: { core: '#4a3d78', edge: '#1a1430', seam: '#8a5fd4' },
-  amber: { core: '#78603d', edge: '#301f10', seam: '#d4a35f' },
-  teal: { core: '#2f6b5c', edge: '#0d2a22', seam: '#3dd4a8' },
+  purple: { core: '#4a3d78', edge: '#1a1430', seam: '#8a5fd4', light: '#c9b8f0' },
+  amber: { core: '#78603d', edge: '#301f10', seam: '#d4a35f', light: '#e8cfa8' },
+  teal: { core: '#2f6b5c', edge: '#0d2a22', seam: '#3dd4a8', light: '#b8f5e4' },
 };
 
 const corrPalettes = {
@@ -51,14 +51,24 @@ const WallCell = memo(({ dimension }: { dimension: Dimension }) => {
   const p = wallPalettes[dimension];
   return (
     <svg width={CELL} height={CELL} viewBox="0 0 20 20" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-      <rect width="20" height="20" fill={p.core} />
-      <rect x="0.4" y="0.4" width="19.2" height="19.2" fill="none" stroke={p.seam} strokeOpacity="0.3" strokeWidth="0.4" />
-      <line x1="0" y1="6.6" x2="20" y2="6.6" stroke={p.edge} strokeWidth="0.7" />
-      <line x1="0" y1="13.3" x2="20" y2="13.3" stroke={p.edge} strokeWidth="0.7" />
-      <line x1="6.6" y1="0" x2="6.6" y2="6.6" stroke={p.edge} strokeOpacity="0.7" strokeWidth="0.5" />
-      <line x1="13.3" y1="6.6" x2="13.3" y2="13.3" stroke={p.edge} strokeOpacity="0.7" strokeWidth="0.5" />
-      <line x1="6.6" y1="13.3" x2="6.6" y2="20" stroke={p.edge} strokeOpacity="0.7" strokeWidth="0.5" />
-      <rect x="0" y="0" width="20" height="1" fill={p.seam} fillOpacity="0.25" />
+      <defs>
+        <linearGradient id={`wallGrad-${dimension}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color={p.light} />
+          <stop offset="45%" stop-color={p.core} />
+          <stop offset="100%" stop-color={p.edge} />
+        </linearGradient>
+      </defs>
+      <rect x="1.2" y="1.2" width="18.8" height="18.8" fill="rgba(0,0,0,0.4)" />
+      <rect x="0" y="0" width="18.8" height="18.8" fill={`url(#wallGrad-${dimension})`} />
+      <line x1="0" y1="0.3" x2="18.8" y2="0.3" stroke={p.light} strokeOpacity="0.7" strokeWidth="0.7" />
+      <line x1="0.3" y1="0" x2="0.3" y2="18.8" stroke={p.light} strokeOpacity="0.5" strokeWidth="0.6" />
+      <line x1="0" y1="18.5" x2="18.8" y2="18.5" stroke={p.edge} strokeOpacity="0.8" strokeWidth="0.7" />
+      <line x1="18.5" y1="0" x2="18.5" y2="18.8" stroke={p.edge} strokeOpacity="0.8" strokeWidth="0.7" />
+      <line x1="0" y1="6.6" x2="18.8" y2="6.6" stroke={p.edge} strokeOpacity="0.5" strokeWidth="0.5" />
+      <line x1="0" y1="13.3" x2="18.8" y2="13.3" stroke={p.edge} strokeOpacity="0.5" strokeWidth="0.5" />
+      <line x1="6.6" y1="0" x2="6.6" y2="6.6" stroke={p.edge} strokeOpacity="0.4" strokeWidth="0.4" />
+      <line x1="13.3" y1="6.6" x2="13.3" y2="13.3" stroke={p.edge} strokeOpacity="0.4" strokeWidth="0.4" />
+      <line x1="6.6" y1="13.3" x2="6.6" y2="18.8" stroke={p.edge} strokeOpacity="0.4" strokeWidth="0.4" />
     </svg>
   );
 });

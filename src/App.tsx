@@ -16,6 +16,7 @@ import Maze from "./pages/Maze.tsx";
 import ShadowRealm from "./pages/ShadowRealm.tsx";
 import Paywall from "./pages/Paywall.tsx";
 import BernardRoom1 from "./pages/BernardRoom1.tsx";
+import BernardRoomDynamic from "./pages/BernardRoomDynamic.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";

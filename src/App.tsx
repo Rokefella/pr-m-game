@@ -16,6 +16,7 @@ import Maze from "./pages/Maze.tsx";
 import ShadowRealm from "./pages/ShadowRealm.tsx";
 import Paywall from "./pages/Paywall.tsx";
 import BernardRoom1 from "./pages/BernardRoom1.tsx";
+import BernardRoomDynamic from "./pages/BernardRoomDynamic.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/shadow" element={<ShadowRealm />} />
             <Route path="/paywall" element={<Paywall />} />
             <Route path="/bernard-room-1" element={<BernardRoom1 />} />
+            <Route path="/bernard-room" element={<BernardRoomDynamic />} />
             <Route path="/avatar-preview" element={<AvatarPreview />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

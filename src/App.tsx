@@ -50,6 +50,7 @@ const App = () => (
             <Route path="/shadow" element={<ShadowRealm />} />
             <Route path="/paywall" element={<Paywall />} />
             <Route path="/bernard-room-1" element={<BernardRoom1 />} />
+            <Route path="/bernard-room" element={<BernardRoomDynamic />} />
             <Route path="/avatar-preview" element={<AvatarPreview />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

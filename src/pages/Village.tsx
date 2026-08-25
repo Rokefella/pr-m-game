@@ -13,7 +13,8 @@ import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type S
 import { supabase } from '@/lib/supabase';
 import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
 import bernardMarkerUrl from '@/assets/bernard_marker.svg';
-import { useBernardDialogue, type BernardDialogueData } from '@/hooks/useBernardDialogue';
+import bankerMarkerUrl from '@/assets/banker_marker.svg';
+import { useNpcDialogue, type BernardDialogueData } from '@/hooks/useNpcDialogue';
 
 
 
@@ -59,6 +60,7 @@ type DynamicVillage = {
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
   bernardCenter: { x: number; y: number } | null;
+  bankerCenter: { x: number; y: number } | null;
   merchantCenter: { x: number; y: number } | null;
   gridSize: number;
   start: { col: number; row: number } | null;
@@ -922,6 +924,9 @@ const Village = () => {
   const merchantPos = dynamicBuildings
     ? (dynamicBuildings.merchantCenter ?? { x: mapW / 2, y: mapH / 2 })
     : MERCHANT;
+  const bankerPos = dynamicBuildings
+    ? (dynamicBuildings.bankerCenter ?? { x: mapW / 2, y: mapH / 2 })
+    : { x: mapW / 2, y: mapH / 2 };
   const eyePupilRef = useRef({ x: 0, y: 0 });
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });
@@ -1067,7 +1072,7 @@ const Village = () => {
     bumpFlags,
     resetBernardBucket,
     resolvedDialogue,
-  } = useBernardDialogue({
+  } = useNpcDialogue('bernard', {
     user,
     currentLevel,
     socialStat,
@@ -1089,6 +1094,31 @@ const Village = () => {
     },
     onAcceptAlexandraQuest: () => acceptAlexandraQuestRef.current(),
   });
+
+  // ── The Banker (data-driven dialogue, same spine as Bernard) ──
+  const [bankerOpen, setBankerOpen] = useState(false);
+  const bankerLockRef = useRef(false);
+  const {
+    resetBernardBucket: resetBankerBucket,
+    resolvedDialogue: bankerDialogue,
+  } = useNpcDialogue('banker', {
+    user,
+    currentLevel,
+    socialStat,
+    perceptionStat,
+    tradeStat,
+    credits,
+    growthPoints,
+    isOpen: bankerOpen,
+    onCreditsChange: setCredits,
+    onGrowthPointsChange: setGrowthPoints,
+    onCloseDialogue: () => setBankerOpen(false),
+  });
+
+  const openBankerDialog = () => {
+    resetBankerBucket();
+    setBankerOpen(true);
+  };
 
   const acceptAlexandraQuest = useCallback(async () => {
     if (!user) return;
@@ -1481,6 +1511,7 @@ const Village = () => {
 
         let eyeCenter: { x: number; y: number } | null = null;
         let bernardCenter: { x: number; y: number } | null = null;
+        let bankerCenter: { x: number; y: number } | null = null;
         let merchantCenter: { x: number; y: number } | null = null;
 
         cells.forEach((cell, i) => {
@@ -1518,6 +1549,9 @@ const Village = () => {
               break;
             case 'BERNARD':
               bernardCenter = { x, y };
+              break;
+            case 'BANKER':
+              bankerCenter = { x, y };
               break;
             case 'MERCHANT':
               merchantCenter = { x, y };
@@ -1587,7 +1621,7 @@ const Village = () => {
             },
           }));
 
-          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
+          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, eyeCenter, bernardCenter, bankerCenter, merchantCenter, gridSize, start });
 
 
           // Reposition the player once, when the dynamic village loads
@@ -1907,6 +1941,19 @@ const Village = () => {
       }
     } else {
       bernardLockRef.current = false;
+    }
+
+    // Banker proximity → open dialogue (40px)
+    const bankX = dynamicBuildings?.bankerCenter ? dynamicBuildings.bankerCenter.x : mapSizeRef.current.w / 2;
+    const bankY = dynamicBuildings?.bankerCenter ? dynamicBuildings.bankerCenter.y : mapSizeRef.current.h / 2;
+    const dbk = Math.hypot(fx - bankX, fy - bankY);
+    if (dbk <= 40) {
+      if (!bankerLockRef.current) {
+        bankerLockRef.current = true;
+        openBankerDialog();
+      }
+    } else {
+      bankerLockRef.current = false;
     }
   };
   moveRef.current = move;
@@ -2635,6 +2682,37 @@ const Village = () => {
         >
           B
         </span>
+
+        {/* The Banker marker */}
+        {dynamicBuildings?.bankerCenter && (
+          <>
+            <img
+              src={bankerMarkerUrl}
+              width={24}
+              height={24}
+              style={{
+                position: 'absolute',
+                left: bankerPos.x - 12,
+                top: bankerPos.y - 12,
+                pointerEvents: 'none',
+              }}
+            />
+            <span
+              className="font-mono"
+              style={{
+                position: 'absolute',
+                left: bankerPos.x - 4,
+                top: bankerPos.y - 24,
+                fontSize: 14,
+                color: 'rgba(26,158,122,0.7)',
+                pointerEvents: 'none',
+                zIndex: 4,
+              }}
+            >
+              $
+            </span>
+          </>
+        )}
 
 
         {/* Ghost players */}

@@ -47,6 +47,8 @@ const App = () => (
             <Route path="/library-door" element={<LibraryDoor />} />
             <Route path="/library" element={<LibraryRoom />} />
             <Route path="/exchange-door" element={<ExchangeDoor />} />
+            <Route path="/exchange" element={<ExchangeRoom />} />
+
             <Route path="/maze" element={<Maze />} />
             <Route path="/shadow" element={<ShadowRealm />} />
             <Route path="/paywall" element={<Paywall />} />

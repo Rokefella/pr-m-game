@@ -2783,6 +2783,14 @@ const Village = () => {
             maxWidth: 'min(720px, 84vw)',
           }}
         >
+          <img
+            src="/assets/sigils/PRAEM-logo-instrument-icon.svg"
+            alt="PRÆM"
+            width="64"
+            height="38"
+            className="object-contain"
+            style={{ display: 'block', marginBottom: 8 }}
+          />
           <p
             className="font-fell italic"
             style={{

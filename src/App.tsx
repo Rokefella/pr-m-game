@@ -12,6 +12,7 @@ import Door from "./pages/Door.tsx";
 import LibraryDoor from "./pages/LibraryDoor.tsx";
 import LibraryRoom from "./pages/LibraryRoom.tsx";
 import ExchangeDoor from "./pages/ExchangeDoor.tsx";
+import ExchangeRoom from "./pages/ExchangeRoom.tsx";
 import Maze from "./pages/Maze.tsx";
 import ShadowRealm from "./pages/ShadowRealm.tsx";
 import Paywall from "./pages/Paywall.tsx";
@@ -46,6 +47,8 @@ const App = () => (
             <Route path="/library-door" element={<LibraryDoor />} />
             <Route path="/library" element={<LibraryRoom />} />
             <Route path="/exchange-door" element={<ExchangeDoor />} />
+            <Route path="/exchange" element={<ExchangeRoom />} />
+
             <Route path="/maze" element={<Maze />} />
             <Route path="/shadow" element={<ShadowRealm />} />
             <Route path="/paywall" element={<Paywall />} />

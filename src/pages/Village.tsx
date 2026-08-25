@@ -1784,7 +1784,8 @@ const Village = () => {
     if (a.id === 47) {
       if (user) void setFlag(user.id, 'touched_47', 'true');
       const lv = currentLevelRef.current;
-      if (lv < 3) {
+      // TEMP: lowered for testing, revert to lv < 3 before release
+      if (lv < 1) {
         showLockWhisper('The Exchange opens later.');
         return true;
       }

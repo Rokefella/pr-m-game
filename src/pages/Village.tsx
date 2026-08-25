@@ -3499,6 +3499,76 @@ const Village = () => {
         </BernardDialogue>
       )}
 
+      {/* The Banker dialogue overlay */}
+      {bankerOpen && bankerDialogue && (
+        <BernardDialogue text={bankerDialogue.text} onShow={bankerDialogue.onShow}>
+          {(bankerDialogue.options ?? []).map((o, i) => (
+            <button
+              key={`${o.label}-${i}`}
+              type="button"
+              className="font-cinzel"
+              onClick={() => {
+                o.onSelect();
+                if (o.closes) setBankerOpen(false);
+              }}
+              style={{
+                background: 'rgba(26,158,122,0.18)',
+                border: '0.5px solid rgba(26,158,122,0.5)',
+                color: '#1a9e7a',
+                padding: '6px 12px',
+                fontSize: 20,
+                letterSpacing: '0.02em',
+                cursor: 'pointer',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}
+            >
+              {o.label.toUpperCase()}
+            </button>
+          ))}
+          {!(bankerDialogue.options ?? []).length && bankerDialogue.buttonLabel && (
+            <button
+              type="button"
+              className="font-cinzel"
+              onClick={() => {
+                bankerDialogue.buttonAction?.();
+                setBankerOpen(false);
+              }}
+              style={{
+                background: 'rgba(26,158,122,0.18)',
+                border: '0.5px solid rgba(26,158,122,0.5)',
+                color: '#1a9e7a',
+                padding: '6px 12px',
+                fontSize: 20,
+                letterSpacing: '0.02em',
+                cursor: 'pointer',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}
+            >
+              {bankerDialogue.buttonLabel.toUpperCase()}
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="font-cinzel"
+            onClick={() => setBankerOpen(false)}
+            style={{
+              background: 'transparent',
+              border: '0.5px solid rgba(160,140,200,0.3)',
+              color: 'rgba(160,140,200,0.5)',
+              padding: '8px 18px',
+              fontSize: 20,
+              letterSpacing: '0.3em',
+              cursor: 'pointer',
+            }}
+          >
+            CLOSE
+          </button>
+        </BernardDialogue>
+      )}
+
       <ProfileOverlay
         isOpen={profileOpenDisplay}
         onClose={closeProfile}

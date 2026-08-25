@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { setFlag } from '@/lib/questFlags';
 import { checkSubscriptionStatus } from '@/lib/subscriptionStatus';
 import BernardDialogue from '@/components/BernardDialogue';
-import { useBernardDialogue } from '@/hooks/useBernardDialogue';
+import { useNpcDialogue } from '@/hooks/useNpcDialogue';
 import bernardMarkerUrl from '@/assets/bernard_marker.svg';
 
 const CELL = 20;
@@ -157,7 +157,7 @@ const BernardRoomDynamic = () => {
     resolvedDialogue,
     resetBernardBucket,
     bumpFlags,
-  } = useBernardDialogue({
+  } = useNpcDialogue('bernard', {
     user,
     currentLevel,
     socialStat,

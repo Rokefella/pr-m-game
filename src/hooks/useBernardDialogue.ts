@@ -1,9 +1,9 @@
 // Back-compat shim — the real implementation lives in useNpcDialogue.ts.
 export * from './useNpcDialogue';
-import { useNpcDialogue } from './useNpcDialogue';
+import { useNpcDialogue, type UseNpcDialogueOptions } from './useNpcDialogue';
 
-/** @deprecated use useNpcDialogue('bernard') */
-export const useBernardDialogue = (opts: Parameters<typeof useNpcDialogue>[1] extends undefined ? never : never | Record<string, unknown>) =>
-  useNpcDialogue('bernard', opts as never);
+/** @deprecated use useNpcDialogue('bernard', options) */
+export const useBernardDialogue = (options: UseNpcDialogueOptions) =>
+  useNpcDialogue('bernard', options);
 
 export default useBernardDialogue;

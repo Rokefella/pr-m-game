@@ -407,32 +407,9 @@ function useNpcDialogueImpl({
     if (isRevisit) {
       const entry = pickBookEntry();
       // Empty book → fall through to the fixed stage text below.
-      if (entry) {
-        const raw: BernardOption[] = [
-          entry.option_a_label
-            ? { label: entry.option_a_label, leads_to: entry.option_a_target, action_key: entry.option_a_action_key }
-            : null,
-          entry.option_b_label
-            ? { label: entry.option_b_label, leads_to: entry.option_b_target, action_key: entry.option_b_action_key }
-            : null,
-        ].filter(Boolean) as BernardOption[];
-        const options: BernardResolvedOption[] = raw.map((o) => ({
-          label: o.label,
-          closes: !o.leads_to && !o.action_key,
-
-          onSelect: () => {
-            if (o.action_key) bernardActions[o.action_key]?.();
-            if (o.leads_to) {
-              // Walk deeper into the graph without closing the dialogue.
-              setCurrentBucket(o.leads_to);
-              return;
-            }
-            if (!o.action_key) onCloseDialogue?.();
-          },
-        }));
-        return { text: entry.text, buttonLabel: match.button_label, options };
-      }
+      if (entry) return buildBookDialogue(entry, match.button_label);
     }
+
 
     return {
       text: match.text,

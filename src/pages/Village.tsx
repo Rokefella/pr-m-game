@@ -1946,18 +1946,6 @@ const Village = () => {
       bernardLockRef.current = false;
     }
 
-    // Banker proximity → open dialogue (40px)
-    const bankX = dynamicBuildings?.bankerCenter ? dynamicBuildings.bankerCenter.x : mapSizeRef.current.w / 2;
-    const bankY = dynamicBuildings?.bankerCenter ? dynamicBuildings.bankerCenter.y : mapSizeRef.current.h / 2;
-    const dbk = Math.hypot(fx - bankX, fy - bankY);
-    if (dbk <= 40 && bankerReady) {
-      if (!bankerLockRef.current) {
-        bankerLockRef.current = true;
-        openBankerDialog();
-      }
-    } else {
-      bankerLockRef.current = false;
-    }
   };
   moveRef.current = move;
 

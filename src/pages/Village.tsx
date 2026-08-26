@@ -1097,30 +1097,6 @@ const Village = () => {
   });
 
   // ── The Banker (data-driven dialogue, same spine as Bernard) ──
-  const [bankerOpen, setBankerOpen] = useState(false);
-  const bankerLockRef = useRef(false);
-  const {
-    resetBernardBucket: resetBankerBucket,
-    resolvedDialogue: bankerDialogue,
-    isReady: bankerReady,
-  } = useNpcDialogue('banker', {
-    user,
-    currentLevel,
-    socialStat,
-    perceptionStat,
-    tradeStat,
-    credits,
-    growthPoints,
-    isOpen: bankerOpen,
-    onCreditsChange: setCredits,
-    onGrowthPointsChange: setGrowthPoints,
-    onCloseDialogue: () => setBankerOpen(false),
-  });
-
-  const openBankerDialog = () => {
-    resetBankerBucket();
-    setBankerOpen(true);
-  };
 
   const acceptAlexandraQuest = useCallback(async () => {
     if (!user) return;

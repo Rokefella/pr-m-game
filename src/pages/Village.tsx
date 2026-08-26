@@ -1486,7 +1486,7 @@ const Village = () => {
 
         let eyeCenter: { x: number; y: number } | null = null;
         let bernardCenter: { x: number; y: number } | null = null;
-        let bankerCenter: { x: number; y: number } | null = null;
+        
         let merchantCenter: { x: number; y: number } | null = null;
 
         cells.forEach((cell, i) => {

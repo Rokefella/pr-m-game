@@ -149,8 +149,145 @@ const ExchangeRoom = () => {
   const [bankerOpen, setBankerOpen] = useState(false);
   const bankerLockRef = useRef(false);
 
+  // ---- Fragment marketplace state (UI only; room logic untouched) ----
+  const [marketOpen, setMarketOpen] = useState(false);
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [myListings, setMyListings] = useState<Listing[]>([]);
+  const [myFragments, setMyFragments] = useState<OwnedFragment[]>([]);
+  const [marketLoading, setMarketLoading] = useState(false);
+  const [marketBusy, setMarketBusy] = useState(false);
+  const [marketError, setMarketError] = useState<string | null>(null);
+  const [marketNotice, setMarketNotice] = useState<string | null>(null);
+  const [sellFragmentId, setSellFragmentId] = useState('');
+  const [sellPrice, setSellPrice] = useState('');
+  const [username, setUsername] = useState<string | null>(null);
+  const [fragmentCount, setFragmentCount] = useState(0);
+
+  const refreshOwnCounts = async (uid: string) => {
+    const { data: userRow } = await supabase
+      .from('users')
+      .select('credits, growth_points, username')
+      .eq('id', uid)
+      .maybeSingle();
+    if (userRow) {
+      setCredits(Number(userRow.credits ?? 0));
+      setGrowthPoints(Number(userRow.growth_points ?? 0));
+      setUsername(userRow.username ?? null);
+    }
+    const { count } = await supabase
+      .from('fragments')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', uid);
+    setFragmentCount(count ?? 0);
+  };
+
+  const loadMarket = async () => {
+    if (!user) return;
+    setMarketLoading(true);
+    setMarketError(null);
+    try {
+      const { data: rows, error } = await supabase
+        .from('exchange_listings' as never)
+        .select('id, fragment_id, seller_id, price, status, prime_number, level, seller_username, created_at')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+
+      const all = ((rows ?? []) as unknown as Listing[]);
+      setListings(all.filter((l) => l.seller_id !== user.id));
+      setMyListings(all.filter((l) => l.seller_id === user.id));
+
+      const listedIds = new Set(all.filter((l) => l.seller_id === user.id).map((l) => l.fragment_id));
+      const { data: frags } = await supabase
+        .from('fragments')
+        .select('id, prime_number, level')
+        .eq('user_id', user.id)
+        .order('prime_number', { ascending: true });
+      const owned = ((frags ?? []) as unknown as OwnedFragment[]).filter((f) => !listedIds.has(f.id));
+      setMyFragments(owned);
+      setSellFragmentId((prev) => (owned.some((f) => f.id === prev) ? prev : owned[0]?.id ?? ''));
+
+      await refreshOwnCounts(user.id);
+    } catch (e) {
+      setMarketError(e instanceof Error ? e.message : 'The exchange did not answer.');
+    } finally {
+      setMarketLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!marketOpen || !user) return;
+    void loadMarket();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [marketOpen, user]);
+
+  const buyListing = async (listing: Listing) => {
+    if (!user || marketBusy) return;
+    setMarketBusy(true);
+    setMarketError(null);
+    setMarketNotice(null);
+    const { error } = await supabase.rpc('purchase_fragment_listing' as never, {
+      p_listing_id: listing.id,
+      p_buyer_id: user.id,
+    } as never);
+    if (error) {
+      setMarketError(error.message || 'The purchase failed.');
+    } else {
+      setMarketNotice(`Acquired Prime ${listing.prime_number ?? '?'}.`);
+      await loadMarket();
+    }
+    setMarketBusy(false);
+  };
+
+  const createListing = async () => {
+    if (!user || marketBusy) return;
+    const frag = myFragments.find((f) => f.id === sellFragmentId);
+    const price = Number(sellPrice);
+    if (!frag) { setMarketError('Choose a fragment to list.'); return; }
+    if (!Number.isFinite(price) || price <= 0) { setMarketError('Set a price above zero.'); return; }
+    setMarketBusy(true);
+    setMarketError(null);
+    setMarketNotice(null);
+    const { error } = await supabase.from('exchange_listings' as never).insert({
+      fragment_id: frag.id,
+      seller_id: user.id,
+      price: Math.floor(price),
+      prime_number: frag.prime_number,
+      level: frag.level,
+      seller_username: username,
+    } as never);
+    if (error) {
+      setMarketError(error.message || 'The listing was refused.');
+    } else {
+      setMarketNotice(`Prime ${frag.prime_number} offered for ${Math.floor(price)} credits.`);
+      setSellPrice('');
+      await loadMarket();
+    }
+    setMarketBusy(false);
+  };
+
+  const cancelListing = async (listing: Listing) => {
+    if (!user || marketBusy) return;
+    setMarketBusy(true);
+    setMarketError(null);
+    setMarketNotice(null);
+    const { error } = await supabase
+      .from('exchange_listings' as never)
+      .update({ status: 'cancelled' } as never)
+      .eq('id', listing.id)
+      .eq('seller_id', user.id);
+    if (error) {
+      setMarketError(error.message || 'The listing could not be withdrawn.');
+    } else {
+      setMarketNotice('Listing withdrawn.');
+      await loadMarket();
+    }
+    setMarketBusy(false);
+  };
+
   useEffect(() => { roomRef.current = room; }, [room]);
   useEffect(() => { loadingRef.current = roomLoading; }, [roomLoading]);
+
 
   const {
     resolvedDialogue,

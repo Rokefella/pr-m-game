@@ -357,16 +357,50 @@ function useNpcDialogueImpl({
     accept_alexandra_quest: () => { onAcceptAlexandraQuest?.(); },
   };
 
+  /** Turns a book entry into renderable dialogue data (options resolved to handlers). */
+  const buildBookDialogue = (entry: BernardBookEntry, buttonLabel: string | null): BernardDialogueData => {
+    const raw: BernardOption[] = [
+      entry.option_a_label
+        ? { label: entry.option_a_label, leads_to: entry.option_a_target, action_key: entry.option_a_action_key }
+        : null,
+      entry.option_b_label
+        ? { label: entry.option_b_label, leads_to: entry.option_b_target, action_key: entry.option_b_action_key }
+        : null,
+    ].filter(Boolean) as BernardOption[];
+    const options: BernardResolvedOption[] = raw.map((o) => ({
+      label: o.label,
+      closes: !o.leads_to && !o.action_key,
+      onSelect: () => {
+        if (o.action_key) bernardActions[o.action_key]?.();
+        if (o.leads_to) {
+          setCurrentBucket(o.leads_to);
+          return;
+        }
+        if (!o.action_key) onCloseDialogue?.();
+      },
+    }));
+    return { text: entry.text, buttonLabel, options };
+  };
+
   const getBernardDialogue = (flagOverride?: (k: string) => string | null): BernardDialogueData => {
     if (typeof window === 'undefined' || !user) {
       return { text: '', buttonLabel: null };
     }
     const f = flagOverride ?? getFlag;
     const stage = parseInt(f(stageFlagKey) || '0', 10);
+
+    // Book-only NPCs (no spine rows at all) always resolve straight from their book.
+    if (bernardStages.length === 0) {
+      const entry = pickBookEntry();
+      if (entry) return buildBookDialogue(entry, null);
+      return { text: '[no dialogue configured for this character]', buttonLabel: null };
+    }
+
     const match =
       bernardStages.find((row) => conditionsMet(stage, row.condition, f)) ??
       bernardStages.find((row) => row.stage_key === 'stage_6_followup');
     if (!match) return { text: '', buttonLabel: null };
+
 
     // A revisit = the matched stage neither advances the spine nor grants anything.
     const isRevisit = !match.button_action_key && !match.on_show_action_key;

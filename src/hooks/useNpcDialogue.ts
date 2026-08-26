@@ -147,17 +147,21 @@ function useNpcDialogueImpl({
 
   /** Entry point for casual conversation: quest root until the three buildings are done. */
   const defaultBucket = useCallback((): string => {
-    const stage = getFlag(stageFlagKey);
-    if (stage === '1') return 'quest_check_status';
-    if (stage === '3') return 'quest_stage3_root';
-    if (stage === '4') return 'quest_stage4_root';
-    if (stage === '6') return 'quest_stage6_root';
-    const done =
-      getFlag('touched_23') === 'true' &&
-      getFlag('touched_47') === 'true' &&
-      getFlag('touched_89') === 'true';
-    return done ? BERNARD_CHAR_ROOT : BERNARD_QUEST_ROOT;
-  }, [stageFlagKey]);
+    if (npcKey === 'bernard') {
+      const stage = getFlag(stageFlagKey);
+      if (stage === '1') return 'quest_check_status';
+      if (stage === '3') return 'quest_stage3_root';
+      if (stage === '4') return 'quest_stage4_root';
+      if (stage === '6') return 'quest_stage6_root';
+      const done =
+        getFlag('touched_23') === 'true' &&
+        getFlag('touched_47') === 'true' &&
+        getFlag('touched_89') === 'true';
+      return done ? BERNARD_CHAR_ROOT : BERNARD_QUEST_ROOT;
+    }
+    return DEFAULT_ENTRY_BUCKETS[npcKey] ?? 'temper_root';
+  }, [npcKey, stageFlagKey]);
+
 
   // Where in the branching book graph this conversation currently sits.
   const [currentBucket, setCurrentBucket] = useState<string>(() => defaultBucket());

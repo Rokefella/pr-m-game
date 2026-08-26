@@ -7,7 +7,7 @@ import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
-import BernardDialogue from '@/components/BernardDialogue';
+import NpcDialogue from '@/components/NpcDialogue';
 import CharacterEye from '@/components/CharacterEye';
 import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { supabase } from '@/lib/supabase';
@@ -1072,6 +1072,7 @@ const Village = () => {
     bumpFlags,
     resetBernardBucket,
     resolvedDialogue,
+    isReady: bernardReady,
   } = useNpcDialogue('bernard', {
     user,
     currentLevel,
@@ -1101,6 +1102,7 @@ const Village = () => {
   const {
     resetBernardBucket: resetBankerBucket,
     resolvedDialogue: bankerDialogue,
+    isReady: bankerReady,
   } = useNpcDialogue('banker', {
     user,
     currentLevel,
@@ -1935,7 +1937,7 @@ const Village = () => {
     const bernX = dynamicBuildings ? (dynamicBuildings.bernardCenter ? dynamicBuildings.bernardCenter.x : mapSizeRef.current.w / 2) : BERNARD_VILLAGE.x;
     const bernY = dynamicBuildings ? (dynamicBuildings.bernardCenter ? dynamicBuildings.bernardCenter.y : mapSizeRef.current.h / 2) : BERNARD_VILLAGE.y;
     const db = Math.hypot(fx - bernX, fy - bernY);
-    if (db <= 40) {
+    if (db <= 40 && bernardReady) {
       if (!bernardLockRef.current) {
         bernardLockRef.current = true;
         openBernardDialog();
@@ -1948,7 +1950,7 @@ const Village = () => {
     const bankX = dynamicBuildings?.bankerCenter ? dynamicBuildings.bankerCenter.x : mapSizeRef.current.w / 2;
     const bankY = dynamicBuildings?.bankerCenter ? dynamicBuildings.bankerCenter.y : mapSizeRef.current.h / 2;
     const dbk = Math.hypot(fx - bankX, fy - bankY);
-    if (dbk <= 40) {
+    if (dbk <= 40 && bankerReady) {
       if (!bankerLockRef.current) {
         bankerLockRef.current = true;
         openBankerDialog();
@@ -3440,7 +3442,7 @@ const Village = () => {
 
       {/* Bernard dialogue overlay */}
       {bernardOpen && resolvedDialogue && (
-        <BernardDialogue text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>
+        <NpcDialogue npcName="Bernard" npcPortraitSrc={bernardMarkerUrl} text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>
           {(resolvedDialogue.options ?? []).map((o, i) => (
             <button
               key={`${o.label}-${i}`}
@@ -3505,12 +3507,12 @@ const Village = () => {
           >
             CLOSE
           </button>
-        </BernardDialogue>
+        </NpcDialogue>
       )}
 
       {/* The Banker dialogue overlay */}
       {bankerOpen && bankerDialogue && (
-        <BernardDialogue text={bankerDialogue.text} onShow={bankerDialogue.onShow}>
+        <NpcDialogue npcName="The Banker" npcPortraitSrc={bankerMarkerUrl} text={bankerDialogue.text} onShow={bankerDialogue.onShow}>
           {(bankerDialogue.options ?? []).map((o, i) => (
             <button
               key={`${o.label}-${i}`}
@@ -3575,7 +3577,7 @@ const Village = () => {
           >
             CLOSE
           </button>
-        </BernardDialogue>
+        </NpcDialogue>
       )}
 
       <ProfileOverlay

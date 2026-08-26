@@ -141,6 +141,9 @@ function useNpcDialogueImpl({
   const stageFlagKey = `${npcKey}_stage`;
   const [bernardStages, setBernardStages] = useState<BernardStageRow[]>([]);
   const [bernardBookEntries, setBernardBookEntries] = useState<BernardBookEntry[]>([]);
+  // Data-loading gates — proximity triggers must wait for both fetches.
+  const [bookLoaded, setBookLoaded] = useState(false);
+  const [stagesLoaded, setStagesLoaded] = useState(false);
   // Forces re-render of Bernard dialogue when quest flags change.
   const [flagsVersion, setFlagsVersion] = useState(0);
   const bumpFlags = useCallback(() => setFlagsVersion((v) => v + 1), []);
@@ -190,6 +193,7 @@ function useNpcDialogueImpl({
         .maybeSingle();
       if (npcErr || !npcRow) {
         if (npcErr) console.error('[useNpcDialogue] npc lookup failed', npcErr);
+        if (!cancelled) setBookLoaded(true);
         return;
       }
       const { data, error } = await supabase
@@ -200,6 +204,7 @@ function useNpcDialogueImpl({
         .eq('npc_id', (npcRow as { id: string }).id);
       if (error) {
         console.error('[useNpcDialogue] book entries fetch failed', error);
+        if (!cancelled) setBookLoaded(true);
         return;
       }
       if (cancelled) return;
@@ -216,9 +221,16 @@ function useNpcDialogueImpl({
         return r.flags_equal === false ? !allMatch : allMatch;
       });
       setBernardBookEntries(eligible);
+      setBookLoaded(true);
     })();
     return () => { cancelled = true; };
   }, [npcKey, currentLevel, socialStat, perceptionStat, tradeStat]);
+
+  // A different NPC means a fresh load — close the readiness gate again.
+  useEffect(() => {
+    setBookLoaded(false);
+    setStagesLoaded(false);
+  }, [npcKey]);
 
 
   // Eligible entries indexed by bucket_key.
@@ -244,6 +256,7 @@ function useNpcDialogueImpl({
         .maybeSingle();
       if (npcErr || !npcRow) {
         if (npcErr) console.error('[useNpcDialogue] npc lookup failed', npcErr);
+        if (!cancelled) setStagesLoaded(true);
         return;
       }
       const { data, error } = await supabase
@@ -253,9 +266,13 @@ function useNpcDialogueImpl({
         .order('order_index', { ascending: true });
       if (error) {
         console.error('[useNpcDialogue] dialogue stages fetch failed', error);
+        if (!cancelled) setStagesLoaded(true);
         return;
       }
-      if (!cancelled) setBernardStages((data as BernardStageRow[]) || []);
+      if (!cancelled) {
+        setBernardStages((data as BernardStageRow[]) || []);
+        setStagesLoaded(true);
+      }
     })();
     return () => { cancelled = true; };
   }, [npcKey]);
@@ -419,6 +436,8 @@ function useNpcDialogueImpl({
     advanceBernardStage,
     getBernardDialogue,
     resolvedDialogue,
+    /** True once this NPC's stages + book have finished loading. */
+    isReady: bookLoaded && stagesLoaded,
     bumpFlags,
   };
 

@@ -924,9 +924,6 @@ const Village = () => {
   const merchantPos = dynamicBuildings
     ? (dynamicBuildings.merchantCenter ?? { x: mapW / 2, y: mapH / 2 })
     : MERCHANT;
-  const bankerPos = dynamicBuildings
-    ? (dynamicBuildings.bankerCenter ?? { x: mapW / 2, y: mapH / 2 })
-    : { x: mapW / 2, y: mapH / 2 };
   const eyePupilRef = useRef({ x: 0, y: 0 });
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });

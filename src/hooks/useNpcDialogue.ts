@@ -77,6 +77,11 @@ export type BernardBookEntry = {
 export const BERNARD_QUEST_ROOT = 'quest_intro_root';
 export const BERNARD_CHAR_ROOT = 'char_temper_root';
 
+const DEFAULT_ENTRY_BUCKETS: Record<string, string> = {
+  banker: 'bnk_temper_root',
+};
+
+
 export type UseNpcDialogueOptions = {
   /** NPC key in the `npcs` table (e.g. 'bernard', 'banker'). */
   npcKey?: string;

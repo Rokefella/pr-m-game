@@ -1093,7 +1093,7 @@ const Village = () => {
     onAcceptAlexandraQuest: () => acceptAlexandraQuestRef.current(),
   });
 
-  // ── The Banker (data-driven dialogue, same spine as Bernard) ──
+  
 
   const acceptAlexandraQuest = useCallback(async () => {
     if (!user) return;

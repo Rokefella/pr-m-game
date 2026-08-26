@@ -14,6 +14,56 @@ export type Database = {
   }
   public: {
     Tables: {
+      exchange_listings: {
+        Row: {
+          buyer_id: string | null
+          created_at: string
+          fragment_id: string
+          id: string
+          level: number | null
+          price: number
+          prime_number: number | null
+          seller_id: string
+          seller_username: string | null
+          sold_at: string | null
+          status: string
+        }
+        Insert: {
+          buyer_id?: string | null
+          created_at?: string
+          fragment_id: string
+          id?: string
+          level?: number | null
+          price: number
+          prime_number?: number | null
+          seller_id: string
+          seller_username?: string | null
+          sold_at?: string | null
+          status?: string
+        }
+        Update: {
+          buyer_id?: string | null
+          created_at?: string
+          fragment_id?: string
+          id?: string
+          level?: number | null
+          price?: number
+          prime_number?: number | null
+          seller_id?: string
+          seller_username?: string | null
+          sold_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exchange_listings_fragment_id_fkey"
+            columns: ["fragment_id"]
+            isOneToOne: false
+            referencedRelation: "fragments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fragments: {
         Row: {
           banked: boolean
@@ -252,7 +302,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      purchase_fragment_listing: {
+        Args: { p_buyer_id: string; p_listing_id: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

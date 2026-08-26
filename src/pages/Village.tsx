@@ -60,7 +60,7 @@ type DynamicVillage = {
   npcs: { x: number; y: number; name: string }[];
   eyeCenter: { x: number; y: number } | null;
   bernardCenter: { x: number; y: number } | null;
-  bankerCenter: { x: number; y: number } | null;
+  
   merchantCenter: { x: number; y: number } | null;
   gridSize: number;
   start: { col: number; row: number } | null;

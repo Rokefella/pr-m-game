@@ -674,6 +674,246 @@ const ExchangeRoom = () => {
         THE EXCHANGE
       </div>
 
+      {/* Marketplace toggle — sits near the Banker's dialogue trigger, never blocks movement */}
+      <button
+        type="button"
+        className="font-cinzel"
+        onClick={() => setMarketOpen((v) => !v)}
+        style={{
+          position: 'absolute',
+          top: 44,
+          right: 18,
+          background: marketOpen ? 'rgba(200,150,58,0.28)' : 'rgba(10,8,18,0.75)',
+          border: '0.5px solid rgba(200,150,58,0.5)',
+          color: '#c8963a',
+          padding: '8px 14px',
+          fontSize: 12,
+          letterSpacing: '0.2em',
+          cursor: 'pointer',
+          zIndex: 8,
+        }}
+      >
+        {marketOpen ? 'CLOSE MARKET' : 'MARKETPLACE'}
+      </button>
+
+      {marketOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 84,
+            right: 18,
+            width: 360,
+            maxHeight: 'calc(100% - 120px)',
+            overflowY: 'auto',
+            background: 'rgba(6,5,12,0.94)',
+            border: '0.5px solid rgba(200,150,58,0.35)',
+            padding: 16,
+            zIndex: 8,
+            boxSizing: 'border-box',
+          }}
+        >
+          <div
+            className="font-cinzel"
+            style={{ fontSize: 12, letterSpacing: '0.25em', color: 'rgba(200,150,58,0.8)', marginBottom: 4 }}
+          >
+            FRAGMENT MARKET
+          </div>
+          <div className="font-mono" style={{ fontSize: 11, color: 'rgba(200,196,186,0.5)', marginBottom: 12 }}>
+            {credits} credits · {fragmentCount} fragments held
+          </div>
+
+          {marketError && (
+            <div
+              className="font-fell italic"
+              style={{
+                fontSize: 13,
+                color: '#d07a6a',
+                border: '0.5px solid rgba(208,122,106,0.4)',
+                padding: '6px 8px',
+                marginBottom: 10,
+              }}
+            >
+              {marketError}
+            </div>
+          )}
+          {marketNotice && !marketError && (
+            <div className="font-fell italic" style={{ fontSize: 13, color: '#1a9e7a', marginBottom: 10 }}>
+              {marketNotice}
+            </div>
+          )}
+          {marketLoading && (
+            <div className="font-mono" style={{ fontSize: 11, color: 'rgba(160,140,200,0.6)', marginBottom: 10 }}>
+              LOADING…
+            </div>
+          )}
+
+          {/* BROWSE */}
+          <div className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.25em', color: 'rgba(200,196,186,0.6)', marginBottom: 8 }}>
+            BROWSE
+          </div>
+          {!listings.length && !marketLoading && (
+            <div className="font-fell italic" style={{ fontSize: 13, color: 'rgba(200,196,186,0.4)', marginBottom: 14 }}>
+              Nothing is offered right now.
+            </div>
+          )}
+          {listings.map((l) => (
+            <div
+              key={l.id}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+                borderBottom: '0.5px solid rgba(200,196,186,0.12)',
+                padding: '6px 0',
+              }}
+            >
+              <span className="font-mono" style={{ fontSize: 11, color: 'rgba(200,196,186,0.8)' }}>
+                Prime {l.prime_number ?? '?'}, Level {l.level ?? '?'} — {l.price} credits — sold by{' '}
+                {l.seller_username ?? 'unknown'}
+              </span>
+              <button
+                type="button"
+                className="font-cinzel"
+                disabled={marketBusy || l.seller_id === user?.id}
+                onClick={() => void buyListing(l)}
+                style={{
+                  background: 'rgba(200,150,58,0.18)',
+                  border: '0.5px solid rgba(200,150,58,0.5)',
+                  color: '#c8963a',
+                  padding: '4px 10px',
+                  fontSize: 11,
+                  letterSpacing: '0.15em',
+                  cursor: marketBusy || l.seller_id === user?.id ? 'not-allowed' : 'pointer',
+                  opacity: marketBusy || l.seller_id === user?.id ? 0.4 : 1,
+                  flexShrink: 0,
+                }}
+              >
+                BUY
+              </button>
+            </div>
+          ))}
+
+          {/* SELL */}
+          <div
+            className="font-cinzel"
+            style={{ fontSize: 11, letterSpacing: '0.25em', color: 'rgba(200,196,186,0.6)', margin: '18px 0 8px' }}
+          >
+            SELL
+          </div>
+          {!myFragments.length ? (
+            <div className="font-fell italic" style={{ fontSize: 13, color: 'rgba(200,196,186,0.4)' }}>
+              You hold nothing the market will take.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <select
+                className="font-mono"
+                value={sellFragmentId}
+                onChange={(e) => setSellFragmentId(e.target.value)}
+                style={{
+                  background: 'rgba(10,8,18,0.9)',
+                  border: '0.5px solid rgba(200,196,186,0.25)',
+                  color: 'rgba(200,196,186,0.85)',
+                  fontSize: 11,
+                  padding: '6px 8px',
+                }}
+              >
+                {myFragments.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    Prime {f.prime_number}, Level {f.level}
+                  </option>
+                ))}
+              </select>
+              <input
+                className="font-mono"
+                type="number"
+                min={1}
+                placeholder="Price in credits"
+                value={sellPrice}
+                onChange={(e) => setSellPrice(e.target.value)}
+                style={{
+                  background: 'rgba(10,8,18,0.9)',
+                  border: '0.5px solid rgba(200,196,186,0.25)',
+                  color: 'rgba(200,196,186,0.85)',
+                  fontSize: 11,
+                  padding: '6px 8px',
+                }}
+              />
+              <button
+                type="button"
+                className="font-cinzel"
+                disabled={marketBusy}
+                onClick={() => void createListing()}
+                style={{
+                  background: 'rgba(200,150,58,0.18)',
+                  border: '0.5px solid rgba(200,150,58,0.5)',
+                  color: '#c8963a',
+                  padding: '6px 12px',
+                  fontSize: 11,
+                  letterSpacing: '0.2em',
+                  cursor: marketBusy ? 'not-allowed' : 'pointer',
+                  opacity: marketBusy ? 0.5 : 1,
+                }}
+              >
+                LIST FOR SALE
+              </button>
+            </div>
+          )}
+
+          {/* MY LISTINGS */}
+          <div
+            className="font-cinzel"
+            style={{ fontSize: 11, letterSpacing: '0.25em', color: 'rgba(200,196,186,0.6)', margin: '18px 0 8px' }}
+          >
+            MY LISTINGS
+          </div>
+          {!myListings.length ? (
+            <div className="font-fell italic" style={{ fontSize: 13, color: 'rgba(200,196,186,0.4)' }}>
+              You have nothing on offer.
+            </div>
+          ) : (
+            myListings.map((l) => (
+              <div
+                key={l.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                  borderBottom: '0.5px solid rgba(200,196,186,0.12)',
+                  padding: '6px 0',
+                }}
+              >
+                <span className="font-mono" style={{ fontSize: 11, color: 'rgba(200,196,186,0.8)' }}>
+                  Prime {l.prime_number ?? '?'}, Level {l.level ?? '?'} — {l.price} credits
+                </span>
+                <button
+                  type="button"
+                  className="font-cinzel"
+                  disabled={marketBusy}
+                  onClick={() => void cancelListing(l)}
+                  style={{
+                    background: 'transparent',
+                    border: '0.5px solid rgba(160,140,200,0.35)',
+                    color: 'rgba(160,140,200,0.7)',
+                    padding: '4px 10px',
+                    fontSize: 11,
+                    letterSpacing: '0.15em',
+                    cursor: marketBusy ? 'not-allowed' : 'pointer',
+                    flexShrink: 0,
+                  }}
+                >
+                  CANCEL
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+
+
       {message && (
         <div
           className="font-fell italic"

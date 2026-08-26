@@ -78,7 +78,7 @@ export const BERNARD_QUEST_ROOT = 'quest_intro_root';
 export const BERNARD_CHAR_ROOT = 'char_temper_root';
 
 const DEFAULT_ENTRY_BUCKETS: Record<string, string> = {
-  banker: 'bnk_temper_root',
+  banker: 'bnk_root_menu',
 };
 
 
@@ -104,6 +104,8 @@ export type UseNpcDialogueOptions = {
   onAcceptAlexandraQuest?: () => void;
   /** Called when a book option is a dead end — host should close the dialogue. */
   onCloseDialogue?: () => void;
+  /** Host opens its marketplace panel (Banker's trade action). */
+  onOpenMarketplace?: () => void;
   /** Host's open state; when it becomes true the hook resolves a single stable node. */
   isOpen?: boolean;
 };
@@ -136,6 +138,7 @@ function useNpcDialogueImpl({
   onMessage,
   onAcceptAlexandraQuest,
   onCloseDialogue,
+  onOpenMarketplace,
   isOpen,
 }: UseNpcDialogueOptions) {
   const stageFlagKey = `${npcKey}_stage`;
@@ -355,6 +358,10 @@ function useNpcDialogueImpl({
       onMessage?.('You are a Wanderer.');
     },
     accept_alexandra_quest: () => { onAcceptAlexandraQuest?.(); },
+    open_marketplace_browse: () => {
+      onOpenMarketplace?.();
+      onCloseDialogue?.();
+    },
   };
 
   /** Turns a book entry into renderable dialogue data (options resolved to handlers). */

@@ -318,6 +318,7 @@ const ExchangeRoom = () => {
     onCreditsChange: setCredits,
     onGrowthPointsChange: setGrowthPoints,
     onCloseDialogue: () => setBankerOpen(false),
+    onOpenMarketplace: () => setMarketOpen(true),
     onMessage: (msg) => {
       setMessage(msg);
       window.setTimeout(() => setMessage(null), 3000);
@@ -674,28 +675,6 @@ const ExchangeRoom = () => {
         THE EXCHANGE
       </div>
 
-      {/* Marketplace toggle — sits near the Banker's dialogue trigger, never blocks movement */}
-      <button
-        type="button"
-        className="font-cinzel"
-        onClick={() => setMarketOpen((v) => !v)}
-        style={{
-          position: 'absolute',
-          top: 44,
-          right: 18,
-          background: marketOpen ? 'rgba(200,150,58,0.28)' : 'rgba(10,8,18,0.75)',
-          border: '0.5px solid rgba(200,150,58,0.5)',
-          color: '#c8963a',
-          padding: '8px 14px',
-          fontSize: 12,
-          letterSpacing: '0.2em',
-          cursor: 'pointer',
-          zIndex: 8,
-        }}
-      >
-        {marketOpen ? 'CLOSE MARKET' : 'MARKETPLACE'}
-      </button>
-
       {marketOpen && (
         <div
           style={{
@@ -718,6 +697,25 @@ const ExchangeRoom = () => {
           >
             FRAGMENT MARKET
           </div>
+          <button
+            type="button"
+            className="font-cinzel"
+            onClick={() => setMarketOpen(false)}
+            style={{
+              position: 'absolute',
+              top: 12,
+              right: 12,
+              background: 'transparent',
+              border: '0.5px solid rgba(200,150,58,0.4)',
+              color: 'rgba(200,150,58,0.8)',
+              padding: '4px 8px',
+              fontSize: 11,
+              letterSpacing: '0.2em',
+              cursor: 'pointer',
+            }}
+          >
+            CLOSE
+          </button>
           <div className="font-mono" style={{ fontSize: 11, color: 'rgba(200,196,186,0.5)', marginBottom: 12 }}>
             {credits} credits · {fragmentCount} fragments held
           </div>

@@ -1,13 +1,16 @@
 import { ReactNode, useEffect } from 'react';
-import bernardMarker from '@/assets/bernard_marker.svg';
 
 interface Props {
   text: string;
+  /** Display name shown above the dialogue text (e.g. "Bernard", "The Banker"). */
+  npcName: string;
+  /** Portrait image source for this NPC (imported asset URL). */
+  npcPortraitSrc: string;
   children?: ReactNode; // action buttons
   onShow?: () => void;
 }
 
-const BernardDialogue = ({ text, children, onShow }: Props) => {
+const NpcDialogue = ({ text, npcName, npcPortraitSrc, children, onShow }: Props) => {
   useEffect(() => {
     onShow?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -37,7 +40,7 @@ const BernardDialogue = ({ text, children, onShow }: Props) => {
           gap: 20,
         }}
       >
-        {/* Left: Bernard image */}
+        {/* Left: NPC portrait */}
         <div
           style={{
             width: '40%',
@@ -50,8 +53,8 @@ const BernardDialogue = ({ text, children, onShow }: Props) => {
           }}
         >
           <img
-            src={bernardMarker}
-            alt="Bernard"
+            src={npcPortraitSrc}
+            alt={npcName}
             style={{
               height: 280,
               maxHeight: '100%',
@@ -65,7 +68,7 @@ const BernardDialogue = ({ text, children, onShow }: Props) => {
         {/* Right: dialogue */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
           <p className="font-cinzel" style={{ color: '#c8963a', fontSize: 16, letterSpacing: '0.2em', margin: 0 }}>
-            Bernard
+            {npcName}
           </p>
           <p className="font-fell italic" style={{ color: 'rgba(200,185,255,0.95)', fontSize: 16, lineHeight: 1.65, margin: '12px 0 16px' }}>
             {text}
@@ -79,4 +82,4 @@ const BernardDialogue = ({ text, children, onShow }: Props) => {
   );
 };
 
-export default BernardDialogue;
+export default NpcDialogue;

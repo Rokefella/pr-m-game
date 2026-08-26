@@ -5,7 +5,7 @@ import { fetchOrCreateUser } from '@/lib/userData';
 import { supabase } from '@/lib/supabase';
 import { setFlag } from '@/lib/questFlags';
 import { checkSubscriptionStatus } from '@/lib/subscriptionStatus';
-import BernardDialogue from '@/components/BernardDialogue';
+import NpcDialogue from '@/components/NpcDialogue';
 import { useNpcDialogue } from '@/hooks/useNpcDialogue';
 import bankerMarkerUrl from '@/assets/banker_marker.svg';
 
@@ -156,6 +156,7 @@ const ExchangeRoom = () => {
     resolvedDialogue,
     resetBernardBucket,
     bumpFlags,
+    isReady: npcReady,
   } = useNpcDialogue('banker', {
     user,
     currentLevel,
@@ -432,7 +433,7 @@ const ExchangeRoom = () => {
 
     // Banker proximity → open the shared dialogue (40px)
     const db = Math.hypot(nx - bankerPos.x, ny - bankerPos.y);
-    if (db <= 40) {
+    if (db <= 40 && npcReady) {
       if (!bankerLockRef.current) {
         bankerLockRef.current = true;
         openBankerDialog();
@@ -732,7 +733,7 @@ const ExchangeRoom = () => {
       )}
 
       {bankerOpen && resolvedDialogue && (
-        <BernardDialogue text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>
+        <NpcDialogue npcName="The Banker" npcPortraitSrc={bankerMarkerUrl} text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>
           {(resolvedDialogue.options ?? []).map((o, i) => (
             <button
               key={`${o.label}-${i}`}
@@ -797,7 +798,7 @@ const ExchangeRoom = () => {
           >
             CLOSE
           </button>
-        </BernardDialogue>
+        </NpcDialogue>
       )}
     </div>
   );

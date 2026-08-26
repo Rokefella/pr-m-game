@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
-import BernardDialogue from '@/components/BernardDialogue';
+import NpcDialogue from '@/components/NpcDialogue';
 import CharacterEye from '@/components/CharacterEye';
 import { useAuth } from '@/context/AuthContext';
 import { getAllFlags } from '@/lib/questFlags';
 import { fetchOrCreateUser } from '@/lib/userData';
 import { useBernardDialogue } from '@/hooks/useBernardDialogue';
+import bernardMarkerUrl from '@/assets/bernard_marker.svg';
 
 
 
@@ -286,7 +287,7 @@ const BernardRoom1 = () => {
 
 
     return (
-      <BernardDialogue text={d.text} onShow={d.onShow}>
+      <NpcDialogue npcName="Bernard" npcPortraitSrc={bernardMarkerUrl} text={d.text} onShow={d.onShow}>
         {actions.map((a, i) => (
           <button
             key={i}
@@ -305,7 +306,7 @@ const BernardRoom1 = () => {
             {a.label}
           </button>
         ))}
-      </BernardDialogue>
+      </NpcDialogue>
     );
   };
 

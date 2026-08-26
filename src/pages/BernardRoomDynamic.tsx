@@ -5,7 +5,7 @@ import { fetchOrCreateUser } from '@/lib/userData';
 import { supabase } from '@/lib/supabase';
 import { setFlag } from '@/lib/questFlags';
 import { checkSubscriptionStatus } from '@/lib/subscriptionStatus';
-import BernardDialogue from '@/components/BernardDialogue';
+import NpcDialogue from '@/components/NpcDialogue';
 import { useNpcDialogue } from '@/hooks/useNpcDialogue';
 import bernardMarkerUrl from '@/assets/bernard_marker.svg';
 
@@ -157,6 +157,7 @@ const BernardRoomDynamic = () => {
     resolvedDialogue,
     resetBernardBucket,
     bumpFlags,
+    isReady: npcReady,
   } = useNpcDialogue('bernard', {
     user,
     currentLevel,
@@ -434,7 +435,7 @@ const BernardRoomDynamic = () => {
 
     // Bernard proximity → open the shared dialogue (40px)
     const db = Math.hypot(nx - bernardPos.x, ny - bernardPos.y);
-    if (db <= 40) {
+    if (db <= 40 && npcReady) {
       if (!bernardLockRef.current) {
         bernardLockRef.current = true;
         openBernardDialog();
@@ -734,7 +735,7 @@ const BernardRoomDynamic = () => {
       )}
 
       {bernardOpen && resolvedDialogue && (
-        <BernardDialogue text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>
+        <NpcDialogue npcName="Bernard" npcPortraitSrc={bernardMarkerUrl} text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>
           {(resolvedDialogue.options ?? []).map((o, i) => (
             <button
               key={`${o.label}-${i}`}
@@ -799,7 +800,7 @@ const BernardRoomDynamic = () => {
           >
             CLOSE
           </button>
-        </BernardDialogue>
+        </NpcDialogue>
       )}
     </div>
   );

@@ -13,7 +13,7 @@ import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type S
 import { supabase } from '@/lib/supabase';
 import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
 import bernardMarkerUrl from '@/assets/bernard_marker.svg';
-import bankerMarkerUrl from '@/assets/banker_marker.svg';
+
 import { useNpcDialogue, type BernardDialogueData } from '@/hooks/useNpcDialogue';
 
 

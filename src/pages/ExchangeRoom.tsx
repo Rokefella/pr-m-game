@@ -13,6 +13,18 @@ const CELL = 20;
 const STEP = 12;
 
 type Rect = { id: string; x: number; y: number; w: number; h: number };
+type Listing = {
+  id: string;
+  fragment_id: string;
+  seller_id: string;
+  price: number;
+  status: string;
+  prime_number: number | null;
+  level: number | null;
+  seller_username: string | null;
+  created_at: string;
+};
+type OwnedFragment = { id: string; prime_number: number; level: number };
 type RugTrim = { top: boolean; bottom: boolean; left: boolean; right: boolean };
 type RugTile = { id: string; x: number; y: number; trim: RugTrim };
 type RoomCell = {

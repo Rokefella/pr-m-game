@@ -2686,36 +2686,6 @@ const Village = () => {
           B
         </span>
 
-        {/* The Banker marker */}
-        {dynamicBuildings?.bankerCenter && (
-          <>
-            <img
-              src={bankerMarkerUrl}
-              width={24}
-              height={24}
-              style={{
-                position: 'absolute',
-                left: bankerPos.x - 12,
-                top: bankerPos.y - 12,
-                pointerEvents: 'none',
-              }}
-            />
-            <span
-              className="font-mono"
-              style={{
-                position: 'absolute',
-                left: bankerPos.x - 4,
-                top: bankerPos.y - 24,
-                fontSize: 14,
-                color: 'rgba(26,158,122,0.7)',
-                pointerEvents: 'none',
-                zIndex: 4,
-              }}
-            >
-              $
-            </span>
-          </>
-        )}
 
 
         {/* Ghost players */}

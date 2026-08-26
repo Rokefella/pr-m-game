@@ -1525,9 +1525,6 @@ const Village = () => {
             case 'BERNARD':
               bernardCenter = { x, y };
               break;
-            case 'BANKER':
-              bankerCenter = { x, y };
-              break;
             case 'MERCHANT':
               merchantCenter = { x, y };
               break;

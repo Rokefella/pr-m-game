@@ -20,8 +20,11 @@ export type Database = {
           created_at: string
           fragment_id: string
           id: string
+          level: number | null
           price: number
+          prime_number: number | null
           seller_id: string
+          seller_username: string | null
           sold_at: string | null
           status: string
         }
@@ -30,8 +33,11 @@ export type Database = {
           created_at?: string
           fragment_id: string
           id?: string
+          level?: number | null
           price: number
+          prime_number?: number | null
           seller_id: string
+          seller_username?: string | null
           sold_at?: string | null
           status?: string
         }
@@ -40,8 +46,11 @@ export type Database = {
           created_at?: string
           fragment_id?: string
           id?: string
+          level?: number | null
           price?: number
+          prime_number?: number | null
           seller_id?: string
+          seller_username?: string | null
           sold_at?: string | null
           status?: string
         }

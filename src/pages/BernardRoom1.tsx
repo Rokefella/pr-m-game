@@ -7,6 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { getAllFlags } from '@/lib/questFlags';
 import { fetchOrCreateUser } from '@/lib/userData';
 import { useBernardDialogue } from '@/hooks/useBernardDialogue';
+import bernardMarkerUrl from '@/assets/bernard_marker.svg';
 
 
 

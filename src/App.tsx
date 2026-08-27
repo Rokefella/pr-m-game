@@ -23,6 +23,7 @@ import Signup from "./pages/Signup.tsx";
 import AvatarPreview from "./pages/AvatarPreview.tsx";
 import Welcome from "./pages/Welcome.tsx";
 import Intro from "./pages/Intro.tsx";
+import DynamicRoom from "./pages/DynamicRoom.tsx";
 
 const queryClient = new QueryClient();
 

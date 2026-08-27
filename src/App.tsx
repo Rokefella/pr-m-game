@@ -23,6 +23,7 @@ import Signup from "./pages/Signup.tsx";
 import AvatarPreview from "./pages/AvatarPreview.tsx";
 import Welcome from "./pages/Welcome.tsx";
 import Intro from "./pages/Intro.tsx";
+import DynamicRoom from "./pages/DynamicRoom.tsx";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,7 @@ const App = () => (
             <Route path="/paywall" element={<Paywall />} />
             <Route path="/bernard-room" element={<BernardRoomDynamic />} />
             <Route path="/avatar-preview" element={<AvatarPreview />} />
+            <Route path="/room/:levelNumber/:locationKey" element={<DynamicRoom />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

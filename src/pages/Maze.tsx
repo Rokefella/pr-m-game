@@ -885,11 +885,19 @@ const Maze = () => {
     // blue door — Bernard's room (Level 1) / credit game (other levels)
     if (cfg.creditDoors.some((d) => d.col === nc && d.row === nr)) {
       if (currentLevelRef.current === 1) {
-        navigate('/bernard-room');
+        navigate(`/room/${currentLevelRef.current}/bernard_room`);
       } else {
         showWhisper('A game exists here. Not yet open.', 'rgba(59,130,246,0.8)', 2500);
       }
     }
+
+    // ROOM_DOOR cells — newly-placed colored doors leading to generic rooms.
+    const roomDoor = cfg.doorsToRoom?.find((d) => d.col === nc && d.row === nr);
+    if (roomDoor) {
+      const key = (roomDoor as DoorToRoom & { color?: string }).color ?? roomDoor.roomId;
+      if (key) navigate(`/room/${currentLevelRef.current}/${key}`);
+    }
+
   };
 
   // keyboard

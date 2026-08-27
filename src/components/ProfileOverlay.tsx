@@ -392,11 +392,11 @@ const ProfileOverlay = ({
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
               <div
                 style={{
-                  width: 150,
-                  height: 150,
+                  width: 100,
+                  height: 100,
                   borderRadius: '50%',
                   background: `radial-gradient(circle at 30% 30%, ${auraColor}cc, ${auraColor}66)`,
-                  boxShadow: `0 0 40px ${auraColor}66, inset 0 0 30px ${auraColor}44`,
+                  boxShadow: `0 0 28px ${auraColor}66, inset 0 0 20px ${auraColor}44`,
                 }}
               />
             </div>

@@ -1,7 +1,22 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
+import { fetchOrCreateUser } from '@/lib/userData';
 
 const LibraryDoor = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [level, setLevel] = useState(1);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!user?.id) return;
+    (async () => {
+      const row = await fetchOrCreateUser(user.id);
+      if (!cancelled && row?.level) setLevel(row.level);
+    })();
+    return () => { cancelled = true; };
+  }, [user]);
 
   return (
     <div
@@ -174,7 +189,7 @@ const LibraryDoor = () => {
       >
         <button
           className="font-cinzel"
-          onClick={() => navigate('/library')}
+          onClick={() => navigate(`/room/${level}/library`)}
           style={{
             background: '#c8963a',
             color: '#04040a',

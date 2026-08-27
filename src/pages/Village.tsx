@@ -898,7 +898,7 @@ const Village = () => {
   };
   const finishVillageLoading = () => {
     if (villageLoadingTimerRef.current) return;
-    const remaining = Math.max(0, 6000 - (Date.now() - villageLoadingStartRef.current));
+    const remaining = Math.max(0, 3000 - (Date.now() - villageLoadingStartRef.current));
     if (remaining > 0) {
       villageLoadingTimerRef.current = window.setTimeout(() => {
         villageLoadingTimerRef.current = null;

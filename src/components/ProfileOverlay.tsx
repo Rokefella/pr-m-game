@@ -390,13 +390,14 @@ const ProfileOverlay = ({
         {mainTab === 'profile' && (
           <div style={{ marginTop: 8 }}>
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-              <Avatar
-                view="front"
-                hat={accountRow?.avatar_hat ?? 'none'}
-                body={accountRow?.avatar_body ?? 'default'}
-                head={accountRow?.avatar_head ?? 'default'}
-                auraColor={accountRow?.aura_color ?? '#5b4fd4'}
-                size={150}
+              <div
+                style={{
+                  width: 150,
+                  height: 150,
+                  borderRadius: '50%',
+                  background: `radial-gradient(circle at 30% 30%, ${auraColor}cc, ${auraColor}66)`,
+                  boxShadow: `0 0 40px ${auraColor}66, inset 0 0 30px ${auraColor}44`,
+                }}
               />
             </div>
             <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 36, color: '#c8963a', margin: '24px 0 0' }}>

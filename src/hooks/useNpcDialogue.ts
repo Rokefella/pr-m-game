@@ -205,7 +205,7 @@ function useNpcDialogueImpl({
       const { data, error } = await supabase
         .from('npc_book_entries')
         .select(
-          'id, node_key, bucket_key, topic, text, weight, min_level, min_social, min_perception, min_trade, requires_flags, flags_equal, option_a_label, option_a_target, option_a_action_key, option_b_label, option_b_target, option_b_action_key',
+          'id, node_key, bucket_key, topic, text, weight, min_level, min_social, min_perception, min_trade, requires_flags, flags_equal, requires_drops, option_a_label, option_a_target, option_a_action_key, option_b_label, option_b_target, option_b_action_key',
         )
         .eq('npc_id', (npcRow as { id: string }).id);
       if (error) {
@@ -222,15 +222,21 @@ function useNpcDialogueImpl({
         if (typeof r.min_perception === 'number' && perceptionStat < r.min_perception) return false;
         if (typeof r.min_trade === 'number' && tradeStat < r.min_trade) return false;
         const requires = r.requires_flags;
-        if (!requires || Object.keys(requires).length === 0) return true;
-        const allMatch = Object.keys(requires).every((k) => getFlag(k) === requires[k]);
-        return r.flags_equal === false ? !allMatch : allMatch;
+        if (requires && Object.keys(requires).length > 0) {
+          const allMatch = Object.keys(requires).every((k) => getFlag(k) === requires[k]);
+          if (r.flags_equal === false ? allMatch : !allMatch) return false;
+        }
+        const requiredDrops = r.requires_drops;
+        if (requiredDrops && requiredDrops.length > 0) {
+          if (!requiredDrops.every((k) => ownedDropKeys.has(k))) return false;
+        }
+        return true;
       });
       setBernardBookEntries(eligible);
       setBookLoaded(true);
     })();
     return () => { cancelled = true; };
-  }, [npcKey, currentLevel, socialStat, perceptionStat, tradeStat]);
+  }, [npcKey, currentLevel, socialStat, perceptionStat, tradeStat, ownedDropKeys]);
 
   // A different NPC means a fresh load — close the readiness gate again.
   useEffect(() => {

@@ -38,6 +38,15 @@ type AccountUserRow = {
   avatar_hat: string | null;
   avatar_body: string | null;
   avatar_head: string | null;
+  trade: number | null;
+  extra_drop_capacity: number | null;
+};
+
+type OwnedDrop = {
+  id: string;
+  drop_key: string;
+  name: string;
+  description: string | null;
 };
 
 const ProfileOverlay = ({
@@ -73,6 +82,11 @@ const ProfileOverlay = ({
 
   const [folderFragments, setFolderFragments] = useState<Array<{ id: string; prime_number: number }>>([]);
   const [folderTooltip, setFolderTooltip] = useState<string | null>(null);
+  const [ownedDrops, setOwnedDrops] = useState<OwnedDrop[]>([]);
+  const [dropTooltip, setDropTooltip] = useState<string | null>(null);
+  const [extraDropCapacity, setExtraDropCapacity] = useState(0);
+  const [dropSlotMsg, setDropSlotMsg] = useState('');
+  const [buyingSlot, setBuyingSlot] = useState(false);
   const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
 
@@ -108,11 +122,46 @@ const ProfileOverlay = ({
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, steps_remaining, registration_number, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head')
+      .select('username, credits, steps_remaining, registration_number, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head, trade, extra_drop_capacity')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (!cancelled && data) setAccountRow(data as AccountUserRow);
+        if (!cancelled && data) {
+          const row = data as unknown as AccountUserRow;
+          setAccountRow(row);
+          setExtraDropCapacity(row.extra_drop_capacity ?? 0);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [isOpen, user]);
+
+  // Fetch the player's owned drops when the overlay opens
+  useEffect(() => {
+    if (!isOpen || !user) return;
+    let cancelled = false;
+    (supabase.from('drops' as never) as never as {
+      select: (q: string) => { eq: (c: string, v: string) => Promise<{ data: unknown; error: unknown }> };
+    })
+      .select('id, drop_types(drop_key, name, description)')
+      .eq('user_id', user.id)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) { console.error('[Folder] drops fetch failed', error); return; }
+        const rows = (data || []) as Array<{
+          id: string;
+          drop_types?: { drop_key?: string; name?: string; description?: string | null }
+            | Array<{ drop_key?: string; name?: string; description?: string | null }>;
+        }>;
+        const mapped: OwnedDrop[] = rows.map((r) => {
+          const dt = Array.isArray(r.drop_types) ? r.drop_types[0] : r.drop_types;
+          return {
+            id: r.id,
+            drop_key: dt?.drop_key ?? '',
+            name: dt?.name ?? 'Unknown',
+            description: dt?.description ?? null,
+          };
+        });
+        setOwnedDrops(mapped);
       });
     return () => { cancelled = true; };
   }, [isOpen, user]);
@@ -787,6 +836,122 @@ const ProfileOverlay = ({
               <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.2)', marginTop: 32 }}>
                 Fragments are lost if you leave the maze without visiting the Shadow Realm.
               </p>
+
+              {/* DROPS section */}
+              {(() => {
+                const tradeStat = accountRow?.trade ?? 0;
+                const dropCapacity = 10 + tradeStat * 2 + extraDropCapacity;
+                const owned = ownedDrops.length;
+                const dropCells = Array.from({ length: dropCapacity }, (_, i) => ownedDrops[i] || null);
+                const creditsNum = accountRow?.credits ?? 0;
+                const SLOT_COST = 100;
+                const canAfford = creditsNum >= SLOT_COST;
+                const selectedDrop = ownedDrops.find((d) => d.id === dropTooltip) || null;
+
+                const buySlot = async () => {
+                  if (!user || !canAfford || buyingSlot) return;
+                  setBuyingSlot(true);
+                  setDropSlotMsg('');
+                  const nextCredits = creditsNum - SLOT_COST;
+                  const nextExtra = extraDropCapacity + 1;
+                  const { error } = await supabase
+                    .from('users')
+                    .update({ credits: nextCredits, extra_drop_capacity: nextExtra } as never)
+                    .eq('id', user.id);
+                  if (error) {
+                    console.error('[Folder] buy slot failed', error);
+                    setDropSlotMsg('The exchange refused you. Try again.');
+                  } else {
+                    setExtraDropCapacity(nextExtra);
+                    setAccountRow((r) => (r ? { ...r, credits: nextCredits, extra_drop_capacity: nextExtra } : r));
+                    setDropSlotMsg('The folder widens. One more slot.');
+                  }
+                  setBuyingSlot(false);
+                };
+
+                return (
+                  <div style={{ marginTop: 40 }}>
+                    {/* Header row */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 16 }}>
+                      <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>DROPS</span>
+                      <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>{owned} / {dropCapacity}</span>
+                    </div>
+
+                    {/* Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 60px)', gap: 8, justifyContent: 'center' }}>
+                      {dropCells.map((drop, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            position: 'relative',
+                            width: 60,
+                            height: 60,
+                            border: drop
+                              ? '1px solid rgba(200,150,58,0.4)'
+                              : '1px dashed rgba(160,140,200,0.08)',
+                            background: drop ? 'rgba(200,150,58,0.15)' : 'transparent',
+                            cursor: drop ? 'pointer' : 'default',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            padding: 4,
+                            textAlign: 'center',
+                          }}
+                          onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}
+                        >
+                          {drop && (
+                            <span className="font-cinzel" style={{ fontSize: 10, letterSpacing: '0.06em', color: '#c8963a', lineHeight: 1.2 }}>
+                              {drop.name}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Tooltip / flavour text */}
+                    {selectedDrop && (
+                      <p
+                        className="font-fell italic"
+                        style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.6)', marginTop: 16 }}
+                      >
+                        {selectedDrop.name}. {selectedDrop.description ?? 'Its purpose is not yet clear.'}
+                      </p>
+                    )}
+
+                    {/* Status text */}
+                    {owned === 0 && (
+                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.3)', marginTop: 24 }}>
+                        You carry nothing. The village gives to those who ask.
+                      </p>
+                    )}
+                    {owned >= dropCapacity && (
+                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(200,80,80,0.4)', marginTop: 24 }}>
+                        You cannot carry more. Widen the folder.
+                      </p>
+                    )}
+
+                    {/* Buy slot */}
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <button
+                        onClick={buySlot}
+                        disabled={!canAfford || buyingSlot}
+                        className="font-cinzel"
+                        style={{
+                          ...ghostBtn,
+                          marginTop: 20,
+                          opacity: canAfford && !buyingSlot ? 1 : 0.35,
+                          cursor: canAfford && !buyingSlot ? 'pointer' : 'default',
+                        }}
+                      >
+                        BUY +1 SLOT — {SLOT_COST} CREDITS
+                      </button>
+                    </div>
+                    {dropSlotMsg && (
+                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.5)', marginTop: 10 }}>
+                        {dropSlotMsg}
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           );
         })()}

@@ -700,6 +700,68 @@ const Maze = () => {
     });
   };
 
+  // DROP_SPAWN tiles — repeatable random drop rolls (never marked as used)
+  type DropSpawn = { col: number; row: number; drop_type_id?: string | null; drop_key?: string | null; chance?: number | null };
+  const dropSpawnsRef = useRef<DropSpawn[]>([]);
+  useEffect(() => {
+    const raw = config as unknown as
+      | { dropSpawns?: DropSpawn[]; extraCells?: Array<DropSpawn & { type?: string }> }
+      | null;
+    const fromExtra = (raw?.extraCells ?? []).filter((c) => c && c.type === 'DROP_SPAWN');
+    const cells = [...(raw?.dropSpawns ?? []), ...fromExtra];
+    dropSpawnsRef.current = cells.filter(
+      (c) => c && typeof c.col === 'number' && typeof c.row === 'number',
+    );
+  }, [config]);
+
+  const rollDropSpawn = (col: number, row: number) => {
+    const spawn = dropSpawnsRef.current.find((s) => s.col === col && s.row === row);
+    if (!spawn) return;
+    const chance = Number(spawn.chance ?? 0);
+    if (!(chance > 0)) return;
+    if (Math.random() * 100 >= chance) return; // miss — no message, keep moving
+
+    const uid = userIdRef.current;
+    if (!uid) return;
+
+    void (async () => {
+      try {
+        let dropTypeId = spawn.drop_type_id ?? null;
+        let dropName: string | null = null;
+
+        if (dropTypeId) {
+          const { data } = await supabase
+            .from('drop_types' as never)
+            .select('id, name')
+            .eq('id', dropTypeId as never)
+            .maybeSingle();
+          dropName = (data as { name?: string } | null)?.name ?? null;
+        } else if (spawn.drop_key) {
+          const { data } = await supabase
+            .from('drop_types' as never)
+            .select('id, name')
+            .eq('drop_key', spawn.drop_key as never)
+            .maybeSingle();
+          const row2 = data as { id?: string; name?: string } | null;
+          dropTypeId = row2?.id ?? null;
+          dropName = row2?.name ?? null;
+        }
+        if (!dropTypeId) return;
+
+        const { error } = await supabase
+          .from('drops' as never)
+          .insert({ user_id: uid, drop_type_id: dropTypeId, source: 'random_pickup' } as never);
+        if (error) return;
+
+        showWhisper(`You found: ${dropName ?? 'something'}.`, '#c8963a', 3000);
+      } catch {
+        /* silent — a failed drop must not interrupt movement */
+      }
+    })();
+  };
+
+
+
 
   // Move Claire one step toward target if possible
   const stepClaireToward = (target: Cell) => {

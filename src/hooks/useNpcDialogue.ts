@@ -64,6 +64,7 @@ export type BernardBookEntry = {
   min_trade: number | null;
   requires_flags: Record<string, string> | null;
   flags_equal: boolean | null;
+  requires_drops: string[] | null;
   option_a_label: string | null;
   option_a_target: string | null;
   option_a_action_key: string | null;
@@ -147,6 +148,8 @@ function useNpcDialogueImpl({
   // Data-loading gates — proximity triggers must wait for both fetches.
   const [bookLoaded, setBookLoaded] = useState(false);
   const [stagesLoaded, setStagesLoaded] = useState(false);
+  const [dropsLoaded, setDropsLoaded] = useState(false);
+  const [ownedDropKeys, setOwnedDropKeys] = useState<Set<string>>(new Set());
   // Forces re-render of Bernard dialogue when quest flags change.
   const [flagsVersion, setFlagsVersion] = useState(0);
   const bumpFlags = useCallback(() => setFlagsVersion((v) => v + 1), []);
@@ -202,7 +205,7 @@ function useNpcDialogueImpl({
       const { data, error } = await supabase
         .from('npc_book_entries')
         .select(
-          'id, node_key, bucket_key, topic, text, weight, min_level, min_social, min_perception, min_trade, requires_flags, flags_equal, option_a_label, option_a_target, option_a_action_key, option_b_label, option_b_target, option_b_action_key',
+          'id, node_key, bucket_key, topic, text, weight, min_level, min_social, min_perception, min_trade, requires_flags, flags_equal, requires_drops, option_a_label, option_a_target, option_a_action_key, option_b_label, option_b_target, option_b_action_key',
         )
         .eq('npc_id', (npcRow as { id: string }).id);
       if (error) {
@@ -219,15 +222,57 @@ function useNpcDialogueImpl({
         if (typeof r.min_perception === 'number' && perceptionStat < r.min_perception) return false;
         if (typeof r.min_trade === 'number' && tradeStat < r.min_trade) return false;
         const requires = r.requires_flags;
-        if (!requires || Object.keys(requires).length === 0) return true;
-        const allMatch = Object.keys(requires).every((k) => getFlag(k) === requires[k]);
-        return r.flags_equal === false ? !allMatch : allMatch;
+        if (requires && Object.keys(requires).length > 0) {
+          const allMatch = Object.keys(requires).every((k) => getFlag(k) === requires[k]);
+          if (r.flags_equal === false ? allMatch : !allMatch) return false;
+        }
+        const requiredDrops = r.requires_drops;
+        if (requiredDrops && requiredDrops.length > 0) {
+          if (!requiredDrops.every((k) => ownedDropKeys.has(k))) return false;
+        }
+        return true;
       });
       setBernardBookEntries(eligible);
       setBookLoaded(true);
     })();
     return () => { cancelled = true; };
-  }, [npcKey, currentLevel, socialStat, perceptionStat, tradeStat]);
+  }, [npcKey, currentLevel, socialStat, perceptionStat, tradeStat, ownedDropKeys]);
+
+  // Fetch the player's owned drops once per hook instance (or when user changes).
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) {
+      setOwnedDropKeys(new Set());
+      setDropsLoaded(true);
+      return;
+    }
+    (async () => {
+      const { data, error } = await supabase
+        .from('drops')
+        .select('drop_type_id, drop_types(drop_key)')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[useNpcDialogue] drops fetch failed', error);
+        if (!cancelled) setDropsLoaded(true);
+        return;
+      }
+      if (cancelled) return;
+      const keys = new Set<string>();
+      for (const row of (data || []) as unknown as Array<{ drop_types?: { drop_key?: string } | Array<{ drop_key?: string }> }>) {
+        const dropType = row.drop_types;
+        if (Array.isArray(dropType)) {
+          for (const dt of dropType) {
+            if (typeof dt?.drop_key === 'string') keys.add(dt.drop_key);
+          }
+        } else if (dropType && typeof dropType.drop_key === 'string') {
+          keys.add(dropType.drop_key);
+        }
+      }
+      setOwnedDropKeys(keys);
+      setDropsLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   // A different NPC means a fresh load — close the readiness gate again.
   useEffect(() => {
@@ -454,8 +499,8 @@ function useNpcDialogueImpl({
     advanceBernardStage,
     getBernardDialogue,
     resolvedDialogue,
-    /** True once this NPC's stages + book have finished loading. */
-    isReady: bookLoaded && stagesLoaded,
+    /** True once this NPC's stages + book + drops have finished loading. */
+    isReady: bookLoaded && stagesLoaded && dropsLoaded,
     bumpFlags,
   };
 

@@ -922,6 +922,11 @@ const Maze = () => {
       triggerTileWhisper(nc, nr);
     }
 
+    // DROP_SPAWN tiles — repeatable random drop roll
+    rollDropSpawn(nc, nr);
+
+
+
     // easter egg check
 
     const eggKey = `${nc},${nr}`;

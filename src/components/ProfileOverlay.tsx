@@ -38,6 +38,15 @@ type AccountUserRow = {
   avatar_hat: string | null;
   avatar_body: string | null;
   avatar_head: string | null;
+  trade: number | null;
+  extra_drop_capacity: number | null;
+};
+
+type OwnedDrop = {
+  id: string;
+  drop_key: string;
+  name: string;
+  description: string | null;
 };
 
 const ProfileOverlay = ({
@@ -73,6 +82,11 @@ const ProfileOverlay = ({
 
   const [folderFragments, setFolderFragments] = useState<Array<{ id: string; prime_number: number }>>([]);
   const [folderTooltip, setFolderTooltip] = useState<string | null>(null);
+  const [ownedDrops, setOwnedDrops] = useState<OwnedDrop[]>([]);
+  const [dropTooltip, setDropTooltip] = useState<string | null>(null);
+  const [extraDropCapacity, setExtraDropCapacity] = useState(0);
+  const [dropSlotMsg, setDropSlotMsg] = useState('');
+  const [buyingSlot, setBuyingSlot] = useState(false);
   const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
 

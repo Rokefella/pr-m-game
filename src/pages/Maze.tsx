@@ -704,7 +704,7 @@ const Maze = () => {
   type DropSpawn = { col: number; row: number; drop_type_id?: string | null; drop_key?: string | null; chance?: number | null };
   const dropSpawnsRef = useRef<DropSpawn[]>([]);
   useEffect(() => {
-    const raw = config as unknown as
+    const raw = configRef.current as unknown as
       | { dropSpawns?: DropSpawn[]; extraCells?: Array<DropSpawn & { type?: string }> }
       | null;
     const fromExtra = (raw?.extraCells ?? []).filter((c) => c && c.type === 'DROP_SPAWN');

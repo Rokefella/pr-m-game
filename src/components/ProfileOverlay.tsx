@@ -122,11 +122,46 @@ const ProfileOverlay = ({
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, steps_remaining, registration_number, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head')
+      .select('username, credits, steps_remaining, registration_number, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head, trade, extra_drop_capacity')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (!cancelled && data) setAccountRow(data as AccountUserRow);
+        if (!cancelled && data) {
+          const row = data as unknown as AccountUserRow;
+          setAccountRow(row);
+          setExtraDropCapacity(row.extra_drop_capacity ?? 0);
+        }
+      });
+    return () => { cancelled = true; };
+  }, [isOpen, user]);
+
+  // Fetch the player's owned drops when the overlay opens
+  useEffect(() => {
+    if (!isOpen || !user) return;
+    let cancelled = false;
+    (supabase.from('drops' as never) as never as {
+      select: (q: string) => { eq: (c: string, v: string) => Promise<{ data: unknown; error: unknown }> };
+    })
+      .select('id, drop_types(drop_key, name, description)')
+      .eq('user_id', user.id)
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) { console.error('[Folder] drops fetch failed', error); return; }
+        const rows = (data || []) as Array<{
+          id: string;
+          drop_types?: { drop_key?: string; name?: string; description?: string | null }
+            | Array<{ drop_key?: string; name?: string; description?: string | null }>;
+        }>;
+        const mapped: OwnedDrop[] = rows.map((r) => {
+          const dt = Array.isArray(r.drop_types) ? r.drop_types[0] : r.drop_types;
+          return {
+            id: r.id,
+            drop_key: dt?.drop_key ?? '',
+            name: dt?.name ?? 'Unknown',
+            description: dt?.description ?? null,
+          };
+        });
+        setOwnedDrops(mapped);
       });
     return () => { cancelled = true; };
   }, [isOpen, user]);

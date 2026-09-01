@@ -407,6 +407,36 @@ function useNpcDialogueImpl({
       onOpenMarketplace?.();
       onCloseDialogue?.();
     },
+    buy_chef_spice: async () => {
+      if (!user) return;
+      const price = 40;
+      if (credits < price) {
+        onMessage?.(`You need ${price} credits for the Traded Spice.`);
+        return;
+      }
+      const { data: dt } = await supabase
+        .from('drop_types' as never)
+        .select('id, name')
+        .eq('drop_key', 'chef_spice_traded' as never)
+        .maybeSingle();
+      const dropType = dt as { id?: string; name?: string } | null;
+      if (!dropType?.id) {
+        onMessage?.('The spice is not available right now.');
+        return;
+      }
+      const nextCredits = credits - price;
+      onCreditsChange?.(nextCredits);
+      await updateUser(user.id, { credits: nextCredits });
+      const { error } = await supabase
+        .from('drops' as never)
+        .insert({ user_id: user.id, drop_type_id: dropType.id, source: 'merchant_purchase' } as never);
+      if (error) {
+        console.error('[buy_chef_spice] drop insert failed', error);
+        onMessage?.('The spice slipped through your fingers. Try again.');
+        return;
+      }
+      onMessage?.(`You purchased ${dropType.name ?? 'Traded Spice'} for ${price} credits.`);
+    },
   };
 
   /** Turns a book entry into renderable dialogue data (options resolved to handlers). */

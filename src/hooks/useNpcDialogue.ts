@@ -437,7 +437,15 @@ function useNpcDialogueImpl({
       }
       onMessage?.(`You purchased ${dropType.name ?? 'Traded Spice'} for ${price} credits.`);
     },
+    complete_chef_recipe: async () => {
+      if (!user) return;
+      const nextGp = growthPoints + 1;
+      onGrowthPointsChange?.(nextGp);
+      await updateUser(user.id, { growth_points: nextGp } as never);
+      await setFlag(user.id, 'chef_recipe_complete', 'true');
+    },
   };
+
 
   /** Turns a book entry into renderable dialogue data (options resolved to handlers). */
   const buildBookDialogue = (entry: BernardBookEntry, buttonLabel: string | null): BernardDialogueData => {

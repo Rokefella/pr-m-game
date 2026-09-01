@@ -499,8 +499,8 @@ function useNpcDialogueImpl({
     advanceBernardStage,
     getBernardDialogue,
     resolvedDialogue,
-    /** True once this NPC's stages + book have finished loading. */
-    isReady: bookLoaded && stagesLoaded,
+    /** True once this NPC's stages + book + drops have finished loading. */
+    isReady: bookLoaded && stagesLoaded && dropsLoaded,
     bumpFlags,
   };
 

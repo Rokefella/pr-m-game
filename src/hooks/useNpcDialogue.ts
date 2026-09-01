@@ -64,6 +64,7 @@ export type BernardBookEntry = {
   min_trade: number | null;
   requires_flags: Record<string, string> | null;
   flags_equal: boolean | null;
+  requires_drops: string[] | null;
   option_a_label: string | null;
   option_a_target: string | null;
   option_a_action_key: string | null;

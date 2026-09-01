@@ -238,6 +238,42 @@ function useNpcDialogueImpl({
     return () => { cancelled = true; };
   }, [npcKey, currentLevel, socialStat, perceptionStat, tradeStat, ownedDropKeys]);
 
+  // Fetch the player's owned drops once per hook instance (or when user changes).
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) {
+      setOwnedDropKeys(new Set());
+      setDropsLoaded(true);
+      return;
+    }
+    (async () => {
+      const { data, error } = await supabase
+        .from('drops')
+        .select('drop_type_id, drop_types(drop_key)')
+        .eq('user_id', user.id);
+      if (error) {
+        console.error('[useNpcDialogue] drops fetch failed', error);
+        if (!cancelled) setDropsLoaded(true);
+        return;
+      }
+      if (cancelled) return;
+      const keys = new Set<string>();
+      for (const row of (data || []) as unknown as Array<{ drop_types?: { drop_key?: string } | Array<{ drop_key?: string }> }>) {
+        const dropType = row.drop_types;
+        if (Array.isArray(dropType)) {
+          for (const dt of dropType) {
+            if (typeof dt?.drop_key === 'string') keys.add(dt.drop_key);
+          }
+        } else if (dropType && typeof dropType.drop_key === 'string') {
+          keys.add(dropType.drop_key);
+        }
+      }
+      setOwnedDropKeys(keys);
+      setDropsLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
+
   // A different NPC means a fresh load — close the readiness gate again.
   useEffect(() => {
     setBookLoaded(false);

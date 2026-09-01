@@ -148,6 +148,8 @@ function useNpcDialogueImpl({
   // Data-loading gates — proximity triggers must wait for both fetches.
   const [bookLoaded, setBookLoaded] = useState(false);
   const [stagesLoaded, setStagesLoaded] = useState(false);
+  const [dropsLoaded, setDropsLoaded] = useState(false);
+  const [ownedDropKeys, setOwnedDropKeys] = useState<Set<string>>(new Set());
   // Forces re-render of Bernard dialogue when quest flags change.
   const [flagsVersion, setFlagsVersion] = useState(0);
   const bumpFlags = useCallback(() => setFlagsVersion((v) => v + 1), []);

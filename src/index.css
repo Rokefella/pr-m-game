@@ -72,6 +72,12 @@
     -webkit-user-select: none;
     user-select: none;
   }
+
+  #root input,
+  #root textarea {
+    -webkit-user-select: text;
+    user-select: text;
+  }
 }
 
 /* PRÆM Animations */

@@ -25,7 +25,13 @@ const INTERACTIVE = 'button, a, input, textarea, select, label, [role="button"],
 type Dir = -1 | 0 | 1;
 
 export type ThumbstickProps = {
-  onMove: (dc: Dir, dr: Dir) => void;
+  /** Called once per discrete step, with auto-repeat while held. */
+  onMove?: (dc: Dir, dr: Dir) => void;
+  /**
+   * Called only when the snapped direction changes (and with 0,0 on release).
+   * Used by pixel-based screens that run their own movement loop.
+   */
+  onDirectionChange?: (dc: Dir, dr: Dir) => void;
   disabled?: boolean;
 };
 
@@ -45,13 +51,15 @@ const snap8 = (dx: number, dy: number): { dc: Dir; dr: Dir } => {
   return table[sector];
 };
 
-const Thumbstick = ({ onMove, disabled = false }: ThumbstickProps) => {
+const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickProps) => {
   const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
   const [knob, setKnob] = useState({ x: 0, y: 0 });
   const [visible, setVisible] = useState(false);
 
   const onMoveRef = useRef(onMove);
   onMoveRef.current = onMove;
+  const onDirRef = useRef(onDirectionChange);
+  onDirRef.current = onDirectionChange;
   const disabledRef = useRef(disabled);
   disabledRef.current = disabled;
 
@@ -81,7 +89,7 @@ const Thumbstick = ({ onMove, disabled = false }: ThumbstickProps) => {
     timerRef.current = window.setTimeout(() => {
       const d = dirRef.current;
       if (!d || disabledRef.current) return;
-      onMoveRef.current(d.dc, d.dr);
+      onMoveRef.current?.(d.dc, d.dr);
       schedule();
     }, interval);
   }, []);
@@ -93,6 +101,7 @@ const Thumbstick = ({ onMove, disabled = false }: ThumbstickProps) => {
         if (cur) {
           dirRef.current = null;
           clearTimer();
+          onDirRef.current?.(0, 0);
         }
         return;
       }
@@ -100,7 +109,10 @@ const Thumbstick = ({ onMove, disabled = false }: ThumbstickProps) => {
       clearTimer();
       dirRef.current = next;
       dirStartRef.current = Date.now();
-      if (!disabledRef.current) onMoveRef.current(next.dc, next.dr);
+      if (!disabledRef.current) {
+        onMoveRef.current?.(next.dc, next.dr);
+        onDirRef.current?.(next.dc, next.dr);
+      }
       schedule();
     },
     [schedule],

@@ -814,6 +814,12 @@ const Maze = () => {
     const nr = Math.max(0, Math.min(cfg.rows - 1, cur.row + sdr));
     if (nc === cur.col && nr === cur.row) return;
     if (isWall(nc, nr)) return;
+    // Diagonal: refuse to slip through the corner point between two walls.
+    if (sdc !== 0 && sdr !== 0) {
+      const sideA = isWall(cur.col + sdc, cur.row);
+      const sideB = isWall(cur.col, cur.row + sdr);
+      if (sideA && sideB) return;
+    }
     lastMoveTimeRef.current = now;
 
     prevPosRef.current = { ...cur };

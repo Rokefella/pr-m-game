@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 // player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
+import Thumbstick from '@/components/Thumbstick';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
@@ -1922,6 +1923,7 @@ const Village = () => {
   // Keyboard arrow keys — held-keys system for smooth diagonal movement
 
   const heldKeysRef = useRef<Set<string>>(new Set());
+  const stickDirRef = useRef<{ dc: number; dr: number }>({ dc: 0, dr: 0 });
   useEffect(() => {
     const ARROWS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
     const onDown = (e: KeyboardEvent) => {
@@ -1951,11 +1953,16 @@ const Village = () => {
       if (keyFrameCounter >= 2) {
         keyFrameCounter = 0;
         const held = heldKeysRef.current;
+        const stick = stickDirRef.current;
         let kdx = 0, kdy = 0;
-        if (held.has('ArrowLeft') || held.has('dpad--1-0')) kdx -= STEP;
-        if (held.has('ArrowRight') || held.has('dpad-1-0')) kdx += STEP;
-        if (held.has('ArrowUp') || held.has('dpad-0--1')) kdy -= STEP;
-        if (held.has('ArrowDown') || held.has('dpad-0-1')) kdy += STEP;
+        if (held.has('ArrowLeft')) kdx -= STEP;
+        if (held.has('ArrowRight')) kdx += STEP;
+        if (held.has('ArrowUp')) kdy -= STEP;
+        if (held.has('ArrowDown')) kdy += STEP;
+        if (stick.dc !== 0) kdx += stick.dc * STEP;
+        if (stick.dr !== 0) kdy += stick.dr * STEP;
+        kdx = Math.max(-STEP, Math.min(STEP, kdx));
+        kdy = Math.max(-STEP, Math.min(STEP, kdy));
         if (kdx !== 0 && kdy !== 0) {
           kdx *= 0.707;
           kdy *= 0.707;
@@ -2119,34 +2126,6 @@ const Village = () => {
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
   }, [view]);
-
-  const dpadBtn: React.CSSProperties = {
-    width: 44,
-    height: 44,
-    background: 'rgba(91,79,212,0.15)',
-    border: '0.5px solid rgba(91,79,212,0.4)',
-    borderRadius: 4,
-    color: 'rgba(160,140,200,0.8)',
-    fontSize: 16,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    userSelect: 'none',
-    WebkitUserSelect: 'none',
-    WebkitTouchCallout: 'none',
-    touchAction: 'none',
-  };
-
-  const dpadHandlers = (dc: number, dr: number) => {
-    const key = `dpad-${dc}-${dr}`;
-    return {
-      onPointerDown: (e: React.PointerEvent) => { e.preventDefault(); heldKeysRef.current.add(key); },
-      onPointerUp: () => { heldKeysRef.current.delete(key); },
-      onPointerLeave: () => { heldKeysRef.current.delete(key); },
-      onPointerCancel: () => { heldKeysRef.current.delete(key); },
-    };
-  };
 
   // Per-Type-A depth styling: rgb tuple + darker shade tuple
   const TYPE_A_DEPTH: Record<number, { rgb: [number, number, number]; dark: [number, number, number] }> = {
@@ -2840,57 +2819,10 @@ const Village = () => {
       )}
 
 
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 70,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 44px)',
-          gridTemplateRows: 'repeat(3, 44px)',
-          gap: 4,
-          zIndex: 11,
-        }}
-      >
-        <div />
-        <div
-          role="button"
-          aria-label="Up"
-          style={dpadBtn}
-          {...dpadHandlers(0, -1)}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,2 13,12 1,12" fill="rgba(160,140,200,0.8)"/></svg>
-        </div>
-        <div />
-        <div
-          role="button"
-          aria-label="Left"
-          style={dpadBtn}
-          {...dpadHandlers(-1, 0)}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="2,7 12,1 12,13" fill="rgba(160,140,200,0.8)"/></svg>
-        </div>
-        <div />
-        <div
-          role="button"
-          aria-label="Right"
-          style={dpadBtn}
-          {...dpadHandlers(1, 0)}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="12,7 2,1 2,13" fill="rgba(160,140,200,0.8)"/></svg>
-        </div>
-        <div />
-        <div
-          role="button"
-          aria-label="Down"
-          style={dpadBtn}
-          {...dpadHandlers(0, 1)}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,12 13,2 1,2" fill="rgba(160,140,200,0.8)"/></svg>
-        </div>
-        <div />
-      </div>
+      <Thumbstick
+        onDirectionChange={(dc, dr) => { stickDirRef.current = { dc, dr }; }}
+        disabled={profileOpenDisplay || merchantOpen || bernardOpen || paywallOpen}
+      />
 
       {/* HUD bar */}
       <div

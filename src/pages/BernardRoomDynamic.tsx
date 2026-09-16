@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser } from '@/lib/userData';
 import { supabase } from '@/lib/supabase';
+import Thumbstick from '@/components/Thumbstick';
 import { setFlag } from '@/lib/questFlags';
 import { checkSubscriptionStatus } from '@/lib/subscriptionStatus';
 import NpcDialogue from '@/components/NpcDialogue';
@@ -447,6 +448,7 @@ const BernardRoomDynamic = () => {
   moveRef.current = move;
 
   const heldKeysRef = useRef<Set<string>>(new Set());
+  const stickDirRef = useRef<{ dc: number; dr: number }>({ dc: 0, dr: 0 });
   useEffect(() => {
     const ARROWS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
     const onDown = (e: KeyboardEvent) => {
@@ -477,6 +479,9 @@ const BernardRoomDynamic = () => {
         if (held.has('ArrowRight')) kdx += STEP;
         if (held.has('ArrowUp')) kdy -= STEP;
         if (held.has('ArrowDown')) kdy += STEP;
+        const stick = stickDirRef.current;
+        if (stick.dc !== 0) kdx = stick.dc * STEP;
+        if (stick.dr !== 0) kdy = stick.dr * STEP;
         if (kdx !== 0 && kdy !== 0) { kdx *= 0.707; kdy *= 0.707; }
         if (kdx !== 0 || kdy !== 0) moveRef.current(kdx, kdy);
       }
@@ -802,6 +807,10 @@ const BernardRoomDynamic = () => {
           </button>
         </NpcDialogue>
       )}
+      <Thumbstick
+        onDirectionChange={(dc, dr) => { stickDirRef.current = { dc, dr }; }}
+        disabled={bernardOpen}
+      />
     </div>
   );
 };

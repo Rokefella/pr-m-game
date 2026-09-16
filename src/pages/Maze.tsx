@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/levelLoader';
+import Thumbstick from '@/components/Thumbstick';
 
 // TODO: restore to real walking steps via HealthKit for production.
 const INITIAL_STEPS = 1000;
@@ -814,6 +815,12 @@ const Maze = () => {
     const nr = Math.max(0, Math.min(cfg.rows - 1, cur.row + sdr));
     if (nc === cur.col && nr === cur.row) return;
     if (isWall(nc, nr)) return;
+    // Diagonal: refuse to slip through the corner point between two walls.
+    if (sdc !== 0 && sdr !== 0) {
+      const sideA = isWall(cur.col + sdc, cur.row);
+      const sideB = isWall(cur.col, cur.row + sdr);
+      if (sideA && sideB) return;
+    }
     lastMoveTimeRef.current = now;
 
     prevPosRef.current = { ...cur };
@@ -990,12 +997,11 @@ const Maze = () => {
     const tick = () => {
       const k = heldKeysRef.current;
       let dc = 0, dr = 0;
-      if (k.has('ArrowLeft') || k.has('dpad--1-0')) dc -= 1;
-      if (k.has('ArrowRight') || k.has('dpad-1-0')) dc += 1;
-      if (k.has('ArrowUp') || k.has('dpad-0--1')) dr -= 1;
-      if (k.has('ArrowDown') || k.has('dpad-0-1')) dr += 1;
-      if (dc !== 0) tryMove(dc, 0);
-      if (dr !== 0) tryMove(0, dr);
+      if (k.has('ArrowLeft')) dc -= 1;
+      if (k.has('ArrowRight')) dc += 1;
+      if (k.has('ArrowUp')) dr -= 1;
+      if (k.has('ArrowDown')) dr += 1;
+      if (dc !== 0 || dr !== 0) tryMove(dc, dr);
 
       const targetX = window.innerWidth / 2 - (posRef.current.col * CELL + CELL / 2);
       const targetY = window.innerHeight / 2 - (posRef.current.row * CELL + CELL / 2);
@@ -1021,7 +1027,7 @@ const Maze = () => {
     return () => window.clearInterval(id);
   }, []);
 
-  const dpadMove = (dc: number, dr: number) => tryMove(dc, dr);
+  
 
   const playerScreenX = typeof window !== 'undefined' ? window.innerWidth / 2 : 0;
   const playerScreenY = typeof window !== 'undefined' ? window.innerHeight / 2 : 0;
@@ -1483,40 +1489,13 @@ const Maze = () => {
         </div>
       )}
 
-      <div
-        style={{
-          position: 'fixed', bottom: 120, left: '50%', transform: 'translateX(-50%)',
-          width: 120, height: 120, zIndex: 55,
-        }}
-      >
-        {[
-          { dc: 0, dr: -1, top: 0, left: 40 },
-          { dc: -1, dr: 0, top: 40, left: 0 },
-          { dc: 1, dr: 0, top: 40, left: 80 },
-          { dc: 0, dr: 1, top: 80, left: 40 },
-        ].map((b, i) => (
-          <button
-            key={i}
-            onPointerDown={(e) => { e.preventDefault(); heldKeysRef.current.add(`dpad-${b.dc}-${b.dr}`); }}
-            onPointerUp={(e) => { e.preventDefault(); heldKeysRef.current.delete(`dpad-${b.dc}-${b.dr}`); }}
-            onPointerLeave={(e) => { e.preventDefault(); heldKeysRef.current.delete(`dpad-${b.dc}-${b.dr}`); }}
-            onPointerCancel={(e) => { e.preventDefault(); heldKeysRef.current.delete(`dpad-${b.dc}-${b.dr}`); }}
-            style={{
-              position: 'absolute', top: b.top, left: b.left, width: 40, height: 40,
-              background: 'rgba(20,18,30,0.7)', border: '1px solid rgba(100,80,160,0.4)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', padding: 0,
-              userSelect: 'none', WebkitUserSelect: 'none',
-              WebkitTouchCallout: 'none', touchAction: 'none',
-            }}
-          >
-            {i === 0 && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,2 13,12 1,12" fill="rgba(160,140,200,0.8)"/></svg>}
-            {i === 1 && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="2,7 12,1 12,13" fill="rgba(160,140,200,0.8)"/></svg>}
-            {i === 2 && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="12,7 2,1 2,13" fill="rgba(160,140,200,0.8)"/></svg>}
-            {i === 3 && <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polygon points="7,12 13,2 1,2" fill="rgba(160,140,200,0.8)"/></svg>}
-          </button>
-        ))}
-      </div>
+      <Thumbstick
+        onMove={(dc, dr) => tryMove(dc, dr)}
+        disabled={
+          profileOpenDisplay || exchangeOpen || doorConfirmOpen || insufficientFragmentsOpen ||
+          paywallOpen || activeFragment !== null
+        }
+      />
 
       <div
         className="font-mono"

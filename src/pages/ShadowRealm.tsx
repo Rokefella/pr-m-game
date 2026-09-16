@@ -4,6 +4,7 @@ import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
 import { getAllFlags, setFlag } from '@/lib/questFlags';
 import { supabase } from '@/lib/supabase';
+import Thumbstick from '@/components/Thumbstick';
 
 const STEP = 20;
 const TRANSFER_SIZE = 40;
@@ -256,24 +257,6 @@ const ShadowRealm = () => {
   const stepsColor =
     stepsRemaining <= 10 ? 'rgba(200,80,80,0.9)' : stepsRemaining <= 30 ? '#c8963a' : 'rgba(160,140,200,0.6)';
 
-  const dpadBtn = (label: string, dx: number, dy: number) => (
-    <button
-      onClick={() => move(dx, dy)}
-      className="font-mono"
-      style={{
-        width: 44,
-        height: 44,
-        background: 'rgba(200,80,80,0.05)',
-        border: '1px solid rgba(200,80,80,0.3)',
-        color: 'rgba(200,140,140,0.7)',
-        fontSize: 14,
-        cursor: 'pointer',
-      }}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div
       style={{
@@ -355,28 +338,7 @@ const ShadowRealm = () => {
         }}
       />
 
-      {/* D-pad */}
-      <div
-        style={{
-          position: 'fixed',
-          right: 24,
-          bottom: 90,
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 44px)',
-          gridTemplateRows: 'repeat(3, 44px)',
-          gap: 4,
-        }}
-      >
-        <div />
-        {dpadBtn('↑', 0, -1)}
-        <div />
-        {dpadBtn('←', -1, 0)}
-        <div />
-        {dpadBtn('→', 1, 0)}
-        <div />
-        {dpadBtn('↓', 0, 1)}
-        <div />
-      </div>
+      <Thumbstick onMove={(dc, dr) => move(dc, dr)} disabled={transferring} />
 
       {/* RETURN */}
       <button

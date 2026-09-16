@@ -59,6 +59,19 @@
     font-family: 'IM Fell English', serif;
     font-size: 19px;
   }
+
+  html,
+  body,
+  #root,
+  #root * {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  #root {
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }
 
 /* PRÆM Animations */

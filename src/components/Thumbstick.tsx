@@ -141,18 +141,38 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
       return false;
     };
 
-    const onPointerDown = (e: PointerEvent) => {
-      if (disabledRef.current) return;
-      if (activeRef.current) return;
-      if (e.pointerType === 'mouse' && e.button !== 0) return;
-      if (isExcluded(e.target, e.clientY)) return;
+    const start = (x: number, y: number, id: number, target: EventTarget | null) => {
+      if (disabledRef.current) return false;
+      if (activeRef.current) return false;
+      if (isExcluded(target, y)) return false;
       activeRef.current = true;
-      pointerIdRef.current = e.pointerId;
-      const o = { x: e.clientX, y: e.clientY };
+      pointerIdRef.current = id;
+      const o = { x, y };
       originRef.current = o;
       setOrigin(o);
       setKnob({ x: 0, y: 0 });
       setVisible(true);
+      return true;
+    };
+
+    const moveTo = (x: number, y: number) => {
+      const o = originRef.current;
+      if (!o) return;
+      let dx = x - o.x;
+      let dy = y - o.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist > MAX_RADIUS) {
+        dx = (dx / dist) * MAX_RADIUS;
+        dy = (dy / dist) * MAX_RADIUS;
+      }
+      setKnob({ x: dx, y: dy });
+      if (dist < DEAD_ZONE) setDirection(null);
+      else setDirection(snap8(dx, dy));
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      if (!start(e.clientX, e.clientY, e.pointerId, e.target)) return;
       const el = e.target as Element | null;
       try {
         el?.setPointerCapture?.(e.pointerId);
@@ -163,21 +183,7 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
 
     const onPointerMove = (e: PointerEvent) => {
       if (!activeRef.current || pointerIdRef.current !== e.pointerId) return;
-      const o = originRef.current;
-      if (!o) return;
-      let dx = e.clientX - o.x;
-      let dy = e.clientY - o.y;
-      const dist = Math.hypot(dx, dy);
-      if (dist > MAX_RADIUS) {
-        dx = (dx / dist) * MAX_RADIUS;
-        dy = (dy / dist) * MAX_RADIUS;
-      }
-      setKnob({ x: dx, y: dy });
-      if (dist < DEAD_ZONE) {
-        setDirection(null);
-      } else {
-        setDirection(snap8(dx, dy));
-      }
+      moveTo(e.clientX, e.clientY);
     };
 
     const onPointerEnd = (e: PointerEvent) => {
@@ -185,24 +191,37 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
       stop();
     };
 
-    const preventTouch = (e: TouchEvent) => {
-      if (activeRef.current) e.preventDefault();
-    };
-
-    const preventTouchStart = (e: TouchEvent) => {
-      if (disabledRef.current) return;
+    // Touch fallback: some engines (and iOS gesture cancellation) do not deliver
+    // a usable pointer stream once touchstart's default is prevented.
+    const onTouchStart = (e: TouchEvent) => {
       const t = e.touches[0];
       if (!t) return;
+      if (disabledRef.current) return;
       if (isExcluded(e.target, t.clientY)) return;
       e.preventDefault();
+      start(t.clientX, t.clientY, t.identifier, e.target);
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!activeRef.current) return;
+      e.preventDefault();
+      const t = e.touches[0];
+      if (t) moveTo(t.clientX, t.clientY);
+    };
+
+    const onTouchEnd = () => {
+      if (!activeRef.current) return;
+      stop();
     };
 
     window.addEventListener('pointerdown', onPointerDown, { passive: false });
     window.addEventListener('pointermove', onPointerMove, { passive: false });
     window.addEventListener('pointerup', onPointerEnd, { passive: false });
     window.addEventListener('pointercancel', onPointerEnd, { passive: false });
-    window.addEventListener('touchstart', preventTouchStart, { passive: false });
-    window.addEventListener('touchmove', preventTouch, { passive: false });
+    window.addEventListener('touchstart', onTouchStart, { passive: false });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd, { passive: false });
+    window.addEventListener('touchcancel', onTouchEnd, { passive: false });
     window.addEventListener('blur', stop);
 
     return () => {
@@ -210,8 +229,10 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerEnd);
       window.removeEventListener('pointercancel', onPointerEnd);
-      window.removeEventListener('touchstart', preventTouchStart);
-      window.removeEventListener('touchmove', preventTouch);
+      window.removeEventListener('touchstart', onTouchStart);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
       window.removeEventListener('blur', stop);
       clearTimer();
     };

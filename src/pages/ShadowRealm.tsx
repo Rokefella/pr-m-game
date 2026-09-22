@@ -29,6 +29,11 @@ type RunFragment = {
   image_data: string | null;
 };
 
+// ----- published shadow realm level data -----
+type RealmCell = { col: number; row: number; type?: string; color?: string; name?: string };
+type PlacedCell = { x: number; y: number; color?: string; name?: string };
+
+
 const ShadowRealm = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -59,8 +64,104 @@ const ShadowRealm = () => {
   const [saving, setSaving] = useState(false);
   const runFragsRef = useRef<RunFragment[]>([]);
 
-  // Transfer point is centered on screen, slightly above player start.
+  // Fallback transfer point: centered on screen, slightly above player start.
   const TRANSFER_OFFSET_Y = -120;
+
+  // ----- published level data (graceful fallback when nothing published) -----
+  const [hasLevelData, setHasLevelData] = useState(false);
+  const [walls, setWalls] = useState<PlacedCell[]>([]);
+  const [ghostZones, setGhostZones] = useState<PlacedCell[]>([]);
+  const [eyes, setEyes] = useState<PlacedCell[]>([]);
+  const [npcs, setNpcs] = useState<PlacedCell[]>([]);
+  const [drops, setDrops] = useState<PlacedCell[]>([]);
+  const [transferOffset, setTransferOffset] = useState({ x: 0, y: TRANSFER_OFFSET_Y });
+  const transferOffsetRef = useRef({ x: 0, y: TRANSFER_OFFSET_Y });
+  const wallSetRef = useRef<Set<string>>(new Set());
+  const roomDoorsRef = useRef<PlacedCell[]>([]);
+  const [roomDoors, setRoomDoors] = useState<PlacedCell[]>([]);
+  const [gateMsg, setGateMsg] = useState<string | null>(null);
+  const gateTimerRef = useRef<number | null>(null);
+
+  const showGateMsg = useCallback((line: string) => {
+    setGateMsg(line);
+    if (gateTimerRef.current) window.clearTimeout(gateTimerRef.current);
+    gateTimerRef.current = window.setTimeout(() => setGateMsg(null), 3000);
+  }, []);
+
+  // Load the published shadow realm layout for the player's current level.
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let cancelled = false;
+    (async () => {
+      const level = currentLevelRef.current;
+      const { data } = await supabase
+        .from('special_locations' as never)
+        .select('data')
+        .eq('level_number', level)
+        .eq('location_key', 'shadow_realm')
+        .maybeSingle();
+      if (cancelled || !data) return;
+
+      const d = (data as { data?: { extraCells?: RealmCell[]; start?: { col: number; row: number } | null } })?.data;
+      const cells = Array.isArray(d?.extraCells) ? d!.extraCells! : [];
+      if (cells.length === 0) return;
+
+      // Origin: the published start cell if present, else the first cell.
+      const origin = d?.start && typeof d.start.col === 'number'
+        ? { col: d.start.col, row: d.start.row }
+        : { col: cells[0].col, row: cells[0].row };
+      const toPx = (c: RealmCell): PlacedCell => ({
+        x: (c.col - origin.col) * STEP,
+        y: (c.row - origin.row) * STEP,
+        color: c.color,
+        name: c.name,
+      });
+
+      const nextWalls: PlacedCell[] = [];
+      const nextGhosts: PlacedCell[] = [];
+      const nextEyes: PlacedCell[] = [];
+      const nextNpcs: PlacedCell[] = [];
+      const nextDrops: PlacedCell[] = [];
+      const nextDoors: PlacedCell[] = [];
+      let transfer: PlacedCell | null = null;
+
+      cells.forEach((c) => {
+        if (!c || typeof c.col !== 'number' || typeof c.row !== 'number') return;
+        const p = toPx(c);
+        switch (c.type) {
+          case 'WALL': nextWalls.push(p); break;
+          case 'GHOST_ZONE': nextGhosts.push(p); break;
+          case 'EYE': nextEyes.push(p); break;
+          case 'NPC': nextNpcs.push(p); break;
+          case 'DROP': nextDrops.push(p); break;
+          case 'ROOM_DOOR': nextDoors.push(p); break;
+          case 'TRANSFER_POINT': if (!transfer) transfer = p; break;
+          default: break;
+        }
+      });
+
+      if (cancelled) return;
+      setWalls(nextWalls);
+      setGhostZones(nextGhosts);
+      setEyes(nextEyes);
+      setNpcs(nextNpcs);
+      setDrops(nextDrops);
+      setRoomDoors(nextDoors);
+      roomDoorsRef.current = nextDoors;
+      wallSetRef.current = new Set(nextWalls.map((w) => `${w.x},${w.y}`));
+      if (transfer) {
+        const t = transfer as PlacedCell;
+        setTransferOffset({ x: t.x, y: t.y });
+        transferOffsetRef.current = { x: t.x, y: t.y };
+      }
+      setHasLevelData(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, currentLevel]);
+
 
   useEffect(() => {
     if (authLoading) return;
@@ -229,6 +330,8 @@ const ShadowRealm = () => {
     (dx: number, dy: number) => {
       if (transferringRef.current) return;
       const next = { x: posRef.current.x + dx * STEP, y: posRef.current.y + dy * STEP };
+      // Walls from the published layout block movement.
+      if (wallSetRef.current.has(`${next.x},${next.y}`)) return;
       posRef.current = next;
       setPos(next);
 
@@ -237,11 +340,24 @@ const ShadowRealm = () => {
         setStepsRemaining(stepsRef.current);
       }
 
-      const dist = Math.hypot(next.x - 0, next.y - TRANSFER_OFFSET_Y);
+      const t = transferOffsetRef.current;
+      const dist = Math.hypot(next.x - t.x, next.y - t.y);
       if (dist <= 20) startTransfer();
+
+      // ROOM_DOOR — only opens on the 23rd of any month.
+      const door = roomDoorsRef.current.find((d) => d.x === next.x && d.y === next.y);
+      if (door) {
+        const isTwentyThird = new Date().getDate() === 23;
+        if (isTwentyThird) {
+          navigate(`/room/${currentLevelRef.current}/${door.color ?? 'shadow'}`);
+        } else {
+          showGateMsg('This does not open yet.');
+        }
+      }
     },
-    [startTransfer],
+    [startTransfer, navigate, showGateMsg],
   );
+
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -286,19 +402,132 @@ const ShadowRealm = () => {
         {ATMOSPHERE[atmoIndex]}
       </div>
 
-      {/* Ghost dots */}
-      {GHOSTS.map((g, i) => (
+      {/* Ghost dots — decorative fallback when no level is published */}
+      {!hasLevelData &&
+        GHOSTS.map((g, i) => (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: g.left,
+              top: g.top,
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: 'rgba(91,79,212,0.2)',
+              transform: 'translate(-50%,-50%)',
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
+
+      {/* Published layout — walls */}
+      {walls.map((w, i) => (
         <div
-          key={i}
+          key={`w${i}`}
           style={{
             position: 'absolute',
-            left: g.left,
-            top: g.top,
+            left: '50%',
+            top: '50%',
+            width: STEP,
+            height: STEP,
+            marginLeft: -STEP / 2 + w.x,
+            marginTop: -STEP / 2 + w.y,
+            background: 'rgba(30,10,14,0.95)',
+            border: '1px solid rgba(180,60,60,0.22)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Published layout — ghost zones */}
+      {ghostZones.map((g, i) => (
+        <div
+          key={`g${i}`}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: STEP,
+            height: STEP,
+            marginLeft: -STEP / 2 + g.x,
+            marginTop: -STEP / 2 + g.y,
+            background: 'rgba(91,79,212,0.10)',
+            border: '1px solid rgba(91,79,212,0.20)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Published layout — eyes */}
+      {eyes.map((e, i) => (
+        <div
+          key={`e${i}`}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: 10,
+            height: 10,
+            marginLeft: -5 + e.x,
+            marginTop: -5 + e.y,
+            borderRadius: '50%',
+            border: '1px solid rgba(200,100,100,0.6)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Published layout — NPCs */}
+      {npcs.map((n, i) => (
+        <div
+          key={`n${i}`}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: 8,
+            height: 8,
+            marginLeft: -4 + n.x,
+            marginTop: -4 + n.y,
+            background: 'rgba(200,150,58,0.8)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Published layout — drops */}
+      {drops.map((d, i) => (
+        <div
+          key={`d${i}`}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
             width: 6,
             height: 6,
-            borderRadius: '50%',
-            background: 'rgba(91,79,212,0.2)',
-            transform: 'translate(-50%,-50%)',
+            marginLeft: -3 + d.x,
+            marginTop: -3 + d.y,
+            background: 'rgba(26,158,122,0.7)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Published layout — room doors */}
+      {roomDoors.map((d, i) => (
+        <div
+          key={`rd${i}`}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: STEP,
+            height: STEP,
+            marginLeft: -STEP / 2 + d.x,
+            marginTop: -STEP / 2 + d.y,
+            border: '1px solid rgba(169,140,255,0.6)',
+            background: 'rgba(169,140,255,0.08)',
             pointerEvents: 'none',
           }}
         />
@@ -312,13 +541,34 @@ const ShadowRealm = () => {
           top: '50%',
           width: TRANSFER_SIZE,
           height: TRANSFER_SIZE,
-          marginLeft: -TRANSFER_SIZE / 2,
-          marginTop: -TRANSFER_SIZE / 2 + TRANSFER_OFFSET_Y,
+          marginLeft: -TRANSFER_SIZE / 2 + transferOffset.x,
+          marginTop: -TRANSFER_SIZE / 2 + transferOffset.y,
           border: '1px solid rgba(200,80,80,0.8)',
           background: 'rgba(200,80,80,0.06)',
           animation: 'shadowTransferPulse 2s ease-in-out infinite',
         }}
       />
+
+      {/* Gate message */}
+      {gateMsg && (
+        <div
+          className="font-fell italic"
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            top: '38%',
+            textAlign: 'center',
+            fontSize: 16,
+            color: 'rgba(200,100,100,0.75)',
+            pointerEvents: 'none',
+            animation: 'shadowFadeIn 400ms ease-out',
+          }}
+        >
+          {gateMsg}
+        </div>
+      )}
+
 
       {/* Player */}
       <div

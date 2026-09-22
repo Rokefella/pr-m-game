@@ -402,19 +402,132 @@ const ShadowRealm = () => {
         {ATMOSPHERE[atmoIndex]}
       </div>
 
-      {/* Ghost dots */}
-      {GHOSTS.map((g, i) => (
+      {/* Ghost dots — decorative fallback when no level is published */}
+      {!hasLevelData &&
+        GHOSTS.map((g, i) => (
+          <div
+            key={i}
+            style={{
+              position: 'absolute',
+              left: g.left,
+              top: g.top,
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              background: 'rgba(91,79,212,0.2)',
+              transform: 'translate(-50%,-50%)',
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
+
+      {/* Published layout — walls */}
+      {walls.map((w, i) => (
         <div
-          key={i}
+          key={`w${i}`}
           style={{
             position: 'absolute',
-            left: g.left,
-            top: g.top,
+            left: '50%',
+            top: '50%',
+            width: STEP,
+            height: STEP,
+            marginLeft: -STEP / 2 + w.x,
+            marginTop: -STEP / 2 + w.y,
+            background: 'rgba(30,10,14,0.95)',
+            border: '1px solid rgba(180,60,60,0.22)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Published layout — ghost zones */}
+      {ghostZones.map((g, i) => (
+        <div
+          key={`g${i}`}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: STEP,
+            height: STEP,
+            marginLeft: -STEP / 2 + g.x,
+            marginTop: -STEP / 2 + g.y,
+            background: 'rgba(91,79,212,0.10)',
+            border: '1px solid rgba(91,79,212,0.20)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Published layout — eyes */}
+      {eyes.map((e, i) => (
+        <div
+          key={`e${i}`}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: 10,
+            height: 10,
+            marginLeft: -5 + e.x,
+            marginTop: -5 + e.y,
+            borderRadius: '50%',
+            border: '1px solid rgba(200,100,100,0.6)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Published layout — NPCs */}
+      {npcs.map((n, i) => (
+        <div
+          key={`n${i}`}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: 8,
+            height: 8,
+            marginLeft: -4 + n.x,
+            marginTop: -4 + n.y,
+            background: 'rgba(200,150,58,0.8)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Published layout — drops */}
+      {drops.map((d, i) => (
+        <div
+          key={`d${i}`}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
             width: 6,
             height: 6,
-            borderRadius: '50%',
-            background: 'rgba(91,79,212,0.2)',
-            transform: 'translate(-50%,-50%)',
+            marginLeft: -3 + d.x,
+            marginTop: -3 + d.y,
+            background: 'rgba(26,158,122,0.7)',
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+
+      {/* Published layout — room doors */}
+      {roomDoors.map((d, i) => (
+        <div
+          key={`rd${i}`}
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            width: STEP,
+            height: STEP,
+            marginLeft: -STEP / 2 + d.x,
+            marginTop: -STEP / 2 + d.y,
+            border: '1px solid rgba(169,140,255,0.6)',
+            background: 'rgba(169,140,255,0.08)',
             pointerEvents: 'none',
           }}
         />
@@ -428,13 +541,34 @@ const ShadowRealm = () => {
           top: '50%',
           width: TRANSFER_SIZE,
           height: TRANSFER_SIZE,
-          marginLeft: -TRANSFER_SIZE / 2,
-          marginTop: -TRANSFER_SIZE / 2 + TRANSFER_OFFSET_Y,
+          marginLeft: -TRANSFER_SIZE / 2 + transferOffset.x,
+          marginTop: -TRANSFER_SIZE / 2 + transferOffset.y,
           border: '1px solid rgba(200,80,80,0.8)',
           background: 'rgba(200,80,80,0.06)',
           animation: 'shadowTransferPulse 2s ease-in-out infinite',
         }}
       />
+
+      {/* Gate message */}
+      {gateMsg && (
+        <div
+          className="font-fell italic"
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            top: '38%',
+            textAlign: 'center',
+            fontSize: 16,
+            color: 'rgba(200,100,100,0.75)',
+            pointerEvents: 'none',
+            animation: 'shadowFadeIn 400ms ease-out',
+          }}
+        >
+          {gateMsg}
+        </div>
+      )}
+
 
       {/* Player */}
       <div

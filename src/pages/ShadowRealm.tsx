@@ -29,6 +29,11 @@ type RunFragment = {
   image_data: string | null;
 };
 
+// ----- published shadow realm level data -----
+type RealmCell = { col: number; row: number; type?: string; color?: string; name?: string };
+type PlacedCell = { x: number; y: number; color?: string; name?: string };
+
+
 const ShadowRealm = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();

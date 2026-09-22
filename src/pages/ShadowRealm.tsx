@@ -64,8 +64,104 @@ const ShadowRealm = () => {
   const [saving, setSaving] = useState(false);
   const runFragsRef = useRef<RunFragment[]>([]);
 
-  // Transfer point is centered on screen, slightly above player start.
+  // Fallback transfer point: centered on screen, slightly above player start.
   const TRANSFER_OFFSET_Y = -120;
+
+  // ----- published level data (graceful fallback when nothing published) -----
+  const [hasLevelData, setHasLevelData] = useState(false);
+  const [walls, setWalls] = useState<PlacedCell[]>([]);
+  const [ghostZones, setGhostZones] = useState<PlacedCell[]>([]);
+  const [eyes, setEyes] = useState<PlacedCell[]>([]);
+  const [npcs, setNpcs] = useState<PlacedCell[]>([]);
+  const [drops, setDrops] = useState<PlacedCell[]>([]);
+  const [transferOffset, setTransferOffset] = useState({ x: 0, y: TRANSFER_OFFSET_Y });
+  const transferOffsetRef = useRef({ x: 0, y: TRANSFER_OFFSET_Y });
+  const wallSetRef = useRef<Set<string>>(new Set());
+  const roomDoorsRef = useRef<PlacedCell[]>([]);
+  const [roomDoors, setRoomDoors] = useState<PlacedCell[]>([]);
+  const [gateMsg, setGateMsg] = useState<string | null>(null);
+  const gateTimerRef = useRef<number | null>(null);
+
+  const showGateMsg = useCallback((line: string) => {
+    setGateMsg(line);
+    if (gateTimerRef.current) window.clearTimeout(gateTimerRef.current);
+    gateTimerRef.current = window.setTimeout(() => setGateMsg(null), 3000);
+  }, []);
+
+  // Load the published shadow realm layout for the player's current level.
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let cancelled = false;
+    (async () => {
+      const level = currentLevelRef.current;
+      const { data } = await supabase
+        .from('special_locations' as never)
+        .select('data')
+        .eq('level_number', level)
+        .eq('location_key', 'shadow_realm')
+        .maybeSingle();
+      if (cancelled || !data) return;
+
+      const d = (data as { data?: { extraCells?: RealmCell[]; start?: { col: number; row: number } | null } })?.data;
+      const cells = Array.isArray(d?.extraCells) ? d!.extraCells! : [];
+      if (cells.length === 0) return;
+
+      // Origin: the published start cell if present, else the first cell.
+      const origin = d?.start && typeof d.start.col === 'number'
+        ? { col: d.start.col, row: d.start.row }
+        : { col: cells[0].col, row: cells[0].row };
+      const toPx = (c: RealmCell): PlacedCell => ({
+        x: (c.col - origin.col) * STEP,
+        y: (c.row - origin.row) * STEP,
+        color: c.color,
+        name: c.name,
+      });
+
+      const nextWalls: PlacedCell[] = [];
+      const nextGhosts: PlacedCell[] = [];
+      const nextEyes: PlacedCell[] = [];
+      const nextNpcs: PlacedCell[] = [];
+      const nextDrops: PlacedCell[] = [];
+      const nextDoors: PlacedCell[] = [];
+      let transfer: PlacedCell | null = null;
+
+      cells.forEach((c) => {
+        if (!c || typeof c.col !== 'number' || typeof c.row !== 'number') return;
+        const p = toPx(c);
+        switch (c.type) {
+          case 'WALL': nextWalls.push(p); break;
+          case 'GHOST_ZONE': nextGhosts.push(p); break;
+          case 'EYE': nextEyes.push(p); break;
+          case 'NPC': nextNpcs.push(p); break;
+          case 'DROP': nextDrops.push(p); break;
+          case 'ROOM_DOOR': nextDoors.push(p); break;
+          case 'TRANSFER_POINT': if (!transfer) transfer = p; break;
+          default: break;
+        }
+      });
+
+      if (cancelled) return;
+      setWalls(nextWalls);
+      setGhostZones(nextGhosts);
+      setEyes(nextEyes);
+      setNpcs(nextNpcs);
+      setDrops(nextDrops);
+      setRoomDoors(nextDoors);
+      roomDoorsRef.current = nextDoors;
+      wallSetRef.current = new Set(nextWalls.map((w) => `${w.x},${w.y}`));
+      if (transfer) {
+        const t = transfer as PlacedCell;
+        setTransferOffset({ x: t.x, y: t.y });
+        transferOffsetRef.current = { x: t.x, y: t.y };
+      }
+      setHasLevelData(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, currentLevel]);
+
 
   useEffect(() => {
     if (authLoading) return;

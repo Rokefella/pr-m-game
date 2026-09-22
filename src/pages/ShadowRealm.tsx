@@ -330,6 +330,8 @@ const ShadowRealm = () => {
     (dx: number, dy: number) => {
       if (transferringRef.current) return;
       const next = { x: posRef.current.x + dx * STEP, y: posRef.current.y + dy * STEP };
+      // Walls from the published layout block movement.
+      if (wallSetRef.current.has(`${next.x},${next.y}`)) return;
       posRef.current = next;
       setPos(next);
 
@@ -338,11 +340,24 @@ const ShadowRealm = () => {
         setStepsRemaining(stepsRef.current);
       }
 
-      const dist = Math.hypot(next.x - 0, next.y - TRANSFER_OFFSET_Y);
+      const t = transferOffsetRef.current;
+      const dist = Math.hypot(next.x - t.x, next.y - t.y);
       if (dist <= 20) startTransfer();
+
+      // ROOM_DOOR — only opens on the 23rd of any month.
+      const door = roomDoorsRef.current.find((d) => d.x === next.x && d.y === next.y);
+      if (door) {
+        const isTwentyThird = new Date().getDate() === 23;
+        if (isTwentyThird) {
+          navigate(`/room/${currentLevelRef.current}/${door.color ?? 'shadow'}`);
+        } else {
+          showGateMsg('This does not open yet.');
+        }
+      }
     },
-    [startTransfer],
+    [startTransfer, navigate, showGateMsg],
   );
+
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

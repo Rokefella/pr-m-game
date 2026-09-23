@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser } from '@/lib/userData';
 import { supabase } from '@/lib/supabase';
@@ -364,6 +364,10 @@ const NpcActor = ({
 const DynamicRoom = () => {
   const navigate = useNavigate();
   const params = useParams<{ levelNumber: string; locationKey: string }>();
+  const [searchParams] = useSearchParams();
+  // Maze-originated visits carry ?from=maze and exit back into the maze
+  // instead of the room's own (statically authored) exit destination.
+  const fromMaze = searchParams.get('from') === 'maze';
   const locationKey = params.locationKey ?? '';
   const routeLevel = Number(params.levelNumber);
   const levelNumber = Number.isFinite(routeLevel) && routeLevel > 0 ? routeLevel : 1;
@@ -672,9 +676,13 @@ const DynamicRoom = () => {
     for (const ex of roomRef.current.exitTiles) {
       if (nx >= ex.x - 2 && nx <= ex.x + ex.w + 2 && ny >= ex.y - 2 && ny <= ex.y + ex.h + 2) {
         if (!navigatedRef.current) {
-          const target = EXIT_ROUTES[ex.destination] ?? '/village';
           navigatedRef.current = true;
-          window.setTimeout(() => navigate(target), 400);
+          if (fromMaze) {
+            window.setTimeout(() => navigate('/maze'), 400);
+          } else {
+            const target = EXIT_ROUTES[ex.destination] ?? '/village';
+            window.setTimeout(() => navigate(target), 400);
+          }
         }
         return;
       }

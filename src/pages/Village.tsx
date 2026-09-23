@@ -2855,17 +2855,18 @@ const Village = () => {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          gap: 8,
           zIndex: 12,
         }}
       >
-        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#e0ddd5' }}>
-          STEPS&nbsp;&nbsp;{String(stepsRemaining).padStart(2, '0')}
+        <span className="font-mono" style={{ fontSize: 13, letterSpacing: '0.06em', color: '#e0ddd5', whiteSpace: 'nowrap' }}>
+          STEPS&nbsp;{String(stepsRemaining).padStart(2, '0')}
         </span>
-        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#c8963a' }}>
-          CREDITS&nbsp;&nbsp;{String(credits).padStart(2, '0')}
+        <span className="font-mono" style={{ fontSize: 13, letterSpacing: '0.06em', color: '#c8963a', whiteSpace: 'nowrap' }}>
+          CREDITS&nbsp;{String(credits).padStart(2, '0')}
         </span>
-        <span className="font-mono" style={{ fontSize: 15, letterSpacing: '0.18em', color: '#5b4fd4' }}>
-          LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}
+        <span className="font-mono" style={{ fontSize: 13, letterSpacing: '0.06em', color: '#5b4fd4', whiteSpace: 'nowrap' }}>
+          LEVEL&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
         <ProfileButton onClick={openProfile} />
       </div>

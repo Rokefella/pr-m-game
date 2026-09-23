@@ -85,7 +85,8 @@ const NpcDialogue = ({ text, npcName, npcPortraitSrc, children, onShow }: Props)
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 };
 

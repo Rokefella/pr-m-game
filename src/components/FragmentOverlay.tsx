@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 
 interface FragmentOverlayProps {
   prime: number;
@@ -7,19 +8,9 @@ interface FragmentOverlayProps {
   onContinue: () => void;
 }
 
-const LINES: Record<number, string> = {
-  0: '23. It was always going to be you.',
-  1: '47. The spiral bends toward the willing.',
-  2: '89. You are inside the instrument now.',
-  3: '139. She left this for someone like you.',
-  4: '211. The junction remembers every visitor.',
-  5: '257. You have gone further than most.',
-  6: '293. Almost. The door is close.',
-};
-
-const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: FragmentOverlayProps) => {
+const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOverlayProps) => {
   const regLabel = `#${String(registrationNumber).padStart(4, '0')}`;
-  const fullLine = LINES[index] ?? `${prime}.`;
+  const [fullLine, setFullLine] = useState<string | null>(null);
   const [bgOpacity, setBgOpacity] = useState(0);
   const [eyeRy, setEyeRy] = useState(2);
   const [typed, setTyped] = useState('');
@@ -45,7 +36,48 @@ const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: Fragm
     };
     raf = requestAnimationFrame(animateEye);
 
-    // typing starts after eye opens (800ms)
+    return () => {
+      cancelAnimationFrame(raf);
+      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+    };
+  }, []);
+
+  // Pull one random reveal line from the shared `fragment_reveals` table
+  useEffect(() => {
+    let cancelled = false;
+    const fetchRandomReveal = async (): Promise<string | null> => {
+      try {
+        const { data, error } = await supabase
+          .from('fragment_reveals' as never)
+          .select('text')
+          .order('random()' as never)
+          .limit(1)
+          .single();
+        if (!error && data) return (data as { text?: string }).text ?? null;
+        const { data: pool } = await supabase
+          .from('fragment_reveals' as never)
+          .select('text')
+          .limit(100);
+        const rows = (pool as { text?: string }[] | null) ?? [];
+        if (rows.length === 0) return null;
+        return rows[Math.floor(Math.random() * rows.length)]?.text ?? null;
+      } catch {
+        return null;
+      }
+    };
+    void fetchRandomReveal().then((text) => {
+      if (!cancelled) setFullLine(text ?? `${prime}.`);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [prime]);
+
+  // Typing starts after the eye opens (800ms) and only once the reveal line
+  // has resolved — if the fetch is slow, typing simply waits for it.
+  useEffect(() => {
+    if (fullLine === null) return;
+
     let typeTimer: number | undefined;
     let primeTimer: number | undefined;
     let buttonsTimer: number | undefined;
@@ -69,7 +101,6 @@ const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: Fragm
     }, 800);
 
     return () => {
-      cancelAnimationFrame(raf);
       window.clearTimeout(typeStart);
       if (typeTimer) window.clearTimeout(typeTimer);
       if (primeTimer) window.clearTimeout(primeTimer);

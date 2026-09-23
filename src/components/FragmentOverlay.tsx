@@ -38,7 +38,11 @@ const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: Fragm
 
     return () => {
       cancelAnimationFrame(raf);
-et line from the shared `fragment_reveals` table
+      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+    };
+  }, []);
+
+  // Pull one random reveal line from the shared `fragment_reveals` table
   useEffect(() => {
     let cancelled = false;
     const fetchRandomReveal = async (): Promise<string | null> => {
@@ -103,3 +107,169 @@ et line from the shared `fragment_reveals` table
       if (buttonsTimer) window.clearTimeout(buttonsTimer);
     };
   }, [fullLine]);
+
+  const handleContinue = () => {
+    setFadingOut(true);
+    window.setTimeout(onContinue, 400);
+  };
+
+  const handleCapture = () => {
+    // Fragment is already persisted to the folder (Supabase) on collection.
+    // Confirm to the player, then continue the normal post-collection flow.
+    setSavedMsg(true);
+    if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = window.setTimeout(() => {
+      setSavedMsg(false);
+      handleContinue();
+    }, 800);
+  };
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: '#04040a',
+        opacity: fadingOut ? 0 : bgOpacity,
+        transition: fadingOut ? 'opacity 400ms ease-out' : 'opacity 600ms ease-in',
+        zIndex: 100,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        pointerEvents: 'auto',
+      }}
+    >
+      {/* Eye */}
+      <svg
+        width={140}
+        height={88}
+        viewBox="-70 -44 140 88"
+        style={{ filter: 'drop-shadow(0 0 20px rgba(91,79,212,0.4))' }}
+      >
+        <ellipse
+          cx={0}
+          cy={0}
+          rx={60}
+          ry={eyeRy}
+          stroke="rgba(160,140,200,0.6)"
+          strokeWidth={1}
+          fill="none"
+        />
+        {eyeRy > 8 && <circle cx={0} cy={0} r={8} fill="#5b4fd4" />}
+      </svg>
+
+      {/* Typed line */}
+      <p
+        className="font-fell italic"
+        style={{
+          marginTop: 40,
+          fontSize: 18,
+          color: 'rgba(160,140,200,0.9)',
+          textAlign: 'center',
+          minHeight: 24,
+          maxWidth: '85vw',
+        }}
+      >
+        {typed}
+      </p>
+
+      {/* Prime number */}
+      {showPrime && (
+        <div
+          className="font-cinzel"
+          style={{
+            marginTop: 32,
+            fontSize: 64,
+            color: '#c8963a',
+            animation: 'fragPrimePulse 1.2s ease-in-out infinite',
+          }}
+        >
+          {prime}
+        </div>
+      )}
+
+      {/* Player avatar */}
+      {showPrime && (
+        <div
+          style={{
+            marginTop: 24,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 6,
+          }}
+        >
+          <svg width={40} height={40} viewBox="-20 -20 40 40">
+            <circle
+              cx={0}
+              cy={0}
+              r={8}
+              fill="#5b4fd4"
+              style={{ filter: 'drop-shadow(0 0 12px rgba(91,79,212,0.8))' }}
+            />
+          </svg>
+          <div
+            className="font-mono"
+            style={{ fontSize: 11, color: 'rgba(160,140,200,0.4)' }}
+          >
+            {regLabel}
+          </div>
+        </div>
+      )}
+
+      {/* Buttons */}
+      {showButtons && (
+        <div
+          style={{
+            marginTop: 24,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <div style={{ display: 'flex', gap: 16 }}>
+            <button
+              className="font-cinzel"
+              onClick={handleCapture}
+              style={{
+                fontSize: 11,
+                letterSpacing: '0.28em',
+                background: '#c8963a',
+                color: '#04040a',
+                padding: '10px 24px',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              SAVE TO FOLDER
+            </button>
+          </div>
+          {savedMsg && (
+            <div
+              className="font-fell italic"
+              style={{
+                fontSize: 13,
+                color: 'rgba(160,140,200,0.6)',
+              }}
+            >
+              Saved to your folder.
+            </div>
+          )}
+        </div>
+      )}
+
+      <a ref={anchorRef} style={{ display: 'none' }} />
+
+      <style>{`
+        @keyframes fragPrimePulse {
+          0%, 100% { opacity: 0.8; }
+          50% { opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default FragmentOverlay;

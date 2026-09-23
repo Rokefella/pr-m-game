@@ -8,7 +8,7 @@ interface FragmentOverlayProps {
   onContinue: () => void;
 }
 
-const FragmentOverlay = ({ prime, index, registrationNumber, onContinue }: FragmentOverlayProps) => {
+const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOverlayProps) => {
   const regLabel = `#${String(registrationNumber).padStart(4, '0')}`;
   const [fullLine, setFullLine] = useState<string | null>(null);
   const [bgOpacity, setBgOpacity] = useState(0);

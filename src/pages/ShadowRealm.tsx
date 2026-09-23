@@ -611,26 +611,6 @@ const ShadowRealm = () => {
 
       <Thumbstick onMove={(dc, dr) => move(dc, dr)} disabled={transferring} />
 
-      {/* RETURN */}
-      <button
-        onClick={() => navigate('/village')}
-        className="font-cinzel"
-        style={{
-          position: 'fixed',
-          left: 24,
-          bottom: 64,
-          background: 'none',
-          border: 'none',
-          padding: 0,
-          fontSize: 10,
-          letterSpacing: '0.28em',
-          color: 'rgba(160,140,200,0.3)',
-          cursor: 'pointer',
-        }}
-      >
-        RETURN
-      </button>
-
       {/* HUD */}
       <div
         className="font-mono"

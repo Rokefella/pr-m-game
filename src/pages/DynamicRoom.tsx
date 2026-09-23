@@ -63,8 +63,10 @@ type RoomCell = {
   npc_key?: string | null;
   npc_name?: string | null;
   exit?: { destination?: string } | null;
+  color?: string | null;
 };
 type ExitTile = Rect & { destination: string };
+type ColorTile = { id: string; x: number; y: number; col: number; row: number; color: string };
 type NpcPlacement = { id: string; npcKey: string; x: number; y: number };
 type RoomLayout = {
   wallTiles: Rect[];
@@ -72,6 +74,10 @@ type RoomLayout = {
   bookcaseTiles: Rect[];
   lightTiles: Rect[];
   rugTiles: RugTile[];
+  groundTiles: ColorTile[];
+  treeTiles: ColorTile[];
+  flowerTiles: ColorTile[];
+  gardenDecorTiles: ColorTile[];
   exitTiles: ExitTile[];
   npcs: NpcPlacement[];
   gridSize: number;
@@ -157,6 +163,61 @@ const RugCell = memo(({ trim }: { trim: RugTrim }) => (
     {trim.bottom && <line x1="0.6" y1="19.4" x2="19.4" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
     {trim.left && <line x1="0.6" y1="0.6" x2="0.6" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
     {trim.right && <line x1="19.4" y1="0.6" x2="19.4" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
+  </svg>
+));
+
+const GroundTile = memo(({ color, col, row }: { color: string; col: number; row: number }) => {
+  const v = (col * 7 + row * 3) % 4;
+  const blades = [
+    [4 + v, 16, 5 + v, 12],
+    [11, 17, 10, 13],
+    [15 - v, 15, 16 - v, 11],
+    [7, 8 + v, 8, 5 + v],
+  ];
+  return (
+    <svg width="100%" height="100%" viewBox="0 0 20 20" style={{ display: 'block' }}>
+      <rect width="20" height="20" fill={color} opacity={0.55} />
+      <rect width="20" height="20" fill="rgba(0,0,0,0.25)" />
+      {blades.map(([x1, y1, x2, y2], i) => (
+        <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke={color} strokeWidth={0.6} opacity={0.9} />
+      ))}
+      <circle cx={3 + v * 3} cy={4} r={0.5} fill={color} opacity={0.8} />
+      <circle cx={17 - v} cy={18 - v} r={0.5} fill={color} opacity={0.8} />
+    </svg>
+  );
+});
+
+const TreeTile = memo(({ color, col, row }: { color: string; col: number; row: number }) => {
+  const v = (col + row) % 3;
+  const outer =
+    v === 0 ? { cx: 10, cy: 9, rx: 6, ry: 7 } : v === 1 ? { cx: 10, cy: 10, rx: 5, ry: 6 } : { cx: 10, cy: 8, rx: 7, ry: 8 };
+  const inner =
+    v === 0 ? { cx: 10, cy: 7, rx: 4, ry: 5 } : v === 1 ? { cx: 10, cy: 9, rx: 3, ry: 4 } : { cx: 10, cy: 6, rx: 5, ry: 6 };
+  return (
+    <svg width="100%" height="100%" viewBox="0 0 20 20" style={{ display: 'block' }}>
+      <rect x="9.3" y="14" width="1.4" height="5" fill="#3a2a1a" />
+      <ellipse {...outer} fill={color} opacity={0.75} />
+      <ellipse {...inner} fill={color} opacity={0.95} />
+      <ellipse {...inner} fill="rgba(255,255,255,0.08)" />
+    </svg>
+  );
+});
+
+const FlowerTile = memo(({ color }: { color: string }) => (
+  <svg width="100%" height="100%" viewBox="0 0 20 20" style={{ display: 'block' }}>
+    <ellipse cx="10" cy="6.5" rx="2" ry="3" fill={color} opacity={0.85} />
+    <ellipse cx="10" cy="13.5" rx="2" ry="3" fill={color} opacity={0.85} />
+    <ellipse cx="6.5" cy="10" rx="3" ry="2" fill={color} opacity={0.85} />
+    <ellipse cx="13.5" cy="10" rx="3" ry="2" fill={color} opacity={0.85} />
+    <circle cx="10" cy="10" r="1.6" fill="#e0c870" />
+  </svg>
+));
+
+const GardenDecorTile = memo(({ color }: { color: string }) => (
+  <svg width="100%" height="100%" viewBox="0 0 20 20" style={{ display: 'block' }}>
+    <polygon points="10,2 18,10 10,18 2,10" fill="none" stroke={color} strokeWidth={1} opacity={0.9} />
+    <polygon points="10,6 14,10 10,14 6,10" fill="none" stroke={color} strokeWidth={0.6} opacity={0.6} />
+    <circle cx="10" cy="10" r="1" fill={color} />
   </svg>
 ));
 
@@ -476,6 +537,10 @@ const DynamicRoom = () => {
         const lightTiles: Rect[] = [];
         const rugCells: { col: number; row: number }[] = [];
         const exitTiles: ExitTile[] = [];
+        const groundTiles: ColorTile[] = [];
+        const treeTiles: ColorTile[] = [];
+        const flowerTiles: ColorTile[] = [];
+        const gardenDecorTiles: ColorTile[] = [];
         const npcs: NpcPlacement[] = [];
 
         cells.forEach((cell) => {
@@ -497,6 +562,18 @@ const DynamicRoom = () => {
               break;
             case 'RUG':
               rugCells.push({ col: cell.col, row: cell.row });
+              break;
+            case 'GROUND':
+              groundTiles.push({ id: `ground-${cell.col}-${cell.row}`, x, y, col: cell.col, row: cell.row, color: cell.color || '#2e4a2a' });
+              break;
+            case 'TREE':
+              treeTiles.push({ id: `tree-${cell.col}-${cell.row}`, x, y, col: cell.col, row: cell.row, color: cell.color || '#2f5a34' });
+              break;
+            case 'FLOWER':
+              flowerTiles.push({ id: `flower-${cell.col}-${cell.row}`, x, y, col: cell.col, row: cell.row, color: cell.color || '#c86a8a' });
+              break;
+            case 'GARDEN_DECOR':
+              gardenDecorTiles.push({ id: `decor-${cell.col}-${cell.row}`, x, y, col: cell.col, row: cell.row, color: cell.color || '#c8943a' });
               break;
             case 'ROOM_EXIT':
               exitTiles.push({
@@ -551,6 +628,10 @@ const DynamicRoom = () => {
           bookcaseTiles,
           lightTiles,
           rugTiles,
+          groundTiles,
+          treeTiles,
+          flowerTiles,
+          gardenDecorTiles,
           exitTiles,
           npcs,
           gridSize,
@@ -781,7 +862,7 @@ const DynamicRoom = () => {
     growthPoints,
   };
 
-  const title = ROOM_TITLES[locationKey] ?? locationKey.replace(/_/g, ' ').toUpperCase();
+  const title = ROOM_TITLES[locationKey] ?? '';
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#04040a', overflow: 'hidden' }}>
@@ -884,6 +965,30 @@ const DynamicRoom = () => {
         </div>
       )}
 
+      {!roomLoading && room && room.exitTiles.length === 0 && (
+        <button
+          className="font-cinzel"
+          onClick={() => navigate(fromMaze ? '/maze' : '/village')}
+          style={{
+            position: 'absolute',
+            top: 44,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 7,
+            background: 'transparent',
+            color: '#9a9890',
+            padding: '10px 22px',
+            fontSize: 13,
+            letterSpacing: '0.3em',
+            border: '0.5px solid #5a5855',
+            borderRadius: 0,
+            cursor: 'pointer',
+          }}
+        >
+          LEAVE
+        </button>
+      )}
+
       {!roomLoading && room && (
         <div
           style={{
@@ -908,6 +1013,42 @@ const DynamicRoom = () => {
               zIndex: 0,
             }}
           />
+
+          {(room.groundTiles ?? []).map((t) => (
+            <div
+              key={t.id}
+              style={{ position: 'absolute', left: t.x, top: t.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 1 }}
+            >
+              <GroundTile color={t.color} col={t.col} row={t.row} />
+            </div>
+          ))}
+
+          {(room.treeTiles ?? []).map((t) => (
+            <div
+              key={t.id}
+              style={{ position: 'absolute', left: t.x, top: t.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 2 }}
+            >
+              <TreeTile color={t.color} col={t.col} row={t.row} />
+            </div>
+          ))}
+
+          {(room.flowerTiles ?? []).map((t) => (
+            <div
+              key={t.id}
+              style={{ position: 'absolute', left: t.x, top: t.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 2 }}
+            >
+              <FlowerTile color={t.color} />
+            </div>
+          ))}
+
+          {(room.gardenDecorTiles ?? []).map((t) => (
+            <div
+              key={t.id}
+              style={{ position: 'absolute', left: t.x, top: t.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 2 }}
+            >
+              <GardenDecorTile color={t.color} />
+            </div>
+          ))}
 
           {(room.rugTiles ?? []).map((r) => (
             <div

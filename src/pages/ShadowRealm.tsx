@@ -570,6 +570,7 @@ const ShadowRealm = () => {
           animation: 'shadowTransferPulse 2s ease-in-out infinite',
         }}
       />
+      </div>
 
       {/* Gate message */}
       {gateMsg && (
@@ -591,10 +592,22 @@ const ShadowRealm = () => {
         </div>
       )}
 
-
-      </div>
-
       {/* Player — fixed at screen center; the world moves instead */}
+      <div
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: 8,
+          height: 8,
+          marginLeft: -4,
+          marginTop: -4,
+          borderRadius: '50%',
+          background: '#5b4fd4',
+          boxShadow: '0 0 12px rgba(91,79,212,0.8)',
+          animation: 'shadowPlayerPulse 2s ease-in-out infinite',
+        }}
+      />
 
       <Thumbstick onMove={(dc, dr) => move(dc, dr)} disabled={transferring} />
 

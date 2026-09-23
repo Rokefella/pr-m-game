@@ -177,7 +177,7 @@ const dialogueButtonStyle = {
   border: '0.5px solid rgba(200,150,58,0.5)',
   color: '#c8963a',
   padding: '6px 12px',
-  fontSize: 20,
+  fontSize: 13,
   letterSpacing: '0.02em',
   cursor: 'pointer',
   width: '100%',
@@ -348,7 +348,7 @@ const NpcActor = ({
               border: '0.5px solid rgba(160,140,200,0.3)',
               color: 'rgba(160,140,200,0.5)',
               padding: '8px 18px',
-              fontSize: 20,
+              fontSize: 13,
               letterSpacing: '0.3em',
               cursor: 'pointer',
             }}

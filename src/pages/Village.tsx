@@ -2949,6 +2949,7 @@ const Village = () => {
               localStorage.removeItem('praem_aura_color');
               sessionStorage.clear();
               if (user) {
+                await supabase.from('quest_flags').delete().eq('user_id', user.id);
                 await supabase.from('fragments').delete().eq('user_id', user.id);
                 await updateUser(user.id, {
                   entity_answer: null,

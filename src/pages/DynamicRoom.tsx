@@ -759,7 +759,7 @@ const DynamicRoom = () => {
   }, []);
   const camAxis = (mapAxis: number, p: number, viewSize: number) => {
     if (mapAxis <= viewSize) return 0;
-    return Math.min(-viewSize / 2, Math.max(viewSize / 2 - mapAxis, mapAxis / 2 - p));
+    return Math.min(-viewSize / 2, Math.max(viewSize / 2 - mapAxis, -p));
   };
 
   const openNpc = useCallback((npcKey: string) => {

@@ -64,6 +64,24 @@ export type Database = {
           },
         ]
       }
+      fragment_reveals: {
+        Row: {
+          created_at: string
+          id: string
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          text: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          text?: string
+        }
+        Relationships: []
+      }
       fragments: {
         Row: {
           banked: boolean

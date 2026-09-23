@@ -435,6 +435,14 @@ const ShadowRealm = () => {
           />
         ))}
 
+      {/* World container — translates with the player so the realm scrolls */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          transform: `translate(${-pos.x}px, ${-pos.y}px)`,
+        }}
+      >
       {/* Published layout — walls */}
       {walls.map((w, i) => (
         <div
@@ -562,6 +570,7 @@ const ShadowRealm = () => {
           animation: 'shadowTransferPulse 2s ease-in-out infinite',
         }}
       />
+      </div>
 
       {/* Gate message */}
       {gateMsg && (
@@ -583,8 +592,7 @@ const ShadowRealm = () => {
         </div>
       )}
 
-
-      {/* Player */}
+      {/* Player — fixed at screen center; the world moves instead */}
       <div
         style={{
           position: 'absolute',
@@ -594,7 +602,6 @@ const ShadowRealm = () => {
           height: 8,
           marginLeft: -4,
           marginTop: -4,
-          transform: `translate(${pos.x}px, ${pos.y}px)`,
           borderRadius: '50%',
           background: '#5b4fd4',
           boxShadow: '0 0 12px rgba(91,79,212,0.8)',

@@ -1,4 +1,5 @@
 import { ReactNode, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Props {
   text: string;
@@ -10,13 +11,17 @@ interface Props {
   onShow?: () => void;
 }
 
+// Rendered through a Portal into document.body: both Village's and DynamicRoom's
+// world containers use CSS transforms, which make position:fixed inside them size
+// against the transformed map instead of the real viewport. A portal avoids any
+// transformed ancestor entirely.
 const NpcDialogue = ({ text, npcName, npcPortraitSrc, children, onShow }: Props) => {
   useEffect(() => {
     onShow?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return (
+  return createPortal(
     <>
       <style>{`
         @keyframes bernardImgIn {
@@ -31,6 +36,8 @@ const NpcDialogue = ({ text, npcName, npcPortraitSrc, children, onShow }: Props)
       <div
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0,
+          maxWidth: 640,
+          margin: '0 auto',
           background: 'linear-gradient(to top, rgba(4,4,10,0.97) 0%, rgba(4,4,10,0.85) 100%)',
           borderTop: '0.5px solid rgba(91,79,212,0.3)',
           zIndex: 110,
@@ -78,7 +85,8 @@ const NpcDialogue = ({ text, npcName, npcPortraitSrc, children, onShow }: Props)
           </div>
         </div>
       </div>
-    </>
+    </>,
+    document.body
   );
 };
 

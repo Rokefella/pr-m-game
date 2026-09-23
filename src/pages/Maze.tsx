@@ -959,7 +959,10 @@ const Maze = () => {
     // blue door — Bernard's room (Level 1) / credit game (other levels)
     if (cfg.creditDoors.some((d) => d.col === nc && d.row === nr)) {
       if (currentLevelRef.current === 1) {
-        navigate(`/room/${currentLevelRef.current}/bernard_room`);
+        // Preserve the exact maze position so re-entering the maze restores it.
+        window.sessionStorage.setItem('praem_maze_return_col', String(nc));
+        window.sessionStorage.setItem('praem_maze_return_row', String(nr));
+        navigate(`/room/${currentLevelRef.current}/bernard_room?from=maze`);
       } else {
         showWhisper('A game exists here. Not yet open.', 'rgba(59,130,246,0.8)', 2500);
       }

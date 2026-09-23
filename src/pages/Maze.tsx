@@ -1592,7 +1592,7 @@ const Maze = () => {
       {exchangeOpen && (
         <div
           style={{
-            position: 'fixed', left: 0, right: 0, bottom: 36, height: 220,
+            position: 'fixed', left: 0, right: 0, bottom: HUD_HEIGHT, height: 220,
             background: 'rgba(4,4,10,0.97)', borderTop: '1px solid rgba(100,80,160,0.4)',
             zIndex: 70, animation: 'mazePanelSlide 280ms ease-out',
           }}

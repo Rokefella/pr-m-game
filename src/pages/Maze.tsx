@@ -18,6 +18,7 @@ const CELL = 40;
 type Cell = { col: number; row: number };
 type FragmentDef = Cell & { prime: number };
 type EggDef = Cell & { line: string };
+type UserFragmentRow = { prime_number: number; banked: boolean | null; level: number | null };
 
 type LevelConfig = {
   cols: number;
@@ -480,6 +481,8 @@ const Maze = () => {
 
   const [pos, setPos] = useState<Cell>({ col: 0, row: 0 });
   const posRef = useRef<Cell>({ col: 0, row: 0 });
+  const [displayPos, setDisplayPos] = useState<Cell>({ col: 0, row: 0 });
+  const displayPosRef = useRef<Cell>({ col: 0, row: 0 });
   const prevPosRef = useRef<Cell>({ col: 0, row: 0 });
 
   const eggsTriggeredRef = useRef<Set<string>>(new Set());
@@ -488,6 +491,7 @@ const Maze = () => {
   const [collected, setCollected] = useState<Set<number>>(new Set());
   const collectedRef = useRef<Set<number>>(new Set());
   const bankedRef = useRef<Set<number>>(new Set());
+  const [userFragments, setUserFragments] = useState<UserFragmentRow[]>([]);
 
   const [stepsRemaining, setStepsRemaining] = useState(INITIAL_STEPS);
   const stepsRemainingRef = useRef(INITIAL_STEPS);
@@ -535,8 +539,18 @@ const Maze = () => {
       }
     }
     posRef.current = { ...spawn };
+    displayPosRef.current = { ...spawn };
     prevPosRef.current = { ...spawn };
     setPos({ ...spawn });
+    setDisplayPos({ ...spawn });
+    if (typeof window !== 'undefined') {
+      const initialCam = {
+        x: window.innerWidth / 2 - (spawn.col * CELL + CELL / 2),
+        y: window.innerHeight / 2 - (spawn.row * CELL + CELL / 2),
+      };
+      camRef.current = initialCam;
+      setCam(initialCam);
+    }
     if (config.claire) {
       clairePosRef.current = { ...config.claire };
       setClairePos({ ...config.claire });
@@ -554,6 +568,21 @@ const Maze = () => {
     setClaireVisible(true);
     reunionDoneRef.current = false;
   }, [config]);
+
+  // Restore unfinished run fragments for this exact level only. Banked fragments
+  // and fragments saved against other levels do not satisfy the golden door.
+  useEffect(() => {
+    if (!config || !levelLoaded) return;
+    const currentLevelPrimes = new Set(config.fragments.map((f) => f.prime));
+    const restored = new Set<number>();
+    userFragments.forEach((r) => {
+      if (r.banked) return;
+      if (Number(r.level) !== currentLevelRef.current) return;
+      if (currentLevelPrimes.has(r.prime_number)) restored.add(r.prime_number);
+    });
+    collectedRef.current = restored;
+    setCollected(restored);
+  }, [config, levelLoaded, userFragments]);
 
   // If player spawns ON an uncollected fragment, collect it immediately.
   useEffect(() => {
@@ -622,16 +651,18 @@ const Maze = () => {
       // Split into banked (permanent, all levels) and run (this run; starts empty per run).
       const { data: existing, error: fragError } = await supabase
         .from('fragments')
-        .select('prime_number, banked')
+        .select('prime_number, banked, level')
         .eq('user_id', user.id);
       if (fragError) console.error('Failed to load fragments', fragError);
       if (!cancelled && Array.isArray(existing)) {
         const banked = new Set<number>();
-        existing.forEach((r: { prime_number: number; banked: boolean | null }) => {
+        const rows = existing as UserFragmentRow[];
+        rows.forEach((r) => {
           if (r.banked) banked.add(r.prime_number);
         });
         bankedRef.current = banked;
-        // Run fragments always start empty on entering a level.
+        setUserFragments(rows);
+        // Run fragments are restored only for this exact level once config is ready.
         collectedRef.current = new Set<number>();
         setCollected(new Set<number>());
       }
@@ -1006,6 +1037,23 @@ const Maze = () => {
       if (k.has('ArrowDown')) dr += 1;
       if (dc !== 0 || dr !== 0) tryMove(dc, dr);
 
+      const targetPos = posRef.current;
+      const curDisplay = displayPosRef.current;
+      const dCol = targetPos.col - curDisplay.col;
+      const dRow = targetPos.row - curDisplay.row;
+      if (Math.abs(dCol) < 0.01 && Math.abs(dRow) < 0.01) {
+        if (curDisplay.col !== targetPos.col || curDisplay.row !== targetPos.row) {
+          displayPosRef.current = { col: targetPos.col, row: targetPos.row };
+          setDisplayPos(displayPosRef.current);
+        }
+      } else {
+        displayPosRef.current = {
+          col: curDisplay.col + dCol * 0.18,
+          row: curDisplay.row + dRow * 0.18,
+        };
+        setDisplayPos(displayPosRef.current);
+      }
+
       const targetX = window.innerWidth / 2 - (posRef.current.col * CELL + CELL / 2);
       const targetY = window.innerHeight / 2 - (posRef.current.row * CELL + CELL / 2);
       camRef.current = {
@@ -1032,8 +1080,8 @@ const Maze = () => {
 
   
 
-  const playerScreenX = typeof window !== 'undefined' ? window.innerWidth / 2 : 0;
-  const playerScreenY = typeof window !== 'undefined' ? window.innerHeight / 2 : 0;
+  const playerScreenX = typeof window !== 'undefined' ? cam.x + displayPos.col * CELL + CELL / 2 : 0;
+  const playerScreenY = typeof window !== 'undefined' ? cam.y + displayPos.row * CELL + CELL / 2 : 0;
 
   // Level 3+ placeholder
   if (levelLoaded && currentLevel >= 3) {

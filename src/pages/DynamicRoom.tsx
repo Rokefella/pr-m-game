@@ -675,6 +675,7 @@ const DynamicRoom = () => {
         const sp = { x: spawnCol * CELL + CELL / 2, y: spawnRow * CELL + CELL / 2 };
         playerRef.current = sp;
         playerTargetRef.current = sp;
+        camSnapRef.current = true;
 
         if (!cancelled) {
           setPlayer(sp);
@@ -741,6 +742,25 @@ const DynamicRoom = () => {
     const size = (room?.gridSize ?? 1) * CELL;
     return { w: size, h: size };
   }, [room]);
+
+  // Camera-follow: eases toward centering the player each frame (same pattern
+  // as Village). On an axis where the map is smaller than the viewport, that
+  // axis keeps the map centered instead of following.
+  const worldRef = useRef<HTMLDivElement | null>(null);
+  const cameraRef = useRef({ x: 0, y: 0 });
+  const camSnapRef = useRef(true);
+  const viewRef = useRef({ w: window.innerWidth, h: window.innerHeight });
+  useEffect(() => {
+    const onResize = () => {
+      viewRef.current = { w: window.innerWidth, h: window.innerHeight };
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  const camAxis = (mapAxis: number, p: number, viewSize: number) => {
+    if (mapAxis <= viewSize) return 0;
+    return Math.min(-viewSize / 2, Math.max(viewSize / 2 - mapAxis, mapAxis / 2 - p));
+  };
 
   const openNpc = useCallback((npcKey: string) => {
     setOpenSignals((prev) => ({ ...prev, [npcKey]: (prev[npcKey] ?? 0) + 1 }));
@@ -844,6 +864,31 @@ const DynamicRoom = () => {
       } else {
         playerRef.current = { x: cur.x + dx * 0.18, y: cur.y + dy * 0.18 };
         setPlayer(playerRef.current);
+      }
+
+      // Camera eases toward centering the (visually eased) player position;
+      // snaps once on spawn/room load so it never glides across the map.
+      const ms = (roomRef.current?.gridSize ?? 1) * CELL;
+      const camTx = camAxis(ms, cur.x, viewRef.current.w);
+      const camTy = camAxis(ms, cur.y, viewRef.current.h);
+      if (camSnapRef.current) {
+        camSnapRef.current = false;
+        cameraRef.current = { x: camTx, y: camTy };
+      } else {
+        const cdx = camTx - cameraRef.current.x;
+        const cdy = camTy - cameraRef.current.y;
+        if (Math.abs(cdx) < 0.5 && Math.abs(cdy) < 0.5) {
+          cameraRef.current = { x: camTx, y: camTy };
+        } else {
+          cameraRef.current = {
+            x: cameraRef.current.x + cdx * 0.12,
+            y: cameraRef.current.y + cdy * 0.12,
+          };
+        }
+      }
+      // Write the camera transform straight to the DOM — no React re-render.
+      if (worldRef.current) {
+        worldRef.current.style.transform = `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px)`;
       }
 
       raf = requestAnimationFrame(loop);
@@ -991,13 +1036,14 @@ const DynamicRoom = () => {
 
       {!roomLoading && room && (
         <div
+          ref={worldRef}
           style={{
             position: 'absolute',
             left: '50%',
             top: '50%',
             width: mapSize.w,
             height: mapSize.h,
-            transform: `translate(${-mapSize.w / 2}px, ${-mapSize.h / 2}px)`,
+            transform: `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px)`,
           }}
         >
           <div

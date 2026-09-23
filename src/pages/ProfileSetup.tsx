@@ -174,7 +174,8 @@ const ProfileSetup = () => {
           className="font-cinzel"
           style={{ fontSize: 18, color: '#9a9890' }}
         >
-          Wanderer
+          —
+
         </p>
         <p
           className="font-mono italic"

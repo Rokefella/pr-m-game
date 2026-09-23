@@ -2667,6 +2667,24 @@ const Village = () => {
             zIndex: 5,
           }}
         />
+        {currentTitle && (
+          <p
+            className="font-fell italic"
+            style={{
+              position: 'absolute',
+              left: player.x,
+              top: player.y + 10,
+              transform: 'translateX(-50%)',
+              fontSize: 12,
+              color: 'rgba(224,221,213,0.28)',
+              whiteSpace: 'nowrap',
+              pointerEvents: 'none',
+              zIndex: 5,
+            }}
+          >
+            {currentTitle}
+          </p>
+        )}
       </div>
       </>
     )}

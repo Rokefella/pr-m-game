@@ -6,7 +6,7 @@ import { getAllFlags, setFlag } from '@/lib/questFlags';
 import { supabase } from '@/lib/supabase';
 import Thumbstick from '@/components/Thumbstick';
 
-const STEP = 20;
+const STEP = 40; // matches Maze.tsx CELL
 const TRANSFER_SIZE = 40;
 
 const ATMOSPHERE = [
@@ -355,7 +355,7 @@ const ShadowRealm = () => {
 
       const t = transferOffsetRef.current;
       const dist = Math.hypot(next.x - t.x, next.y - t.y);
-      if (dist <= 20) startTransfer();
+      if (dist <= STEP) startTransfer();
 
       // GARDEN_DOOR — only opens on the 23rd of any month; the room is
       // derived from the real current month.

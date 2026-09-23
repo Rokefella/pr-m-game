@@ -1,5 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser } from '@/lib/userData';
 import { supabase } from '@/lib/supabase';
@@ -364,6 +364,10 @@ const NpcActor = ({
 const DynamicRoom = () => {
   const navigate = useNavigate();
   const params = useParams<{ levelNumber: string; locationKey: string }>();
+  const [searchParams] = useSearchParams();
+  // Maze-originated visits carry ?from=maze and exit back into the maze
+  // instead of the room's own (statically authored) exit destination.
+  const fromMaze = searchParams.get('from') === 'maze';
   const locationKey = params.locationKey ?? '';
   const routeLevel = Number(params.levelNumber);
   const levelNumber = Number.isFinite(routeLevel) && routeLevel > 0 ? routeLevel : 1;

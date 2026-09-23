@@ -15,6 +15,12 @@ import Thumbstick from '@/components/Thumbstick';
 const INITIAL_STEPS = 1000;
 const CELL = 40;
 
+// HUD bar reserves enough height for the two-line state ("tap to exchange"
+// sub-label) at all times, so its height never shifts with content.
+const HUD_HEIGHT = 60;
+// Buttons sit above the HUD with a fixed gap; spacing between them preserved.
+const HUD_BUTTON_GAP = 12;
+
 type Cell = { col: number; row: number };
 type FragmentDef = Cell & { prime: number };
 type EggDef = Cell & { line: string };
@@ -1375,7 +1381,7 @@ const Maze = () => {
         className="font-cinzel"
         onClick={() => { window.dispatchEvent(new Event('praem:exit-maze-to-village')); navigate('/village'); }}
         style={{
-          position: 'fixed', bottom: 110, left: 16, background: 'transparent', border: 'none',
+          position: 'fixed', bottom: HUD_HEIGHT + HUD_BUTTON_GAP + 54, left: 16, background: 'transparent', border: 'none',
           color: 'rgba(160,140,200,0.3)', fontSize: 16, letterSpacing: '0.3em', cursor: 'pointer',
           padding: 4, zIndex: 25,
         }}
@@ -1387,7 +1393,7 @@ const Maze = () => {
         className="font-cinzel"
         onClick={() => setExitConfirmOpen(true)}
         style={{
-          position: 'fixed', bottom: 56, left: 16, background: 'transparent', border: 'none',
+          position: 'fixed', bottom: HUD_HEIGHT + HUD_BUTTON_GAP, left: 16, background: 'transparent', border: 'none',
           color: 'rgba(160,140,200,0.4)', fontSize: 16, letterSpacing: '0.3em', cursor: 'pointer',
           padding: 4, zIndex: 65,
         }}
@@ -1553,7 +1559,7 @@ const Maze = () => {
         style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
           background: 'rgba(4,4,10,0.92)', borderTop: '0.5px solid rgba(169,140,255,0.3)',
-          padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          minHeight: HUD_HEIGHT, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           fontSize: 15, letterSpacing: '0.18em', zIndex: 60,
         }}
       >
@@ -1565,9 +1571,14 @@ const Maze = () => {
           }}
         >
           <span>STEPS {stepsRemaining}</span>
-          {stepsRemaining <= 20 && (
-            <span style={{ color: 'rgba(160,140,200,0.4)', fontSize: 14, letterSpacing: '0.15em' }}>tap to exchange</span>
-          )}
+          <span
+            style={{
+              color: 'rgba(160,140,200,0.4)', fontSize: 14, letterSpacing: '0.15em',
+              visibility: stepsRemaining <= 20 ? 'visible' : 'hidden',
+            }}
+          >
+            tap to exchange
+          </span>
         </span>
         {currentLevel === 2 ? (
           <span style={{ color: '#c8963a' }}>FRAGMENTS {collected.size}/{config.fragmentsRequired}</span>

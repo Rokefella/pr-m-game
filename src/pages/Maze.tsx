@@ -648,7 +648,7 @@ const Maze = () => {
       }
 
       // Load ALL the user's fragments (no level filter) so the Folder reflects everything.
-      // Split into banked (permanent, all levels) and run (this run; starts empty per run).
+      // Split into banked (permanent, all levels) and unfinished run fragments for this level.
       const { data: existing, error: fragError } = await supabase
         .from('fragments')
         .select('prime_number, banked, level')

@@ -476,6 +476,10 @@ const DynamicRoom = () => {
         const lightTiles: Rect[] = [];
         const rugCells: { col: number; row: number }[] = [];
         const exitTiles: ExitTile[] = [];
+        const groundTiles: ColorTile[] = [];
+        const treeTiles: ColorTile[] = [];
+        const flowerTiles: ColorTile[] = [];
+        const gardenDecorTiles: ColorTile[] = [];
         const npcs: NpcPlacement[] = [];
 
         cells.forEach((cell) => {
@@ -497,6 +501,18 @@ const DynamicRoom = () => {
               break;
             case 'RUG':
               rugCells.push({ col: cell.col, row: cell.row });
+              break;
+            case 'GROUND':
+              groundTiles.push({ id: `ground-${cell.col}-${cell.row}`, x, y, col: cell.col, row: cell.row, color: cell.color || '#2e4a2a' });
+              break;
+            case 'TREE':
+              treeTiles.push({ id: `tree-${cell.col}-${cell.row}`, x, y, col: cell.col, row: cell.row, color: cell.color || '#2f5a34' });
+              break;
+            case 'FLOWER':
+              flowerTiles.push({ id: `flower-${cell.col}-${cell.row}`, x, y, col: cell.col, row: cell.row, color: cell.color || '#c86a8a' });
+              break;
+            case 'GARDEN_DECOR':
+              gardenDecorTiles.push({ id: `decor-${cell.col}-${cell.row}`, x, y, col: cell.col, row: cell.row, color: cell.color || '#c8943a' });
               break;
             case 'ROOM_EXIT':
               exitTiles.push({
@@ -551,6 +567,10 @@ const DynamicRoom = () => {
           bookcaseTiles,
           lightTiles,
           rugTiles,
+          groundTiles,
+          treeTiles,
+          flowerTiles,
+          gardenDecorTiles,
           exitTiles,
           npcs,
           gridSize,
@@ -781,7 +801,7 @@ const DynamicRoom = () => {
     growthPoints,
   };
 
-  const title = ROOM_TITLES[locationKey] ?? locationKey.replace(/_/g, ' ').toUpperCase();
+  const title = ROOM_TITLES[locationKey] ?? '';
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#04040a', overflow: 'hidden' }}>
@@ -884,6 +904,30 @@ const DynamicRoom = () => {
         </div>
       )}
 
+      {!roomLoading && room && room.exitTiles.length === 0 && (
+        <button
+          className="font-cinzel"
+          onClick={() => navigate(fromMaze ? '/maze' : '/village')}
+          style={{
+            position: 'absolute',
+            top: 44,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 7,
+            background: 'transparent',
+            color: '#9a9890',
+            padding: '10px 22px',
+            fontSize: 13,
+            letterSpacing: '0.3em',
+            border: '0.5px solid #5a5855',
+            borderRadius: 0,
+            cursor: 'pointer',
+          }}
+        >
+          LEAVE
+        </button>
+      )}
+
       {!roomLoading && room && (
         <div
           style={{
@@ -908,6 +952,42 @@ const DynamicRoom = () => {
               zIndex: 0,
             }}
           />
+
+          {(room.groundTiles ?? []).map((t) => (
+            <div
+              key={t.id}
+              style={{ position: 'absolute', left: t.x, top: t.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 1 }}
+            >
+              <GroundTile color={t.color} col={t.col} row={t.row} />
+            </div>
+          ))}
+
+          {(room.treeTiles ?? []).map((t) => (
+            <div
+              key={t.id}
+              style={{ position: 'absolute', left: t.x, top: t.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 2 }}
+            >
+              <TreeTile color={t.color} col={t.col} row={t.row} />
+            </div>
+          ))}
+
+          {(room.flowerTiles ?? []).map((t) => (
+            <div
+              key={t.id}
+              style={{ position: 'absolute', left: t.x, top: t.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 2 }}
+            >
+              <FlowerTile color={t.color} />
+            </div>
+          ))}
+
+          {(room.gardenDecorTiles ?? []).map((t) => (
+            <div
+              key={t.id}
+              style={{ position: 'absolute', left: t.x, top: t.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 2 }}
+            >
+              <GardenDecorTile color={t.color} />
+            </div>
+          ))}
 
           {(room.rugTiles ?? []).map((r) => (
             <div

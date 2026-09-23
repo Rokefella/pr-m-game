@@ -34,6 +34,19 @@ type RealmCell = { col: number; row: number; type?: string; color?: string; name
 type PlacedCell = { x: number; y: number; color?: string; name?: string };
 
 
+// GARDEN_DOOR — room key derived from the real current month,
+// e.g. garden + season + month name ("gardenautumnseptember").
+const MONTH_NAMES = [
+  'january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december',
+];
+
+const gardenRoomKey = (): string => {
+  const month = new Date().getMonth();
+  const season = month <= 1 || month === 11 ? 'winter' : month <= 4 ? 'spring' : month <= 7 ? 'summer' : 'autumn';
+  return `garden${season}${MONTH_NAMES[month]}`;
+};
+
 const ShadowRealm = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -134,7 +147,7 @@ const ShadowRealm = () => {
           case 'EYE': nextEyes.push(p); break;
           case 'NPC': nextNpcs.push(p); break;
           case 'DROP': nextDrops.push(p); break;
-          case 'ROOM_DOOR': nextDoors.push(p); break;
+          case 'GARDEN_DOOR': nextDoors.push(p); break;
           case 'TRANSFER_POINT': if (!transfer) transfer = p; break;
           default: break;
         }
@@ -344,12 +357,13 @@ const ShadowRealm = () => {
       const dist = Math.hypot(next.x - t.x, next.y - t.y);
       if (dist <= 20) startTransfer();
 
-      // ROOM_DOOR — only opens on the 23rd of any month.
+      // GARDEN_DOOR — only opens on the 23rd of any month; the room is
+      // derived from the real current month.
       const door = roomDoorsRef.current.find((d) => d.x === next.x && d.y === next.y);
       if (door) {
         const isTwentyThird = new Date().getDate() === 23;
         if (isTwentyThird) {
-          navigate(`/room/${currentLevelRef.current}/${door.color ?? 'shadow'}`);
+          navigate(`/room/${currentLevelRef.current}/${gardenRoomKey()}`);
         } else {
           showGateMsg('This does not open yet.');
         }

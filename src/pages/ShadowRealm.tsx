@@ -33,6 +33,36 @@ type RunFragment = {
 type RealmCell = { col: number; row: number; type?: string; color?: string; name?: string };
 type PlacedCell = { x: number; y: number; color?: string; name?: string };
 
+const wallKey = (x: number, y: number): string => `${Math.round(x)},${Math.round(y)}`;
+
+const ShadowWallTile = () => (
+  <svg
+    width={STEP}
+    height={STEP}
+    viewBox="0 0 20 20"
+    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+  >
+    <defs>
+      <linearGradient id="shadow-wall-gradient" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#b65a5a" />
+        <stop offset="45%" stopColor="#4a171d" />
+        <stop offset="100%" stopColor="#16070b" />
+      </linearGradient>
+    </defs>
+    <rect x="1.2" y="1.2" width="18.8" height="18.8" fill="rgba(0,0,0,0.55)" />
+    <rect width="18.8" height="18.8" fill="url(#shadow-wall-gradient)" />
+    <line x1="0" y1="0.3" x2="18.8" y2="0.3" stroke="#d88989" strokeOpacity="0.55" strokeWidth="0.7" />
+    <line x1="0.3" y1="0" x2="0.3" y2="18.8" stroke="#d88989" strokeOpacity="0.35" strokeWidth="0.6" />
+    <line x1="0" y1="18.5" x2="18.8" y2="18.5" stroke="#16070b" strokeOpacity="0.9" strokeWidth="0.7" />
+    <line x1="18.5" y1="0" x2="18.5" y2="18.8" stroke="#16070b" strokeOpacity="0.9" strokeWidth="0.7" />
+    <line x1="0" y1="6.6" x2="18.8" y2="6.6" stroke="#16070b" strokeOpacity="0.65" strokeWidth="0.5" />
+    <line x1="0" y1="13.3" x2="18.8" y2="13.3" stroke="#16070b" strokeOpacity="0.65" strokeWidth="0.5" />
+    <line x1="6.6" y1="0" x2="6.6" y2="6.6" stroke="#16070b" strokeOpacity="0.55" strokeWidth="0.4" />
+    <line x1="13.3" y1="6.6" x2="13.3" y2="13.3" stroke="#16070b" strokeOpacity="0.55" strokeWidth="0.4" />
+    <line x1="6.6" y1="13.3" x2="6.6" y2="18.8" stroke="#16070b" strokeOpacity="0.55" strokeWidth="0.4" />
+  </svg>
+);
+
 
 // GARDEN_DOOR — room key derived from the real current month,
 // e.g. garden + season + month name ("gardenautumnseptember").
@@ -161,7 +191,30 @@ const ShadowRealm = () => {
       setDrops(nextDrops);
       setRoomDoors(nextDoors);
       roomDoorsRef.current = nextDoors;
-      wallSetRef.current = new Set(nextWalls.map((w) => `${w.x},${w.y}`));
+      const nextWallSet = new Set(nextWalls.map((w) => wallKey(w.x, w.y)));
+      wallSetRef.current = nextWallSet;
+
+      // Published layouts can omit a start cell, making the arbitrary origin
+      // land on a wall. Move the logical player to the nearest open grid cell.
+      if (nextWallSet.has(wallKey(0, 0))) {
+        let safeSpawn: { x: number; y: number } | null = null;
+        for (let radius = 1; radius <= nextWalls.length + 1 && !safeSpawn; radius++) {
+          for (let dy = -radius; dy <= radius && !safeSpawn; dy++) {
+            for (let dx = -radius; dx <= radius; dx++) {
+              if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue;
+              const candidate = { x: dx * STEP, y: dy * STEP };
+              if (!nextWallSet.has(wallKey(candidate.x, candidate.y))) {
+                safeSpawn = candidate;
+                break;
+              }
+            }
+          }
+        }
+        if (safeSpawn) {
+          posRef.current = safeSpawn;
+          setPos(safeSpawn);
+        }
+      }
       if (transfer) {
         const t = transfer as PlacedCell;
         setTransferOffset({ x: t.x, y: t.y });
@@ -344,7 +397,7 @@ const ShadowRealm = () => {
       if (transferringRef.current) return;
       const next = { x: posRef.current.x + dx * STEP, y: posRef.current.y + dy * STEP };
       // Walls from the published layout block movement.
-      if (wallSetRef.current.has(`${next.x},${next.y}`)) return;
+      if (wallSetRef.current.has(wallKey(next.x, next.y))) return;
       posRef.current = next;
       setPos(next);
 
@@ -455,11 +508,11 @@ const ShadowRealm = () => {
             height: STEP,
             marginLeft: -STEP / 2 + w.x,
             marginTop: -STEP / 2 + w.y,
-            background: 'rgba(30,10,14,0.95)',
-            border: '1px solid rgba(180,60,60,0.22)',
             pointerEvents: 'none',
           }}
-        />
+         >
+           <ShadowWallTile />
+         </div>
       ))}
 
       {/* Published layout — ghost zones */}

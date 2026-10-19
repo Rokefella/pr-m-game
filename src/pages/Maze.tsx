@@ -670,6 +670,8 @@ const Maze = () => {
     return cells;
   }, [config, wallSet, bounds]);
   const visibleObjects = useMemo(() => (config?.visualCells ?? []).filter(cell =>
+    ['ROOM_DOOR', 'DROP_SPAWN', 'DROP', 'NPC'].includes(cell.type) &&
+    !(cell.type === 'ROOM_DOOR' && config?.doorsToRoom?.some(door => door.col === cell.col && door.row === cell.row)) &&
     cell.col >= bounds.minCol && cell.col <= bounds.maxCol && cell.row >= bounds.minRow && cell.row <= bounds.maxRow
   ), [config, bounds]);
 
@@ -1162,7 +1164,7 @@ const Maze = () => {
         {config.doorsToRoom?.filter(inView).map((d, i) => (
           <div key={`room-${i}`} data-object="room-door" style={{ position: 'absolute', left: d.col * CELL, top: d.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
             <WallTile styleKey={theme.wall} dimension={dimension} size={CELL} />
-            <div className="absolute inset-0"><RoomDoorTile dimension={dimension} color={(d as DoorToRoom & { color?: string }).color} size={CELL} /></div>
+            <div className="absolute inset-0"><RoomDoorTile dimension={dimension} color={config.visualCells?.find(cell => cell.type === 'ROOM_DOOR' && cell.col === d.col && cell.row === d.row)?.color ?? (d as DoorToRoom & { color?: string }).color} size={CELL} /></div>
           </div>
         ))}
         {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL, top: config.alexandra.row * CELL, zIndex: 9 }}><NpcPad dimension={dimension} size={CELL} /></div>}

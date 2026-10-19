@@ -1,6 +1,7 @@
-export type StyleKey = 'plated' | 'chevron' | 'hex' | 'lightstrip' | 'gold' | 'ulam';
+export type StyleKey = 'plated' | 'chevron' | 'hex' | 'lightstrip' | 'gold' | 'ulam' | 'calm';
 
 export const WALL_STYLES: Record<StyleKey, string> = {
+  calm: `<rect width="48" height="48" fill="#2f2c6e"/><rect x="6" y="6" width="36" height="36" fill="none" stroke="#3d3a85" opacity=".6"/><path d="M0 1H48M1 0V48" stroke="#6d66c8" stroke-width="1.5" fill="none"/><path d="M0 47H48M47 0V48" stroke="#1a1850" stroke-width="2" fill="none"/>`,
   plated: `<rect width="48" height="48" fill="#58619a"/><rect x="6" y="6" width="36" height="36" fill="#4a5385" stroke="#2f3560"/><path d="M0 1H48M1 0V48" stroke="#9aa4d8" opacity=".8" fill="none"/><path d="M0 47H48M47 0V48" stroke="#2f3560" stroke-width="2" fill="none"/><path d="M9 9h3v3H9zM36 9h3v3h-3zM9 36h3v3H9zM36 36h3v3h-3z" fill="#aab4e8"/><path d="M18 24H30" stroke="$G" stroke-width="5" opacity=".22" fill="none"/><path d="M18 24H30" stroke="$G" stroke-width="2" fill="none"/>`,
   chevron: `<rect width="48" height="48" fill="#55608f"/><path d="M0 8L24 20L48 8M0 28L24 40L48 28" stroke="#35406e" stroke-width="6" fill="none"/><path d="M0 5L24 17L48 5M0 25L24 37L48 25" stroke="#8e99d0" stroke-width="1.5" fill="none"/><path d="M0 1H48" stroke="#aab4e8" fill="none"/><path d="M0 47H48M47 0V48" stroke="#2a3160" stroke-width="2" fill="none"/>`,
   hex: `<rect width="48" height="48" fill="#3d4575"/><path d="M43 24L33.5 40.5H14.5L5 24L14.5 7.5H33.5Z" fill="#5d67a0" stroke="#2d3562" stroke-width="2"/><path d="M36 24L30 34.4H18L12 24L18 13.6H30Z" fill="#4a5385" stroke="#8e99d0"/><path d="M22 22h4v4h-4z" fill="$G"/>`,
@@ -11,6 +12,7 @@ export const WALL_STYLES: Record<StyleKey, string> = {
 
 export type FloorStyleKey = StyleKey | 'ground' | 'plaza' | 'deck';
 export const FLOOR_STYLES: Record<FloorStyleKey, string> = {
+  calm: `<rect width="48" height="48" fill="#1c1a46"/><path d="M0 .5H48M.5 0V48" stroke="#2a2860" stroke-width="1" opacity=".5" fill="none"/>`,
   ground: `<rect width="96" height="96" fill="#35516e"/><rect x="40" y="62" width="16" height="10" fill="#2f4a66" opacity=".6"/><rect x="8" y="42" width="12" height="8" fill="#2f4a66" opacity=".5"/><path d="M6 8h2v2H6zM20 14h2v2h-2zM36 6h2v2h-2zM60 12h2v2h-2zM78 6h2v2h-2zM12 30h2v2h-2zM44 34h2v2h-2zM70 30h2v2h-2zM88 40h2v2h-2z" fill="#4f7a8f" opacity=".7"/><path d="M26 50h4v3h-4zM64 58h5v3h-5zM10 72h4v3h-4zM82 76h4v3h-4z" fill="#5d7f94"/><path d="M14 88V83M16 88V82M52 22V17M54 22V16M86 64V59M88 64V58" stroke="$G" stroke-width="1.5" opacity=".55" fill="none"/>`,
   deck: `<rect width="48" height="48" fill="#2c3460"/><rect x="2" y="2" width="44" height="44" fill="#323b6c" stroke="#232a52"/><path d="M2 3H46M3 2V46" stroke="#4d5894" opacity=".7" fill="none"/><path d="M24 2V46M2 24H46" stroke="#262d58" fill="none"/><path d="M5 5h2v2H5zM41 5h2v2h-2zM5 41h2v2H5zM41 41h2v2h-2z" fill="#6a76b8"/><path d="M22 22h4v4h-4z" fill="$G" opacity=".55"/>`,
   plaza: `<rect width="96" height="96" fill="#4c5688"/><rect x="4" y="4" width="88" height="88" fill="#525c92" stroke="#2f3560"/><path d="M48 4V92M4 48H92" stroke="#3a4272" fill="none"/><path d="M4 4h4v4H4zM88 4h4v4h-4zM4 88h4v4H4zM88 88h4v4h-4z" fill="#aab4e8"/><path d="M6 5H90" stroke="#9aa4d8" opacity=".6" fill="none"/>`,

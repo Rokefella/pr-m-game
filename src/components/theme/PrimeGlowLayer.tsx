@@ -19,7 +19,7 @@ export default memo(function PrimeGlowLayer({ cols, rows, size, dimension, isFlo
     <svg aria-hidden="true" width={cols * size} height={rows * size} viewBox={`0 0 ${cols * size} ${rows * size}`} shapeRendering="crispEdges" className="absolute left-0 top-0 pointer-events-none" style={{ imageRendering: 'pixelated' }}>
       {cells.map(({ col, row }) => (
         <g key={`${col},${row}`}>
-          <rect x={col * size + 3} y={row * size + 3} width={Math.max(0, size - 6)} height={Math.max(0, size - 6)} fill={glow} fillOpacity={0.1} stroke={glow} strokeWidth={1} strokeOpacity={0.3} />
+          <rect x={col * size + 3} y={row * size + 3} width={Math.max(0, size - 6)} height={Math.max(0, size - 6)} fill={glow} fillOpacity={0.08} stroke={glow} strokeWidth={1} strokeOpacity={0.22} />
           <circle cx={(col + 0.5) * size} cy={(row + 0.5) * size} r={size * 0.04} fill={glow} opacity={0.7} />
         </g>
       ))}

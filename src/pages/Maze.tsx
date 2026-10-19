@@ -20,13 +20,24 @@ import PrimeGlowLayer from '@/components/theme/PrimeGlowLayer';
 import { Gate, PrimeShard, Veil, RoomDoorTile, DropSpawnGlimmer, DropCrate, NpcPad, StartPad, Pylon } from '@/components/theme/objects';
 import { getThemeForLevel } from '@/lib/theme/themes';
 import { DIMENSION_GLOW } from '@/lib/theme/tokens';
-import { MAZE_VIGNETTE, SHOW_SPAWN_GLIMMER, pylonCells, visibleBounds } from '@/lib/theme/mazeRendering';
+import { SHOW_SPAWN_GLIMMER, pylonCells, visibleBounds } from '@/lib/theme/mazeRendering';
 import type { VisualCell } from '@/lib/levelLoader';
 import '@/components/theme/maze.css';
 
 // TODO: restore to real walking steps via HealthKit for production.
 const INITIAL_STEPS = 1000;
 const CELL = 40;
+// Lantern: clear radius around the player, widened by Perception; beyond it a dim (not black) fog.
+const LANTERN_BASE_RADIUS_CELLS = 3.2;
+const LANTERN_PERCEPTION_BONUS = 0.5;
+const LANTERN_SOFT_CELLS = 3;
+const FOG_OPACITY = 0.8;
+const FOG_RGB = '11,14,31';
+const lanternRadii = (perception: number) => {
+  const r1 = (LANTERN_BASE_RADIUS_CELLS + Math.min(3, Math.max(0, perception) * LANTERN_PERCEPTION_BONUS)) * CELL;
+  return { r1, r2: r1 + LANTERN_SOFT_CELLS * CELL };
+};
+const LANTERN_BG = `radial-gradient(circle at var(--lx) var(--ly), rgba(245,213,138,.10) 0, rgba(245,213,138,0) ${1.6 * CELL}px), radial-gradient(circle at var(--lx) var(--ly), rgba(${FOG_RGB},0) 0, rgba(${FOG_RGB},0) var(--r1), rgba(${FOG_RGB},calc(var(--fog) * .35)) calc(var(--r1) + (var(--r2) - var(--r1)) * .5), rgba(${FOG_RGB},var(--fog)) var(--r2))`;
 
 // HUD bar reserves enough height for the two-line state ("tap to exchange"
 // sub-label) at all times, so its height never shifts with content.
@@ -491,6 +502,8 @@ const Maze = () => {
 
   const [quoteIdx, setQuoteIdx] = useState(0);
   const worldRef = useRef<HTMLDivElement>(null);
+  const fogRef = useRef<HTMLDivElement>(null);
+  const [perception, setPerception] = useState(0);
   const camRef = useRef({ x: 0, y: 0 });
   const heldKeysRef = useRef<Set<string>>(new Set());
   const lastMoveTimeRef = useRef(0);
@@ -634,6 +647,7 @@ const Maze = () => {
       setCredits(row.credits);
       if (row.aura_color) setAuraColor(row.aura_color);
       setRegistrationNumber(row.registration_number);
+      setPerception(Number((row as unknown as { perception?: number | null }).perception ?? 0));
       registrationNumberRef.current = row.registration_number;
       const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;
       stepsRemainingRef.current = startSteps;
@@ -1097,6 +1111,10 @@ const Maze = () => {
         y: camRef.current.y + (targetY - camRef.current.y) * 0.12,
       };
       if (worldRef.current) worldRef.current.style.transform = `translate(${camRef.current.x}px, ${camRef.current.y}px)`;
+      if (fogRef.current) {
+        fogRef.current.style.setProperty('--lx', `${camRef.current.x + displayPosRef.current.col * CELL + CELL / 2}px`);
+        fogRef.current.style.setProperty('--ly', `${camRef.current.y + displayPosRef.current.row * CELL + CELL / 2}px`);
+      }
 
       pulseT += 1 / 60;
       const p = 1 + Math.sin((pulseT / 1.5) * Math.PI * 2) * 0.075 + 0.075;
@@ -1286,15 +1304,21 @@ const Maze = () => {
         />
       </div>
 
-      <div className="maze-player-light" style={{ left: playerScreenX, top: playerScreenY }} />
       <div
+        ref={fogRef}
+        aria-hidden="true"
         style={{
           position: 'fixed',
           inset: 0,
-          background: `radial-gradient(ellipse at ${playerScreenX}px ${playerScreenY}px, transparent 0%, hsl(var(--background) / ${MAZE_VIGNETTE}) 100%)`,
+          '--lx': `${playerScreenX}px`,
+          '--ly': `${playerScreenY}px`,
+          '--r1': `${lanternRadii(perception).r1}px`,
+          '--r2': `${lanternRadii(perception).r2}px`,
+          '--fog': FOG_OPACITY,
+          background: LANTERN_BG,
           pointerEvents: 'none',
           zIndex: 50,
-        }}
+        } as CSSProperties}
       />
 
       <p

@@ -13,6 +13,10 @@ import { ROOM_BG, ROOM_ZOOM, roomCamAxis } from '@/components/theme/rooms/roomCo
 import { exitDir, roomGeometry, type Run } from '@/components/theme/rooms/roomGeometry';
 import { paletteFromColor } from '@/components/PlayerAvatar';
 import type { ExitDir } from '@/components/theme/objects';
+import GardenScene from '@/components/garden/GardenScene';
+import GardenParticles from '@/components/garden/GardenParticles';
+import { generateGarden } from '@/lib/garden/generateGarden';
+import type { GardenConfig } from '@/lib/garden/gardenConfig';
 
 import alexandraMarkerUrl from '@/assets/alexandra_marker.svg';
 import architectMarkerUrl from '@/assets/architect_marker.svg';
@@ -89,6 +93,7 @@ type RoomLayout = {
   npcs: NpcPlacement[];
   gridSize: number;
   start: { col: number; row: number } | null;
+  garden?: GardenConfig | null;
 };
 
 const GroundTile = memo(({ color, col, row }: { color: string; col: number; row: number }) => {
@@ -448,10 +453,14 @@ const DynamicRoom = () => {
             grid_size?: number;
             gridSize?: number;
             start?: { col?: number; row?: number } | null;
+            garden?: GardenConfig;
           };
         } | null)?.data;
 
-        const cells = rData?.extraCells ?? [];
+        // Procedural garden rows store only a config; everything is generated.
+        const gardenConfig = rData?.garden && typeof rData.garden.seed === 'number' ? rData.garden : null;
+        const generated = gardenConfig ? generateGarden(gardenConfig) : null;
+        const cells: RoomCell[] = generated ? generated.cells : (rData?.extraCells ?? []);
         if (!Array.isArray(cells) || cells.length === 0) {
           if (!cancelled) {
             setRoom(null);
@@ -529,16 +538,17 @@ const DynamicRoom = () => {
           }
         });
 
-        let gridSize = Number(rData?.grid_size ?? rData?.gridSize ?? 0);
+        let gridSize = generated ? generated.size : Number(rData?.grid_size ?? rData?.gridSize ?? 0);
         if (!Number.isFinite(gridSize) || gridSize <= 0) {
           gridSize = cells.reduce((m, c) => Math.max(m, (c?.col ?? 0) + 1, (c?.row ?? 0) + 1), 1);
         }
-        const geom = roomGeometry(cells, gridSize);
+        // Gardens skip roomGeometry entirely: no merged runs, no implicit walls.
+        const geom = generated ? { floorRuns: [] as Run[], wallRuns: [] as Run[], implicitWalls: [] as { col: number; row: number }[] } : roomGeometry(cells, gridSize);
         geom.implicitWalls.forEach(({ col, row }) => {
           wallTiles.push({ id: `wall-${col}-${row}`, x: col * CELL, y: row * CELL, w: CELL, h: CELL });
         });
         exitTiles.forEach((ex) => { ex.dir = exitDir(ex.x / CELL, ex.y / CELL, gridSize); });
-        const rawStart = rData?.start;
+        const rawStart = generated ? generated.start : rData?.start;
         const start =
           rawStart && typeof rawStart.col === 'number' && typeof rawStart.row === 'number'
             ? { col: rawStart.col, row: rawStart.row }
@@ -573,6 +583,7 @@ const DynamicRoom = () => {
           npcs,
           gridSize,
           start,
+          garden: gardenConfig,
         };
 
         // Spawn safety net: nearest open cell around the preferred origin.
@@ -840,7 +851,7 @@ const DynamicRoom = () => {
     growthPoints,
   };
 
-  const title = ROOM_TITLES[locationKey] ?? '';
+  const title = ROOM_TITLES[locationKey] ?? (locationKey.startsWith('garden') ? 'THE GARDEN' : '');
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: ROOM_BG, overflow: 'hidden' }}>
@@ -981,6 +992,10 @@ const DynamicRoom = () => {
             willChange: 'transform',
           }}
         >
+          {room.garden ? (
+            <GardenScene config={room.garden} />
+          ) : (
+          <>
           <RoomScene floorRuns={room.floorRuns} wallRuns={room.wallRuns} furniture={room.furnitureTiles} bookcases={room.bookcaseTiles} lights={room.lightTiles} rugs={room.rugTiles} exits={room.exitTiles} />
 
           {(room.groundTiles ?? []).map((t) => (
@@ -1018,6 +1033,8 @@ const DynamicRoom = () => {
               <GardenDecorTile color={t.color} />
             </div>
           ))}
+          </>
+          )}
 
           {/* Generic NPCs — one actor per placed NPC cell */}
           {room.npcs.map((n) => (
@@ -1044,6 +1061,7 @@ const DynamicRoom = () => {
         onDirectionChange={(dc, dr) => { stickDirRef.current = { dc, dr }; }}
         disabled={openNpcKey !== null}
       />
+      {room?.garden && <GardenParticles config={room.garden} />}
     </div>
   );
 };

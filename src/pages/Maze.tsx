@@ -8,6 +8,7 @@ import { getAllFlags, getFlag } from '@/lib/questFlags';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { waitForDailySteps } from '@/lib/dailySteps';
+import { endRun, forfeitUnbanked, getActiveRun, startRun, STRICT_FORFEIT } from '@/lib/runState';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
@@ -360,22 +361,34 @@ const Maze = () => {
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
   const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
 
-  // Forfeit fragments if the player leaves the maze without visiting the Shadow Realm.
+  // Capture the room return before config initialization consumes its coordinates.
+  const roomReturnRef = useRef(Boolean(sessionStorage.getItem('praem_maze_return_col')));
   const userIdRef = useRef<string | null>(null);
   useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
-  useEffect(() => {
-    const handleExit = () => {
-      const visited = sessionStorage.getItem('visited_shadow_this_run');
-      const uid = userIdRef.current;
-      if (visited !== 'true' && uid) {
-        // Only forfeit run fragments. Banked fragments survive exit.
-        supabase.from('fragments').delete().eq('user_id', uid).eq('banked', false).then(() => {});
-      }
-      sessionStorage.removeItem('visited_shadow_this_run');
-    };
-    window.addEventListener('praem:exit-maze-to-village', handleExit);
-    return () => window.removeEventListener('praem:exit-maze-to-village', handleExit);
-  }, []);
+  const leavingRef = useRef(false);
+  const leaveMaze = useCallback(async () => {
+    if (leavingRef.current) return;
+    leavingRef.current = true;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const uid = userIdRef.current;
+    if (uid) {
+      await Promise.race([
+        forfeitUnbanked(uid),
+        new Promise<boolean>((resolve) => {
+          timeout = setTimeout(() => {
+            console.error('[Maze] fragment forfeiture timed out');
+            resolve(false);
+          }, 1500);
+        }),
+      ]);
+    }
+    if (timeout !== undefined) clearTimeout(timeout);
+    endRun();
+    sessionStorage.removeItem('praem_maze_return_col');
+    sessionStorage.removeItem('praem_maze_return_row');
+    window.dispatchEvent(new Event('praem:exit-maze-to-village'));
+    navigate('/village');
+  }, [navigate]);
 
   // Subscription status from the users row + quest flags gate the paywall moment.
   const subStatusRef = useRef<string>('trial');
@@ -597,6 +610,7 @@ const Maze = () => {
     }
     let cancelled = false;
     stepsReadyRef.current = false;
+    setLevelLoaded(false);
     (async () => {
       await waitForDailySteps(user.id);
       if (cancelled) return;
@@ -631,7 +645,18 @@ const Maze = () => {
       if (fragError) console.error('Failed to load fragments', fragError);
       if (!cancelled && Array.isArray(existing)) {
         const banked = new Set<number>();
-        const rows = existing as UserFragmentRow[];
+        const storedRun = getActiveRun(user.id, row.level);
+        const resume = roomReturnRef.current || Boolean(sessionStorage.getItem('praem_maze_return_col')) || (!STRICT_FORFEIT && Boolean(storedRun));
+        let rows = existing as UserFragmentRow[];
+        if (!resume) {
+          await forfeitUnbanked(user.id);
+          if (cancelled || leavingRef.current) return;
+          rows = rows.filter((fragment) => fragment.banked !== false);
+          startRun(user.id, row.level);
+        } else if (!storedRun) {
+          startRun(user.id, row.level);
+        }
+        roomReturnRef.current = false;
         rows.forEach((r) => {
           if (r.banked) banked.add(r.prime_number);
         });
@@ -641,7 +666,7 @@ const Maze = () => {
         collectedRef.current = new Set<number>();
         setCollected(new Set<number>());
       }
-      setLevelLoaded(true);
+      if (!cancelled && !leavingRef.current) setLevelLoaded(true);
     })();
     return () => { cancelled = true; };
   }, [user, authLoading]);
@@ -1092,7 +1117,7 @@ const Maze = () => {
         </p>
         <button
           className="font-cinzel"
-          onClick={() => { window.dispatchEvent(new Event('praem:exit-maze-to-village')); navigate('/village'); }}
+          onClick={leaveMaze}
           style={{
             background: 'transparent', border: '0.5px solid rgba(160,140,200,0.4)',
             color: 'rgba(160,140,200,0.7)', padding: '10px 24px', fontSize: 16,
@@ -1298,7 +1323,7 @@ const Maze = () => {
 
       <button
         className="font-cinzel"
-        onClick={() => { window.dispatchEvent(new Event('praem:exit-maze-to-village')); navigate('/village'); }}
+        onClick={leaveMaze}
         style={{
           position: 'fixed', bottom: HUD_HEIGHT + HUD_BUTTON_GAP + 54, left: 16, background: 'transparent', border: 'none',
           color: 'rgba(160,140,200,0.3)', fontSize: 16, letterSpacing: '0.3em', cursor: 'pointer',
@@ -1336,7 +1361,7 @@ const Maze = () => {
           <div style={{ display: 'flex', gap: 16 }}>
             <button
               className="font-cinzel"
-              onClick={() => { window.dispatchEvent(new Event('praem:exit-maze-to-village')); navigate('/village'); }}
+              onClick={leaveMaze}
               style={{
                 fontSize: 16, letterSpacing: '0.3em', background: 'rgba(200,80,80,0.9)', color: 'white',
                 border: 'none', padding: '10px 24px', cursor: 'pointer',
@@ -1636,13 +1661,11 @@ const Maze = () => {
           userId={user?.id ?? ''}
           onContinue={() => {
             setPaywallOpen(false);
-            window.dispatchEvent(new Event('praem:exit-maze-to-village'));
-            navigate('/village');
+            void leaveMaze();
           }}
           onDismiss={() => {
             setPaywallOpen(false);
-            window.dispatchEvent(new Event('praem:exit-maze-to-village'));
-            navigate('/village');
+            void leaveMaze();
           }}
         />
       )}

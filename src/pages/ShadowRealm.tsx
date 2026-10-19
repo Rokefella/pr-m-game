@@ -4,6 +4,7 @@ import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
 import { getAllFlags, setFlag } from '@/lib/questFlags';
 import { supabase } from '@/lib/supabase';
+import { endRun } from '@/lib/runState';
 import Thumbstick from '@/components/Thumbstick';
 
 const STEP = 40; // matches Maze.tsx CELL
@@ -245,7 +246,6 @@ const ShadowRealm = () => {
       currentLevelRef.current = row.level;
       setStepsRemaining(row.steps_remaining);
       stepsRef.current = row.steps_remaining;
-      sessionStorage.setItem('visited_shadow_this_run', 'true');
       setFlag(user.id, 'shadow_visited', 'true');
 
       const { data } = await supabase
@@ -301,6 +301,8 @@ const ShadowRealm = () => {
         maze_completed_level: currentLevelRef.current,
         level: currentLevelRef.current + 1,
       });
+      endRun();
+      sessionStorage.removeItem('visited_shadow_this_run');
       return true;
     } catch (e) {
       console.error('[ShadowRealm] transfer failed', e);

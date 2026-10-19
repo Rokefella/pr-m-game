@@ -639,6 +639,8 @@ const Maze = () => {
           .select('id')
           .eq('user_id', user.id)
           .eq('prime_number', frag.prime)
+          .eq('level', currentLevelRef.current)
+          .eq('banked', false)
           .limit(1);
         if (leavingRef.current || (existing && existing.length > 0)) return;
         const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
@@ -647,6 +649,7 @@ const Maze = () => {
           prime_number: frag.prime,
           level: currentLevelRef.current,
           image_data: imageData,
+          banked: false,
         });
         if (error) console.error('Failed to save fragment', error);
       })();
@@ -1031,6 +1034,8 @@ const Maze = () => {
               .select('id')
               .eq('user_id', uidFrag)
               .eq('prime_number', frag.prime)
+              .eq('level', currentLevelRef.current)
+              .eq('banked', false)
               .limit(1);
             if (leavingRef.current || (existing && existing.length > 0)) return;
             const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);

@@ -10,3 +10,4 @@
 - Coordinate daily step claims through one per-user in-memory session promise; Village publishes a refreshed balance and Maze waits before loading or writing steps to prevent stale balances overwriting grants.
 - Render ACCOUNT feedback through a portaled modal sized against the visual viewport; keyboard resize must keep the message and submission controls visible.
 - Keep fragment plate primitives presentation-only; coordinate eye, voice and digit readiness in FragmentOverlay, deriving pre-collection counts by excluding the current prime from the Folder query so asynchronous pickup persistence cannot skew the count.
+- Keep player sprite art and CSS-only motion inside PlayerAvatar with its existing viewBox and origin; preview the same component directly so visual changes require no gameplay caller updates.

@@ -1,5 +1,18 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthContext';
+import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
+import { Button } from '@/components/ui/button';
+import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
+import PixelEye from '@/components/theme/PixelEye';
+import DecodeNumber from '@/components/theme/DecodeNumber';
+import FolderSlots from '@/components/theme/FolderSlots';
+import { useReducedMotion } from '@/components/theme/useReducedMotion';
+import { DIMENSION_GLOW } from '@/lib/theme/tokens';
+import {
+  EYE_MS, TYPE_MS_PER_CHAR, DECODE_MS_PER_DIGIT, REVEAL_FLASH_MS,
+  REDUCED_REVEAL_MS, FOLDER_TOTAL, countBeforeFragment,
+} from '@/lib/theme/fragmentReveal';
 
 interface FragmentOverlayProps {
   prime: number;
@@ -9,38 +22,60 @@ interface FragmentOverlayProps {
 }
 
 const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOverlayProps) => {
+  const { user } = useAuth();
+  const reduced = useReducedMotion();
   const regLabel = `#${String(registrationNumber).padStart(4, '0')}`;
   const [fullLine, setFullLine] = useState<string | null>(null);
-  const [bgOpacity, setBgOpacity] = useState(0);
-  const [eyeRy, setEyeRy] = useState(2);
+  const [eyeOpen, setEyeOpen] = useState(false);
   const [typed, setTyped] = useState('');
-  const [showPrime, setShowPrime] = useState(false);
-  const [showButtons, setShowButtons] = useState(false);
+  const [typingDone, setTypingDone] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const [flashDone, setFlashDone] = useState(false);
+  const [reducedReady, setReducedReady] = useState(false);
+  const [filled, setFilled] = useState<number | null>(null);
+  const [auraColor, setAuraColor] = useState<string | null>(null);
   const [fadingOut, setFadingOut] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   const savedTimerRef = useRef<number | null>(null);
-  const anchorRef = useRef<HTMLAnchorElement>(null);
+
+  useEffect(() => () => {
+    if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+  }, []);
 
   useEffect(() => {
-    // bg fade-in
-    requestAnimationFrame(() => setBgOpacity(1));
+    const timer = window.setTimeout(() => {
+      setEyeOpen(true);
+      if (reduced) {
+        setRevealed(true);
+        setReducedReady(true);
+      }
+    }, reduced ? REDUCED_REVEAL_MS : EYE_MS);
+    return () => window.clearTimeout(timer);
+  }, [reduced]);
 
-    // eye opens over 800ms
-    const eyeStart = performance.now();
-    let raf = 0;
-    const animateEye = (t: number) => {
-      const p = Math.min(1, (t - eyeStart) / 800);
-      const eased = 1 - Math.pow(1 - p, 3); // ease-out
-      setEyeRy(2 + (36 - 2) * eased);
-      if (p < 1) raf = requestAnimationFrame(animateEye);
-    };
-    raf = requestAnimationFrame(animateEye);
-
-    return () => {
-      cancelAnimationFrame(raf);
-      if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
-    };
-  }, []);
+  // Same user-wide rows and ordering as ProfileOverlay's FOLDER tab. Exclude
+  // this prime because Maze may have already persisted the pickup by now.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const { data, error } = await supabase.from('fragments')
+          .select('id,prime_number,collected_at')
+          .eq('user_id', user.id).order('collected_at', { ascending: false });
+        if (!cancelled && !error && Array.isArray(data)) {
+          setFilled(countBeforeFragment(data, prime));
+        }
+      } catch { /* Unknown counts stay hidden. */ }
+    })();
+    void (async () => {
+      try {
+        const { data } = await supabase.from('users').select('aura_color').eq('id', user.id).maybeSingle();
+        if (!cancelled) setAuraColor(data?.aura_color ?? null);
+      } catch { /* Use the existing default purple palette. */ }
+    })();
+    return () => { cancelled = true; };
+  }, [user, prime]);
 
   // Pull one random reveal line from the shared `fragment_reveals` table
   useEffect(() => {
@@ -73,40 +108,38 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
     };
   }, [prime]);
 
-  // Typing starts after the eye opens (800ms) and only once the reveal line
-  // has resolved — if the fetch is slow, typing simply waits for it.
+  // The eye and fetch must both be ready before typing and decoding begin.
   useEffect(() => {
-    if (fullLine === null) return;
+    if (!eyeOpen || fullLine === null) return;
+    if (reduced) {
+      setTyped(fullLine);
+      setTypingDone(true);
+      return;
+    }
+    let i = 0;
+    setTypingDone(fullLine.length === 0);
+    const timer = window.setInterval(() => {
+      i += 1;
+      setTyped(fullLine.slice(0, i));
+      if (i >= fullLine.length) {
+        setTypingDone(true);
+        window.clearInterval(timer);
+      }
+    }, TYPE_MS_PER_CHAR);
+    return () => window.clearInterval(timer);
+  }, [eyeOpen, fullLine, reduced]);
 
-    let typeTimer: number | undefined;
-    let primeTimer: number | undefined;
-    let buttonsTimer: number | undefined;
-    const typeStart = window.setTimeout(() => {
-      let i = 0;
-      const tick = () => {
-        i += 1;
-        setTyped(fullLine.slice(0, i));
-        if (i < fullLine.length) {
-          typeTimer = window.setTimeout(tick, 35);
-        } else {
-          // 400ms pause then prime
-          primeTimer = window.setTimeout(() => {
-            setShowPrime(true);
-            // 500ms after prime → buttons
-            buttonsTimer = window.setTimeout(() => setShowButtons(true), 500);
-          }, 400);
-        }
-      };
-      tick();
-    }, 800);
+  const handleDecoded = useCallback(() => {
+    if (!reduced) setRevealed(true);
+  }, [reduced]);
 
-    return () => {
-      window.clearTimeout(typeStart);
-      if (typeTimer) window.clearTimeout(typeTimer);
-      if (primeTimer) window.clearTimeout(primeTimer);
-      if (buttonsTimer) window.clearTimeout(buttonsTimer);
-    };
-  }, [fullLine]);
+  useEffect(() => {
+    if (!revealed || reduced) return;
+    const timer = window.setTimeout(() => setFlashDone(true), REVEAL_FLASH_MS);
+    return () => window.clearTimeout(timer);
+  }, [revealed, reduced]);
+
+  const canSave = reduced ? reducedReady : revealed && flashDone && typingDone;
 
   const handleContinue = () => {
     setFadingOut(true);
@@ -114,8 +147,8 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
   };
 
   const handleCapture = () => {
-    // Fragment is already persisted to the folder (Supabase) on collection.
-    // Confirm to the player, then continue the normal post-collection flow.
+    // Fragment is already persisted to the folder on collection.
+    // Confirm, then continue the original post-collection flow.
     setSavedMsg(true);
     if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
     savedTimerRef.current = window.setTimeout(() => {
@@ -125,149 +158,27 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: '#04040a',
-        opacity: fadingOut ? 0 : bgOpacity,
-        transition: fadingOut ? 'opacity 400ms ease-out' : 'opacity 600ms ease-in',
-        zIndex: 100,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        pointerEvents: 'auto',
-      }}
-    >
-      {/* Eye */}
-      <svg
-        width={140}
-        height={88}
-        viewBox="-70 -44 140 88"
-        style={{ filter: 'drop-shadow(0 0 20px rgba(91,79,212,0.4))' }}
-      >
-        <ellipse
-          cx={0}
-          cy={0}
-          rx={60}
-          ry={eyeRy}
-          stroke="rgba(160,140,200,0.6)"
-          strokeWidth={1}
-          fill="none"
-        />
-        {eyeRy > 8 && <circle cx={0} cy={0} r={8} fill="#5b4fd4" />}
-      </svg>
-
-      {/* Typed line */}
-      <p
-        className="font-fell italic"
-        style={{
-          marginTop: 40,
-          fontSize: 18,
-          color: 'rgba(160,140,200,0.9)',
-          textAlign: 'center',
-          minHeight: 24,
-          maxWidth: '85vw',
-        }}
-      >
-        {typed}
-      </p>
-
-      {/* Prime number */}
-      {showPrime && (
-        <div
-          className="font-cinzel"
-          style={{
-            marginTop: 32,
-            fontSize: 64,
-            color: '#c8963a',
-            animation: 'fragPrimePulse 1.2s ease-in-out infinite',
-          }}
-        >
-          {prime}
-        </div>
-      )}
-
-      {/* Player avatar */}
-      {showPrime && (
-        <div
-          style={{
-            marginTop: 24,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 6,
-          }}
-        >
-          <svg width={40} height={40} viewBox="-20 -20 40 40">
-            <circle
-              cx={0}
-              cy={0}
-              r={8}
-              fill="#5b4fd4"
-              style={{ filter: 'drop-shadow(0 0 12px rgba(91,79,212,0.8))' }}
-            />
-          </svg>
-          <div
-            className="font-mono"
-            style={{ fontSize: 11, color: 'rgba(160,140,200,0.4)' }}
-          >
-            {regLabel}
+    <div className={`fragment-backdrop ${fadingOut ? 'fragment-fading' : ''}`} role="dialog" aria-modal="true" aria-label="Fragment reveal">
+      <PlateFrame className="fragment-frame">
+        <div className="fragment-stack">
+          <PixelEye animate={!reduced} />
+          <p className="fragment-voice font-fell italic">{typed}</p>
+          <div className="fragment-number-plate">
+            <PlateCorners />
+            <DecodeNumber value={prime} run={eyeOpen && fullLine !== null} glow={DIMENSION_GLOW.teal} msPerDigit={DECODE_MS_PER_DIGIT} onDone={handleDecoded} />
           </div>
-        </div>
-      )}
-
-      {/* Buttons */}
-      {showButtons && (
-        <div
-          style={{
-            marginTop: 24,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 12,
-          }}
-        >
-          <div style={{ display: 'flex', gap: 16 }}>
-            <button
-              className="font-cinzel"
-              onClick={handleCapture}
-              style={{
-                fontSize: 11,
-                letterSpacing: '0.28em',
-                background: '#c8963a',
-                color: '#04040a',
-                padding: '10px 24px',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              SAVE TO FOLDER
-            </button>
+          {filled !== null && <>
+            <p className="fragment-caption font-mono">Folder {Math.min(FOLDER_TOTAL, filled + (revealed ? 1 : 0))} of {FOLDER_TOTAL}</p>
+            <FolderSlots filled={filled} revealed={revealed} />
+          </>}
+          <div className="fragment-avatar">
+            <PlayerAvatar size={36} palette={paletteFromColor(auraColor, registrationNumber)} walking={false} />
+            <div className={`fragment-registration font-mono ${registrationNumber === 1 ? 'fragment-registration-first' : ''}`}>{regLabel}</div>
           </div>
-          {savedMsg && (
-            <div
-              className="font-fell italic"
-              style={{
-                fontSize: 13,
-                color: 'rgba(160,140,200,0.6)',
-              }}
-            >
-              Saved to your folder.
-            </div>
-          )}
+          <Button className="fragment-save font-cinzel" disabled={!canSave || savedMsg} onClick={handleCapture}>SAVE TO FOLDER</Button>
+          {savedMsg && <p className="fragment-saved font-fell italic" role="status">Saved to your folder.</p>}
         </div>
-      )}
-
-      <a ref={anchorRef} style={{ display: 'none' }} />
-
-      <style>{`
-        @keyframes fragPrimePulse {
-          0%, 100% { opacity: 0.8; }
-          50% { opacity: 1; }
-        }
-      `}</style>
+      </PlateFrame>
     </div>
   );
 };

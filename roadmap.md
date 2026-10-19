@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Add reusable pixel plate, eye, decoding number and folder slots; restyle FragmentOverlay without gameplay changes.
+- [x] Test reveal timing/count rules (14 tests) and verify isolated pickup/save at 375×667 and 375×500, six-digit primes, reduced motion and unchanged save callback; build passes.
+- [ ] Verify live fragment folder query and pickup persistence — the game's separate auth session is unavailable; isolated fixtures are not live verification.
+
 - [x] Integrate Instrument Village ground, streets, trees, plazas and buildings without gameplay changes.
 - [x] Test neighbour rules (15 theme tests pass) and verify isolated Village 1/2 70×70 layouts at 375px, four-digit HUD balances, camera scrolling and reduced-motion beacons.
 - [ ] Verify actual signed-in Village 1/2 layouts and real-device scrolling — no game auth session is available; isolated map checks do not establish real-device performance.

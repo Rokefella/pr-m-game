@@ -1,5 +1,9 @@
 # Roadmap
 
+- [x] Fix maze run lifecycle with explicit exits, twelve-hour resumption and Shadow transfer completion; preserve room round trips and gameplay rendering/movement.
+- [x] Test all five deliberate exits, room-return resumption and twelve-hour limits (21 new tests); isolated browser scenarios a–d pass with no runtime errors, including actual Bernard door navigation and full Shadow transfer.
+- [ ] Verify scenarios a–d against a real player's stored fragments — the game uses external auth without an available session; isolated checks do not establish live persistence.
+
 - [x] Replace avatar aura rings with a pulsing pixel orb; preserve palette API and caller positioning.
 - [x] Verify 64 previews across four colours, 24/30/48/96 pixels, idle/walking and both backgrounds at 375px and desktop; pulse, alternating feet and reduced motion pass, with six related tests and build OK.
 

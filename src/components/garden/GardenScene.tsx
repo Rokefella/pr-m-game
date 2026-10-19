@@ -85,9 +85,9 @@ const GardenScene = memo(function GardenScene({ config }: { config: GardenConfig
         <circle cx={circleSize / 2} cy={circleSize / 2} r={(circle.r + 2) * CELL} fill={season.glow} opacity=".08" className="garden-halo" />
         <circle cx={circleSize / 2} cy={circleSize / 2} r={circle.r * CELL} fill="rgba(0,0,0,.25)" stroke={season.glow} strokeOpacity=".55" strokeWidth="2" />
         <circle cx={circleSize / 2} cy={circleSize / 2} r={(circle.r - 2) * CELL} fill="rgba(0,0,0,.3)" />
-        <g transform={`translate(${circleSize / 2} ${circleSize / 2}) translate(-187 -176) scale(22)`} fill={season.glow}>
-          <path d={SPIRAL_PATH} />
-          <rect x="8" y="8" width="1" height="1" fill="#fff3c4" />
+        <g transform={`translate(${circleSize / 2} ${circleSize / 2}) translate(-91 -91) scale(14)`} fill={season.glow}>
+          {SPIRAL_RECTS.map(([x, y, w, h], i) => <rect key={i} x={x} y={y} width={w} height={h} />)}
+          <rect x="6" y="6" width="1" height="1" fill="#fff3c4" />
         </g>
       </svg>
       {/* Flowers */}

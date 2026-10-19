@@ -12,7 +12,7 @@ export function pylonCells(cols: number, rows: number, walls: Set<string>, open:
     for (let col = 0; col < cols; col++) {
       const key = `${col},${row}`;
       if (!walls.has(key)) { previous = -Infinity; continue; }
-      if (row + 1 < rows && open.has(`${col},${row + 1}`) && (col * 7 + row * 13) % 11 === 0 && col - previous >= 5) {
+      if (row + 1 < rows && open.has(`${col},${row + 1}`) && (col * 7 + row * 13) % 29 === 0 && col - previous >= 8) {
         result.add(key);
         previous = col;
       }

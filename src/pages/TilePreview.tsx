@@ -9,12 +9,12 @@ import { type Dimension } from '@/lib/theme/tokens';
 import { getThemeForLevel, THEME_PRESETS } from '@/lib/theme/themes';
 import { VillageDoor } from '@/components/theme/objects';
 
-const STYLES: StyleKey[] = ['plated', 'chevron', 'hex', 'lightstrip', 'gold', 'ulam'];
+const STYLES: StyleKey[] = ['calm', 'plated', 'chevron', 'hex', 'lightstrip', 'gold', 'ulam'];
 
 export default function TilePreview() {
   const [dimension, setDimension] = useState<Dimension>('purple');
   const [primeGlow, setPrimeGlow] = useState(true);
-  const [preset, setPreset] = useState('instrument');
+  const [preset, setPreset] = useState('calm');
   const sampleRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const theme = getThemeForLevel(1, preset);

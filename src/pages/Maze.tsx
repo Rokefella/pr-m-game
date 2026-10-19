@@ -1,4 +1,4 @@
-import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
@@ -8,7 +8,9 @@ import { getAllFlags, getFlag } from '@/lib/questFlags';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { waitForDailySteps } from '@/lib/dailySteps';
-import { endRun, forfeitUnbanked, getActiveRun, startRun, STRICT_FORFEIT } from '@/lib/runState';
+import { endRun, forfeitUnbanked, getActiveRun, markRunComplete, startRun, STRICT_FORFEIT } from '@/lib/runState';
+import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
+import PixelEye from '@/components/theme/PixelEye';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
@@ -350,6 +352,34 @@ const QUOTES = [
   '89 is the center of everything.',
 ];
 
+// ----- plated maze dialogs (Instrument format) -----
+const BTN_BASE: CSSProperties = { minHeight: 44, flex: '1 1 120px', fontSize: 14, letterSpacing: '0.24em', cursor: 'pointer', padding: '10px 18px' };
+const PRIMARY_BTN: CSSProperties = { ...BTN_BASE, background: '#c8963a', color: '#1a1448', border: 'none', borderTop: '3px solid #f5c060', borderBottom: '3px solid #8a6420' };
+const SECONDARY_BTN: CSSProperties = { ...BTN_BASE, background: 'transparent', color: '#8e99d0', border: '1px solid #4a5385' };
+const DANGER_BTN: CSSProperties = { ...BTN_BASE, background: '#a83a3a', color: '#fff', border: 'none', borderTop: '3px solid #c85a5a', borderBottom: '3px solid #6e1a1a' };
+
+const MazeDialog = ({ glow, zIndex, children }: { glow: string; zIndex: number; children: ReactNode }) => (
+  <div style={{ position: 'fixed', inset: 0, background: 'rgba(14,18,40,0.94)', zIndex, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', animation: 'mazeDoorFade 400ms ease-in' }}>
+    <PlateFrame glow={glow} style={{ maxHeight: '100%', overflowY: 'auto' }}>{children}</PlateFrame>
+  </div>
+);
+
+const DialogButtons = ({ children }: { children: ReactNode }) => (
+  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 20 }}>{children}</div>
+);
+
+const ShardPlate = ({ filled, caption }: { filled: boolean[]; caption?: string }) => (
+  <div style={{ position: 'relative', marginTop: 16, background: '#0f1329', border: '1px solid #2f3560', padding: '12px 10px' }}>
+    <PlateCorners />
+    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 8 }}>
+      {filled.map((on, i) => (
+        <span key={i} aria-hidden="true" style={{ width: 12, height: 18, clipPath: on ? 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)' : undefined, background: on ? '#b79bff' : 'transparent', outline: on ? undefined : '1.5px dashed #f5c060', outlineOffset: -2 }} />
+      ))}
+    </div>
+    {caption && <p className="font-mono" style={{ margin: '10px 0 0', fontSize: 11, color: '#8e99d0', textAlign: 'center', letterSpacing: '0.12em' }}>{caption}</p>}
+  </div>
+);
+
 const Maze = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
@@ -667,7 +697,18 @@ const Maze = () => {
       if (fragError) console.error('Failed to load fragments', fragError);
       if (!cancelled && !leavingRef.current && Array.isArray(existing)) {
         const banked = new Set<number>();
-        const storedRun = getActiveRun(user.id, row.level);
+        let storedRun = getActiveRun(user.id, row.level);
+        if (storedRun?.completed) {
+          const carried = (existing as UserFragmentRow[]).some((f) => f.banked === false && f.level === row.level);
+          if (carried) {
+            // The run already passed the golden door: finish banking in the Shadow Realm.
+            sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ level: row.level, ts: Date.now() }));
+            navigate('/shadow', { replace: true });
+            return;
+          }
+          endRun();
+          storedRun = null;
+        }
         const resume = roomReturnRef.current || Boolean(sessionStorage.getItem('praem_maze_return_col')) || (!STRICT_FORFEIT && Boolean(storedRun));
         let rows = existing as UserFragmentRow[];
         if (!resume) {
@@ -1360,18 +1401,6 @@ const Maze = () => {
 
       <button
         className="font-cinzel"
-        onClick={leaveMaze}
-        style={{
-          position: 'fixed', bottom: HUD_HEIGHT + HUD_BUTTON_GAP + 54, left: 16, background: 'transparent', border: 'none',
-          color: 'rgba(160,140,200,0.3)', fontSize: 16, letterSpacing: '0.3em', cursor: 'pointer',
-          padding: 4, zIndex: 25,
-        }}
-      >
-        RETURN
-      </button>
-
-      <button
-        className="font-cinzel"
         onClick={() => setExitConfirmOpen(true)}
         style={{
           position: 'fixed', bottom: HUD_HEIGHT + HUD_BUTTON_GAP, left: 16, background: 'transparent', border: 'none',
@@ -1383,150 +1412,52 @@ const Maze = () => {
       </button>
 
       {exitConfirmOpen && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(4,4,10,0.92)', zIndex: 200,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28,
-          }}
-        >
-          <div
-            className="font-fell italic"
-            style={{ fontSize: 18, color: 'rgba(160,140,200,0.7)', textAlign: 'center', maxWidth: '85vw' }}
-          >
-            Leave the maze? All progress will be lost.
-          </div>
-          <div style={{ display: 'flex', gap: 16 }}>
-            <button
-              className="font-cinzel"
-              onClick={leaveMaze}
-              style={{
-                fontSize: 16, letterSpacing: '0.3em', background: 'rgba(200,80,80,0.9)', color: 'white',
-                border: 'none', padding: '10px 24px', cursor: 'pointer',
-              }}
-            >
-              LEAVE
-            </button>
-            <button
-              className="font-cinzel"
-              onClick={() => setExitConfirmOpen(false)}
-              style={{
-                fontSize: 16, letterSpacing: '0.3em', background: 'transparent',
-                border: '0.5px solid rgba(160,140,200,0.3)', color: 'rgba(160,140,200,0.5)',
-                padding: '10px 24px', cursor: 'pointer',
-              }}
-            >
-              STAY
-            </button>
-          </div>
-        </div>
+        <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={200}>
+          <p className="font-fell italic" style={{ margin: 0, fontSize: 20, color: '#e0ddd5', textAlign: 'center' }}>Leave the maze?</p>
+          <p className="font-fell italic" style={{ margin: '10px 0 0', fontSize: 14, color: '#b79bff', textAlign: 'center' }}>Everything you carry will be lost.</p>
+          <DialogButtons>
+            <button className="font-cinzel" style={DANGER_BTN} onClick={leaveMaze}>LEAVE</button>
+            <button className="font-cinzel" style={SECONDARY_BTN} onClick={() => setExitConfirmOpen(false)}>STAY</button>
+          </DialogButtons>
+        </MazeDialog>
       )}
 
       {doorConfirmOpen && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(4,4,10,0.96)', zIndex: 100,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            animation: 'mazeDoorFade 600ms ease-in',
-          }}
-        >
-          <svg width={80} height={48} viewBox="-40 -24 80 48">
-            <ellipse cx={0} cy={0} rx={32} ry={19} stroke="rgba(200,150,58,0.5)" strokeWidth={1} fill="none" />
-            <circle cx={0} cy={0} r={5} fill="#c8963a" />
-          </svg>
-          <div
-            className="font-fell italic"
-            style={{ marginTop: 20, fontSize: 22, color: '#c8963a', textAlign: 'center', maxWidth: '85vw' }}
-          >
-            The way opens.
-          </div>
-          <div
-            className="font-fell italic"
-            style={{ marginTop: 10, fontSize: 18, color: 'rgba(160,140,200,0.5)', textAlign: 'center', maxWidth: '85vw' }}
-          >
-            Are you ready to leave the maze? Unfinished paths will remain.
-          </div>
-          <div
-            className="font-cinzel"
-            style={{ marginTop: 16, fontSize: 14, color: 'rgba(200,150,58,0.4)', letterSpacing: '0.2em', textAlign: 'center' }}
-          >
-            All {config.fragmentsRequired} fragments collected.
-          </div>
-          <div style={{ display: 'flex', gap: 16, marginTop: 28 }}>
-            <button
-              className="font-cinzel"
-              onClick={async () => {
+        <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={100}>
+          <div style={{ display: 'flex', justifyContent: 'center' }}><PixelEye glow={DIMENSION_GLOW[glow]} size={128} animate /></div>
+          <p className="font-fell italic" style={{ margin: '14px 0 0', fontSize: 22, color: '#f5c060', textAlign: 'center' }}>The way opens.</p>
+          <p className="font-fell italic" style={{ margin: '8px 0 0', fontSize: 15, color: '#b79bff', textAlign: 'center' }}>Are you ready to leave the maze? Unfinished paths will remain.</p>
+          <ShardPlate filled={Array(config.fragmentsRequired).fill(true)} caption={`All ${config.fragmentsRequired} fragments collected.`} />
+          <DialogButtons>
+            <button className="font-cinzel" style={PRIMARY_BTN} onClick={async () => {
                 if (user) {
                   await supabase.from('users').update({ maze_completed_level: currentLevelRef.current }).eq('id', user.id);
                 }
+                if (user) markRunComplete(user.id, currentLevelRef.current);
                 sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ level: currentLevelRef.current, ts: Date.now() }));
                 navigate('/shadow');
-              }}
-              style={{
-                fontSize: 16, letterSpacing: '0.3em', background: '#c8963a', color: '#04040a',
-                border: 'none', padding: '10px 24px', cursor: 'pointer',
-              }}
-            >
-              ENTER
-            </button>
-            <button
-              className="font-cinzel"
-              onClick={() => setDoorConfirmOpen(false)}
-              style={{
-                fontSize: 16, letterSpacing: '0.3em', background: 'transparent',
-                border: '0.5px solid rgba(160,140,200,0.3)', color: 'rgba(160,140,200,0.5)',
-                padding: '10px 24px', cursor: 'pointer',
-              }}
-            >
-              STAY
-            </button>
-          </div>
-        </div>
+              }}>ENTER</button>
+            <button className="font-cinzel" style={SECONDARY_BTN} onClick={() => setDoorConfirmOpen(false)}>STAY</button>
+          </DialogButtons>
+        </MazeDialog>
       )}
 
-      {insufficientFragmentsOpen && (
-        <div
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(4,4,10,0.96)', zIndex: 100,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            animation: 'mazeDoorFade 600ms ease-in',
-          }}
-        >
-          <svg width={80} height={48} viewBox="-40 -24 80 48">
-            <ellipse cx={0} cy={0} rx={32} ry={19} stroke="rgba(200,150,58,0.5)" strokeWidth={1} fill="none" />
-            <circle cx={0} cy={0} r={5} fill="#c8963a" />
-          </svg>
-          <div
-            className="font-fell italic"
-            style={{ marginTop: 20, fontSize: 22, color: '#c8963a', textAlign: 'center', maxWidth: '85vw' }}
-          >
-            The Instrument does not answer.
-          </div>
-          <div
-            className="font-fell italic"
-            style={{ marginTop: 10, fontSize: 18, color: 'rgba(160,140,200,0.5)', textAlign: 'center', maxWidth: '85vw' }}
-          >
-            {(() => {
-              const requiredPrimes = config.fragments.map((f) => f.prime);
-              const have = requiredPrimes.filter((p) => collectedRef.current.has(p)).length;
-              const required = requiredPrimes.length;
-              return `You carry ${have} of ${required} fragments the Instrument requires.`;
-            })()}
-          </div>
-          <div style={{ display: 'flex', gap: 16, marginTop: 28 }}>
-            <button
-              className="font-cinzel"
-              onClick={() => setInsufficientFragmentsOpen(false)}
-              style={{
-                fontSize: 16, letterSpacing: '0.3em', background: 'transparent',
-                border: '0.5px solid rgba(160,140,200,0.3)', color: 'rgba(160,140,200,0.5)',
-                padding: '10px 24px', cursor: 'pointer',
-              }}
-            >
-              STAY
-            </button>
-          </div>
-        </div>
-      )}
+      {insufficientFragmentsOpen && (() => {
+        const requiredPrimes = config.fragments.map((f) => f.prime);
+        const filled = requiredPrimes.map((p) => collectedRef.current.has(p)).sort((x, y) => Number(y) - Number(x));
+        const have = filled.filter(Boolean).length;
+        return (
+          <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={100}>
+            <div style={{ display: 'flex', justifyContent: 'center' }}><PixelEye glow={DIMENSION_GLOW[glow]} size={128} closed /></div>
+            <p className="font-fell italic" style={{ margin: '14px 0 0', fontSize: 22, color: '#f5c060', textAlign: 'center' }}>The Instrument does not answer.</p>
+            <p className="font-fell italic" style={{ margin: '8px 0 0', fontSize: 15, color: '#b79bff', textAlign: 'center' }}>You carry {have} of {requiredPrimes.length} fragments the Instrument requires.</p>
+            <ShardPlate filled={filled} />
+            <DialogButtons>
+              <button className="font-cinzel" style={SECONDARY_BTN} onClick={() => setInsufficientFragmentsOpen(false)}>STAY</button>
+            </DialogButtons>
+          </MazeDialog>
+        );
+      })()}
 
       <Thumbstick
         onMove={(dc, dr) => tryMove(dc, dr)}

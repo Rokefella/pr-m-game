@@ -90,7 +90,7 @@ describe('Maze run entry and deliberate exits', () => {
     expect(sessionStorage.getItem('praem_maze_return_col')).toBeNull();
     expect(fixture.deletes).toHaveLength(0);
   });
-  it.each(['RETURN', 'LEAVE'])('%s forfeits two unbanked fragments and ends the run despite the legacy Shadow flag', async (exit) => {
+  it.each(['LEAVE'])('%s forfeits two unbanked fragments and ends the run despite the legacy Shadow flag', async (exit) => {
     startRun('player', 2); sessionStorage.setItem('visited_shadow_this_run', 'true');
     openMaze(); await ready(2);
     if (exit === 'LEAVE') fireEvent.click(screen.getByRole('button', { name: 'EXIT MAZE' }));

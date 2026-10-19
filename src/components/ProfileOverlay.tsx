@@ -87,7 +87,7 @@ const ProfileOverlay = ({
     updateUser(user.id, { growth_points: nextGp, [key]: nextVal } as never);
   };
 
-  const [folderFragments, setFolderFragments] = useState<Array<{ id: string; prime_number: number }>>([]);
+  const [folderFragments, setFolderFragments] = useState<Array<{ id: string; prime_number: number; banked?: boolean | null }>>([]);
   const [folderTooltip, setFolderTooltip] = useState<string | null>(null);
   const [ownedDrops, setOwnedDrops] = useState<OwnedDrop[]>([]);
   const [dropTooltip, setDropTooltip] = useState<string | null>(null);
@@ -225,7 +225,7 @@ const ProfileOverlay = ({
     if (!accessToken) return;
 
     fetch(
-      `https://jngofylkynipsnzyyzdq.supabase.co/rest/v1/fragments?select=id%2Cprime_number%2Ccollected_at&user_id=eq.${encodeURIComponent(user.id)}&order=collected_at.desc`,
+      `https://jngofylkynipsnzyyzdq.supabase.co/rest/v1/fragments?select=id%2Cprime_number%2Ccollected_at%2Cbanked&user_id=eq.${encodeURIComponent(user.id)}&order=collected_at.desc`,
       {
         headers: {
           apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpuZ29meWxreW5pcHNuenl5emRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjIzNDEsImV4cCI6MjA5MjUzODM0MX0.FWvc_DwabUSkxgHVwKRA3T2SMTlQ7aQr12a7yGUEW64',
@@ -845,7 +845,7 @@ const ProfileOverlay = ({
                       width: 60,
                       height: 60,
                       border: frag
-                        ? '1px solid rgba(167,139,250,0.4)'
+                        ? frag.banked === false ? '1.5px dashed #f5c060' : '1px solid rgba(167,139,250,0.4)'
                         : '1px dashed rgba(160,140,200,0.35)',
                       background: frag ? 'rgba(107,70,193,0.3)' : 'transparent',
                       cursor: frag ? 'pointer' : 'default',
@@ -864,6 +864,12 @@ const ProfileOverlay = ({
                   </div>
                 ))}
               </div>
+
+              {folderFragments.some((f) => f.banked === false) && (
+                <p className="font-mono" style={{ textAlign: 'center', fontSize: 11, color: '#8e99d0', marginTop: 12, letterSpacing: '0.04em' }}>
+                  Dashed fragments are carried. Bank them in the Shadow Realm or lose them if you leave.
+                </p>
+              )}
 
               {/* Tooltip / flavour text */}
               {(() => {

@@ -1,4 +1,4 @@
-import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
@@ -358,13 +358,13 @@ const PRIMARY_BTN: CSSProperties = { ...BTN_BASE, background: '#c8963a', color: 
 const SECONDARY_BTN: CSSProperties = { ...BTN_BASE, background: 'transparent', color: '#8e99d0', border: '1px solid #4a5385' };
 const DANGER_BTN: CSSProperties = { ...BTN_BASE, background: '#a83a3a', color: '#fff', border: 'none', borderTop: '3px solid #c85a5a', borderBottom: '3px solid #6e1a1a' };
 
-const MazeDialog = ({ glow, zIndex, children }: { glow: string; zIndex: number; children: React.ReactNode }) => (
+const MazeDialog = ({ glow, zIndex, children }: { glow: string; zIndex: number; children: ReactNode }) => (
   <div style={{ position: 'fixed', inset: 0, background: 'rgba(14,18,40,0.94)', zIndex, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', animation: 'mazeDoorFade 400ms ease-in' }}>
     <PlateFrame glow={glow} style={{ maxHeight: '100%', overflowY: 'auto' }}>{children}</PlateFrame>
   </div>
 );
 
-const DialogButtons = ({ children }: { children: React.ReactNode }) => (
+const DialogButtons = ({ children }: { children: ReactNode }) => (
   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 20 }}>{children}</div>
 );
 

@@ -1,5 +1,5 @@
-import PlateFrame from '@/components/theme/PlateFrame';
-import PixelEye from '@/components/theme/PixelEye';
+import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
+import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 // player ID sourced from localStorage
@@ -754,6 +754,7 @@ const Village = () => {
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('');
   const [levelUpHandled, setLevelUpHandled] = useState(false);
+  const levelUpReducedMotion = useReducedMotion();
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [username, setUsername] = useState<string>('');
   const usernameRef = useRef<string>('');
@@ -1226,6 +1227,11 @@ const Village = () => {
 
     if (row.levelup_pending && !levelUpHandled) {
       const newLv = row.levelup_newlevel ?? row.level;
+      // The arrival card only appears from level 2 onward.
+      if (newLv < 2) {
+        setLevelUpHandled(true);
+        return;
+      }
       const stageNow = parseInt(getFlag('bernard_stage') || '0', 10);
       const titlesUnlocked = stageNow >= 5;
       const newTitle = titlesUnlocked ? (TITLES_BY_LEVEL[newLv] || '') : '';

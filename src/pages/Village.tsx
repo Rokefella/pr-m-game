@@ -18,10 +18,9 @@ import { supabase } from '@/lib/supabase';
 import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
 import FloorLayer from '@/components/theme/FloorLayer';
 import BuildingBlock from '@/components/theme/BuildingBlock';
-import VillagePatternTile from '@/components/theme/VillagePatternTile';
-import { Pylon } from '@/components/theme/objects';
+import VillageTerrain from '@/components/theme/VillageTerrain';
 import { VILLAGE_GLOW } from '@/lib/theme/tokens';
-import { VILLAGE_BG, VILLAGE_VIGNETTE, streetStyle, treeStyle } from '@/lib/theme/villageRendering';
+import { VILLAGE_BG, VILLAGE_VIGNETTE } from '@/lib/theme/villageRendering';
 import { memo } from 'react';
 import bernardMarkerUrl from '@/assets/bernard_marker.svg';
 
@@ -550,6 +549,7 @@ const generateForest = (): ForestBlock[] => {
   return blocks;
 };
 const FOREST = generateForest();
+const EMPTY_GROUND: GroundTile[] = [];
 
 // Forest atmosphere text fragments
 const FOREST_TEXTS: { x: number; y: number; t: string }[] = [
@@ -2027,14 +2027,7 @@ const Village = () => {
         <FloorLayer cols={mapW / 20} rows={mapH / 20} size={20} styleKey="ground" glow={VILLAGE_GLOW} />
 
         {/* Decorative streets and plaza plates use cached CSS images. */}
-        {visible?.groundTiles.map((g) => (
-          <div key={`gt-${g.x}-${g.y}`}>
-            <VillagePatternTile x={g.x} y={g.y} w={20} h={20}
-              kind={g.kind === 'ROAD' || g.kind === 'PATH' ? 'street' : 'floor'}
-              styleKey={g.kind === 'ROAD' ? streetStyle(g.x / 20, g.y / 20, themedTiles.roads) : g.kind === 'PATH' ? 'h' : 'plaza'} />
-            {g.kind === 'LANDMARK' && <div style={{ position: 'absolute', left: g.x, top: g.y, zIndex: 3, pointerEvents: 'none' }}><Pylon dimension="amber" size={20} /></div>}
-          </div>
-        ))}
+        <VillageTerrain ground={visible?.groundTiles ?? EMPTY_GROUND} forest={visible?.forest ?? FOREST} roads={themedTiles.roads} trees={themedTiles.trees} />
 
         {/* Rugs — decorative floor overlay, above base ground, below solids */}
         {visible?.rugTiles.map((r) => (
@@ -2081,10 +2074,6 @@ const Village = () => {
         ))}
 
         {/* Forest blocks (outside outermost ring) */}
-
-        {(visible ? visible.forest : FOREST).map((f) => (
-          <VillagePatternTile key={`f-${f.x}-${f.y}`} x={f.x} y={f.y} w={f.w} h={f.h} kind="tree" styleKey={treeStyle(Math.floor(f.x / 20), Math.floor(f.y / 20), themedTiles.trees)} />
-        ))}
 
         {/* Forest atmosphere text fragments (hardcoded village only) */}
         {!dynamicBuildings &&
@@ -2185,6 +2174,7 @@ const Village = () => {
             left: bernardPos.x - 12,
             top: bernardPos.y - 12,
             pointerEvents: 'none',
+            zIndex: 4,
           }}
         />
         <span

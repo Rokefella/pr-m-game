@@ -16,7 +16,7 @@ export default memo(function BuildingBlock({ cols, rows, size, label, numbered =
     <rect x={W / 2 - 4} y={H - 8} width="8" height="4" fill="var(--instrument-beacon)" />
     {numbered && <>
       <rect className="instrument-beacon-ring" x="1" y="1" width={W - 2} height={H - 2} fill="none" stroke="var(--instrument-beacon)" strokeWidth="1.5" />
-      <text x={W / 2} y={H / 2 + 5} textAnchor="middle" fontFamily="Cinzel, serif" fontSize="14" fill="var(--instrument-beacon)">{label}</text>
+      <text x={W / 2} y={H / 2 + 5 * 48 / size} textAnchor="middle" fontFamily="Cinzel, serif" fontSize={14 * 48 / size} fill="var(--instrument-beacon)">{label}</text>
     </>}
   </svg>;
 });

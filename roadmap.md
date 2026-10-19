@@ -1,7 +1,8 @@
 # Roadmap
 
 - [x] Integrate Instrument Village ground, streets, trees, plazas and buildings without gameplay changes.
-- [ ] Test neighbour rules and verify Village rendering and scrolling at 375px with large HUD balances.
+- [x] Test neighbour rules (15 theme tests pass) and verify isolated Village 1/2 70×70 layouts at 375px, four-digit HUD balances, camera scrolling and reduced-motion beacons.
+- [ ] Verify actual signed-in Village 1/2 layouts and real-device scrolling — no game auth session is available; isolated map checks do not establish real-device performance.
 
 - [x] Add session-once daily step claims with fresh-row synchronization before step writes.
 - [x] Add ACCOUNT feedback sheet with nonempty submissions and keyboard-safe phone layout.

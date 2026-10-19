@@ -62,7 +62,7 @@ export const DataShelf = memo(function DataShelf({ size, seed = 0 }: RoomObjProp
     <path d="M5 17H43M5 31H43" stroke="#5d67a0" strokeWidth="2" />
     {[0, 1, 2].map(r => [0, 1, 2, 3, 4].map(c => {
       const k = (seed + r * 5 + c * 3) % 7;
-      return k < 5 ? <rect key={`${r}-${c}`} x={7 + c * 7} y={6 + r * 14} width="5" height={k % 2 ? 9 : 7} y2={0} fill={cols[k % 4]} opacity={k === 0 ? 1 : 0.75} /> : null;
+      return k < 5 ? <rect key={`${r}-${c}`} x={7 + c * 7} y={6 + r * 14} width="5" height={k % 2 ? 9 : 7} fill={cols[k % 4]} opacity={k === 0 ? 1 : 0.75} /> : null;
     }))}
     <path d="M3 4H45" stroke="#9aa4d8" opacity=".6" />
   </Art>;

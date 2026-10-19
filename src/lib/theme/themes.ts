@@ -13,7 +13,7 @@ export const THEME_PRESETS: Record<string, ThemeDef> = {
   ulam: { wall: 'ulam', floor: 'ulam', primeGlow: true },
 };
 
-export const LEVEL_THEMES = ['calm'];
+export const LEVEL_THEMES = ['plated'];
 
 function isStyleKey(value: string): value is StyleKey {
   return Object.prototype.hasOwnProperty.call(WALL_STYLES, value);

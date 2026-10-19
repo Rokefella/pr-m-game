@@ -11,7 +11,7 @@ export const WALL_STYLES: Record<StyleKey, string> = {
   ulam: `<rect width="48" height="48" fill="#4e5784"/><rect x="4" y="4" width="40" height="40" fill="#454d7c" stroke="#2c3260"/><path d="M0 1H48" stroke="#9aa4d8" opacity=".7" fill="none"/><path d="M4 22H44" stroke="#2c3260" fill="none"/><path d="M4 21v6M6 21v6M10 21v6M14 21v6M22 21v6M26 21v6M34 21v6M38 21v6M46 21v6" stroke="$G" stroke-width="2" fill="none"/>`,
 };
 
-export type FloorStyleKey = StyleKey | 'ground' | 'plaza' | 'deck';
+export type FloorStyleKey = StyleKey | 'ground' | 'plaza' | 'deck' | 'garden';
 export const FLOOR_STYLES: Record<FloorStyleKey, string> = {
   shadow: `<rect width="48" height="48" fill="#141c1a"/><path d="M0 1H48M1 0V48" stroke="#1f2b27" stroke-width="2" fill="none"/><path d="M0 30H14V18H30V30H48" stroke="#3f7a58" stroke-width="1.5" opacity=".28" fill="none"/><path d="M28 16h4v4h-4z" fill="#4f9a6e" opacity=".4"/><path d="M8 40L14 36L18 42" stroke="#26362f" stroke-width="1.5" fill="none"/>`,
   calm: `<rect width="48" height="48" fill="#1c1a46"/><path d="M0 .5H48M.5 0V48" stroke="#2a2860" stroke-width="1" opacity=".5" fill="none"/>`,
@@ -23,10 +23,15 @@ export const FLOOR_STYLES: Record<FloorStyleKey, string> = {
   hex: `<rect width="48" height="48" fill="#384069"/><path d="M0 1H48M1 0V48" stroke="#2a3052" stroke-width="2" fill="none"/><path d="M43 24L33.5 40.5H14.5L5 24L14.5 7.5H33.5Z" stroke="$G" opacity=".3" fill="none"/>`,
   lightstrip: `<rect width="48" height="48" fill="#363e6a"/><path d="M0 0H48M0 0V48" stroke="$G" stroke-width="4" opacity=".12" fill="none"/><path d="M0 0H48M0 0V48" stroke="$G" stroke-width="1.5" opacity=".55" fill="none"/><path d="M0 0h3v3H0z" fill="#aef6ff"/>`,
   gold: `<rect width="48" height="48" fill="#3d4170"/><path d="M0 1H48M1 0V48" stroke="#2a3052" stroke-width="2" fill="none"/><circle cx="24" cy="24" r="16" stroke="#c8963a" stroke-dasharray="3 3" opacity=".5" fill="none"/><circle cx="24" cy="24" r="9" stroke="#c8963a" opacity=".4" fill="none"/><path d="M24 4V9M24 39V44M4 24H9M39 24H44" stroke="#c8963a" opacity=".6" fill="none"/>`,
+  garden: `<rect width="96" height="96" fill="$GA"/><rect x="40" y="62" width="16" height="10" fill="$GB" opacity=".6"/><rect x="8" y="42" width="12" height="8" fill="$GB" opacity=".5"/><path d="M6 8h2v2H6zM60 12h2v2h-2zM36 6h2v2h-2zM12 30h2v2h-2zM44 34h2v2h-2zM70 30h2v2h-2zM88 40h2v2h-2z" fill="$GS" opacity=".8"/><path d="M24 16h3v2h-3zM70 70h3v2h-3zM54 30h3v2h-3zM80 20h3v2h-3zM12 80h3v2h-3z" fill="$GL"/><path d="M14 88V83M16 88V82M52 22V17M54 22V16M86 64V59M88 64V58" stroke="$GV" stroke-width="1.5" opacity=".5" fill="none"/><path d="M0 60H20V40H44V60H70V50H96" stroke="$GV" stroke-width="1.5" opacity=".25" fill="none"/>`,
   ulam: `<rect width="48" height="48" fill="#3a4270"/><path d="M0 1H48M1 0V48" stroke="#2a3052" stroke-width="2" fill="none"/><path d="M15 7h2v2h-2zM23 7h2v2h-2zM31 7h2v2h-2zM7 15h2v2H7zM23 15h2v2h-2zM39 15h2v2h-2zM15 23h2v2h-2zM23 23h2v2h-2zM7 31h2v2H7zM23 31h2v2h-2zM31 31h2v2h-2zM39 31h2v2h-2zM7 39h2v2H7zM15 39h2v2h-2zM31 39h2v2h-2zM39 39h2v2h-2z" fill="#6a74b0" opacity=".55"/><path d="M30 22h4v4h-4zM30 14h4v4h-4zM14 14h4v4h-4zM14 30h4v4h-4zM38 22h4v4h-4zM38 6h4v4h-4zM6 6h4v4H6zM6 22h4v4H6zM22 38h4v4h-4z" fill="$G"/>`,
 };
 
-const STREET_H = `<rect width="48" height="48" fill="#4a5483"/><path d="M0 0h48v6H0zM0 42h48v6H0z" fill="#2a3060"/><path d="M0 6H48M0 42H48" stroke="#8e99d0" opacity=".7" fill="none"/><path d="M24 6V42" stroke="#3a4272" fill="none"/><path d="M6 2h3v3H6zM30 43h3v3h-3z" fill="$G"/><path d="M30 2h3v3h-3zM6 43h3v3H6z" fill="#62e6f0"/><path d="M4 24H16M22 24H34M40 24H48" stroke="$G" stroke-width="6" opacity=".2" fill="none"/><path d="M4 24H16M22 24H34M40 24H48" stroke="$G" stroke-width="3" fill="none"/>`;
+export const FLOWER_STYLES: Record<string, string> = {
+  bloom: `<path d="M4 0h4v4H4zM0 4h4v4H0zM8 4h4v4H8zM4 8h4v4H4z" fill="$F"/><path d="M4 4h4v4H4z" fill="#fff3c4"/>`,
+};
+
+const STREET_H =  `<rect width="48" height="48" fill="#4a5483"/><path d="M0 0h48v6H0zM0 42h48v6H0z" fill="#2a3060"/><path d="M0 6H48M0 42H48" stroke="#8e99d0" opacity=".7" fill="none"/><path d="M24 6V42" stroke="#3a4272" fill="none"/><path d="M6 2h3v3H6zM30 43h3v3h-3z" fill="$G"/><path d="M30 2h3v3h-3zM6 43h3v3H6z" fill="#62e6f0"/><path d="M4 24H16M22 24H34M40 24H48" stroke="$G" stroke-width="6" opacity=".2" fill="none"/><path d="M4 24H16M22 24H34M40 24H48" stroke="$G" stroke-width="3" fill="none"/>`;
 export const STREET_STYLES: Record<string, string> = {
   h: STREET_H,
   v: `<g transform="rotate(90 24 24)">${STREET_H}</g>`,
@@ -34,9 +39,11 @@ export const STREET_STYLES: Record<string, string> = {
 };
 const TREE = `<ellipse cx="24" cy="44" rx="16" ry="4" fill="#000" opacity=".35"/><rect x="22" y="34" width="4" height="10" fill="#4a3f5a"/><path d="M12 6H36V10H44V28H36V32H12V28H4V10H12Z" fill="$T" stroke="#0f3d35"/><path d="M10 10h14v5H10zM6 15h6v10H6z" fill="#fff" opacity=".22"/><path d="M28 18h2v2h-2zM16 26h2v2h-2zM36 24h2v2h-2z" fill="#aef6e0"/>`;
 export const TREE_STYLES: Record<string, string> = {
+  garden: `<ellipse cx="24" cy="44" rx="16" ry="4" fill="#000" opacity=".3"/><rect x="22" y="34" width="4" height="10" fill="#5a4030"/><path d="M12 6H36V10H44V28H36V32H12V28H4V10H12Z" fill="$T" stroke="#3a2a10" stroke-opacity=".6"/><path d="M10 10h14v5H10zM6 15h6v10H6z" fill="#fff" opacity=".25"/><path d="M28 18h2v2h-2zM16 26h2v2h-2zM36 24h2v2h-2z" fill="#ffe9a8"/>`,
+  hedge: `<rect width="48" height="48" fill="$T"/><path d="M0 12h12v12H0zM24 0h12v12H24zM12 24h12v12H12zM36 24h12v12H36z" fill="#fff" opacity=".14"/><path d="M6 30h2v2H6zM30 10h2v2h-2zM42 40h2v2h-2z" fill="#ffe9a8"/><rect y="44" width="48" height="4" fill="#000" opacity=".22"/>`,
   tree: TREE,
   dense: `<g transform="translate(24 24) scale(1.1) translate(-24 -24)">${TREE}</g>`,
 };
 export const TREE_TINTS = ['#1f8f7a', '#3a7f9a', '#2aa88e'] as const;
 /** Sources drawn on a 96x96 canvas (rendered at twice the cell size). */
-export const LARGE_PATTERNS: ReadonlySet<string> = new Set(['floor:ground', 'floor:plaza']);
+export const LARGE_PATTERNS: ReadonlySet<string> = new Set(['floor:ground', 'floor:plaza', 'floor:garden']);

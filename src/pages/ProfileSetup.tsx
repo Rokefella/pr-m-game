@@ -2,11 +2,25 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser, upsertUser } from '@/lib/userData';
+import PlateFrame from '@/components/theme/PlateFrame';
+import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
+
+const NAME_RE = /^[A-Za-z0-9 _-]+$/;
+export function nameError(raw: string): string | null {
+  const name = raw.trim();
+  if (name.length > 0 && !NAME_RE.test(name)) return 'Letters, numbers, space, _ and - only.';
+  if (name.length < 3) return 'Use at least 3 characters.';
+  if (name.length > 16) return 'Use at most 16 characters.';
+  return null;
+}
 
 const ProfileSetup = () => {
   const [username, setUsername] = useState('');
   const [saving, setSaving] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [auraColor, setAuraColor] = useState('#5b4fd4');
+  const [registration, setRegistration] = useState<number | null>(null);
+  const [avatarSize] = useState(() => (window.innerHeight < 700 ? 80 : 96));
   const navigate = useNavigate();
   const { user, loading } = useAuth();
 
@@ -16,7 +30,9 @@ const ProfileSetup = () => {
     (async () => {
       try {
         const row = await fetchOrCreateUser(user.id);
-        if (!cancelled && row.aura_color) setAuraColor(row.aura_color);
+        if (cancelled) return;
+        if (row.aura_color) setAuraColor(row.aura_color);
+        if (row.registration_number) setRegistration(row.registration_number);
       } catch (e) {
         console.error('[ProfileSetup] fetchOrCreateUser failed', e);
       }
@@ -24,189 +40,94 @@ const ProfileSetup = () => {
     return () => { cancelled = true; };
   }, [user]);
 
+  const error = nameError(username);
+  const showError = username.trim().length > 0 && error !== null;
+  const valid = error === null;
+
   const handleEnter = async () => {
-    if (saving) return;
+    if (saving || !valid) return;
     if (loading || !user) return;
     setSaving(true);
-    await upsertUser(user.id, {
-      username: username.trim() || 'Anonymous',
-      aura_color: auraColor,
-    });
-    navigate('/village');
+    try {
+      await upsertUser(user.id, { username: username.trim(), aura_color: auraColor });
+      navigate('/village');
+    } catch (e) {
+      console.error('[ProfileSetup] save failed', e);
+      setSaving(false);
+    }
   };
+
+  const isFirst = registration === 1;
+  const palette = isFirst ? 'red' : paletteFromColor(auraColor, registration);
+  const plate = registration ? `#${String(registration).padStart(4, '0')}` : '#----';
 
   return (
     <div
-      className="flex min-h-screen flex-col"
-      style={{ backgroundColor: '#04040a', padding: '52px 22px 28px', maxWidth: 390, margin: '0 auto' }}
+      className="flex flex-col items-center justify-center overflow-hidden"
+      style={{
+        height: '100dvh', backgroundColor: '#0e1228',
+        backgroundImage: 'radial-gradient(rgba(142,153,208,0.07) 1px, transparent 1px)', backgroundSize: '16px 16px',
+        padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))',
+      }}
     >
-      {/* Title */}
-      <h1
-        className="font-cinzel text-center"
-        style={{
-          fontSize: 18,
-          fontWeight: 400,
-          letterSpacing: '0.28em',
-          color: '#e0ddd5',
-          marginBottom: 28,
-        }}
-      >
-        Who are you?
-      </h1>
+      <PlateFrame width="min(92vw, 360px)" glow="#b79bff">
+        <div className="relative z-10 flex flex-col" style={{ padding: '24px 20px 20px' }}>
+          <h1 className="font-cinzel text-center" style={{ fontSize: 18, fontWeight: 400, letterSpacing: '0.28em', color: '#b79bff', marginBottom: 14 }}>
+            WHO ARE YOU?
+          </h1>
 
-      {/* Avatar */}
-      <div className="flex justify-center" style={{ marginBottom: 24 }}>
-        <div className="relative" style={{ width: 64, height: 64 }}>
-          <div
-            className="absolute rounded-full"
-            style={{
-              inset: -3,
-              border: '1px solid rgba(169,140,255,0.2)',
-              borderRadius: '50%',
-            }}
+          <div className="flex flex-col items-center" style={{ marginBottom: 16 }}>
+            <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+              <div aria-hidden="true" style={{ position: 'absolute', left: '50%', top: '42%', width: avatarSize * 1.5, height: avatarSize * 1.5, transform: 'translate(-50%,-50%)', borderRadius: '50%', background: `radial-gradient(circle, ${isFirst ? 'rgba(240,120,120,0.22)' : 'rgba(183,155,255,0.22)'} 0%, transparent 70%)` }} />
+              <div style={{ position: 'relative' }}><PlayerAvatar size={avatarSize} palette={palette} walking={false} /></div>
+            </div>
+            <span className="font-mono" style={{ marginTop: 6, background: '#0f1329', border: '1px solid #8e99d0', fontSize: 11, padding: '3px 10px', letterSpacing: '0.15em', color: isFirst ? '#f5b0b0' : '#aab4e8' }}>
+              {plate}
+            </span>
+          </div>
+
+          <label htmlFor="praem-name" className="font-mono block" style={{ fontSize: 11, letterSpacing: '0.2em', color: '#8e99d0', marginBottom: 6 }}>
+            NAME FOR THIS DIMENSION
+          </label>
+          <input
+            id="praem-name"
+            type="text"
+            value={username}
+            maxLength={16}
+            autoComplete="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            onChange={(e) => setUsername(e.target.value)}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleEnter(); }}
+            className="font-mono w-full"
+            style={{ height: 48, background: '#0f1329', border: `1px solid ${focused ? '#b79bff' : '#4a5385'}`, padding: '0 12px', fontSize: 16, color: '#e8e4ff', borderRadius: 0, outline: 'none' }}
           />
-          <div
-            className="flex items-center justify-center rounded-full"
+          <p className="font-mono" role={showError ? 'alert' : undefined} style={{ fontSize: 11, marginTop: 6, color: showError ? '#d07a6a' : '#8e99d0', minHeight: '2.6em', lineHeight: 1.3 }}>
+            {showError ? error : '3 to 16 characters. Cannot be changed once you enter.'}
+          </p>
+
+          <div style={{ marginTop: 6, background: '#0f1329', border: '1px solid #2f3560', padding: '8px 12px' }}>
+            <p className="font-mono" style={{ fontSize: 11, letterSpacing: '0.18em', color: '#aab4e8', whiteSpace: 'pre' }}>TITLE  -</p>
+            <p className="font-mono" style={{ fontSize: 11, color: '#6a74b0', marginTop: 2 }}>earned, not chosen</p>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleEnter}
+            disabled={!valid || saving}
+            className="font-cinzel w-full"
             style={{
-              width: 64,
-              height: 64,
-              background: '#1a1a2e',
-              border: '1px solid #3a3a5a',
-              borderRadius: '50%',
+              marginTop: 18, minHeight: 48, background: '#c8963a', color: '#1a1448', fontSize: 16, letterSpacing: '0.3em',
+              borderTop: '3px solid #f5c060', borderBottom: '3px solid #8a6420', borderLeft: 'none', borderRight: 'none', borderRadius: 0,
+              cursor: valid && !saving ? 'pointer' : 'not-allowed', opacity: valid && !saving ? 1 : 0.45,
             }}
           >
-            <svg width="28" height="36" viewBox="0 0 28 36" fill="none">
-              <circle cx="14" cy="10" r="10" fill="#4a4a7a" />
-              <path d="M6 22 L22 22 L28 38 L0 38 Z" fill="#4a4a7a" />
-            </svg>
-          </div>
+            {saving ? '…' : 'ENTER'}
+          </button>
         </div>
-      </div>
-
-      {/* Username */}
-      <div>
-        <label
-          className="font-mono block"
-          style={{
-            fontSize: 14,
-            letterSpacing: '0.2em',
-            color: '#9a9890',
-            marginBottom: 5,
-          }}
-        >
-          Username
-        </label>
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="choose a name for this dimension"
-          className="font-mono w-full placeholder:text-[#5a5855]"
-          style={{
-            background: '#0e0e16',
-            border: '0.5px solid #3a3a44',
-            padding: '9px 11px',
-            fontSize: 16,
-            color: '#e0ddd5',
-            borderRadius: 0,
-            outline: 'none',
-            fontStyle: 'normal',
-          }}
-        />
-        <p
-          className="font-mono italic"
-          style={{
-            fontSize: 14,
-            color: 'rgba(169,140,255,0.8)',
-            marginTop: 3,
-          }}
-        >
-          cannot be changed once you enter
-        </p>
-      </div>
-
-      {/* Dimension */}
-      <div style={{ marginTop: 14 }}>
-        <p
-          className="font-cinzel"
-          style={{
-            fontSize: 14,
-            color: 'rgba(160,140,200,0.4)',
-            letterSpacing: '0.2em',
-            marginBottom: 8,
-          }}
-        >
-          YOUR DIMENSION
-        </p>
-        <div
-          aria-label="Your dimension"
-          style={{
-            width: 16,
-            height: 16,
-            borderRadius: '50%',
-            background: auraColor,
-            boxShadow: `0 0 8px ${auraColor}80`,
-          }}
-        />
-      </div>
-
-      {/* Title Slot */}
-      <div
-        style={{
-          marginTop: 12,
-          background: '#0e0e1e',
-          border: '1px solid #3a3a5a',
-          padding: '10px 12px',
-        }}
-      >
-        <p
-          className="font-mono"
-          style={{
-            fontSize: 14,
-            letterSpacing: '0.18em',
-            color: '#9a9890',
-            marginBottom: 2,
-          }}
-        >
-          Title
-        </p>
-        <p
-          className="font-cinzel"
-          style={{ fontSize: 18, color: '#9a9890' }}
-        >
-          —
-
-        </p>
-        <p
-          className="font-mono italic"
-          style={{ fontSize: 14, color: '#5a5855', marginTop: 3 }}
-        >
-          titles are earned · not chosen
-        </p>
-      </div>
-
-      {/* CTA */}
-      <button
-        onClick={handleEnter}
-        className="font-cinzel w-full"
-        style={{
-          marginTop: 'auto',
-          marginBottom: 0,
-          background: 'transparent',
-          color: '#a98cff',
-          padding: 11,
-          fontSize: 16,
-          letterSpacing: '0.3em',
-          border: '0.5px solid rgba(169,140,255,0.35)',
-          borderRadius: 0,
-          textAlign: 'center',
-          cursor: 'pointer',
-          textShadow: '0 0 12px rgba(169,140,255,0.6)',
-          animation: 'breathe 3s ease-in-out infinite',
-        }}
-      >
-        ENTER
-      </button>
+      </PlateFrame>
     </div>
   );
 };

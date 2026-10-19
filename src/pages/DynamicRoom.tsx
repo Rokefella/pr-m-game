@@ -576,7 +576,7 @@ const DynamicRoom = () => {
         };
 
         // Spawn safety net: nearest open cell around the preferred origin.
-        const solids = [...wallTiles, ...furnitureTiles, ...bookcaseTiles, ...lightTiles];
+        const solids = [...wallTiles, ...furnitureTiles, ...bookcaseTiles, ...lightTiles, ...treeTiles.map(t => ({ x: t.col * CELL, y: t.row * CELL, w: CELL, h: CELL }))];
         const isOpenCell = (col: number, row: number) => {
           if (col < 0 || row < 0 || col >= gridSize || row >= gridSize) return false;
           const px = col * CELL + CELL / 2;
@@ -670,6 +670,7 @@ const DynamicRoom = () => {
       ...(room?.furnitureTiles ?? []),
       ...(room?.bookcaseTiles ?? []),
       ...(room?.lightTiles ?? []),
+      ...(room?.treeTiles ?? []).map(t => ({ id: t.id, x: t.col * CELL, y: t.row * CELL, w: CELL, h: CELL })),
     ],
     [room],
   );

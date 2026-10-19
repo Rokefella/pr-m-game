@@ -67,6 +67,8 @@ type DynamicVillage = {
   typeC: Rect[];
   clusters: BuildingCluster[];
   forest: ForestBlock[];
+  /** 'col,row' keys of FOREST cells; collision only (O(1) lookup in move()). */
+  forestCells?: Set<string>;
   groundTiles: GroundTile[];
   wallTiles?: Rect[];
   furnitureTiles?: Rect[];
@@ -1432,7 +1434,9 @@ const Village = () => {
             },
           }));
 
-          setDynamicBuildings({ typeA, doors, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
+          const forestCells = new Set(forest.map(f => `${Math.floor(f.x / 20)},${Math.floor(f.y / 20)}`));
+          const forestRects: Rect[] = forest.map((f, i) => ({ id: `forest-${i}`, x: Math.floor(f.x / 20) * 20, y: Math.floor(f.y / 20) * 20, w: 20, h: 20 }));
+          setDynamicBuildings({ typeA, doors, typeB, typeC, clusters, forest, forestCells, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
 
 
           // Reposition the player once, when the dynamic village loads
@@ -1445,6 +1449,7 @@ const Village = () => {
             const obstacles: Rect[] = [
               ...clusters, ...typeA, ...typeB, ...typeC,
               ...wallTiles, ...furnitureTiles, ...bookcaseTiles, ...lightTiles,
+              ...forestRects,
             ];
             const returned = returnSpawn(obstacles, loadedDoors, dynW, dynH);
             if (returned) sp = returned;
@@ -1635,6 +1640,14 @@ const Village = () => {
     // A shared 20px cell + 8px zone overrides building collision from every side.
     const door = activeDoors.find(d => inDoorZone({ x: nx, y: ny }, d));
     if (door) triggerDoor(door.kind, door);
+
+    // Trees are solid: O(1) cell lookup on the four padded corners (doors stay exempt).
+    const fc = dynamicBuildings?.forestCells;
+    if (!door && fc && fc.size) {
+      for (const [px, py] of [[nx - 2, ny - 2], [nx + 2, ny - 2], [nx - 2, ny + 2], [nx + 2, ny + 2]]) {
+        if (fc.has(`${Math.floor(px / 20)},${Math.floor(py / 20)}`)) return;
+      }
+    }
 
     // Obstacles (B + C + RIM) with 2px padding — also check whisper trigger on any whispered building
     for (const o of door ? [] : activeObstacles) {

@@ -5,6 +5,10 @@ import { useAuth } from '@/context/AuthContext';
 import { updateUser } from '@/lib/userData';
 import { getFlag } from '@/lib/questFlags';
 import { BETA_MODE } from '@/lib/config';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { sendBetaFeedback } from '@/lib/betaFeedback';
 
 
 
@@ -105,6 +109,34 @@ const ProfileOverlay = ({
   const [deleteText, setDeleteText] = useState('');
   const [deleteMsg, setDeleteMsg] = useState('');
   const [titleDropdownOpen, setTitleDropdownOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackSending, setFeedbackSending] = useState(false);
+  const [feedbackError, setFeedbackError] = useState('');
+  const [feedbackThanks, setFeedbackThanks] = useState(false);
+  const [feedbackViewport, setFeedbackViewport] = useState({ top: 0, height: window.innerHeight });
+  useEffect(() => {
+    if (!feedbackOpen) return;
+    const viewport = window.visualViewport;
+    const update = () => setFeedbackViewport({
+      top: viewport?.offsetTop ?? 0,
+      height: viewport?.height ?? window.innerHeight,
+    });
+    update();
+    viewport?.addEventListener('resize', update);
+    viewport?.addEventListener('scroll', update);
+    window.addEventListener('resize', update);
+    return () => {
+      viewport?.removeEventListener('resize', update);
+      viewport?.removeEventListener('scroll', update);
+      window.removeEventListener('resize', update);
+    };
+  }, [feedbackOpen]);
+  useEffect(() => {
+    if (!feedbackThanks) return;
+    const timer = window.setTimeout(() => setFeedbackThanks(false), 3500);
+    return () => window.clearTimeout(timer);
+  }, [feedbackThanks]);
 
   // Reset expanded groups whenever the overlay closes
   useEffect(() => {
@@ -114,6 +146,7 @@ const ProfileOverlay = ({
       setPasswordMsg('');
       setNameForm(false); setNewName(''); setNameStep('input'); setNameMsg('');
       setDeleteForm(false); setDeleteText(''); setDeleteMsg('');
+      setFeedbackOpen(false); setFeedbackText(''); setFeedbackError(''); setFeedbackThanks(false);
     }
   }, [isOpen]);
 
@@ -380,6 +413,24 @@ const ProfileOverlay = ({
     if (deleteText !== 'DELETE') return;
     await supabase.auth.signOut();
     setDeleteMsg('Contact support to complete deletion.');
+  };
+
+  const handleSendFeedback = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!user || feedbackSending || !feedbackText.trim()) return;
+    setFeedbackSending(true);
+    setFeedbackError('');
+    try {
+      await sendBetaFeedback(feedbackText, window.location.pathname, navigator.userAgent,
+        (payload) => supabase.from('beta_feedback').insert(payload));
+      setFeedbackOpen(false);
+      setFeedbackText('');
+      setFeedbackThanks(true);
+    } catch {
+      setFeedbackError('Could not send. Please try again.');
+    } finally {
+      setFeedbackSending(false);
+    }
   };
 
   return (
@@ -1052,6 +1103,15 @@ const ProfileOverlay = ({
               </button>}
             </div>
 
+            <div className="mb-8">
+              <Button type="button" variant="outline" className="font-cinzel rounded-none border-purple/20 bg-transparent text-purple/80 text-[13px] font-normal" onClick={() => {
+                setFeedbackError(''); setFeedbackThanks(false); setFeedbackOpen(true);
+              }}>
+                Send feedback
+              </Button>
+              {feedbackThanks && <p role="status" className="font-fell italic mt-2 text-base text-foreground">Thank you. Your feedback has been sent.</p>}
+            </div>
+
             {/* SECTION 3 — DANGER */}
             <div>
               <p className="font-cinzel" style={{ ...sectionLabelStyle, color: 'rgba(200,80,80,0.4)' }}>DANGER</p>
@@ -1203,6 +1263,37 @@ const ProfileOverlay = ({
       >
         LEAVE
       </button>
+      <DialogPrimitive.Root open={feedbackOpen && isOpen} onOpenChange={(open) => {
+        if (!feedbackSending) { setFeedbackOpen(open); setFeedbackError(''); }
+      }}>
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-[200] bg-background/80" />
+          <DialogPrimitive.Content
+            aria-describedby={undefined}
+            className="fixed left-0 right-0 z-[210] mx-auto w-full max-w-[520px] -translate-y-full overflow-y-auto border-t border-purple/30 bg-background p-5 pb-[max(20px,env(safe-area-inset-bottom))] text-foreground focus:outline-none"
+            style={{ top: feedbackViewport.top + feedbackViewport.height, maxHeight: Math.max(0, feedbackViewport.height - 12) }}
+            onEscapeKeyDown={(event) => { if (feedbackSending) event.preventDefault(); }}
+            onPointerDownOutside={(event) => { if (feedbackSending) event.preventDefault(); }}
+          >
+            <DialogPrimitive.Title className="font-cinzel m-0 mb-4 text-lg font-normal">Send feedback</DialogPrimitive.Title>
+            <form onSubmit={handleSendFeedback} className="flex min-w-0 flex-col gap-3">
+              <Textarea aria-label="Feedback message" rows={4} value={feedbackText}
+                onChange={(event) => setFeedbackText(event.target.value)} disabled={feedbackSending}
+                className="font-fell min-h-[80px] max-h-[28dvh] resize-none rounded-none border-purple/30 text-base placeholder:text-secondary"
+                placeholder="Your message" />
+              {feedbackError && <p role="alert" className="m-0 text-base text-destructive">{feedbackError}</p>}
+              <div className="flex gap-3">
+                <Button type="submit" variant="outline" disabled={!user || !feedbackText.trim() || feedbackSending}
+                  className="font-cinzel flex-1 rounded-none border-purple/30 bg-transparent text-purple text-[13px] font-normal">
+                  {feedbackSending ? 'Sending…' : 'Send'}
+                </Button>
+                <Button type="button" variant="outline" disabled={feedbackSending} onClick={() => setFeedbackOpen(false)}
+                  className="font-cinzel flex-1 rounded-none border-purple/20 bg-transparent text-purple/80 text-[13px] font-normal">Cancel</Button>
+              </div>
+            </form>
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
     </div>
   );
 };

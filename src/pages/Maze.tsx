@@ -7,6 +7,7 @@ import { BETA_MODE } from '@/lib/config';
 import { getAllFlags, getFlag } from '@/lib/questFlags';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
+import { waitForDailySteps } from '@/lib/dailySteps';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
@@ -464,6 +465,7 @@ const Maze = () => {
 
   const [stepsRemaining, setStepsRemaining] = useState(INITIAL_STEPS);
   const stepsRemainingRef = useRef(INITIAL_STEPS);
+  const stepsReadyRef = useRef(false);
 
   const [whisper, setWhisper] = useState<string | null>(null);
   const [whisperColor, setWhisperColor] = useState<string>('rgba(160,140,200,0.85)');
@@ -594,7 +596,10 @@ const Maze = () => {
       return;
     }
     let cancelled = false;
+    stepsReadyRef.current = false;
     (async () => {
+      await waitForDailySteps(user.id);
+      if (cancelled) return;
       const row = await fetchOrCreateUser(user.id);
       if (cancelled) return;
       subStatusRef.current = BETA_MODE ? 'active' : row.subscription_status ?? 'trial';
@@ -612,6 +617,7 @@ const Maze = () => {
       const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;
       stepsRemainingRef.current = startSteps;
       setStepsRemaining(startSteps);
+      stepsReadyRef.current = true;
       if (row.steps_remaining <= 0) {
         updateUser(user.id, { steps_remaining: INITIAL_STEPS });
       }
@@ -826,6 +832,7 @@ const Maze = () => {
   };
 
   const tryMove = (dc: number, dr: number) => {
+    if (!stepsReadyRef.current) return;
     const cfg = configRef.current;
     if (!cfg) return;
     const now = Date.now();
@@ -1583,6 +1590,7 @@ const Maze = () => {
                 <button
                   className="font-cinzel"
                   onClick={() => {
+                    if (!stepsReadyRef.current) return;
                     if (credits < selectedCredits) {
                       setExchangeError(true);
                       window.setTimeout(() => { setExchangeOpen(false); setExchangeError(false); }, 2000);

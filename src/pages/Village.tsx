@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 // player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
+import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailySteps';
 import { useAuth } from '@/context/AuthContext';
 import Thumbstick from '@/components/Thumbstick';
 import { restUpdate } from '@/lib/supabaseRest';
@@ -986,6 +987,20 @@ const Village = () => {
   const usernameRef = useRef<string>('');
   const [unlockedTitles, setUnlockedTitles] = useState<string[]>([]);
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);
+  const stepsReadyRef = useRef(false);
+  const userLoadVersionRef = useRef(0);
+  const activeUserIdRef = useRef(user?.id);
+  activeUserIdRef.current = user?.id;
+  const [dailyStepsMessage, setDailyStepsMessage] = useState<string | null>(null);
+  useEffect(() => {
+    if (!dailyStepsMessage || villageLoading) return;
+    const timer = window.setTimeout(() => setDailyStepsMessage(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [dailyStepsMessage, villageLoading]);
+  useEffect(() => () => {
+    userLoadVersionRef.current += 1;
+    stepsReadyRef.current = false;
+  }, [user?.id]);
   const [totalMazeSteps, setTotalMazeSteps] = useState<number>(0);
   const [totalMazeTime, setTotalMazeTime] = useState<number>(0);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState<number>(14);
@@ -1368,8 +1383,24 @@ const Village = () => {
 
   const refetchUser = useCallback(async () => {
     if (!user) return;
+    const version = ++userLoadVersionRef.current;
+    stepsReadyRef.current = false;
     console.log('[Village] playerId from auth:', user.id);
-    const row = await fetchOrCreateUser(user.id);
+    let row = await fetchOrCreateUser(user.id);
+    if (version !== userLoadVersionRef.current || activeUserIdRef.current !== user.id) return;
+    let granted = 0;
+    try {
+      granted = await claimDailyStepsOnce(user.id, async () => {
+        const { data, error } = await supabase.rpc('claim_daily_steps');
+        if (error) throw error;
+        return typeof data === 'number' ? data : 0;
+      });
+    } catch (error) {
+      console.warn('[Village] daily step claim failed', error);
+    }
+    // Refresh even after a failed response: the server may already have granted steps.
+    row = await fetchOrCreateUser(user.id);
+    if (version !== userLoadVersionRef.current || activeUserIdRef.current !== user.id) return;
     console.log('[Village] user row:', row);
     setCurrentLevel(row.level);
     setSocialStatus(((row as unknown as { social?: number }).social) ?? 0);
@@ -1388,6 +1419,12 @@ const Village = () => {
     usernameRef.current = row.username || '';
     setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : []);
     setStepsRemaining(row.steps_remaining);
+    // React publishes the balance before the next input event; movement/navigation
+    // stays blocked until the authoritative post-claim balance is available.
+    stepsReadyRef.current = true;
+    if (takeDailyStepsAnnouncement(user.id, granted)) {
+      setDailyStepsMessage(`The day gives you ${granted} steps.`);
+    }
     console.log('[Village credits] row.credits =', row.credits, typeof row.credits);
     setCredits(row.credits);
     setTotalMazeSteps(row.total_maze_steps);
@@ -1794,7 +1831,7 @@ const Village = () => {
   );
 
   const move = (dx: number, dy: number) => {
-    if (villageLoadingRef.current) return;
+    if (villageLoadingRef.current || !stepsReadyRef.current) return;
     const prev = playerTargetRef.current;
 
 
@@ -2819,6 +2856,11 @@ const Village = () => {
       )}
 
       {/* Easter egg whisper */}
+      {dailyStepsMessage && !villageLoading && (
+        <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[18%] z-[60] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">
+          {dailyStepsMessage}
+        </p>
+      )}
       {whisper && (
         <p
           key={whisper}
@@ -3287,6 +3329,7 @@ const Village = () => {
                 label: '500 Steps',
                 cost: 5,
                 onPurchase: () => {
+                  if (!stepsReadyRef.current) return;
                   const next = stepsRemaining + 500;
                   setStepsRemaining(next);
                   updateUser(user.id, { steps_remaining: next });

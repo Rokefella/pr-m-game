@@ -8,6 +8,11 @@ import { setFlag } from '@/lib/questFlags';
 import { checkSubscriptionStatus } from '@/lib/subscriptionStatus';
 import NpcDialogue from '@/components/NpcDialogue';
 import { useNpcDialogue } from '@/hooks/useNpcDialogue';
+import { RoomScene, RoomAvatar, avatarTransform } from '@/components/theme/rooms/RoomScene';
+import { ROOM_BG, ROOM_ZOOM, roomCamAxis } from '@/components/theme/rooms/roomConfig';
+import { exitDir, roomGeometry, type Run } from '@/components/theme/rooms/roomGeometry';
+import { paletteFromColor } from '@/components/PlayerAvatar';
+import type { ExitDir } from '@/components/theme/objects';
 
 import alexandraMarkerUrl from '@/assets/alexandra_marker.svg';
 import architectMarkerUrl from '@/assets/architect_marker.svg';
@@ -65,15 +70,17 @@ type RoomCell = {
   exit?: { destination?: string } | null;
   color?: string | null;
 };
-type ExitTile = Rect & { destination: string };
+type ExitTile = Rect & { destination: string; dir: ExitDir };
 type ColorTile = { id: string; x: number; y: number; col: number; row: number; color: string };
 type NpcPlacement = { id: string; npcKey: string; x: number; y: number };
 type RoomLayout = {
   wallTiles: Rect[];
   furnitureTiles: Rect[];
   bookcaseTiles: Rect[];
-  lightTiles: Rect[];
+  lightTiles: (Rect & { color?: string | null })[];
   rugTiles: RugTile[];
+  floorRuns: Run[];
+  wallRuns: Run[];
   groundTiles: ColorTile[];
   treeTiles: ColorTile[];
   flowerTiles: ColorTile[];
@@ -83,88 +90,6 @@ type RoomLayout = {
   gridSize: number;
   start: { col: number; row: number } | null;
 };
-
-const WallCell = memo(() => (
-  <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-    <rect width="20" height="20" fill="#3a3548" />
-    <rect x="0.3" y="0.3" width="19.4" height="19.4" fill="none" stroke="rgba(140,120,200,0.25)" strokeWidth="0.4" />
-    <line x1="0" y1="6.5" x2="20" y2="6.5" stroke="rgba(15,12,25,0.5)" strokeWidth="0.6" />
-    <line x1="0" y1="13.5" x2="20" y2="13.5" stroke="rgba(15,12,25,0.5)" strokeWidth="0.6" />
-    <rect x="0" y="0" width="20" height="1.2" fill="rgba(170,150,220,0.18)" />
-  </svg>
-));
-
-const FurnitureCell = memo(() => (
-  <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-    <rect width="20" height="20" fill="rgba(15,18,28,0.3)" />
-    <rect x="2" y="3" width="16" height="14" rx="1.2" fill="#6b4a2e" stroke="#8a6540" strokeWidth="0.5" />
-    <path d="M2,6 Q10,5 18,6" fill="none" stroke="rgba(140,100,60,0.5)" strokeWidth="0.4" />
-    <path d="M2,9.5 Q10,8.7 18,9.5" fill="none" stroke="rgba(140,100,60,0.4)" strokeWidth="0.4" />
-    <path d="M2,13 Q10,12.3 18,13" fill="none" stroke="rgba(140,100,60,0.4)" strokeWidth="0.4" />
-    <rect x="2" y="3" width="16" height="2.2" rx="1" fill="rgba(200,160,110,0.25)" />
-  </svg>
-));
-
-const BOOKCASE_SPINE_COLORS = ['#8a3a3a', '#3a6a5a', '#c8963a', '#3a4a7a', '#7a5535'];
-
-const BookcaseCell = memo(({ col, row }: { col: number; row: number }) => {
-  let seed = (col * 73856093) ^ (row * 19349663);
-  const rand = () => {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return seed / 0x7fffffff;
-  };
-  const spines: { x: number; w: number; fill: string }[] = [];
-  let x = 2.5;
-  for (let i = 0; i < 9; i++) {
-    const w = 1.2 + rand() * 0.6;
-    if (x + w > 17.4) break;
-    spines.push({ x, w, fill: BOOKCASE_SPINE_COLORS[Math.floor(rand() * BOOKCASE_SPINE_COLORS.length)] });
-    x += w + 0.45;
-  }
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-      <rect width="20" height="20" fill="rgba(15,18,28,0.3)" />
-      <rect x="1.5" y="2" width="17" height="16" rx="1" fill="#5a3d24" stroke="#7a5535" strokeWidth="0.5" />
-      {spines.map((s) => (
-        <rect key={s.x} x={s.x} y={3.2} width={s.w} height={13.6} fill={s.fill} />
-      ))}
-      <rect x="1.5" y="2" width="17" height="1.3" rx="0.5" fill="rgba(200,160,110,0.3)" />
-    </svg>
-  );
-});
-
-const LightCell = memo(() => (
-  <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-    <defs>
-      <radialGradient id="dynamicRoomLampGlow" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor="#f4d78a" stopOpacity="0.5" />
-        <stop offset="45%" stopColor="#e8b84a" stopOpacity="0.2" />
-        <stop offset="100%" stopColor="#e8b84a" stopOpacity="0" />
-      </radialGradient>
-    </defs>
-    <ellipse
-      cx="10"
-      cy="10"
-      rx="9"
-      ry="9"
-      fill="url(#dynamicRoomLampGlow)"
-      style={{ animation: 'glowPulse 3.2s ease-in-out infinite', transformOrigin: '10px 10px' }}
-    />
-    <rect x="7" y="7" width="6" height="6" rx="1" fill="#3a2f1a" stroke="#7a5535" strokeWidth="0.5" />
-    <rect x="8.5" y="8.3" width="3" height="3.4" rx="0.4" fill="#f4d78a" fillOpacity="0.75" />
-  </svg>
-));
-
-const RugCell = memo(({ trim }: { trim: RugTrim }) => (
-  <svg width="20" height="20" viewBox="0 0 20 20" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-    <rect width="20" height="20" fill="#5a2020" fillOpacity="0.4" />
-    <path d="M10,5 L14,10 L10,15 L6,10 Z" fill="none" stroke="rgba(200,160,110,0.18)" strokeWidth="0.3" />
-    {trim.top && <line x1="0.6" y1="0.6" x2="19.4" y2="0.6" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
-    {trim.bottom && <line x1="0.6" y1="19.4" x2="19.4" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
-    {trim.left && <line x1="0.6" y1="0.6" x2="0.6" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
-    {trim.right && <line x1="19.4" y1="0.6" x2="19.4" y2="19.4" stroke="rgba(200,160,110,0.35)" strokeWidth="0.6" />}
-  </svg>
-));
 
 const GroundTile = memo(({ color, col, row }: { color: string; col: number; row: number }) => {
   const v = (col * 7 + row * 3) % 4;
@@ -438,6 +363,10 @@ const DynamicRoom = () => {
   const [room, setRoom] = useState<RoomLayout | null>(null);
   const [roomLoading, setRoomLoading] = useState(true);
   const [auraColor, setAuraColor] = useState('#a98cff');
+  const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
+  const [walking, setWalking] = useState(false);
+  const walkingRef = useRef(false);
+  const avatarRef = useRef<HTMLDivElement | null>(null);
 
   const [currentLevel, setCurrentLevel] = useState(levelNumber);
   const [socialStat, setSocialStat] = useState(0);
@@ -453,7 +382,6 @@ const DynamicRoom = () => {
   const npcReadyRef = useRef<Record<string, boolean>>({});
   const npcLockRef = useRef<Record<string, boolean>>({});
 
-  const [player, setPlayer] = useState({ x: 0, y: 0 });
   const playerRef = useRef({ x: 0, y: 0 });
   const playerTargetRef = useRef({ x: 0, y: 0 });
   const roomRef = useRef<RoomLayout | null>(null);
@@ -486,6 +414,7 @@ const DynamicRoom = () => {
       if (cancelled || !row) return;
       if (row.aura_color) setAuraColor(row.aura_color);
       const r = row as unknown as Record<string, number | null>;
+      setRegistrationNumber(r.registration_number ?? null);
       setSocialStat(Number(r.social ?? 0));
       setPerceptionStat(Number(r.perception ?? 0));
       setTradeStat(Number(r.trade ?? 0));
@@ -534,7 +463,7 @@ const DynamicRoom = () => {
         const wallTiles: Rect[] = [];
         const furnitureTiles: Rect[] = [];
         const bookcaseTiles: Rect[] = [];
-        const lightTiles: Rect[] = [];
+        const lightTiles: (Rect & { color?: string | null })[] = [];
         const rugCells: { col: number; row: number }[] = [];
         const exitTiles: ExitTile[] = [];
         const groundTiles: ColorTile[] = [];
@@ -558,7 +487,7 @@ const DynamicRoom = () => {
               bookcaseTiles.push({ id: `book-${cell.col}-${cell.row}`, x, y, w: CELL, h: CELL });
               break;
             case 'LIGHT':
-              lightTiles.push({ id: `light-${cell.col}-${cell.row}`, x, y, w: CELL, h: CELL });
+              lightTiles.push({ id: `light-${cell.col}-${cell.row}`, x, y, w: CELL, h: CELL, color: cell.color });
               break;
             case 'RUG':
               rugCells.push({ col: cell.col, row: cell.row });
@@ -583,6 +512,7 @@ const DynamicRoom = () => {
                 w: CELL,
                 h: CELL,
                 destination: cell.exit?.destination ?? 'village',
+                dir: 'down',
               });
               break;
             default: {
@@ -603,6 +533,11 @@ const DynamicRoom = () => {
         if (!Number.isFinite(gridSize) || gridSize <= 0) {
           gridSize = cells.reduce((m, c) => Math.max(m, (c?.col ?? 0) + 1, (c?.row ?? 0) + 1), 1);
         }
+        const geom = roomGeometry(cells, gridSize);
+        geom.implicitWalls.forEach(({ col, row }) => {
+          wallTiles.push({ id: `wall-${col}-${row}`, x: col * CELL, y: row * CELL, w: CELL, h: CELL });
+        });
+        exitTiles.forEach((ex) => { ex.dir = exitDir(ex.x / CELL, ex.y / CELL, gridSize); });
         const rawStart = rData?.start;
         const start =
           rawStart && typeof rawStart.col === 'number' && typeof rawStart.row === 'number'
@@ -628,6 +563,8 @@ const DynamicRoom = () => {
           bookcaseTiles,
           lightTiles,
           rugTiles,
+          floorRuns: geom.floorRuns,
+          wallRuns: geom.wallRuns,
           groundTiles,
           treeTiles,
           flowerTiles,
@@ -678,7 +615,6 @@ const DynamicRoom = () => {
         camSnapRef.current = true;
 
         if (!cancelled) {
-          setPlayer(sp);
           setRoom(layout);
           setRoomLoading(false);
         }
@@ -757,10 +693,6 @@ const DynamicRoom = () => {
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
-  const camAxis = (mapAxis: number, p: number, viewSize: number) => {
-    if (mapAxis <= viewSize) return 0;
-    return Math.min(-viewSize / 2, Math.max(viewSize / 2 - mapAxis, -p));
-  };
 
   const openNpc = useCallback((npcKey: string) => {
     setOpenSignals((prev) => ({ ...prev, [npcKey]: (prev[npcKey] ?? 0) + 1 }));
@@ -856,21 +788,21 @@ const DynamicRoom = () => {
       const cur = playerRef.current;
       const dx = target.x - cur.x;
       const dy = target.y - cur.y;
-      if (Math.hypot(dx, dy) < 0.5) {
-        if (cur.x !== target.x || cur.y !== target.y) {
-          playerRef.current = { x: target.x, y: target.y };
-          setPlayer(playerRef.current);
-        }
+      const moving = Math.hypot(dx, dy) >= 0.5;
+      if (!moving) {
+        playerRef.current = { x: target.x, y: target.y };
       } else {
         playerRef.current = { x: cur.x + dx * 0.18, y: cur.y + dy * 0.18 };
-        setPlayer(playerRef.current);
       }
+      // Avatar is positioned through its DOM ref; walking flips state only on change.
+      if (avatarRef.current) avatarRef.current.style.transform = avatarTransform(playerRef.current);
+      if (moving !== walkingRef.current) { walkingRef.current = moving; setWalking(moving); }
 
       // Camera eases toward centering the (visually eased) player position;
       // snaps once on spawn/room load so it never glides across the map.
       const ms = (roomRef.current?.gridSize ?? 1) * CELL;
-      const camTx = camAxis(ms, cur.x, viewRef.current.w);
-      const camTy = camAxis(ms, cur.y, viewRef.current.h);
+      const camTx = roomCamAxis(ms, cur.x, viewRef.current.w);
+      const camTy = roomCamAxis(ms, cur.y, viewRef.current.h);
       if (camSnapRef.current) {
         camSnapRef.current = false;
         cameraRef.current = { x: camTx, y: camTy };
@@ -888,7 +820,7 @@ const DynamicRoom = () => {
       }
       // Write the camera transform straight to the DOM — no React re-render.
       if (worldRef.current) {
-        worldRef.current.style.transform = `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px)`;
+        worldRef.current.style.transform = `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px) scale(${ROOM_ZOOM})`;
       }
 
       raf = requestAnimationFrame(loop);
@@ -910,7 +842,7 @@ const DynamicRoom = () => {
   const title = ROOM_TITLES[locationKey] ?? '';
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#04040a', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', inset: 0, background: ROOM_BG, overflow: 'hidden' }}>
       <style>{`
         @keyframes playerPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
         @keyframes roomPulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.9; } }
@@ -1039,26 +971,16 @@ const DynamicRoom = () => {
           ref={worldRef}
           style={{
             position: 'absolute',
-            left: '50%',
-            top: '50%',
+            left: 0,
+            top: 0,
             width: mapSize.w,
             height: mapSize.h,
-            transform: `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px)`,
+            transformOrigin: '0 0',
+            transform: `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px) scale(${ROOM_ZOOM})`,
+            willChange: 'transform',
           }}
         >
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: '#0a0812',
-              backgroundImage:
-                'linear-gradient(rgba(100,80,160,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(100,80,160,0.08) 1px, transparent 1px)',
-              backgroundSize: '40px 40px',
-              boxShadow: 'inset 0 0 60px rgba(0,0,0,0.6)',
-              pointerEvents: 'none',
-              zIndex: 0,
-            }}
-          />
+          <RoomScene floorRuns={room.floorRuns} wallRuns={room.wallRuns} furniture={room.furnitureTiles} bookcases={room.bookcaseTiles} lights={room.lightTiles} rugs={room.rugTiles} exits={room.exitTiles} />
 
           {(room.groundTiles ?? []).map((t) => (
             <div
@@ -1096,66 +1018,6 @@ const DynamicRoom = () => {
             </div>
           ))}
 
-          {(room.rugTiles ?? []).map((r) => (
-            <div
-              key={`rug-${r.x}-${r.y}`}
-              style={{ position: 'absolute', left: r.x, top: r.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 1 }}
-            >
-              <RugCell trim={r.trim} />
-            </div>
-          ))}
-
-          {room.exitTiles.map((ex) => (
-            <div
-              key={`exit-${ex.x}-${ex.y}`}
-              style={{
-                position: 'absolute',
-                left: ex.x,
-                top: ex.y,
-                width: CELL,
-                height: CELL,
-                background: 'rgba(200,148,58,0.35)',
-                boxShadow: '0 0 12px rgba(200,148,58,0.6)',
-                animation: 'roomPulse 2.4s ease-in-out infinite',
-                pointerEvents: 'none',
-                zIndex: 2,
-              }}
-            />
-          ))}
-
-          {room.wallTiles.map((w) => (
-            <div
-              key={`wall-${w.x}-${w.y}`}
-              style={{ position: 'absolute', left: w.x, top: w.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 3 }}
-            >
-              <WallCell />
-            </div>
-          ))}
-          {room.furnitureTiles.map((f) => (
-            <div
-              key={`furn-${f.x}-${f.y}`}
-              style={{ position: 'absolute', left: f.x, top: f.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 3 }}
-            >
-              <FurnitureCell />
-            </div>
-          ))}
-          {(room.bookcaseTiles ?? []).map((b) => (
-            <div
-              key={`book-${b.x}-${b.y}`}
-              style={{ position: 'absolute', left: b.x, top: b.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 3 }}
-            >
-              <BookcaseCell col={Math.round(b.x / CELL)} row={Math.round(b.y / CELL)} />
-            </div>
-          ))}
-          {(room.lightTiles ?? []).map((l) => (
-            <div
-              key={`light-${l.x}-${l.y}`}
-              style={{ position: 'absolute', left: l.x, top: l.y, width: CELL, height: CELL, pointerEvents: 'none', zIndex: 3 }}
-            >
-              <LightCell />
-            </div>
-          ))}
-
           {/* Generic NPCs — one actor per placed NPC cell */}
           {room.npcs.map((n) => (
             <NpcActor
@@ -1174,21 +1036,7 @@ const DynamicRoom = () => {
             />
           ))}
 
-          <div
-            style={{
-              position: 'absolute',
-              left: player.x - 4,
-              top: player.y - 4,
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: auraColor,
-              boxShadow: `0 0 8px ${auraColor}`,
-              animation: 'playerPulse 1.6s ease-in-out infinite',
-              pointerEvents: 'none',
-              zIndex: 5,
-            }}
-          />
+          <RoomAvatar ref={avatarRef} palette={registrationNumber === 1 ? 'red' : paletteFromColor(auraColor)} walking={walking} />
         </div>
       )}
       <Thumbstick

@@ -102,6 +102,13 @@
     -webkit-touch-callout: none;
   }
 
+  html,
+  body,
+  #root {
+    background: #0b0e1f;
+    overflow: hidden;
+  }
+
   #root {
     -webkit-user-select: none;
     user-select: none;

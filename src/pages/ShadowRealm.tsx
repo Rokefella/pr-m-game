@@ -9,6 +9,18 @@ import Thumbstick from '@/components/Thumbstick';
 import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
 import { patternUri } from '@/lib/theme/patterns';
 import { SHADOW } from '@/lib/theme/shadow';
+import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
+import PixelEye from '@/components/theme/PixelEye';
+import FolderSlots from '@/components/theme/FolderSlots';
+import GateScene, { DOOR_COLORS } from '@/components/theme/transition/GateScene';
+import { TransitionFlash } from '@/components/theme/transition/DoorTransition';
+import { useReducedMotion } from '@/components/theme/useReducedMotion';
+
+const TRANSFER_EYE_MS = 800;
+const TRANSFER_PRIME_MS = 1200;
+const LEVEL_GATE_MS = 1400;
+const NOTHING_MS = 1500;
+const REDUCED_NAV_MS = 150;
 
 const SHADOW_LANTERN_RADIUS_CELLS = 4;
 const SHADOW_LANTERN_SOFT_CELLS = 2;
@@ -182,6 +194,13 @@ const ShadowRealm = () => {
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
   const runFragsRef = useRef<RunFragment[]>([]);
+  const [bankedBefore, setBankedBefore] = useState<number | null>(null);
+  const [shownCount, setShownCount] = useState(0);
+  const [nextLevel, setNextLevel] = useState<number | null>(null);
+  const [levelFlash, setLevelFlash] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const reducedRef = useRef(reducedMotion);
+  reducedRef.current = reducedMotion;
 
   // Fallback transfer point: centered on screen, slightly above player start.
   const TRANSFER_OFFSET_Y = -120;
@@ -441,35 +460,40 @@ const ShadowRealm = () => {
       setPrimeVisible(false);
       await wait(20);
       setPrimeVisible(true);
-      await wait(900); // 300 fade in + 600 hold
+      setShownCount((n) => n + 1);
+      await wait(reducedRef.current ? 0 : TRANSFER_PRIME_MS - 320);
       setPrimeVisible(false);
-      await wait(300);
+      await wait(reducedRef.current ? 0 : 300);
     }
-    setCurrentPrime(null);
   }, []);
 
   // Display-only sequence after the save succeeded.
   const playAfterBank = useCallback(() => {
     const frags = runFragsRef.current;
+    const reduced = reducedRef.current;
     const line = 'Your fragments pass into the permanent record.';
+    const after = async () => {
+      if (frags.length === 0) {
+        setNothingMsg(true);
+        window.setTimeout(() => navigate('/village'), reduced ? REDUCED_NAV_MS : NOTHING_MS);
+        return;
+      }
+      setRunCount(0);
+      await playPrimes(frags);
+      setDoneMsg(true);
+      setNextLevel(currentLevelRef.current + 1);
+      window.setTimeout(() => setLevelFlash(true), reduced ? 0 : 700);
+      window.setTimeout(() => navigate('/village'), reduced ? REDUCED_NAV_MS : LEVEL_GATE_MS);
+    };
+    if (reduced) { setTyped(line); void after(); return; }
     let i = 0;
     const tick = () => {
       i += 1;
       setTyped(line.slice(0, i));
       if (i < line.length) { window.setTimeout(tick, 35); return; }
-      window.setTimeout(async () => {
-        if (frags.length === 0) {
-          setNothingMsg(true);
-          window.setTimeout(() => navigate('/village'), 2500);
-          return;
-        }
-        setRunCount(0);
-        await playPrimes(frags);
-        setDoneMsg(true);
-        window.setTimeout(() => navigate('/village'), 2500);
-      }, 400);
+      window.setTimeout(() => void after(), 400);
     };
-    window.setTimeout(tick, 800);
+    window.setTimeout(tick, TRANSFER_EYE_MS);
   }, [navigate, playPrimes]);
 
   const finish = useCallback(async () => {
@@ -497,7 +521,15 @@ const ShadowRealm = () => {
       if (p < 1) requestAnimationFrame(animateEye);
     };
     requestAnimationFrame(animateEye);
-    void finish();
+    void (async () => {
+      const { count } = await supabase
+        .from('fragments')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('banked', true);
+      setBankedBefore(count ?? 0);
+      await finish();
+    })();
   }, [user, finish]);
 
   // ---------------- movement ----------------
@@ -686,41 +718,50 @@ const ShadowRealm = () => {
         <div style={{ color: 'rgba(111,211,154,0.6)' }}>LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}</div>
       </div>
 
-      {transferring && (
-        <div style={{ position: 'fixed', inset: 0, background: '#060a08', opacity: overlayIn ? 1 : 0, transition: 'opacity 600ms ease-in', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width={120} height={72} viewBox="-60 -36 120 72">
-            <ellipse cx={0} cy={0} rx={50} ry={eyeRy} stroke={SHADOW.glow} strokeOpacity={0.7} strokeWidth={1} fill="none" />
-            {eyeRy > 8 && <circle cx={0} cy={0} r={8} fill={SHADOW.eye} />}
-          </svg>
-          <p className="font-fell italic" style={{ marginTop: 32, fontSize: 17, color: 'rgba(111,211,154,0.85)', textAlign: 'center', maxWidth: '85vw', minHeight: 24 }}>
-            {typed}
-          </p>
-          {nothingMsg && !doneMsg && !error && (
-            <p className="font-fell italic" style={{ marginTop: 20, fontSize: 16, color: 'rgba(111,211,154,0.65)' }}>Nothing to transfer.</p>
-          )}
-          {currentPrime !== null && (
-            <div className="font-cinzel" style={{ marginTop: 28, fontSize: 48, color: '#c8963a', opacity: primeVisible ? 1 : 0, transition: 'opacity 300ms ease-out' }}>
-              {currentPrime}
-            </div>
-          )}
-          {doneMsg && (
-            <p className="font-fell italic" style={{ marginTop: 28, fontSize: 16, color: 'rgba(111,211,154,0.65)', animation: 'shadowFadeIn 500ms ease-out' }}>
-              The record is permanent now.
-            </p>
-          )}
-          {error && (
-            <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-              <p className="font-fell italic" style={{ fontSize: 14, color: 'rgba(111,211,154,0.75)' }}>The transfer failed. Try again.</p>
-              <button className="font-cinzel" disabled={saving} onClick={() => void finish()} style={{
-                fontSize: 11, letterSpacing: '0.28em', background: 'rgba(111,211,154,0.1)', border: `1px solid ${SHADOW.glow}`,
-                color: '#c8f5da', padding: '10px 24px', cursor: saving ? 'default' : 'pointer',
-              }}>
-                RETRY
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      {transferring && (() => {
+        const folderCount = Math.min(20, (bankedBefore ?? 0) + shownCount);
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(6,10,8,.96)', opacity: overlayIn ? 1 : 0, transition: 'opacity 600ms ease-in', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', overflowY: 'auto' }}>
+            <PlateFrame tone="shadow" glow={SHADOW.glow} width="min(92vw, 340px)">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, textAlign: 'center' }}>
+                {error ? (
+                  <>
+                    <p className="font-fell italic" style={{ margin: 0, fontSize: 17, color: SHADOW.eye }}>The transfer failed. Try again.</p>
+                    <button className="font-cinzel transition-btn transition-btn-primary" style={{ width: '100%' }} disabled={saving} onClick={() => void finish()}>RETRY</button>
+                  </>
+                ) : nothingMsg ? (
+                  <p className="font-fell italic" style={{ margin: 0, fontSize: 17, color: SHADOW.eye }}>Nothing to transfer.</p>
+                ) : (
+                  <>
+                    <PixelEye tone="green" animate size={128} />
+                    <p className="font-fell italic" style={{ margin: 0, fontSize: 17, minHeight: 46, color: SHADOW.eye }}>{typed}</p>
+                    <div style={{ position: 'relative', width: '100%', background: '#0f1612', border: '1px solid #26312e', padding: '12px 8px', minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', '--plate-gold': '#c8963a' } as CSSProperties}>
+                      <PlateCorners />
+                      <span className="font-cinzel" style={{ fontSize: 'clamp(40px, 14vw, 56px)', color: '#f5c060', opacity: primeVisible && currentPrime !== null ? 1 : 0, transition: 'opacity 300ms ease-out' }}>
+                        {currentPrime ?? '\u00a0'}
+                      </span>
+                    </div>
+                    {bankedBefore !== null && (
+                      <>
+                        <FolderSlots total={20} filled={shownCount > 0 ? folderCount - 1 : folderCount} revealed={shownCount > 0} />
+                        <p className="font-mono" style={{ margin: 0, fontSize: 11, color: SHADOW.glow, letterSpacing: '0.12em' }}>Folder {folderCount} of 20</p>
+                      </>
+                    )}
+                    {doneMsg && <p className="font-fell italic" style={{ margin: 0, fontSize: 16, color: SHADOW.eye, animation: 'shadowFadeIn 500ms ease-out' }}>The record is permanent now.</p>}
+                  </>
+                )}
+              </div>
+            </PlateFrame>
+            {nextLevel !== null && doneMsg && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, pointerEvents: 'none' }}>
+                <div className="font-cinzel" style={{ fontSize: 28, color: '#f5c060', letterSpacing: '0.12em' }}>LEVEL {nextLevel}</div>
+                <GateScene kind="maze" open width="clamp(90px, 26vw, 120px)" />
+              </div>
+            )}
+            <TransitionFlash color={DOOR_COLORS.maze} on={levelFlash} />
+          </div>
+        );
+      })()}
 
       <style>{`
         @keyframes shadowGhostFlicker { 0%, 100% { opacity: .06; } 50% { opacity: .16; } }

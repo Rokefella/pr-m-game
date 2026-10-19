@@ -44,6 +44,9 @@ type AccountUserRow = {
   avatar_body: string | null;
   avatar_head: string | null;
   trade: number | null;
+  growth_points: number | null;
+  social: number | null;
+  perception: number | null;
   extra_drop_capacity: number | null;
 };
 
@@ -70,10 +73,13 @@ const ProfileOverlay = ({
   const [growthOpen, setGrowthOpen] = useState<{ social: boolean; perception: boolean; trade: boolean }>({ social: false, perception: false, trade: false });
   const [growthPoints, setGrowthPoints] = useState(growthPointsProp);
   const [stats, setStats] = useState({ social: socialStatProp, perception: perceptionStatProp, trade: tradeStatProp });
-  useEffect(() => { setGrowthPoints(growthPointsProp); }, [growthPointsProp]);
+  // Props are only initial values; once the fetched users row is in, the
+  // database wins and stale parent props must not overwrite the numbers.
+  useEffect(() => { if (!accountRow) setGrowthPoints(growthPointsProp); }, [growthPointsProp, accountRow]);
   useEffect(() => {
+    if (accountRow) return;
     setStats({ social: socialStatProp, perception: perceptionStatProp, trade: tradeStatProp });
-  }, [socialStatProp, perceptionStatProp, tradeStatProp]);
+  }, [socialStatProp, perceptionStatProp, tradeStatProp, accountRow]);
 
   const commitGrowthPoint = (key: 'social' | 'perception' | 'trade') => {
     if (!user) return;
@@ -156,7 +162,7 @@ const ProfileOverlay = ({
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, steps_remaining, registration_number, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head, trade, extra_drop_capacity')
+      .select('username, credits, steps_remaining, registration_number, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head, trade, extra_drop_capacity, growth_points, social, perception')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -164,6 +170,8 @@ const ProfileOverlay = ({
           const row = data as unknown as AccountUserRow;
           setAccountRow(row);
           setExtraDropCapacity(row.extra_drop_capacity ?? 0);
+          setGrowthPoints(row.growth_points ?? 0);
+          setStats({ social: row.social ?? 0, perception: row.perception ?? 0, trade: row.trade ?? 0 });
         }
       });
     return () => { cancelled = true; };

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
@@ -6,9 +6,18 @@ import { getAllFlags, setFlag } from '@/lib/questFlags';
 import { supabase } from '@/lib/supabase';
 import { endRun } from '@/lib/runState';
 import Thumbstick from '@/components/Thumbstick';
+import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
+import { patternUri } from '@/lib/theme/patterns';
+import { SHADOW } from '@/lib/theme/shadow';
+
+const SHADOW_LANTERN_RADIUS_CELLS = 4;
+const SHADOW_LANTERN_SOFT_CELLS = 2;
+const SHADOW_FOG_OPACITY = 0.92;
+const SHADOW_AVATAR_SIZE = 30;
+const SHADOW_ENTRY_KEY = 'praem_shadow_entry';
+const SHADOW_ENTRY_MAX_MS = 6 * 60 * 60 * 1000;
 
 const STEP = 40; // matches Maze.tsx CELL
-const TRANSFER_SIZE = 40;
 
 const ATMOSPHERE = [
   'You are between.',
@@ -36,35 +45,6 @@ type PlacedCell = { x: number; y: number; color?: string; name?: string };
 
 const wallKey = (x: number, y: number): string => `${Math.round(x)},${Math.round(y)}`;
 
-const ShadowWallTile = () => (
-  <svg
-    width={STEP}
-    height={STEP}
-    viewBox="0 0 20 20"
-    style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-  >
-    <defs>
-      <linearGradient id="shadow-wall-gradient" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#b65a5a" />
-        <stop offset="45%" stopColor="#4a171d" />
-        <stop offset="100%" stopColor="#16070b" />
-      </linearGradient>
-    </defs>
-    <rect x="1.2" y="1.2" width="18.8" height="18.8" fill="rgba(0,0,0,0.55)" />
-    <rect width="18.8" height="18.8" fill="url(#shadow-wall-gradient)" />
-    <line x1="0" y1="0.3" x2="18.8" y2="0.3" stroke="#d88989" strokeOpacity="0.55" strokeWidth="0.7" />
-    <line x1="0.3" y1="0" x2="0.3" y2="18.8" stroke="#d88989" strokeOpacity="0.35" strokeWidth="0.6" />
-    <line x1="0" y1="18.5" x2="18.8" y2="18.5" stroke="#16070b" strokeOpacity="0.9" strokeWidth="0.7" />
-    <line x1="18.5" y1="0" x2="18.5" y2="18.8" stroke="#16070b" strokeOpacity="0.9" strokeWidth="0.7" />
-    <line x1="0" y1="6.6" x2="18.8" y2="6.6" stroke="#16070b" strokeOpacity="0.65" strokeWidth="0.5" />
-    <line x1="0" y1="13.3" x2="18.8" y2="13.3" stroke="#16070b" strokeOpacity="0.65" strokeWidth="0.5" />
-    <line x1="6.6" y1="0" x2="6.6" y2="6.6" stroke="#16070b" strokeOpacity="0.55" strokeWidth="0.4" />
-    <line x1="13.3" y1="6.6" x2="13.3" y2="13.3" stroke="#16070b" strokeOpacity="0.55" strokeWidth="0.4" />
-    <line x1="6.6" y1="13.3" x2="6.6" y2="18.8" stroke="#16070b" strokeOpacity="0.55" strokeWidth="0.4" />
-  </svg>
-);
-
-
 // GARDEN_DOOR — room key derived from the real current month,
 // e.g. garden + season + month name ("gardenautumnseptember").
 const MONTH_NAMES = [
@@ -78,15 +58,110 @@ const gardenRoomKey = (): string => {
   return `garden${season}${MONTH_NAMES[month]}`;
 };
 
+/** Garden door opens on the 23rd; registration 1 can force it with localStorage praem_force_garden_open = '1'. */
+export const isGardenOpen = (registrationNumber?: number | null): boolean => {
+  if (registrationNumber === 1 && typeof window !== 'undefined' && window.localStorage.getItem('praem_force_garden_open') === '1') return true;
+  return new Date().getDate() === 23;
+};
+
+const hasValidEntry = (): boolean => {
+  try {
+    const raw = sessionStorage.getItem(SHADOW_ENTRY_KEY);
+    if (!raw) return false;
+    const ts = Number((JSON.parse(raw) as { ts?: number }).ts);
+    return Number.isFinite(ts) && Date.now() - ts <= SHADOW_ENTRY_MAX_MS;
+  } catch {
+    return false;
+  }
+};
+
+const SHADOW_FOG_BG = `radial-gradient(circle at var(--lx) var(--ly), rgba(245,213,138,.08) 0, rgba(245,213,138,0) ${1.4 * STEP}px), radial-gradient(circle at var(--lx) var(--ly), rgba(${SHADOW.fogRgb},0) 0, rgba(${SHADOW.fogRgb},0) var(--r1), rgba(${SHADOW.fogRgb},calc(var(--fog) * .35)) calc(var(--r1) + (var(--r2) - var(--r1)) * .5), rgba(${SHADOW.fogRgb},var(--fog)) var(--r2))`;
+const SHADOW_R1 = SHADOW_LANTERN_RADIUS_CELLS * STEP;
+const SHADOW_R2 = SHADOW_R1 + SHADOW_LANTERN_SOFT_CELLS * STEP;
+
+const ShadowEye = () => (
+  <svg width={STEP} height={STEP} viewBox="0 0 48 48" shapeRendering="crispEdges" style={{ display: 'block' }}>
+    <circle cx="24" cy="24" r="20" fill="#6fcf97" opacity=".12">
+      <animate attributeName="opacity" values=".08;.22;.08" dur="3s" repeatCount="indefinite" />
+    </circle>
+    {[[18, 14, 12], [12, 18, 24], [8, 22, 32], [12, 26, 24], [18, 30, 12]].map(([x, y, w]) => (
+      <rect key={`${x},${y}`} x={x} y={y} width={w} height={4} fill="#0f1612" stroke="#3a6a4c" />
+    ))}
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="0 0;3 0;0 0;-3 0;0 0" dur="6s" repeatCount="indefinite" />
+      <rect x="20" y="20" width="8" height="8" fill="#9fe08a" />
+      <rect x="22" y="22" width="4" height="4" fill="#0a120c" />
+      <rect x="21" y="21" width="2" height="2" fill="#eaffd0" />
+    </g>
+  </svg>
+);
+
+const TransferCircle = () => (
+  <svg width={120} height={120} viewBox="-60 -60 120 120" shapeRendering="crispEdges" style={{ display: 'block', overflow: 'visible' }}>
+    <circle r="64" fill={SHADOW.glow} opacity=".07" />
+    <circle r="44" fill={SHADOW.glow} opacity=".11">
+      <animate attributeName="opacity" values=".07;.16;.07" dur="2.4s" repeatCount="indefinite" />
+    </circle>
+    <g>
+      <animateTransform attributeName="transform" type="rotate" from="0" to="90" dur="12s" repeatCount="indefinite" />
+      <path d="M0,-44 L44,0 L0,44 L-44,0 Z" fill="none" stroke={SHADOW.glow} strokeWidth="2" opacity=".5" />
+      <path d="M0,-30 L30,0 L0,30 L-30,0 Z" fill="none" stroke={SHADOW.glow} strokeWidth="2" opacity=".85" />
+    </g>
+    <path d="M0,-16 L16,0 L0,16 L-16,0 Z" fill={SHADOW.glow} opacity=".55" />
+    <rect x="-3" y="-3" width="6" height="6" fill="#e8fff0" />
+    <g fill={SHADOW.glow} opacity=".7">
+      <rect x="-1" y="-52" width="2" height="6" /><rect x="-1" y="46" width="2" height="6" />
+      <rect x="46" y="-1" width="6" height="2" /><rect x="-52" y="-1" width="6" height="2" />
+    </g>
+    {[{ x: -10, d: '0s' }, { x: 9, d: '1.4s' }].map((m) => (
+      <rect key={m.x} x={m.x} y="10" width="2" height="2" fill="#e8fff0">
+        <animate attributeName="y" values="10;-40" dur="2.8s" begin={m.d} repeatCount="indefinite" />
+        <animate attributeName="opacity" values="0;1;0" dur="2.8s" begin={m.d} repeatCount="indefinite" />
+      </rect>
+    ))}
+  </svg>
+);
+
+const GardenDoorTile = ({ open }: { open: boolean }) => (
+  <svg width={STEP} height={STEP} viewBox="0 0 48 48" shapeRendering="crispEdges" style={{ display: 'block' }}>
+    <rect x="4" y="0" width="40" height="48" fill="#1f2b27" stroke="#3e5249" />
+    <rect x="12" y="0" width="24" height="48" fill="#031208" />
+    {open ? (
+      <>
+        <rect x="10" y="0" width="28" height="48" fill={SHADOW.door} opacity=".14" />
+        <rect x="16" y="0" width="16" height="48" fill={SHADOW.door} opacity=".38" />
+        <rect x="20" y="0" width="8" height="48" fill="#a8ffc8" />
+        <rect x="23" y="0" width="2" height="48" fill="#fff" opacity=".9" />
+      </>
+    ) : (
+      <rect x="22" y="0" width="4" height="48" fill={SHADOW.doorDormant} opacity=".6" />
+    )}
+  </svg>
+);
+
+type WallRun = { x: number; y: number; w: number };
+
 const ShadowRealm = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
 
   // ----- existing user row / flags wiring (kept) -----
   const [currentLevel, setCurrentLevel] = useState(1);
-  const [stepsRemaining, setStepsRemaining] = useState(0);
   const currentLevelRef = useRef(1);
-  const stepsRef = useRef(0);
+  const [entryOk] = useState(hasValidEntry);
+  const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
+  const registrationRef = useRef<number | null>(null);
+  const [auraColor, setAuraColor] = useState<string | null>(null);
+  const [walking, setWalking] = useState(false);
+  const walkingRef = useRef(false);
+  const displayRef = useRef({ x: 0, y: 0 });
+  const worldRef = useRef<HTMLDivElement>(null);
+  const fogRef = useRef<HTMLDivElement>(null);
+  const beaconRef = useRef<HTMLDivElement>(null);
+  const edgeGlowRef = useRef<HTMLDivElement>(null);
+  const [wallRuns, setWallRuns] = useState<WallRun[]>([]);
+  const [wallShadows, setWallShadows] = useState<PlacedCell[]>([]);
+  const [mapRect, setMapRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
   // ----- realm state -----
   const [atmoIndex, setAtmoIndex] = useState(0);
@@ -113,7 +188,6 @@ const ShadowRealm = () => {
 
   // ----- published level data (graceful fallback when nothing published) -----
   const [hasLevelData, setHasLevelData] = useState(false);
-  const [walls, setWalls] = useState<PlacedCell[]>([]);
   const [ghostZones, setGhostZones] = useState<PlacedCell[]>([]);
   const [eyes, setEyes] = useState<PlacedCell[]>([]);
   const [npcs, setNpcs] = useState<PlacedCell[]>([]);
@@ -132,9 +206,14 @@ const ShadowRealm = () => {
     gateTimerRef.current = window.setTimeout(() => setGateMsg(null), 3000);
   }, []);
 
+  // Entry guard: only a recent golden-door exit from the maze may open the realm.
+  useEffect(() => {
+    if (!entryOk) navigate('/village', { replace: true });
+  }, [entryOk, navigate]);
+
   // Load the published shadow realm layout for the player's current level.
   useEffect(() => {
-    if (authLoading || !user) return;
+    if (!entryOk || authLoading || !user) return;
     let cancelled = false;
     (async () => {
       const level = currentLevelRef.current;
@@ -146,7 +225,7 @@ const ShadowRealm = () => {
         .maybeSingle();
       if (cancelled || !data) return;
 
-      const d = (data as { data?: { extraCells?: RealmCell[]; start?: { col: number; row: number } | null } })?.data;
+      const d = (data as { data?: { extraCells?: RealmCell[]; start?: { col: number; row: number } | null; gridSize?: number } })?.data;
       const cells = Array.isArray(d?.extraCells) ? d!.extraCells! : [];
       if (cells.length === 0) return;
 
@@ -184,8 +263,32 @@ const ShadowRealm = () => {
         }
       });
 
+      // Merge consecutive wall cells per row into one background div; add a drop shadow
+      // under walls whose lower neighbour is open.
+      const wallCells = new Set(cells.filter((c) => c?.type === 'WALL').map((c) => `${c.col},${c.row}`));
+      const maxCol = cells.reduce((m, c) => Math.max(m, c.col), 0);
+      const maxRow = cells.reduce((m, c) => Math.max(m, c.row), 0);
+      const gridN = Math.max(Number(d?.gridSize) || 0, maxCol + 1, maxRow + 1);
+      const runs: WallRun[] = [];
+      const shadows: PlacedCell[] = [];
+      for (let r = 0; r < gridN; r++) {
+        let c = 0;
+        while (c < gridN) {
+          if (!wallCells.has(`${c},${r}`)) { c++; continue; }
+          const first = c;
+          while (c < gridN && wallCells.has(`${c},${r}`)) {
+            if (!wallCells.has(`${c},${r + 1}`)) shadows.push(toPx({ col: c, row: r }));
+            c++;
+          }
+          const p = toPx({ col: first, row: r });
+          runs.push({ x: p.x, y: p.y, w: (c - first) * STEP });
+        }
+      }
+
       if (cancelled) return;
-      setWalls(nextWalls);
+      setWallRuns(runs);
+      setWallShadows(shadows);
+      setMapRect({ x: -origin.col * STEP, y: -origin.row * STEP, w: gridN * STEP, h: gridN * STEP });
       setGhostZones(nextGhosts);
       setEyes(nextEyes);
       setNpcs(nextNpcs);
@@ -231,7 +334,7 @@ const ShadowRealm = () => {
 
 
   useEffect(() => {
-    if (authLoading) return;
+    if (!entryOk || authLoading) return;
     if (!user) {
       navigate('/login');
       return;
@@ -244,8 +347,9 @@ const ShadowRealm = () => {
       if (cancelled) return;
       setCurrentLevel(row.level);
       currentLevelRef.current = row.level;
-      setStepsRemaining(row.steps_remaining);
-      stepsRef.current = row.steps_remaining;
+      setRegistrationNumber(row.registration_number);
+      registrationRef.current = row.registration_number;
+      setAuraColor(row.aura_color ?? null);
       setFlag(user.id, 'shadow_visited', 'true');
 
       const { data } = await supabase
@@ -275,6 +379,8 @@ const ShadowRealm = () => {
   const persistTransfer = useCallback(async () => {
     if (!user) return false;
     const frags = runFragsRef.current;
+    // Level-up guard: with nothing to bank, nothing is written and no level is gained.
+    if (frags.length === 0) return true;
     try {
       const { error: updErr } = await supabase
         .from('fragments')
@@ -303,6 +409,7 @@ const ShadowRealm = () => {
       });
       endRun();
       sessionStorage.removeItem('visited_shadow_this_run');
+      sessionStorage.removeItem(SHADOW_ENTRY_KEY);
       return true;
     } catch (e) {
       console.error('[ShadowRealm] transfer failed', e);
@@ -317,6 +424,10 @@ const ShadowRealm = () => {
     setSaving(false);
     if (!ok) {
       setError(true);
+      return;
+    }
+    if (runFragsRef.current.length === 0) {
+      window.setTimeout(() => navigate('/village'), 2500);
       return;
     }
     setRunCount(0);
@@ -403,11 +514,6 @@ const ShadowRealm = () => {
       posRef.current = next;
       setPos(next);
 
-      if (stepsRef.current > 0) {
-        stepsRef.current -= 1;
-        setStepsRemaining(stepsRef.current);
-      }
-
       const t = transferOffsetRef.current;
       const dist = Math.hypot(next.x - t.x, next.y - t.y);
       if (dist <= STEP) startTransfer();
@@ -416,8 +522,7 @@ const ShadowRealm = () => {
       // derived from the real current month.
       const door = roomDoorsRef.current.find((d) => d.x === next.x && d.y === next.y);
       if (door) {
-        const isTwentyThird = new Date().getDate() === 23;
-        if (isTwentyThird) {
+        if (isGardenOpen(registrationRef.current)) {
           navigate(`/room/${currentLevelRef.current}/${gardenRoomKey()}`);
         } else {
           showGateMsg('This does not open yet.');
@@ -439,346 +544,180 @@ const ShadowRealm = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [move]);
 
-  const stepsColor =
-    stepsRemaining <= 10 ? 'rgba(200,80,80,0.9)' : stepsRemaining <= 30 ? '#c8963a' : 'rgba(160,140,200,0.6)';
+  const gardenOpen = isGardenOpen(registrationNumber);
+  const gardenOpenRef = useRef(gardenOpen);
+  gardenOpenRef.current = gardenOpen;
+
+  // One rAF loop eases the camera, then writes world transform, lantern centre,
+  // and the garden beacon / edge glow through refs (no per-frame React state).
+  useEffect(() => {
+    let raf = 0;
+    const tick = () => {
+      const t = posRef.current;
+      const d = displayRef.current;
+      const dx = t.x - d.x;
+      const dy = t.y - d.y;
+      const moving = Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5;
+      displayRef.current = moving ? { x: d.x + dx * 0.18, y: d.y + dy * 0.18 } : { x: t.x, y: t.y };
+      if (moving !== walkingRef.current) { walkingRef.current = moving; setWalking(moving); }
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      const cam = displayRef.current;
+      if (worldRef.current) worldRef.current.style.transform = `translate(${-cam.x}px, ${-cam.y}px)`;
+      if (fogRef.current) {
+        fogRef.current.style.setProperty('--lx', `${cx}px`);
+        fogRef.current.style.setProperty('--ly', `${cy}px`);
+      }
+      const door = roomDoorsRef.current[0];
+      const beacon = beaconRef.current;
+      const edge = edgeGlowRef.current;
+      if (door && gardenOpenRef.current) {
+        const sx = cx + door.x - cam.x;
+        const sy = cy + door.y - cam.y;
+        const W = window.innerWidth, H = window.innerHeight;
+        if (beacon) { beacon.style.display = 'block'; beacon.style.transform = `translate(${sx}px, ${sy}px)`; }
+        const off = sx < 0 || sx > W || sy < 0 || sy > H;
+        if (edge) {
+          edge.style.display = off ? 'block' : 'none';
+          if (off) edge.style.transform = `translate(${Math.min(W, Math.max(0, sx))}px, ${Math.min(H, Math.max(0, sy))}px)`;
+        }
+      } else {
+        if (beacon) beacon.style.display = 'none';
+        if (edge) edge.style.display = 'none';
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const ghostDelays = useMemo(() => ghostZones.map(() => `${(Math.random() * 1.3).toFixed(2)}s`), [ghostZones]);
+  const palette = registrationNumber === 1 ? 'red' as const : paletteFromColor(auraColor, registrationNumber);
+  const floorUri = useMemo(() => patternUri('floor', 'shadow', SHADOW.seam), []);
+  const wallUri = useMemo(() => patternUri('wall', 'shadow', SHADOW.seam), []);
+  const cellAt = (p: { x: number; y: number }, w = STEP, h = STEP): CSSProperties => ({
+    position: 'absolute', left: '50%', top: '50%', width: w, height: h,
+    marginLeft: -w / 2 + p.x, marginTop: -h / 2 + p.y, pointerEvents: 'none',
+  });
+
+  if (!entryOk) return null;
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: '#04040a',
-        backgroundImage:
-          'linear-gradient(rgba(180,60,60,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(180,60,60,0.08) 1px, transparent 1px)',
-        backgroundSize: '40px 40px',
-        overflow: 'hidden',
-      }}
-    >
+    <div style={{ position: 'fixed', inset: 0, background: '#0a0f0d', overflow: 'hidden' }}>
+      {/* World container — eased camera written through a ref */}
+      <div ref={worldRef} style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+        {mapRect && (
+          <div style={{
+            position: 'absolute', left: '50%', top: '50%',
+            marginLeft: mapRect.x - STEP / 2, marginTop: mapRect.y - STEP / 2,
+            width: mapRect.w, height: mapRect.h,
+            backgroundImage: floorUri, backgroundSize: `${STEP}px ${STEP}px`, imageRendering: 'pixelated', pointerEvents: 'none',
+          }} />
+        )}
+        {!hasLevelData && <div style={{ ...cellAt({ x: 0, y: 0 }, 31 * STEP, 31 * STEP), backgroundImage: floorUri, backgroundSize: `${STEP}px ${STEP}px` }} />}
+
+        {wallShadows.map((w, i) => (
+          <div key={`ws${i}`} style={{ ...cellAt({ x: w.x, y: w.y + STEP / 2 + 5 }, STEP, 10), background: 'rgba(0,0,0,.4)' }} />
+        ))}
+        {wallRuns.map((r, i) => (
+          <div key={`w${i}`} style={{
+            position: 'absolute', left: '50%', top: '50%', width: r.w, height: STEP,
+            marginLeft: -STEP / 2 + r.x, marginTop: -STEP / 2 + r.y,
+            backgroundImage: wallUri, backgroundSize: `${STEP}px ${STEP}px`, imageRendering: 'pixelated', pointerEvents: 'none',
+          }} />
+        ))}
+
+        {ghostZones.map((g, i) => (
+          <div key={`g${i}`} style={{
+            ...cellAt(g),
+            background: 'repeating-linear-gradient(0deg, rgba(184,172,220,.22) 0 1px, transparent 1px 4px), rgba(140,127,191,.10)',
+            animation: 'shadowGhostFlicker 1.3s steps(4) infinite',
+            animationDelay: ghostDelays[i],
+          }} />
+        ))}
+
+        {eyes.map((e, i) => <div key={`e${i}`} style={cellAt(e)}><ShadowEye /></div>)}
+
+        {npcs.map((n, i) => <div key={`n${i}`} style={{ ...cellAt(n, 8, 8), background: 'rgba(200,150,58,0.8)' }} />)}
+        {drops.map((d, i) => <div key={`d${i}`} style={{ ...cellAt(d, 6, 6), background: SHADOW.glow, opacity: 0.7 }} />)}
+
+        {roomDoors.map((d, i) => <div key={`rd${i}`} style={cellAt(d)}><GardenDoorTile open={gardenOpen} /></div>)}
+
+        <div style={cellAt(transferOffset, 120, 120)}><TransferCircle /></div>
+      </div>
+
+      {/* Player — fixed at screen centre; the world moves instead */}
+      <div style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 30, pointerEvents: 'none' }}>
+        <PlayerAvatar palette={palette} walking={walking} size={SHADOW_AVATAR_SIZE} />
+      </div>
+
+      {/* Lantern fog: above world, below beacon/HUD/overlays */}
+      <div ref={fogRef} aria-hidden="true" style={{
+        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 40, background: SHADOW_FOG_BG,
+        '--lx': '50vw', '--ly': '50vh', '--r1': `${SHADOW_R1}px`, '--r2': `${SHADOW_R2}px`, '--fog': SHADOW_FOG_OPACITY,
+      } as CSSProperties} />
+
+      {/* Garden door beacon — above the fog, positioned per frame through refs */}
+      <div ref={beaconRef} aria-hidden="true" style={{ position: 'fixed', left: 0, top: 0, zIndex: 45, pointerEvents: 'none', display: 'none', willChange: 'transform' }}>
+        <div style={{ position: 'absolute', left: -3 * STEP, top: -3 * STEP, width: 6 * STEP, height: 6 * STEP, borderRadius: '50%', background: `radial-gradient(circle, rgba(92,255,154,.22) 0, rgba(92,255,154,0) 70%)` }} />
+        <div style={{ position: 'absolute', left: -STEP * 1.25, top: STEP / 2, width: STEP * 2.5, height: STEP * 2.5, clipPath: 'polygon(35% 0, 65% 0, 100% 100%, 0 100%)', background: `linear-gradient(rgba(92,255,154,1), rgba(92,255,154,0))`, opacity: 0.14, animation: 'shadowConePulse 2.2s ease-in-out infinite' }} />
+        {[-8, 2, 10].map((x, i) => (
+          <div key={x} style={{ position: 'absolute', left: x, top: 0, width: 2, height: 2, background: '#eafff2', animation: `shadowMote 2.6s linear ${i * 0.8}s infinite` }} />
+        ))}
+      </div>
+      <div ref={edgeGlowRef} aria-hidden="true" style={{ position: 'fixed', left: -60, top: -60, width: 120, height: 120, borderRadius: '50%', zIndex: 45, pointerEvents: 'none', display: 'none', background: 'radial-gradient(circle, rgba(92,255,154,.35) 0, rgba(92,255,154,0) 70%)' }} />
+
       {/* Atmosphere */}
-      <div
-        className="font-fell italic"
-        style={{
-          position: 'fixed',
-          top: 24,
-          left: 0,
-          right: 0,
-          textAlign: 'center',
-          fontSize: 13,
-          color: 'rgba(200,100,100,0.5)',
-          pointerEvents: 'none',
-        }}
-      >
+      <div className="font-fell italic" style={{ position: 'fixed', top: 24, left: 0, right: 0, textAlign: 'center', fontSize: 13, color: 'rgba(111,211,154,0.55)', pointerEvents: 'none', zIndex: 50 }}>
         {ATMOSPHERE[atmoIndex]}
       </div>
 
-      {/* Ghost dots — decorative fallback when no level is published */}
-      {!hasLevelData &&
-        GHOSTS.map((g, i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              left: g.left,
-              top: g.top,
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: 'rgba(91,79,212,0.2)',
-              transform: 'translate(-50%,-50%)',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
-
-      {/* World container — translates with the player so the realm scrolls */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          transform: `translate(${-pos.x}px, ${-pos.y}px)`,
-        }}
-      >
-      {/* Published layout — walls */}
-      {walls.map((w, i) => (
-        <div
-          key={`w${i}`}
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: STEP,
-            height: STEP,
-            marginLeft: -STEP / 2 + w.x,
-            marginTop: -STEP / 2 + w.y,
-            pointerEvents: 'none',
-          }}
-         >
-           <ShadowWallTile />
-         </div>
-      ))}
-
-      {/* Published layout — ghost zones */}
-      {ghostZones.map((g, i) => (
-        <div
-          key={`g${i}`}
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: STEP,
-            height: STEP,
-            marginLeft: -STEP / 2 + g.x,
-            marginTop: -STEP / 2 + g.y,
-            background: 'rgba(91,79,212,0.10)',
-            border: '1px solid rgba(91,79,212,0.20)',
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
-
-      {/* Published layout — eyes */}
-      {eyes.map((e, i) => (
-        <div
-          key={`e${i}`}
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: 10,
-            height: 10,
-            marginLeft: -5 + e.x,
-            marginTop: -5 + e.y,
-            borderRadius: '50%',
-            border: '1px solid rgba(200,100,100,0.6)',
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
-
-      {/* Published layout — NPCs */}
-      {npcs.map((n, i) => (
-        <div
-          key={`n${i}`}
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: 8,
-            height: 8,
-            marginLeft: -4 + n.x,
-            marginTop: -4 + n.y,
-            background: 'rgba(200,150,58,0.8)',
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
-
-      {/* Published layout — drops */}
-      {drops.map((d, i) => (
-        <div
-          key={`d${i}`}
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: 6,
-            height: 6,
-            marginLeft: -3 + d.x,
-            marginTop: -3 + d.y,
-            background: 'rgba(26,158,122,0.7)',
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
-
-      {/* Published layout — room doors */}
-      {roomDoors.map((d, i) => (
-        <div
-          key={`rd${i}`}
-          style={{
-            position: 'absolute',
-            left: '50%',
-            top: '50%',
-            width: STEP,
-            height: STEP,
-            marginLeft: -STEP / 2 + d.x,
-            marginTop: -STEP / 2 + d.y,
-            border: '1px solid rgba(169,140,255,0.6)',
-            background: 'rgba(169,140,255,0.08)',
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
-
-      {/* Transfer point */}
-      <div
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          width: TRANSFER_SIZE,
-          height: TRANSFER_SIZE,
-          marginLeft: -TRANSFER_SIZE / 2 + transferOffset.x,
-          marginTop: -TRANSFER_SIZE / 2 + transferOffset.y,
-          border: '1px solid rgba(200,80,80,0.8)',
-          background: 'rgba(200,80,80,0.06)',
-          animation: 'shadowTransferPulse 2s ease-in-out infinite',
-        }}
-      />
-      </div>
-
-      {/* Gate message */}
       {gateMsg && (
-        <div
-          className="font-fell italic"
-          style={{
-            position: 'fixed',
-            left: 0,
-            right: 0,
-            top: '38%',
-            textAlign: 'center',
-            fontSize: 16,
-            color: 'rgba(200,100,100,0.75)',
-            pointerEvents: 'none',
-            animation: 'shadowFadeIn 400ms ease-out',
-          }}
-        >
+        <div className="font-fell italic" style={{ position: 'fixed', left: 0, right: 0, top: '38%', textAlign: 'center', fontSize: 16, color: 'rgba(111,211,154,0.8)', pointerEvents: 'none', animation: 'shadowFadeIn 400ms ease-out', zIndex: 50 }}>
           {gateMsg}
         </div>
       )}
 
-      {/* Player — fixed at screen center; the world moves instead */}
-      <div
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          width: 8,
-          height: 8,
-          marginLeft: -4,
-          marginTop: -4,
-          borderRadius: '50%',
-          background: '#5b4fd4',
-          boxShadow: '0 0 12px rgba(91,79,212,0.8)',
-          animation: 'shadowPlayerPulse 2s ease-in-out infinite',
-        }}
-      />
-
       <Thumbstick onMove={(dc, dr) => move(dc, dr)} disabled={transferring} />
 
       {/* HUD */}
-      <div
-        className="font-mono"
-        style={{
-          position: 'fixed',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 44,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 20px',
-          borderTop: '1px solid rgba(180,60,60,0.15)',
-          background: 'rgba(4,4,10,0.9)',
-          fontSize: 11,
-          letterSpacing: '0.18em',
-        }}
-      >
-        <div style={{ color: stepsColor }}>STEPS&nbsp;&nbsp;{stepsRemaining}</div>
-        <div style={{ color: 'rgba(200,150,58,0.8)' }}>FRAGMENTS&nbsp;&nbsp;{runCount}</div>
-        <div style={{ color: '#5b4fd4' }}>LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}</div>
+      <div className="font-mono" style={{
+        position: 'fixed', left: 0, right: 0, bottom: 0, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 20px', borderTop: '1px solid rgba(111,211,154,0.15)', background: 'rgba(6,10,8,0.92)', fontSize: 11, letterSpacing: '0.18em', zIndex: 60,
+      }}>
+        <div style={{ color: SHADOW.glow }}>FRAGMENTS&nbsp;&nbsp;{runCount}</div>
+        <div style={{ color: 'rgba(111,211,154,0.6)' }}>LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}</div>
       </div>
 
-      {/* Transfer overlay */}
       {transferring && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: '#04040a',
-            opacity: overlayIn ? 1 : 0,
-            transition: 'opacity 600ms ease-in',
-            zIndex: 100,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
+        <div style={{ position: 'fixed', inset: 0, background: '#060a08', opacity: overlayIn ? 1 : 0, transition: 'opacity 600ms ease-in', zIndex: 100, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <svg width={120} height={72} viewBox="-60 -36 120 72">
-            <ellipse cx={0} cy={0} rx={50} ry={eyeRy} stroke="rgba(200,100,100,0.6)" strokeWidth={1} fill="none" />
-            {eyeRy > 8 && <circle cx={0} cy={0} r={8} fill="#5b4fd4" />}
+            <ellipse cx={0} cy={0} rx={50} ry={eyeRy} stroke={SHADOW.glow} strokeOpacity={0.7} strokeWidth={1} fill="none" />
+            {eyeRy > 8 && <circle cx={0} cy={0} r={8} fill={SHADOW.eye} />}
           </svg>
-
-          <p
-            className="font-fell italic"
-            style={{
-              marginTop: 32,
-              fontSize: 17,
-              color: 'rgba(200,100,100,0.8)',
-              textAlign: 'center',
-              maxWidth: '85vw',
-              minHeight: 24,
-            }}
-          >
+          <p className="font-fell italic" style={{ marginTop: 32, fontSize: 17, color: 'rgba(111,211,154,0.85)', textAlign: 'center', maxWidth: '85vw', minHeight: 24 }}>
             {typed}
           </p>
-
           {nothingMsg && !doneMsg && !error && (
-            <p className="font-fell italic" style={{ marginTop: 20, fontSize: 16, color: 'rgba(200,100,100,0.6)' }}>
-              Nothing to transfer.
-            </p>
+            <p className="font-fell italic" style={{ marginTop: 20, fontSize: 16, color: 'rgba(111,211,154,0.65)' }}>Nothing to transfer.</p>
           )}
-
           {currentPrime !== null && (
-            <div
-              className="font-cinzel"
-              style={{
-                marginTop: 28,
-                fontSize: 48,
-                color: '#c8963a',
-                opacity: primeVisible ? 1 : 0,
-                transition: 'opacity 300ms ease-out',
-              }}
-            >
+            <div className="font-cinzel" style={{ marginTop: 28, fontSize: 48, color: '#c8963a', opacity: primeVisible ? 1 : 0, transition: 'opacity 300ms ease-out' }}>
               {currentPrime}
             </div>
           )}
-
           {doneMsg && (
-            <p
-              className="font-fell italic"
-              style={{
-                marginTop: 28,
-                fontSize: 16,
-                color: 'rgba(200,100,100,0.6)',
-                animation: 'shadowFadeIn 500ms ease-out',
-              }}
-            >
+            <p className="font-fell italic" style={{ marginTop: 28, fontSize: 16, color: 'rgba(111,211,154,0.65)', animation: 'shadowFadeIn 500ms ease-out' }}>
               The record is permanent now.
             </p>
           )}
-
           {error && (
             <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-              <p className="font-fell italic" style={{ fontSize: 14, color: 'rgba(200,80,80,0.7)' }}>
-                The transfer failed. Try again.
-              </p>
-              <button
-                className="font-cinzel"
-                disabled={saving}
-                onClick={() => void finish()}
-                style={{
-                  fontSize: 11,
-                  letterSpacing: '0.28em',
-                  background: 'rgba(200,80,80,0.1)',
-                  border: '1px solid rgba(200,80,80,0.6)',
-                  color: 'rgba(200,140,140,0.9)',
-                  padding: '10px 24px',
-                  cursor: saving ? 'default' : 'pointer',
-                }}
-              >
+              <p className="font-fell italic" style={{ fontSize: 14, color: 'rgba(111,211,154,0.75)' }}>The transfer failed. Try again.</p>
+              <button className="font-cinzel" disabled={saving} onClick={() => void finish()} style={{
+                fontSize: 11, letterSpacing: '0.28em', background: 'rgba(111,211,154,0.1)', border: `1px solid ${SHADOW.glow}`,
+                color: '#c8f5da', padding: '10px 24px', cursor: saving ? 'default' : 'pointer',
+              }}>
                 RETRY
               </button>
             </div>
@@ -787,18 +726,10 @@ const ShadowRealm = () => {
       )}
 
       <style>{`
-        @keyframes shadowTransferPulse {
-          0%, 100% { box-shadow: 0 0 8px rgba(200,80,80,0.4); }
-          50% { box-shadow: 0 0 20px rgba(200,80,80,0.9); }
-        }
-        @keyframes shadowPlayerPulse {
-          0%, 100% { box-shadow: 0 0 10px rgba(91,79,212,0.6); }
-          50% { box-shadow: 0 0 18px rgba(91,79,212,0.95); }
-        }
-        @keyframes shadowFadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
+        @keyframes shadowGhostFlicker { 0%, 100% { opacity: .06; } 50% { opacity: .16; } }
+        @keyframes shadowConePulse { 0%, 100% { opacity: .10; } 50% { opacity: .24; } }
+        @keyframes shadowMote { 0% { transform: translateY(0); opacity: 0; } 30% { opacity: 1; } 100% { transform: translateY(-60px); opacity: 0; } }
+        @keyframes shadowFadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </div>
   );

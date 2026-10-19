@@ -1458,6 +1458,7 @@ const Maze = () => {
                 if (user) {
                   await supabase.from('users').update({ maze_completed_level: currentLevelRef.current }).eq('id', user.id);
                 }
+                sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ level: currentLevelRef.current, ts: Date.now() }));
                 navigate('/shadow');
               }}
               style={{

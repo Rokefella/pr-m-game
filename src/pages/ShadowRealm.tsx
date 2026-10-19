@@ -417,91 +417,88 @@ const ShadowRealm = () => {
     }
   }, [user]);
 
+  // Bank first: snapshot the unbanked fragments and persist before any animation,
+  // so leaving mid-sequence can no longer lose the transfer. A retry that finds
+  // nothing unbanked reuses the earlier snapshot (the writes are idempotent).
+  const bankFirst = useCallback(async (): Promise<boolean> => {
+    if (!user) return false;
+    const { data, error: fetchErr } = await supabase
+      .from('fragments')
+      .select('id, prime_number, level, image_data')
+      .eq('user_id', user.id)
+      .eq('banked', false)
+      .order('prime_number', { ascending: true });
+    if (fetchErr) return false;
+    const frags = (data ?? []) as RunFragment[];
+    if (frags.length > 0 || runFragsRef.current.length === 0) runFragsRef.current = frags;
+    return persistTransfer();
+  }, [user, persistTransfer]);
+
+  const playPrimes = useCallback(async (frags: RunFragment[]) => {
+    const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+    for (const f of frags) {
+      setCurrentPrime(f.prime_number);
+      setPrimeVisible(false);
+      await wait(20);
+      setPrimeVisible(true);
+      await wait(900); // 300 fade in + 600 hold
+      setPrimeVisible(false);
+      await wait(300);
+    }
+    setCurrentPrime(null);
+  }, []);
+
+  // Display-only sequence after the save succeeded.
+  const playAfterBank = useCallback(() => {
+    const frags = runFragsRef.current;
+    const line = 'Your fragments pass into the permanent record.';
+    let i = 0;
+    const tick = () => {
+      i += 1;
+      setTyped(line.slice(0, i));
+      if (i < line.length) { window.setTimeout(tick, 35); return; }
+      window.setTimeout(async () => {
+        if (frags.length === 0) {
+          setNothingMsg(true);
+          window.setTimeout(() => navigate('/village'), 2500);
+          return;
+        }
+        setRunCount(0);
+        await playPrimes(frags);
+        setDoneMsg(true);
+        window.setTimeout(() => navigate('/village'), 2500);
+      }, 400);
+    };
+    window.setTimeout(tick, 800);
+  }, [navigate, playPrimes]);
+
   const finish = useCallback(async () => {
     setSaving(true);
     setError(false);
-    const ok = await persistTransfer();
+    const ok = await bankFirst();
     setSaving(false);
-    if (!ok) {
-      setError(true);
-      return;
-    }
-    if (runFragsRef.current.length === 0) {
-      window.setTimeout(() => navigate('/village'), 2500);
-      return;
-    }
-    setRunCount(0);
-    setDoneMsg(true);
-    window.setTimeout(() => navigate('/village'), 2500);
-  }, [persistTransfer, navigate]);
+    if (!ok) { setError(true); return; }
+    playAfterBank();
+  }, [bankFirst, playAfterBank]);
 
-  const playPrimes = useCallback(
-    async (frags: RunFragment[]) => {
-      const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
-      for (const f of frags) {
-        setCurrentPrime(f.prime_number);
-        setPrimeVisible(false);
-        await wait(20);
-        setPrimeVisible(true);
-        await wait(900); // 300 fade in + 600 hold
-        setPrimeVisible(false);
-        await wait(300);
-      }
-      setCurrentPrime(null);
-      await finish();
-    },
-    [finish],
-  );
-
+  const transferStartedRef = useRef(false);
   const startTransfer = useCallback(() => {
-    if (transferringRef.current || !user) return;
+    if (transferStartedRef.current || transferringRef.current || !user) return;
+    transferStartedRef.current = true;
     transferringRef.current = true;
     setTransferring(true);
     requestAnimationFrame(() => setOverlayIn(true));
 
-    // eye opens
     const start = performance.now();
-    let raf = 0;
     const animateEye = (t: number) => {
       const p = Math.min(1, (t - start) / 800);
       const eased = 1 - Math.pow(1 - p, 3);
       setEyeRy(2 + (30 - 2) * eased);
-      if (p < 1) raf = requestAnimationFrame(animateEye);
+      if (p < 1) requestAnimationFrame(animateEye);
     };
-    raf = requestAnimationFrame(animateEye);
-
-    const line = 'Your fragments pass into the permanent record.';
-    window.setTimeout(() => {
-      let i = 0;
-      const tick = () => {
-        i += 1;
-        setTyped(line.slice(0, i));
-        if (i < line.length) {
-          window.setTimeout(tick, 35);
-        } else {
-          window.setTimeout(async () => {
-            const { data } = await supabase
-              .from('fragments')
-              .select('id, prime_number, level, image_data')
-              .eq('user_id', user.id)
-              .eq('banked', false)
-              .order('prime_number', { ascending: true });
-            const frags = (data ?? []) as RunFragment[];
-            runFragsRef.current = frags;
-            if (frags.length === 0) {
-              setNothingMsg(true);
-              await finish();
-              return;
-            }
-            void playPrimes(frags);
-          }, 400);
-        }
-      };
-      tick();
-    }, 800);
-
-    return () => cancelAnimationFrame(raf);
-  }, [user, finish, playPrimes]);
+    requestAnimationFrame(animateEye);
+    void finish();
+  }, [user, finish]);
 
   // ---------------- movement ----------------
 

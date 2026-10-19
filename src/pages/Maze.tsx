@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
@@ -1321,18 +1322,18 @@ const Maze = () => {
       <div
         style={{
           position: 'fixed',
-          left: playerScreenX - 4,
-          top: playerScreenY - 4,
-          width: 8,
-          height: 8,
-          borderRadius: '50%',
-          background: auraColor,
-          boxShadow: `0 0 8px ${auraColor}80`,
-          animation: 'mazeDotPulse 1.5s ease-in-out infinite',
+          left: playerScreenX - 15,
+          top: playerScreenY - 15,
           zIndex: 60,
           pointerEvents: 'none',
         }}
-      />
+      >
+        <PlayerAvatar
+          palette={paletteFromColor(auraColor, registrationNumber)}
+          walking={Math.abs(posRef.current.col - displayPos.col) >= 0.01 || Math.abs(posRef.current.row - displayPos.row) >= 0.01}
+          size={30}
+        />
+      </div>
 
       <div
         style={{

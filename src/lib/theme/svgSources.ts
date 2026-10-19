@@ -11,7 +11,7 @@ export const WALL_STYLES: Record<StyleKey, string> = {
   ulam: `<rect width="48" height="48" fill="#4e5784"/><rect x="4" y="4" width="40" height="40" fill="#454d7c" stroke="#2c3260"/><path d="M0 1H48" stroke="#9aa4d8" opacity=".7" fill="none"/><path d="M4 22H44" stroke="#2c3260" fill="none"/><path d="M4 21v6M6 21v6M10 21v6M14 21v6M22 21v6M26 21v6M34 21v6M38 21v6M46 21v6" stroke="$G" stroke-width="2" fill="none"/>`,
 };
 
-export type FloorStyleKey = StyleKey | 'ground' | 'plaza' | 'deck';
+export type FloorStyleKey = StyleKey | 'ground' | 'plaza' | 'deck' | 'garden';
 export const FLOOR_STYLES: Record<FloorStyleKey, string> = {
   shadow: `<rect width="48" height="48" fill="#141c1a"/><path d="M0 1H48M1 0V48" stroke="#1f2b27" stroke-width="2" fill="none"/><path d="M0 30H14V18H30V30H48" stroke="#3f7a58" stroke-width="1.5" opacity=".28" fill="none"/><path d="M28 16h4v4h-4z" fill="#4f9a6e" opacity=".4"/><path d="M8 40L14 36L18 42" stroke="#26362f" stroke-width="1.5" fill="none"/>`,
   calm: `<rect width="48" height="48" fill="#1c1a46"/><path d="M0 .5H48M.5 0V48" stroke="#2a2860" stroke-width="1" opacity=".5" fill="none"/>`,

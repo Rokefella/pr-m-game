@@ -17,7 +17,7 @@ export function patternUri(kind: Kind, key: string, dimension: Dimension | strin
   let source = Object.prototype.hasOwnProperty.call(sources, key) ? sources[key] : '';
   if (vars) for (const [k, v] of Object.entries(vars)) source = source.split(`$${k}`).join(v);
   const glow = DIMENSION_GLOW[dimension as Dimension] ?? dimension;
-  const vb = patternViewBox(kind, key);
+  const vb = kind === 'flower' ? 12 : patternViewBox(kind, key);
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vb} ${vb}" shape-rendering="crispEdges">${source.replace(/\$G/g, glow).replace(/\$T/g, tint)}</svg>`;
   const uri = `url("data:image/svg+xml;utf8,${encodeURIComponent(svg)}")`;
   cache.set(cacheKey, uri);

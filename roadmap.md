@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Restyle Login and Signup in Instrument plates, with readable inputs, password toggles and existing auth destinations.
+- [ ] Verify phone layout, auth errors and signup confirmation/session navigation; real email delivery remains dependent on the game's external auth service.
+
 - [x] Replace numbered Village buildings with coloured door entrances, preserving gates and legacy fallback; add safe door-specific returns.
 - [x] Test four-direction door zones, refused gates, fallback precedence and safe return placement (26 tests); isolated browser checks pass for twelve approaches/returns, refusal latch/retry, legacy Village 2 doors and 375px preview.
 - [ ] Verify door entry and returns with a real player's account — the game's external sign-in session is unavailable; isolated checks do not establish live persistence.

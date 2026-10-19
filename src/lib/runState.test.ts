@@ -75,3 +75,19 @@ describe('maze run lifecycle', () => {
     expect(log).toHaveBeenCalledWith('[Maze] fragment forfeiture failed', error);
   });
 });
+import { markRunComplete } from './runState';
+describe('completed runs', () => {
+  it('markRunComplete flags the stored run and endRun clears it', () => {
+    localStorage.clear();
+    startRun('u1', 2);
+    markRunComplete('u1', 2);
+    expect(getActiveRun('u1', 2)?.completed).toBe(true);
+    endRun();
+    expect(getActiveRun('u1', 2)).toBeNull();
+  });
+  it('markRunComplete creates a completed record when none exists', () => {
+    localStorage.clear();
+    markRunComplete('u1', 1);
+    expect(getActiveRun('u1', 1)?.completed).toBe(true);
+  });
+});

@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Replace avatar aura rings with a pulsing pixel orb; preserve palette API and caller positioning.
+- [ ] Verify all four colours at 24/30/48/96 pixels, idle/walking, both backgrounds, 375px and reduced motion.
+
 - [x] Add reusable pixel plate, eye, decoding number and folder slots; restyle FragmentOverlay without gameplay changes.
 - [x] Test reveal timing/count rules (14 tests) and verify isolated pickup/save at 375×667 and 375×500, six-digit primes, reduced motion and unchanged save callback; build passes.
 - [ ] Verify live fragment folder query and pickup persistence — the game's separate auth session is unavailable; isolated fixtures are not live verification.

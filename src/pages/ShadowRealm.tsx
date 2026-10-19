@@ -64,6 +64,8 @@ const MONTH_NAMES = [
   'july', 'august', 'september', 'october', 'november', 'december',
 ];
 
+import { GARDEN_LEVEL } from '@/lib/garden/gardenConfig';
+
 const gardenRoomKey = (): string => {
   const month = new Date().getMonth();
   const season = month <= 1 || month === 11 ? 'winter' : month <= 4 ? 'spring' : month <= 7 ? 'summer' : 'autumn';
@@ -552,7 +554,7 @@ const ShadowRealm = () => {
       const door = roomDoorsRef.current.find((d) => d.x === next.x && d.y === next.y);
       if (door) {
         if (isGardenOpen(registrationRef.current)) {
-          navigate(`/room/${currentLevelRef.current}/${gardenRoomKey()}`);
+          navigate(`/room/${GARDEN_LEVEL}/${gardenRoomKey()}`);
         } else {
           showGateMsg('This does not open yet.');
         }

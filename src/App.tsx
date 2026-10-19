@@ -25,6 +25,7 @@ import AvatarPreview from "./pages/AvatarPreview.tsx";
 import Intro from "./pages/Intro.tsx";
 import DynamicRoom from "./pages/DynamicRoom.tsx";
 import TilePreview from "./pages/TilePreview.tsx";
+import GardenPreview from "./pages/GardenPreview.tsx";
 
 const queryClient = new QueryClient();
 
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/avatar-preview" element={<AvatarPreview />} />
             <Route path="/tiles" element={<TilePreview />} />
             <Route path="/room/:levelNumber/:locationKey" element={<DynamicRoom />} />
+            <Route path="/garden-preview" element={<GardenPreview />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

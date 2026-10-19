@@ -1,8 +1,11 @@
 import { supabase } from '@/lib/supabase';
+import { BETA_MODE } from '@/lib/config';
 
 export type SubscriptionStatus = 'trial' | 'active' | 'expired' | 'lifetime' | 'dev' | 'beta';
 
 export async function checkSubscriptionStatus(userId: string): Promise<SubscriptionStatus> {
+  if (BETA_MODE) return 'active';
+
   const { data, error } = await supabase
     .from('users')
     .select('subscription_status, trial_end')
@@ -28,7 +31,7 @@ export async function checkSubscriptionStatus(userId: string): Promise<Subscript
 }
 
 export function canAccessMaze(status: SubscriptionStatus): boolean {
-  return ['trial', 'active', 'lifetime', 'dev', 'beta'].includes(status);
+  return BETA_MODE || ['trial', 'active', 'lifetime', 'dev', 'beta'].includes(status);
 }
 
 export function getDaysRemainingInTrial(trialEnd: string): number {

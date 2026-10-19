@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
+import { BETA_MODE } from '@/lib/config';
 import { getAllFlags, getFlag } from '@/lib/questFlags';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
@@ -419,6 +420,7 @@ const Maze = () => {
   const SUBBED = ['active', 'lifetime', 'dev', 'beta'];
   useEffect(() => {
     const handler = () => {
+      if (BETA_MODE) return;
       const bernard06 = Number(getFlag('bernard_stage') ?? 0) >= 6;
       if (bernard06 && !SUBBED.includes(subStatusRef.current)) {
         setPaywallOpen(true);
@@ -634,10 +636,10 @@ const Maze = () => {
     (async () => {
       const row = await fetchOrCreateUser(user.id);
       if (cancelled) return;
-      subStatusRef.current = row.subscription_status ?? 'trial';
+      subStatusRef.current = BETA_MODE ? 'active' : row.subscription_status ?? 'trial';
       await getAllFlags(user.id);
       if (cancelled) return;
-      if (Number(getFlag('bernard_stage') ?? 0) >= 6 && !SUBBED.includes(subStatusRef.current)) {
+      if (!BETA_MODE && Number(getFlag('bernard_stage') ?? 0) >= 6 && !SUBBED.includes(subStatusRef.current)) {
         window.dispatchEvent(new Event('praem:open-paywall'));
       }
       setPosition({ level: row.level, dimension: 'purple' });
@@ -1711,7 +1713,7 @@ const Maze = () => {
 
       <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} context="maze" runProgress={{ collected: collected.size, required: config.fragmentsRequired }} />
 
-      {paywallOpen && (
+      {!BETA_MODE && paywallOpen && (
         <PaywallOverlay
           userId={user?.id ?? ''}
           onContinue={() => {

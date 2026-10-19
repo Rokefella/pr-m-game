@@ -721,7 +721,7 @@ const ShadowRealm = () => {
       {transferring && (() => {
         const folderCount = Math.min(20, (bankedBefore ?? 0) + shownCount);
         return (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(6,10,8,.96)', opacity: overlayIn ? 1 : 0, transition: 'opacity 600ms ease-in', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', overflowY: 'auto' }}>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(6,10,8,.96)', opacity: overlayIn ? 1 : 0, transition: 'opacity 600ms ease-in', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', overflowY: 'auto' }}>
             <PlateFrame tone="shadow" glow={SHADOW.glow} width="min(92vw, 340px)">
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, textAlign: 'center' }}>
                 {error ? (
@@ -743,7 +743,7 @@ const ShadowRealm = () => {
                     </div>
                     {bankedBefore !== null && (
                       <>
-                        <FolderSlots total={20} filled={Math.max(0, folderCount - (shownCount > 0 ? 1 : 0)) + (shownCount > 0 ? 1 : 0)} revealed={shownCount > 0} />
+                        <FolderSlots total={20} filled={shownCount > 0 ? folderCount - 1 : folderCount} revealed={shownCount > 0} />
                         <p className="font-mono" style={{ margin: 0, fontSize: 11, color: SHADOW.glow, letterSpacing: '0.12em' }}>Folder {folderCount} of 20</p>
                       </>
                     )}
@@ -753,7 +753,7 @@ const ShadowRealm = () => {
               </div>
             </PlateFrame>
             {nextLevel !== null && doneMsg && (
-              <div style={{ position: 'fixed', left: 0, right: 0, bottom: 'max(24px, env(safe-area-inset-bottom))', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, pointerEvents: 'none' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, pointerEvents: 'none' }}>
                 <div className="font-cinzel" style={{ fontSize: 28, color: '#f5c060', letterSpacing: '0.12em' }}>LEVEL {nextLevel}</div>
                 <GateScene kind="maze" open width="clamp(90px, 26vw, 120px)" />
               </div>

@@ -1,3 +1,5 @@
+import PlateFrame from '@/components/theme/PlateFrame';
+import PixelEye from '@/components/theme/PixelEye';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 // player ID sourced from localStorage
@@ -2687,20 +2689,9 @@ const Village = () => {
 
       {/* LEVEL UP OVERLAY */}
       {levelUpOverlay && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(4,4,10,0.96)',
-            zIndex: 200,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            animation: 'villageLevelUpFade 600ms ease-out',
-            padding: 24,
-          }}
-        >
+        <div className="fragment-backdrop" style={{ zIndex: 200, animation: 'villageLevelUpFade 600ms ease-out', overflowY: 'auto' }}>
+        <PlateFrame glow="#b79bff" width="min(92vw, 360px)">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <style>{`
             @keyframes villageLevelUpFade { from { opacity: 0 } to { opacity: 1 } }
             @keyframes villageLevelUpEye { from { opacity: 0 } to { opacity: 1 } }
@@ -2711,17 +2702,14 @@ const Village = () => {
             @keyframes villageLevelPulse { 0%,100% { opacity: 0.85 } 50% { opacity: 1 } }
           `}</style>
 
-          <svg width={120} height={80} style={{ overflow: 'visible', animation: 'villageLevelUpEye 600ms ease-out' }}>
-            <ellipse cx={60} cy={40} rx={40} ry={24} stroke="rgba(160,140,200,0.5)" strokeWidth={1} fill="none" />
-            <circle cx={60} cy={40} r={6} fill="#5b4fd4" />
-          </svg>
+          <PixelEye glow="#b79bff" animate size={128} />
 
           <div
             className="font-cinzel"
             style={{
-              fontSize: 48,
-              color: '#c8963a',
-              marginTop: 24,
+              fontSize: 'clamp(32px, 11vw, 44px)',
+              color: '#f5c060',
+              marginTop: 16,
               animation: 'villageLevelUpText 400ms ease-out 400ms both, villageLevelPulse 1.2s ease-in-out 800ms infinite',
               letterSpacing: '0.12em',
             }}
@@ -2746,7 +2734,7 @@ const Village = () => {
                 className="font-cinzel"
                 style={{
                   fontSize: 20,
-                  color: 'rgba(160,140,200,0.9)',
+                  color: '#f5c060',
                   marginTop: 8,
                   animation: 'villageLevelUpText 400ms ease-out 1000ms both',
                   letterSpacing: '0.08em',
@@ -2835,19 +2823,25 @@ const Village = () => {
               setLevelUpOverlay(null);
             }}
             style={{
-              fontSize: 16,
+              width: '100%',
+              minHeight: 44,
+              fontSize: 14,
               letterSpacing: '0.3em',
               background: '#c8963a',
-              color: '#04040a',
-              padding: '10px 28px',
+              color: '#1a1448',
+              padding: '8px 14px',
               border: 'none',
+              borderTop: '3px solid #f5c060',
+              borderBottom: '3px solid #8a6420',
               cursor: 'pointer',
               marginTop: 24,
               animation: 'villageLevelUpText 400ms ease-out 1600ms both',
             }}
           >
-            ENTER LEVEL {levelUpOverlay.newLevel}
+            CONTINUE
           </button>
+        </div>
+        </PlateFrame>
         </div>
       )}
       {/* WHISPER — must remain outside map div, fixed to screen */}

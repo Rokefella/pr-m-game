@@ -683,12 +683,10 @@ const Village = () => {
   const mapSizeRef = useRef({ w: mapW, h: mapH });
   mapSizeRef.current = { w: mapW, h: mapH };
   // Bernard/Merchant positions: dynamic village cells with safe fallbacks
-  const bernardPos = dynamicBuildings
-    ? (dynamicBuildings.bernardCenter ?? { x: mapW / 2, y: mapH / 2 })
-    : BERNARD_VILLAGE;
-  const merchantPos = dynamicBuildings
-    ? (dynamicBuildings.merchantCenter ?? { x: mapW / 2, y: mapH / 2 })
-    : MERCHANT;
+  // Dynamic villages only show characters the level data places; no centre fallback.
+  const bernardPos = dynamicBuildings ? dynamicBuildings.bernardCenter : BERNARD_VILLAGE;
+  const merchantPos = dynamicBuildings ? dynamicBuildings.merchantCenter : MERCHANT;
+  const eyePos = dynamicBuildings ? dynamicBuildings.eyeCenter : { x: CX, y: CY };
   const eyePupilRef = useRef({ x: 0, y: 0 });
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });
@@ -1403,9 +1401,33 @@ const Village = () => {
             dynSpawnDoneRef.current = true;
             const dynW = gridSize * CELL;
             const dynH = gridSize * CELL;
-            const sp = start
-              ? { x: start.col * CELL, y: start.row * CELL }
-              : { x: dynW / 2, y: dynH / 2 };
+            let sp = start ? { x: start.col * CELL, y: start.row * CELL } : { x: dynW / 2, y: dynH / 2 };
+            if (!start) {
+              // Nearest free cell to the centre: outside every obstacle and off any character.
+              const obstacles: Rect[] = [
+                ...clusters, ...typeA, ...typeB, ...typeC,
+                ...wallTiles, ...furnitureTiles, ...bookcaseTiles, ...lightTiles,
+              ];
+              const chars = [eyeCenter, bernardCenter, merchantCenter].filter(Boolean) as { x: number; y: number }[];
+              const free = (x: number, y: number) =>
+                x >= 0 && y >= 0 && x <= dynW && y <= dynH &&
+                !obstacles.some((o) => x >= o.x - 2 && x <= o.x + o.w + 2 && y >= o.y - 2 && y <= o.y + o.h + 2) &&
+                !chars.some((c) => Math.hypot(x - c.x, y - c.y) <= 40);
+              const c0 = Math.floor(gridSize / 2);
+              search: for (let ring = 0; ring <= gridSize; ring++) {
+                for (let dr = -ring; dr <= ring; dr++) {
+                  for (let dc = -ring; dc <= ring; dc++) {
+                    if (Math.max(Math.abs(dr), Math.abs(dc)) !== ring) continue;
+                    const x = (c0 + dc) * CELL + CELL / 2;
+                    const y = (c0 + dr) * CELL + CELL / 2;
+                    if (free(x, y)) { sp = { x, y }; break search; }
+                  }
+                }
+              }
+            }
+            // Don't auto-open an overlay if the spawn is already beside a character.
+            if (merchantCenter && Math.hypot(sp.x - merchantCenter.x, sp.y - merchantCenter.y) <= 40) merchantTriggerLockRef.current = true;
+            if (bernardCenter && Math.hypot(sp.x - bernardCenter.x, sp.y - bernardCenter.y) <= 40) bernardLockRef.current = true;
             playerRef.current = sp;
             playerTargetRef.current = sp;
             setPlayer(sp);
@@ -1693,10 +1715,8 @@ const Village = () => {
     }
 
     // Merchant proximity → open overlay (40px)
-    const merchX = dynamicBuildings ? (dynamicBuildings.merchantCenter ? dynamicBuildings.merchantCenter.x : mapSizeRef.current.w / 2) : MERCHANT.x;
-    const merchY = dynamicBuildings ? (dynamicBuildings.merchantCenter ? dynamicBuildings.merchantCenter.y : mapSizeRef.current.h / 2) : MERCHANT.y;
-    const dm = Math.hypot(fx - merchX, fy - merchY);
-    if (dm <= 40) {
+    const merchP = dynamicBuildings ? dynamicBuildings.merchantCenter : MERCHANT;
+    if (merchP && Math.hypot(fx - merchP.x, fy - merchP.y) <= 40) {
       if (!merchantTriggerLockRef.current) {
         merchantTriggerLockRef.current = true;
         setMerchantOpen(true);
@@ -1706,10 +1726,8 @@ const Village = () => {
     }
 
     // Bernard proximity → open dialogue (40px)
-    const bernX = dynamicBuildings ? (dynamicBuildings.bernardCenter ? dynamicBuildings.bernardCenter.x : mapSizeRef.current.w / 2) : BERNARD_VILLAGE.x;
-    const bernY = dynamicBuildings ? (dynamicBuildings.bernardCenter ? dynamicBuildings.bernardCenter.y : mapSizeRef.current.h / 2) : BERNARD_VILLAGE.y;
-    const db = Math.hypot(fx - bernX, fy - bernY);
-    if (db <= 40 && bernardReady) {
+    const bernP = dynamicBuildings ? dynamicBuildings.bernardCenter : BERNARD_VILLAGE;
+    if (bernP && Math.hypot(fx - bernP.x, fy - bernP.y) <= 40 && bernardReady) {
       if (!bernardLockRef.current) {
         bernardLockRef.current = true;
         openBernardDialog();
@@ -2098,15 +2116,15 @@ const Village = () => {
 
 
         {/* Watching eye in town square */}
-        <CharacterEye
-          cx={dynamicBuildings ? (dynamicBuildings.eyeCenter ? dynamicBuildings.eyeCenter.x : mapW / 2) : CX}
-          cy={dynamicBuildings ? (dynamicBuildings.eyeCenter ? dynamicBuildings.eyeCenter.y : mapH / 2) : CY}
+        {eyePos && <CharacterEye
+          cx={eyePos.x}
+          cy={eyePos.y}
 
           color="#5b4fd4"
           size="small"
           playerPosition={player}
           zIndex={1}
-        />
+        />}
 
         {/* One module SVG per existing building footprint. */}
         {visible?.clusters.map((c) => (
@@ -2162,9 +2180,10 @@ const Village = () => {
         ))}
 
         {/* Merchant character */}
-        <MerchantCharacter x={merchantPos.x} y={merchantPos.y} palette="green" />
+        {merchantPos && <MerchantCharacter x={merchantPos.x} y={merchantPos.y} palette="green" />}
 
         {/* Bernard marker */}
+        {bernardPos && (<>
         <img
           src={bernardMarkerUrl}
           width={24}
@@ -2191,6 +2210,7 @@ const Village = () => {
         >
           B
         </span>
+        </>)}
 
 
 

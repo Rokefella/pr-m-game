@@ -7,6 +7,7 @@ import PrimeGlowLayer from '@/components/theme/PrimeGlowLayer';
 import { type StyleKey } from '@/lib/theme/svgSources';
 import { type Dimension } from '@/lib/theme/tokens';
 import { getThemeForLevel, THEME_PRESETS } from '@/lib/theme/themes';
+import { VillageDoor } from '@/components/theme/objects';
 
 const STYLES: StyleKey[] = ['plated', 'chevron', 'hex', 'lightstrip', 'gold', 'ulam'];
 
@@ -58,6 +59,17 @@ export default function TilePreview() {
           ))}
         </div>
 
+        <section className="border-t border-border py-7">
+          <div className="flex gap-8">
+            {(['maze', 'library', 'exchange'] as const).map(kind => <figure key={kind}>
+              <div className="relative w-[60px] h-[60px]">
+                <FloorLayer cols={3} rows={3} size={20} styleKey="plated" dimension="amber" />
+                <div className="absolute left-5 top-5"><VillageDoor kind={kind} /></div>
+              </div>
+              <figcaption className="font-mono text-sm mt-3">{kind}</figcaption>
+            </figure>)}
+          </div>
+        </section>
         <section className="border-t border-border pt-7">
           <div className="w-48 mb-5 font-mono text-sm">
             <label htmlFor="tile-preset" className="block mb-2">Preset</label>

@@ -366,14 +366,19 @@ const Maze = () => {
   const userIdRef = useRef<string | null>(null);
   useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
   const leavingRef = useRef(false);
+  const fragmentWritesRef = useRef(new Set<Promise<void>>());
   const leaveMaze = useCallback(async () => {
     if (leavingRef.current) return;
     leavingRef.current = true;
+    stepsReadyRef.current = false;
     let timeout: ReturnType<typeof setTimeout> | undefined;
     const uid = userIdRef.current;
     if (uid) {
       await Promise.race([
-        forfeitUnbanked(uid),
+        (async () => {
+          await Promise.allSettled([...fragmentWritesRef.current]);
+          return forfeitUnbanked(uid);
+        })(),
         new Promise<boolean>((resolve) => {
           timeout = setTimeout(() => {
             console.error('[Maze] fragment forfeiture timed out');
@@ -582,14 +587,14 @@ const Maze = () => {
     setCollected(next);
     setActiveFragment({ prime: frag.prime, index: fragIdx });
     if (user) {
-      (async () => {
+      const write = (async () => {
         const { data: existing } = await supabase
           .from('fragments')
           .select('id')
           .eq('user_id', user.id)
           .eq('prime_number', frag.prime)
           .limit(1);
-        if (existing && existing.length > 0) return; // duplicate, skip silently
+        if (leavingRef.current || (existing && existing.length > 0)) return;
         const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
         const { error } = await supabase.from('fragments').insert({
           user_id: user.id,
@@ -599,6 +604,8 @@ const Maze = () => {
         });
         if (error) console.error('Failed to save fragment', error);
       })();
+      fragmentWritesRef.current.add(write);
+      void write.finally(() => fragmentWritesRef.current.delete(write));
     }
   }, [config, levelLoaded, user]);
 
@@ -631,7 +638,6 @@ const Maze = () => {
       const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;
       stepsRemainingRef.current = startSteps;
       setStepsRemaining(startSteps);
-      stepsReadyRef.current = true;
       if (row.steps_remaining <= 0) {
         updateUser(user.id, { steps_remaining: INITIAL_STEPS });
       }
@@ -643,7 +649,7 @@ const Maze = () => {
         .select('prime_number, banked, level')
         .eq('user_id', user.id);
       if (fragError) console.error('Failed to load fragments', fragError);
-      if (!cancelled && Array.isArray(existing)) {
+      if (!cancelled && !leavingRef.current && Array.isArray(existing)) {
         const banked = new Set<number>();
         const storedRun = getActiveRun(user.id, row.level);
         const resume = roomReturnRef.current || Boolean(sessionStorage.getItem('praem_maze_return_col')) || (!STRICT_FORFEIT && Boolean(storedRun));
@@ -666,7 +672,10 @@ const Maze = () => {
         collectedRef.current = new Set<number>();
         setCollected(new Set<number>());
       }
-      if (!cancelled && !leavingRef.current) setLevelLoaded(true);
+      if (!cancelled && !leavingRef.current) {
+        stepsReadyRef.current = true;
+        setLevelLoaded(true);
+      }
     })();
     return () => { cancelled = true; };
   }, [user, authLoading]);
@@ -958,14 +967,14 @@ const Maze = () => {
 
         const uidFrag = userIdRef.current;
         if (uidFrag) {
-          (async () => {
+          const write = (async () => {
             const { data: existing } = await supabase
               .from('fragments')
               .select('id')
               .eq('user_id', uidFrag)
               .eq('prime_number', frag.prime)
               .limit(1);
-            if (existing && existing.length > 0) return; // duplicate, skip silently
+            if (leavingRef.current || (existing && existing.length > 0)) return;
             const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
             const { error } = await supabase.from('fragments').insert({
               user_id: uidFrag,
@@ -976,6 +985,8 @@ const Maze = () => {
             });
             if (error) console.error('Failed to save fragment', error);
           })();
+          fragmentWritesRef.current.add(write);
+          void write.finally(() => fragmentWritesRef.current.delete(write));
         }
       }
     }

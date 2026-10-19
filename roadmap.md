@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Add reusable pixel plate, eye, decoding number and folder slots; restyle FragmentOverlay without gameplay changes.
+- [ ] Test reveal timing/count rules and verify 375×667, six-digit primes, reduced motion and unchanged save callback.
+
 - [x] Integrate Instrument Village ground, streets, trees, plazas and buildings without gameplay changes.
 - [x] Test neighbour rules (15 theme tests pass) and verify isolated Village 1/2 70×70 layouts at 375px, four-digit HUD balances, camera scrolling and reduced-motion beacons.
 - [ ] Verify actual signed-in Village 1/2 layouts and real-device scrolling — no game auth session is available; isolated map checks do not establish real-device performance.

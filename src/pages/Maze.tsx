@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/levelLoader';
 import Thumbstick from '@/components/Thumbstick';
+import StepExchangeSheet from '@/components/StepExchangeSheet';
 import WallTile from '@/components/theme/WallTile';
 import FloorLayer from '@/components/theme/FloorLayer';
 import PrimeGlowLayer from '@/components/theme/PrimeGlowLayer';
@@ -1502,117 +1503,31 @@ const Maze = () => {
         <ProfileButton onClick={openProfile} />
       </div>
 
-      {exchangeOpen && (
-        <div
-          style={{
-            position: 'fixed', left: 0, right: 0, bottom: HUD_HEIGHT, height: 220,
-            background: 'rgba(4,4,10,0.97)', borderTop: '1px solid rgba(100,80,160,0.4)',
-            zIndex: 70, animation: 'mazePanelSlide 280ms ease-out',
-          }}
-        >
-          <button
-            onClick={() => setExchangeOpen(false)}
-            style={{
-              position: 'absolute', top: 8, right: 12, background: 'transparent', border: 'none',
-              color: 'rgba(160,140,200,0.4)', fontSize: 18, cursor: 'pointer', padding: 4,
-            }}
-          >
-            ×
-          </button>
-
-          {exchangeError ? (
-            <div
-              className="font-fell italic"
-              style={{
-                position: 'absolute', top: '50%', left: 0, right: 0, transform: 'translateY(-50%)',
-                textAlign: 'center', fontSize: 18, color: 'rgba(200,80,80,0.6)',
-              }}
-            >
-              You have nothing left to give.
-            </div>
-          ) : (
-            <>
-              <div
-                className="font-cinzel"
-                style={{
-                  textAlign: 'center', paddingTop: 16, fontSize: 16,
-                  color: 'rgba(160,140,200,0.7)', letterSpacing: '0.2em',
-                }}
-              >
-                Exchange Credits for Steps
-              </div>
-              <div
-                className="font-mono"
-                style={{ textAlign: 'center', marginTop: 8, fontSize: 14, color: 'rgba(160,140,200,0.4)' }}
-              >
-                1 CREDIT = 100 STEPS
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 48, marginTop: 12 }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 14, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>CREDITS</div>
-                  <div className="font-mono" style={{ fontSize: 20, color: '#c8963a', marginTop: 2 }}>{credits}</div>
-                </div>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 14, color: 'rgba(160,140,200,0.5)', letterSpacing: '0.18em' }}>STEPS</div>
-                  <div className="font-mono" style={{ fontSize: 20, color: '#e0ddd5', marginTop: 2 }}>{stepsRemaining}</div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 16 }}>
-                {[1, 5, 10].map((n) => {
-                  const sel = selectedCredits === n;
-                  return (
-                    <button
-                      key={n}
-                      className="font-cinzel"
-                      onClick={() => setSelectedCredits(n)}
-                      style={{
-                        fontSize: 14, letterSpacing: '0.15em', padding: '8px 12px',
-                        border: `0.5px solid ${sel ? '#c8963a' : 'rgba(100,80,160,0.4)'}`,
-                        background: 'rgba(100,80,160,0.08)',
-                        color: sel ? '#c8963a' : 'rgba(160,140,200,0.7)', cursor: 'pointer',
-                      }}
-                    >
-                      {n} CREDIT{n > 1 ? 'S' : ''} → {n * 100} STEPS
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
-                <button
-                  className="font-cinzel"
-                  onClick={() => {
-                    if (!stepsReadyRef.current) return;
-                    if (credits < selectedCredits) {
-                      setExchangeError(true);
-                      window.setTimeout(() => { setExchangeOpen(false); setExchangeError(false); }, 2000);
-                      return;
-                    }
-                    const newCredits = credits - selectedCredits;
-                    setCredits(newCredits);
-                    const gained = selectedCredits * 100;
-                    stepsRemainingRef.current += gained;
-                    setStepsRemaining(stepsRemainingRef.current);
-                    if (user) updateUser(user.id, {
-                      credits: newCredits,
-                      steps_remaining: stepsRemainingRef.current,
-                    });
-                    setExchangeOpen(false);
-                  }}
-                  style={{
-                    fontSize: 16, letterSpacing: '0.3em', background: '#c8963a',
-                    color: '#04040a', padding: '10px 32px', border: 'none', cursor: 'pointer',
-                  }}
-                >
-                  CONFIRM
-                </button>
-              </div>
-            </>
-          )}
-        </div>
-      )}
+      <StepExchangeSheet
+        open={exchangeOpen}
+        credits={credits}
+        steps={stepsRemaining}
+        onClose={() => { setExchangeOpen(false); setExchangeError(false); }}
+        onConfirm={(spent) => {
+          if (!stepsReadyRef.current) return;
+          if (credits < spent) {
+            setExchangeError(true);
+            window.setTimeout(() => { setExchangeOpen(false); setExchangeError(false); }, 2000);
+            return;
+          }
+          setSelectedCredits(spent);
+          const newCredits = credits - spent;
+          setCredits(newCredits);
+          const gained = spent * 100;
+          stepsRemainingRef.current += gained;
+          setStepsRemaining(stepsRemainingRef.current);
+          if (user) updateUser(user.id, {
+            credits: newCredits,
+            steps_remaining: stepsRemainingRef.current,
+          });
+          setExchangeOpen(false);
+        }}
+      />
 
       {activeFragment && (
         <FragmentOverlay

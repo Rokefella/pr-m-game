@@ -99,6 +99,13 @@ const ProfileOverlay = ({
 
   // Account tab state
   const [accountRow, setAccountRow] = useState<AccountUserRow | null>(null);
+  // Props are only initial values; once the fetched users row is in, the
+  // database wins and stale parent props must not overwrite the numbers.
+  useEffect(() => { if (!accountRow) setGrowthPoints(growthPointsProp); }, [growthPointsProp, accountRow]);
+  useEffect(() => {
+    if (accountRow) return;
+    setStats({ social: socialStatProp, perception: perceptionStatProp, trade: tradeStatProp });
+  }, [socialStatProp, perceptionStatProp, tradeStatProp, accountRow]);
   const [emailForm, setEmailForm] = useState(false);
   const [emailMsg, setEmailMsg] = useState('');
   const [passwordMsg, setPasswordMsg] = useState('');

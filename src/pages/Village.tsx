@@ -19,6 +19,8 @@ import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
 import FloorLayer from '@/components/theme/FloorLayer';
 import BuildingBlock from '@/components/theme/BuildingBlock';
 import VillageTerrain from '@/components/theme/VillageTerrain';
+import { VillageDoor } from '@/components/theme/objects';
+import { DOOR_FLAGS, doorRefusal, footprintHasDoor, inDoorZone, nearestDoorReturn, villageDoors, type VillageDoorDef, type VillageDoorKind } from '@/lib/villageDoors';
 import { VILLAGE_GLOW } from '@/lib/theme/tokens';
 import { VILLAGE_BG, VILLAGE_VIGNETTE } from '@/lib/theme/villageRendering';
 import { memo } from 'react';
@@ -57,6 +59,7 @@ type BuildingCluster = {
 };
 type DynamicVillage = {
   typeA: typeof TYPE_A;
+  doors: VillageDoorDef[];
   typeB: Rect[];
   typeC: Rect[];
   clusters: BuildingCluster[];
@@ -236,6 +239,8 @@ const MAP_H = 1400;
 const CX = 1100;
 const CY = 700;
 const STEP = 12;
+const LIBRARY_MIN_LEVEL = 3;
+const EXCHANGE_MIN_LEVEL = 1;
 /** Player glide lerp factor per frame (lower = slower glide). */
 const VILLAGE_GLIDE = 0.11;
 
@@ -635,6 +640,7 @@ const Village = () => {
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const navigatedRef = useRef(false);
+  const doorLockRef = useRef(false);
   const feedbackTimer = useRef<number | null>(null);
 
   // Validated random spawn (computed once)
@@ -648,6 +654,7 @@ const Village = () => {
   const playerTargetRef = useRef(initialPos);
 
   const [dynamicBuildings, setDynamicBuildings] = useState<DynamicVillage | null>(null);
+  const activeDoors = useMemo(() => villageDoors(dynamicBuildings?.doors ?? [], dynamicBuildings?.typeA ?? TYPE_A), [dynamicBuildings]);
   const [villageLoading, setVillageLoading] = useState(true);
   const villageLoadingRef = useRef(true);
   useEffect(() => { villageLoadingRef.current = villageLoading; }, [villageLoading]);
@@ -1240,6 +1247,22 @@ const Village = () => {
     if (authLoading || !user || !currentLevel) return;
     let cancelled = false;
 
+    const returnSpawn = (obstacles: Rect[], doors: VillageDoorDef[], width: number, height: number) => {
+      const raw = sessionStorage.getItem('praem_village_return');
+      if (!raw) return null;
+      sessionStorage.removeItem('praem_village_return');
+      try {
+        const p = JSON.parse(raw);
+        if (typeof p.x !== 'number' || typeof p.y !== 'number' || !Number.isFinite(p.x) || !Number.isFinite(p.y)) return null;
+        const sp = nearestDoorReturn(p, obstacles, doors, width, height);
+        if (sp) doorLockRef.current = true;
+        return sp;
+      } catch { return null; }
+    };
+    const restoreFallbackReturn = () => {
+      const sp = returnSpawn([...OBSTACLES, ...TYPE_A], villageDoors([], TYPE_A), MAP_W, MAP_H);
+      if (sp) { playerRef.current = sp; playerTargetRef.current = sp; setPlayer(sp); }
+    };
     const loadVillage = async () => {
       beginVillageLoading();
       try {
@@ -1251,7 +1274,7 @@ const Village = () => {
           .maybeSingle();
 
         if (cancelled || !villageRow) {
-          if (!cancelled) finishVillageLoading();
+          if (!cancelled) { restoreFallbackReturn(); finishVillageLoading(); }
           return;
         }
         const vData = (villageRow as {
@@ -1264,12 +1287,13 @@ const Village = () => {
         })?.data;
         const cells = vData?.extraCells ?? [];
         if (!Array.isArray(cells) || cells.length === 0) {
-          if (!cancelled) finishVillageLoading();
+          if (!cancelled) { restoreFallbackReturn(); finishVillageLoading(); }
           return;
         }
 
         const CELL = 20;
         const typeA: typeof TYPE_A = [];
+        const doors: VillageDoorDef[] = [];
         const typeB: Rect[] = [];
         const typeC: Rect[] = [];
         const sCells: { col: number; row: number }[] = [];
@@ -1304,6 +1328,15 @@ const Village = () => {
               lCells.push({ col: cell.col, row: cell.row });
               break;
 
+            case 'DOOR_MAZE':
+              doors.push({ kind: 'maze', x, y });
+              break;
+            case 'DOOR_LIBRARY':
+              doors.push({ kind: 'library', x, y });
+              break;
+            case 'DOOR_EXCHANGE':
+              doors.push({ kind: 'exchange', x, y });
+              break;
             case 'BUILDING_23':
               typeA.push({ ...A_23, x, y, w: 70, h: 50 });
               break;
@@ -1393,7 +1426,7 @@ const Village = () => {
             },
           }));
 
-          setDynamicBuildings({ typeA, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
+          setDynamicBuildings({ typeA, doors, typeB, typeC, clusters, forest, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
 
 
           // Reposition the player once, when the dynamic village loads
@@ -1402,17 +1435,21 @@ const Village = () => {
             const dynW = gridSize * CELL;
             const dynH = gridSize * CELL;
             let sp = start ? { x: start.col * CELL, y: start.row * CELL } : { x: dynW / 2, y: dynH / 2 };
-            if (!start) {
+            const loadedDoors = villageDoors(doors, typeA);
+            const obstacles: Rect[] = [
+              ...clusters, ...typeA, ...typeB, ...typeC,
+              ...wallTiles, ...furnitureTiles, ...bookcaseTiles, ...lightTiles,
+            ];
+            const returned = returnSpawn(obstacles, loadedDoors, dynW, dynH);
+            if (returned) sp = returned;
+            if (!start && !returned) {
               // Nearest free cell to the centre: outside every obstacle and off any character.
-              const obstacles: Rect[] = [
-                ...clusters, ...typeA, ...typeB, ...typeC,
-                ...wallTiles, ...furnitureTiles, ...bookcaseTiles, ...lightTiles,
-              ];
               const chars = [eyeCenter, bernardCenter, merchantCenter].filter(Boolean) as { x: number; y: number }[];
               const free = (x: number, y: number) =>
                 x >= 0 && y >= 0 && x <= dynW && y <= dynH &&
                 !obstacles.some((o) => x >= o.x - 2 && x <= o.x + o.w + 2 && y >= o.y - 2 && y <= o.y + o.h + 2) &&
-                !chars.some((c) => Math.hypot(x - c.x, y - c.y) <= 40);
+                !chars.some((c) => Math.hypot(x - c.x, y - c.y) <= 40) &&
+                !loadedDoors.some(d => inDoorZone({ x, y }, d));
               const c0 = Math.floor(gridSize / 2);
               search: for (let ring = 0; ring <= gridSize; ring++) {
                 for (let dr = -ring; dr <= ring; dr++) {
@@ -1548,58 +1585,27 @@ const Village = () => {
 
 
 
-  const triggerA = (nx: number, ny: number, a: { id: number | string }) => {
-    if (a.id === 89) {
-      if (user) void setFlag(user.id, 'touched_89', 'true');
-      const unlocked = parseInt(getFlag('bernard_stage') || '0', 10) >= 2;
-      if (!unlocked) {
-        showLockWhisper('Not yet. Speak to Bernard first.');
-        return true;
-      }
-      if (!navigatedRef.current) {
-        navigatedRef.current = true;
-        const status = subscriptionStatusRef.current;
-        const target = BETA_MODE || (status && canAccessMaze(status)) ? '/door' : '/paywall';
-        window.setTimeout(() => navigate(target), 600);
-      }
-      return true;
-    }
-    if (a.id === 23) {
-      if (user) void setFlag(user.id, 'touched_23', 'true');
-      const lv = currentLevelRef.current;
-      if (lv < 3) {
-        showLockWhisper('The Library opens later.');
-        return true;
-      }
-      if (!navigatedRef.current) {
-        navigatedRef.current = true;
-        window.setTimeout(() => navigate('/library-door'), 600);
-      }
-      return true;
-    }
-    if (a.id === 47) {
-      if (user) void setFlag(user.id, 'touched_47', 'true');
-      const lv = currentLevelRef.current;
-      // TEMP: lowered for testing, revert to lv < 3 before release
-      if (lv < 1) {
-        showLockWhisper('The Exchange opens later.');
-        return true;
-      }
-      if (!navigatedRef.current) {
-        navigatedRef.current = true;
-        window.setTimeout(() => navigate('/exchange-door'), 600);
-      }
-      return true;
-    }
-    return false;
+  const triggerDoor = (kind: VillageDoorKind, door: VillageDoorDef) => {
+    if (doorLockRef.current || navigatedRef.current) return;
+    doorLockRef.current = true;
+    if (user) void setFlag(user.id, DOOR_FLAGS[kind], 'true');
+    const refusal = doorRefusal(kind, currentLevelRef.current, parseInt(getFlag('bernard_stage') || '0', 10), LIBRARY_MIN_LEVEL, EXCHANGE_MIN_LEVEL);
+    if (refusal) { showLockWhisper(refusal); return; }
+    navigatedRef.current = true;
+    const status = subscriptionStatusRef.current;
+    const target = kind === 'maze'
+      ? BETA_MODE || (status && canAccessMaze(status)) ? '/door' : '/paywall'
+      : kind === 'library' ? '/library-door' : '/exchange-door';
+    sessionStorage.setItem('praem_village_return', JSON.stringify({ x: door.x + 10, y: door.y + 10 }));
+    window.setTimeout(() => navigate(target), 400);
   };
-
 
   const activeObstacles = useMemo<Rect[]>(
     () =>
       dynamicBuildings
         ? [
             ...dynamicBuildings.clusters.map((c) => ({ id: c.id, x: c.x, y: c.y, w: c.w, h: c.h })),
+            ...dynamicBuildings.typeA,
             ...dynamicBuildings.typeB,
             ...dynamicBuildings.typeC,
             ...(dynamicBuildings.wallTiles ?? []),
@@ -1607,7 +1613,7 @@ const Village = () => {
             ...(dynamicBuildings.bookcaseTiles ?? []),
             ...(dynamicBuildings.lightTiles ?? []),
           ]
-        : OBSTACLES,
+        : [...OBSTACLES, ...TYPE_A],
     [dynamicBuildings],
   );
 
@@ -1620,16 +1626,12 @@ const Village = () => {
     const ny = Math.max(0, Math.min(mapSizeRef.current.h, prev.y + dy));
 
 
-    // Type A: bumping fires response but cancels move
-    for (const a of (dynamicBuildings ? dynamicBuildings.typeA : TYPE_A)) {
-      if (inside(nx, ny, a)) {
-        triggerA(nx, ny, a);
-        return;
-      }
-    }
+    // A shared 20px cell + 8px zone overrides building collision from every side.
+    const door = activeDoors.find(d => inDoorZone({ x: nx, y: ny }, d));
+    if (door) triggerDoor(door.kind, door);
 
     // Obstacles (B + C + RIM) with 2px padding — also check whisper trigger on any whispered building
-    for (const o of activeObstacles) {
+    for (const o of door ? [] : activeObstacles) {
       if (
         nx >= o.x - 2 &&
         nx <= o.x + o.w + 2 &&
@@ -1673,6 +1675,7 @@ const Village = () => {
 
     // Commit target
     playerTargetRef.current = { x: fx, y: fy };
+    if (!activeDoors.some(d => inDoorZone({ x: fx, y: fy }, d))) doorLockRef.current = false;
 
     // Whisper tiles (within 16px of the tile centre), 30s cooldown per tile
     for (const wc of whisperCellsRef.current) {
@@ -1909,9 +1912,10 @@ const Village = () => {
       lightTiles: (dynamicBuildings.lightTiles ?? []).filter((l) => inBox(l.x, l.y)),
       rugTiles: (dynamicBuildings.rugTiles ?? []).filter((r) => inBox(r.x, r.y)),
       npcs: dynamicBuildings.npcs.filter((n) => inBox(n.x, n.y, 6, 6)),
+      doors: activeDoors.filter(d => inBox(d.x, d.y)),
       typeA: dynamicBuildings.typeA.filter((b) => inBox(b.x, b.y, b.w, b.h)),
     };
-  }, [dynamicBuildings, cullQx, cullQy, view.w, view.h]);
+  }, [dynamicBuildings, activeDoors, cullQx, cullQy, view.w, view.h]);
 
 
 
@@ -1954,9 +1958,9 @@ const Village = () => {
   }, [dynamicBuildings]);
 
   const renderTypeA = (b: typeof A_23 | typeof A_47 | typeof A_89) => (
-    <div key={`a-${b.id}-${b.x}-${b.y}`} className={getFlag(`touched_${b.id}`) === 'true' ? 'instrument-building-touched' : undefined}
+    <div key={`a-${b.id}-${b.x}-${b.y}`} 
       style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, pointerEvents: 'none', zIndex: 3 }}>
-      <BuildingBlock cols={b.w / 20} rows={b.h / 20} size={20} numbered label={String(b.id)} glow={VILLAGE_GLOW} />
+      <BuildingBlock cols={b.w / 20} rows={b.h / 20} size={20} numbered={false} doorway={false} glow={VILLAGE_GLOW} />
       {(b.id === 23 || b.id === 47) && feedback.id === b.id && (
         <p className="font-fell italic" style={{ fontSize: 14, color: 'var(--instrument-beacon)', marginTop: 4, animation: 'villageNotYet 1.5s ease-out forwards' }}>Not yet.</p>
       )}
@@ -2129,15 +2133,20 @@ const Village = () => {
         {/* One module SVG per existing building footprint. */}
         {visible?.clusters.map((c) => (
           <div key={c.id} style={{ position: 'absolute', left: c.x, top: c.y, width: c.w, height: c.h, zIndex: 3, pointerEvents: 'none' }}>
-            <BuildingBlock cols={c.cols} rows={c.rows} size={20} glow={VILLAGE_GLOW} />
+            <BuildingBlock cols={c.cols} rows={c.rows} size={20} doorway={!footprintHasDoor(c, activeDoors)} glow={VILLAGE_GLOW} />
           </div>
         ))}
         {!dynamicBuildings && [...TYPE_RIM, ...TYPE_C, ...TYPE_B].map((b) => (
           <div key={b.id} style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, zIndex: 3, pointerEvents: 'none' }}>
-            <BuildingBlock cols={b.w / 20} rows={b.h / 20} size={20} glow={VILLAGE_GLOW} />
+            <BuildingBlock cols={b.w / 20} rows={b.h / 20} size={20} doorway={!footprintHasDoor(b, activeDoors)} glow={VILLAGE_GLOW} />
           </div>
         ))}
         {(visible ? visible.typeA : TYPE_A).map(renderTypeA)}
+        {(visible ? visible.doors : activeDoors).map(d => (
+          <div key={`door-${d.kind}-${d.x}-${d.y}`} style={{ position: 'absolute', left: d.x, top: d.y, width: 20, height: 20, zIndex: 5, pointerEvents: 'none' }}>
+            <VillageDoor kind={d.kind} touched={getFlag(DOOR_FLAGS[d.kind]) === 'true'} />
+          </div>
+        ))}
 
         {/* Villagers — rendered inside map div, positioned in map pixel coords */}
         {activeVillagers.map((v) => (

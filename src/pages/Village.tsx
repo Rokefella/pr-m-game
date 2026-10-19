@@ -1387,6 +1387,7 @@ const Village = () => {
     stepsReadyRef.current = false;
     console.log('[Village] playerId from auth:', user.id);
     let row = await fetchOrCreateUser(user.id);
+    if (version !== userLoadVersionRef.current || activeUserIdRef.current !== user.id) return;
     let granted = 0;
     try {
       granted = await claimDailyStepsOnce(user.id, async () => {

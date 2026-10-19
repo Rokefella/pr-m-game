@@ -1,8 +1,9 @@
 # Roadmap
 
-- [ ] Add session-once daily step claims with fresh-row synchronization before step writes.
-- [ ] Add ACCOUNT feedback sheet with nonempty submissions and keyboard-safe phone layout.
-- [ ] Test the beta rules and verify the two flows at 375px; report any live-account blocker.
+- [x] Add session-once daily step claims with fresh-row synchronization before step writes.
+- [x] Add ACCOUNT feedback sheet with nonempty submissions and keyboard-safe phone layout.
+- [x] Seven beta rule tests pass; both flows verified with isolated data at 375px, including a keyboard-sized visible area.
+- [ ] Verify real daily grants and feedback persistence — managed auth has no accounts to mint, and the game's separately configured auth session is unavailable.
 
 - [x] Integrate Instrument floor/walls and memoized object visuals into Maze with preserved gameplay and HUD.
 - [x] Verify culling, theme rules, daylight visibility and shard/gate interactions at 375px using isolated fixtures; 13 tests and build pass.

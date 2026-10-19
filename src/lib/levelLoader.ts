@@ -5,6 +5,7 @@ export type FragmentDef = Cell & { prime: number };
 export type DoorToRoom = Cell & { roomId: string; reentry: Cell };
 
 export type EggDef = Cell & { line: string };
+export type VisualCell = Cell & { type: string; color?: string };
 
 export type LoadedLevelConfig = {
   cols: number;
@@ -21,6 +22,8 @@ export type LoadedLevelConfig = {
   alexandra?: Cell;
   claire?: Cell;
   fragmentsRequired: number;
+  theme?: string;
+  visualCells?: VisualCell[];
 };
 
 export type Dimension = 'purple' | 'amber' | 'teal';
@@ -154,5 +157,15 @@ export async function loadLevelFromSupabase(
     veilSet,
     eggs: [],
     fragmentsRequired: requiredFragments,
+    // Presentation-only metadata: never add these cells to collision/interaction sets.
+    theme: typeof d.theme === 'string' ? d.theme : undefined,
+    visualCells: [
+      ...((Array.isArray(d.extraCells) ? d.extraCells : []) as VisualCell[]),
+      ...doorsToRoomArr.map((cell) => ({ ...cell, type: 'ROOM_DOOR' })),
+      ...((Array.isArray(d.dropSpawns) ? d.dropSpawns : []) as Cell[]).map((cell) => ({ ...cell, type: 'DROP_SPAWN' })),
+      ...((Array.isArray(d.drops) ? d.drops : []) as Cell[]).map((cell) => ({ ...cell, type: 'DROP' })),
+      ...((Array.isArray(d.npcs) ? d.npcs : []) as Cell[]).map((cell) => ({ ...cell, type: 'NPC' })),
+    ].filter((cell) => cell && Number.isFinite(cell.col) && Number.isFinite(cell.row))
+      .map((cell) => ({ ...cell, ...rot(cell) })),
   };
 }

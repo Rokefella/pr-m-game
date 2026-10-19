@@ -94,7 +94,7 @@ describe('Maze run entry and deliberate exits', () => {
     startRun('player', 2); sessionStorage.setItem('visited_shadow_this_run', 'true');
     openMaze(); await ready(2);
     if (exit === 'LEAVE') fireEvent.click(screen.getByRole('button', { name: 'EXIT MAZE' }));
-    fireEvent.click(screen.getByRole('button', { name: exit, exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: exit }));
     await screen.findByText('Village destination');
     expect(localStorage.getItem('praem_run')).toBeNull();
     expect(fixture.rows).toEqual([{ prime_number: 89, banked: true, level: 1 }]);

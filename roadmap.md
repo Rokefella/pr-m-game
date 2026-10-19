@@ -1,7 +1,8 @@
 # Roadmap
 
-- [ ] Integrate Instrument floor/walls and memoized object visuals into Maze with preserved gameplay and HUD.
-- [ ] Verify culling, theme overrides, daylight visibility and maze interactions at 375px; report unavailable authenticated checks.
+- [x] Integrate Instrument floor/walls and memoized object visuals into Maze with preserved gameplay and HUD.
+- [x] Verify culling, theme rules, daylight visibility and shard/gate interactions at 375px using isolated fixtures; 13 tests and build pass.
+- [ ] Verify live signed-in maze pickups and door navigation — blocked because auth has no accounts to mint a session for.
 
 - [x] Add isolated Instrument tile foundation, six wall/floor styles, and public /tiles preview without gameplay changes.
 - [x] Test spiral/theme rules (10 passing tests) and verify preview controls at 375px and desktop widths; build passes, with existing preview ref warnings remaining.

@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Fix maze run lifecycle with explicit exits, twelve-hour resumption and Shadow transfer completion; preserve room round trips and gameplay rendering/movement.
+- [ ] Test exit, room return, interrupted-run resumption and post-Shadow fresh entry; check automatic typecheck/build results.
+
 - [x] Replace avatar aura rings with a pulsing pixel orb; preserve palette API and caller positioning.
 - [x] Verify 64 previews across four colours, 24/30/48/96 pixels, idle/walking and both backgrounds at 375px and desktop; pulse, alternating feet and reduced motion pass, with six related tests and build OK.
 

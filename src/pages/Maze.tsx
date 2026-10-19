@@ -19,7 +19,7 @@ import FloorLayer from '@/components/theme/FloorLayer';
 import PrimeGlowLayer from '@/components/theme/PrimeGlowLayer';
 import { Gate, PrimeShard, Veil, RoomDoorTile, DropSpawnGlimmer, DropCrate, NpcPad, StartPad, Pylon } from '@/components/theme/objects';
 import { getThemeForLevel } from '@/lib/theme/themes';
-import { DIMENSION_GLOW } from '@/lib/theme/tokens';
+import { DIMENSION_GLOW, mazeGlowForLevel } from '@/lib/theme/tokens';
 import { SHOW_SPAWN_GLIMMER, pylonCells, visibleBounds } from '@/lib/theme/mazeRendering';
 import type { VisualCell } from '@/lib/levelLoader';
 import '@/components/theme/maze.css';
@@ -28,16 +28,16 @@ import '@/components/theme/maze.css';
 const INITIAL_STEPS = 1000;
 const CELL = 40;
 // Lantern: clear radius around the player, widened by Perception; beyond it a dim (not black) fog.
-const LANTERN_BASE_RADIUS_CELLS = 3.2;
+const LANTERN_BASE_RADIUS_CELLS = 5;
 const LANTERN_PERCEPTION_BONUS = 0.5;
-const LANTERN_SOFT_CELLS = 3;
-const FOG_OPACITY = 0.8;
-const FOG_RGB = '11,14,31';
+const LANTERN_SOFT_CELLS = 2;
+const FOG_OPACITY = 0.9;
+const FOG_RGB = '8,10,24';
 const lanternRadii = (perception: number) => {
   const r1 = (LANTERN_BASE_RADIUS_CELLS + Math.min(3, Math.max(0, perception) * LANTERN_PERCEPTION_BONUS)) * CELL;
   return { r1, r2: r1 + LANTERN_SOFT_CELLS * CELL };
 };
-const LANTERN_BG = `radial-gradient(circle at var(--lx) var(--ly), rgba(245,213,138,.10) 0, rgba(245,213,138,0) ${1.6 * CELL}px), radial-gradient(circle at var(--lx) var(--ly), rgba(${FOG_RGB},0) 0, rgba(${FOG_RGB},0) var(--r1), rgba(${FOG_RGB},calc(var(--fog) * .35)) calc(var(--r1) + (var(--r2) - var(--r1)) * .5), rgba(${FOG_RGB},var(--fog)) var(--r2))`;
+const LANTERN_BG = `radial-gradient(circle at var(--lx) var(--ly), rgba(245,213,138,.08) 0, rgba(245,213,138,0) ${1.4 * CELL}px), radial-gradient(circle at var(--lx) var(--ly), rgba(${FOG_RGB},0) 0, rgba(${FOG_RGB},0) var(--r1), rgba(${FOG_RGB},calc(var(--fog) * .35)) calc(var(--r1) + (var(--r2) - var(--r1)) * .5), rgba(${FOG_RGB},var(--fog)) var(--r2))`;
 
 // HUD bar reserves enough height for the two-line state ("tap to exchange"
 // sub-label) at all times, so its height never shifts with content.
@@ -423,6 +423,8 @@ const Maze = () => {
 
   // Dimension is part of position; default 'purple'. Kept here pending dimension column.
   const dimension: Dimension = position?.dimension ?? 'purple';
+  // Rendering-only glow colour per level; the gameplay dimension above is unchanged.
+  const glow: Dimension = mazeGlowForLevel(currentLevel);
 
   // Level config — loaded async from Supabase `levels` table, with buildLevel1 fallback.
   // Guarded: do NOT load until the user row (position) has resolved.
@@ -1167,29 +1169,29 @@ const Maze = () => {
   const MAP_H = config.rows * CELL;
 
   return (
-    <div className="maze-theme" style={{ position: 'fixed', inset: 0, background: 'hsl(var(--background))', overflow: 'hidden', '--maze-light-core': `${DIMENSION_GLOW[dimension]}14` } as CSSProperties}>
+    <div className="maze-theme" style={{ position: 'fixed', inset: 0, background: 'hsl(var(--background))', overflow: 'hidden', '--maze-light-core': `${DIMENSION_GLOW[glow]}14` } as CSSProperties}>
       <div
         ref={worldRef}
         data-maze-world="true"
         style={{ position: 'absolute', width: MAP_W, height: MAP_H, transform: `translate(${camRef.current.x}px, ${camRef.current.y}px)`, willChange: 'transform' }}
       >
-        <FloorLayer cols={config.cols} rows={config.rows} size={CELL} styleKey={theme.floor} dimension={dimension} />
-        {theme.primeGlow && <PrimeGlowLayer cols={config.cols} rows={config.rows} size={CELL} dimension={dimension} isFloor={isFloor} />}
+        <FloorLayer cols={config.cols} rows={config.rows} size={CELL} styleKey={theme.floor} dimension={glow} />
+        {theme.primeGlow && <PrimeGlowLayer cols={config.cols} rows={config.rows} size={CELL} dimension={glow} isFloor={isFloor} />}
         {visibleWalls.map(({ col, row }) => (
           <div key={`w-${col},${row}`} data-wall-cell={`${col},${row}`} style={{ position: 'absolute', left: col * CELL, top: row * CELL, width: CELL, height: CELL, zIndex: 2, pointerEvents: 'none' }}>
             <div className="maze-wall-shadow" />
-            <WallTile styleKey={theme.wall} dimension={dimension} size={CELL} />
-            {pylons.has(`${col},${row}`) && <div className="absolute inset-0"><Pylon dimension={dimension} size={CELL} /></div>}
-            {config.veilSet?.has(`${col},${row}`) && <div className="absolute inset-0"><Veil dimension={dimension} size={CELL} /></div>}
+            <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />
+            {pylons.has(`${col},${row}`) && <div className="absolute inset-0"><Pylon dimension={glow} size={CELL} /></div>}
+            {config.veilSet?.has(`${col},${row}`) && <div className="absolute inset-0"><Veil dimension={glow} size={CELL} /></div>}
           </div>
         ))}
-        {inView(config.spawn) && <div data-object="start" style={{ position: 'absolute', left: config.spawn.col * CELL, top: config.spawn.row * CELL, zIndex: 3 }}><StartPad dimension={dimension} size={CELL} /></div>}
+        {inView(config.spawn) && <div data-object="start" style={{ position: 'absolute', left: config.spawn.col * CELL, top: config.spawn.row * CELL, zIndex: 3 }}><StartPad dimension={glow} size={CELL} /></div>}
         {visibleObjects.map((cell, index) => (
           <div key={`object-${cell.type}-${cell.col},${cell.row}-${index}`} data-object={cell.type} style={{ position: 'absolute', left: cell.col * CELL, top: cell.row * CELL, width: CELL, height: CELL, zIndex: 9, pointerEvents: 'none' }}>
-            {cell.type === 'ROOM_DOOR' && <><WallTile styleKey={theme.wall} dimension={dimension} size={CELL} /><div className="absolute inset-0"><RoomDoorTile dimension={dimension} color={cell.color} size={CELL} /></div></>}
-            {cell.type === 'DROP_SPAWN' && SHOW_SPAWN_GLIMMER && <DropSpawnGlimmer dimension={dimension} size={CELL} />}
-            {cell.type === 'DROP' && <DropCrate dimension={dimension} size={CELL} />}
-            {cell.type === 'NPC' && <NpcPad dimension={dimension} size={CELL} />}
+            {cell.type === 'ROOM_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><RoomDoorTile dimension={glow} color={cell.color} size={CELL} /></div></>}
+            {cell.type === 'DROP_SPAWN' && SHOW_SPAWN_GLIMMER && <DropSpawnGlimmer dimension={glow} size={CELL} />}
+            {cell.type === 'DROP' && <DropCrate dimension={glow} size={CELL} />}
+            {cell.type === 'NPC' && <NpcPad dimension={glow} size={CELL} />}
           </div>
         ))}
 
@@ -1209,27 +1211,27 @@ const Maze = () => {
 
         {config.fragments.filter((f) => !collected.has(f.prime) && inView(f)).map((f) => (
           <div key={`frag-${f.prime}`} data-object="fragment" style={{ position: 'absolute', left: f.col * CELL, top: f.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
-            <PrimeShard dimension={dimension} size={CELL} />
+            <PrimeShard dimension={glow} size={CELL} />
           </div>
         ))}
         {inView(config.door) && <div data-object="golden-gate" style={{ position: 'absolute', left: config.door.col * CELL, top: config.door.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
-          <WallTile styleKey={theme.wall} dimension={dimension} size={CELL} />
-          <div className="absolute inset-0"><Gate variant="golden" dimension={dimension} size={CELL} /></div>
+          <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />
+          <div className="absolute inset-0"><Gate variant="golden" dimension={glow} size={CELL} /></div>
         </div>}
         {config.creditDoors.filter(inView).map((d, i) => (
           <div key={`cd-${i}`} data-object="blue-gate" style={{ position: 'absolute', left: d.col * CELL, top: d.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
-            <WallTile styleKey={theme.wall} dimension={dimension} size={CELL} />
-            <div className="absolute inset-0"><Gate variant="blue" dimension={dimension} size={CELL} /></div>
+            <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />
+            <div className="absolute inset-0"><Gate variant="blue" dimension={glow} size={CELL} /></div>
           </div>
         ))}
         {config.doorsToRoom?.filter(inView).map((d, i) => (
           <div key={`room-${i}`} data-object="room-door" style={{ position: 'absolute', left: d.col * CELL, top: d.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
-            <WallTile styleKey={theme.wall} dimension={dimension} size={CELL} />
-            <div className="absolute inset-0"><RoomDoorTile dimension={dimension} color={config.visualCells?.find(cell => cell.type === 'ROOM_DOOR' && cell.col === d.col && cell.row === d.row)?.color ?? (d as DoorToRoom & { color?: string }).color} size={CELL} /></div>
+            <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />
+            <div className="absolute inset-0"><RoomDoorTile dimension={glow} color={config.visualCells?.find(cell => cell.type === 'ROOM_DOOR' && cell.col === d.col && cell.row === d.row)?.color ?? (d as DoorToRoom & { color?: string }).color} size={CELL} /></div>
           </div>
         ))}
-        {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL, top: config.alexandra.row * CELL, zIndex: 9 }}><NpcPad dimension={dimension} size={CELL} /></div>}
-        {config.claire && claireVisible && inView(clairePos) && <div style={{ position: 'absolute', left: clairePos.col * CELL, top: clairePos.row * CELL, zIndex: 9 }}><NpcPad dimension={dimension} size={CELL} /></div>}
+        {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL, top: config.alexandra.row * CELL, zIndex: 9 }}><NpcPad dimension={glow} size={CELL} /></div>}
+        {config.claire && claireVisible && inView(clairePos) && <div style={{ position: 'absolute', left: clairePos.col * CELL, top: clairePos.row * CELL, zIndex: 9 }}><NpcPad dimension={glow} size={CELL} /></div>}
 
         {/* Alexandra — gold dot */}
         {config.alexandra && alexandraVisible && (

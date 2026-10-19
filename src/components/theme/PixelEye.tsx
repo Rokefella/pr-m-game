@@ -1,8 +1,13 @@
 import { memo } from 'react';
+import type { CSSProperties } from 'react';
 import { DIMENSION_GLOW } from '@/lib/theme/tokens';
+import { SHADOW } from '@/lib/theme/shadow';
 
-export default memo(function PixelEye({ glow = DIMENSION_GLOW.teal, size = 128, animate = false, closed = false }: { glow?: string; size?: number; animate?: boolean; closed?: boolean }) {
-  return <svg viewBox="0 0 128 44" width={size} height={size * 44 / 128} shapeRendering="crispEdges" className="pixel-eye" aria-hidden="true">
+const GREEN_TONE = { '--plate-border': '#3a6a4c', '--plate-inset': '#0f1612', '--eye-iris': '#9fe08a', '--eye-highlight': '#9fe08a', '--eye-pupil': '#0a120c', '--eye-specular': '#eaffd0' } as CSSProperties;
+
+export default memo(function PixelEye({ glow, size = 128, animate = false, closed = false, tone = 'violet' }: { glow?: string; size?: number; animate?: boolean; closed?: boolean; tone?: 'violet' | 'green' }) {
+  glow = glow ?? (tone === 'green' ? SHADOW.glow : DIMENSION_GLOW.teal);
+  return <svg viewBox="0 0 128 44" width={size} height={size * 44 / 128} shapeRendering="crispEdges" className="pixel-eye" aria-hidden="true" style={tone === 'green' ? GREEN_TONE : undefined}>
     <rect x="0" y="14" width="128" height="16" fill={glow} opacity=".15" />
     {closed ? <g><rect x="16" y="22" width="96" height="4" fill="#9aa4d8" /><rect x="60" y="22" width="8" height="4" fill="#6d60e6" /></g> :
     <g className={`eye-lens ${animate ? 'eye-opening' : ''}`} style={{ transformOrigin: '64px 22px' }}>

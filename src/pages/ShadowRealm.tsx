@@ -427,6 +427,8 @@ const ShadowRealm = () => {
       await updateUser(user.id, {
         maze_completed_level: currentLevelRef.current,
         level: currentLevelRef.current + 1,
+        levelup_pending: true,
+        levelup_newlevel: currentLevelRef.current + 1,
       });
       endRun();
       sessionStorage.removeItem('visited_shadow_this_run');

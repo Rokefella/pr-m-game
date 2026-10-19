@@ -1,5 +1,5 @@
-import PlateFrame from '@/components/theme/PlateFrame';
-import PixelEye from '@/components/theme/PixelEye';
+import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
+import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 // player ID sourced from localStorage
@@ -754,6 +754,7 @@ const Village = () => {
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('');
   const [levelUpHandled, setLevelUpHandled] = useState(false);
+  const levelUpReducedMotion = useReducedMotion();
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [username, setUsername] = useState<string>('');
   const usernameRef = useRef<string>('');
@@ -1226,6 +1227,11 @@ const Village = () => {
 
     if (row.levelup_pending && !levelUpHandled) {
       const newLv = row.levelup_newlevel ?? row.level;
+      // The arrival card only appears from level 2 onward.
+      if (newLv < 2) {
+        setLevelUpHandled(true);
+        return;
+      }
       const stageNow = parseInt(getFlag('bernard_stage') || '0', 10);
       const titlesUnlocked = stageNow >= 5;
       const newTitle = titlesUnlocked ? (TITLES_BY_LEVEL[newLv] || '') : '';
@@ -2700,163 +2706,88 @@ const Village = () => {
 
       {/* Profile rendered via shared ProfileOverlay below (matches ShadowRealm pattern) */}
 
-      {/* LEVEL UP OVERLAY */}
-      {levelUpOverlay && (
-        <div className="fragment-backdrop" style={{ zIndex: 200, animation: 'villageLevelUpFade 600ms ease-out', overflowY: 'auto' }}>
-        <PlateFrame glow="#b79bff" width="min(92vw, 360px)">
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-          <style>{`
-            @keyframes villageLevelUpFade { from { opacity: 0 } to { opacity: 1 } }
-            @keyframes villageLevelUpEye { from { opacity: 0 } to { opacity: 1 } }
-            @keyframes villageLevelUpText {
-              0% { opacity: 0; transform: translateY(8px) }
-              100% { opacity: 1; transform: translateY(0) }
-            }
-            @keyframes villageLevelPulse { 0%,100% { opacity: 0.85 } 50% { opacity: 1 } }
-          `}</style>
-
-          <PixelEye glow="#b79bff" animate size={128} />
-
+      {/* LEVEL UP OVERLAY — arrival card */}
+      {levelUpOverlay && (() => {
+        const rm = levelUpReducedMotion;
+        const anim = (ms: number) => (rm ? undefined : `villageLevelUpText 400ms ease-out ${ms}ms both`);
+        const lvTitle = TITLES_BY_LEVEL[levelUpOverlay.newLevel] || '';
+        const titleUnlocked = parseInt(getFlag('bernard_stage') || '0', 10) >= 5 && !!lvTitle;
+        return (
           <div
-            className="font-cinzel"
-            style={{
-              fontSize: 'clamp(32px, 11vw, 44px)',
-              color: '#f5c060',
-              marginTop: 16,
-              animation: 'villageLevelUpText 400ms ease-out 400ms both, villageLevelPulse 1.2s ease-in-out 800ms infinite',
-              letterSpacing: '0.12em',
-            }}
+            className="fragment-backdrop"
+            style={{ zIndex: 200, background: 'rgba(14,18,40,.94)', overflowY: 'auto', animation: rm ? undefined : 'villageLevelUpFade 600ms ease-out' }}
           >
-            LEVEL {levelUpOverlay.newLevel}
+            <style>{`
+              @keyframes villageLevelUpFade { from { opacity: 0 } to { opacity: 1 } }
+              @keyframes villageLevelUpText { 0% { opacity: 0; transform: translateY(8px) } 100% { opacity: 1; transform: translateY(0) } }
+            `}</style>
+            <PlateFrame glow="#c8963a" width="min(92vw, 340px)">
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <div className="font-cinzel" style={{ fontSize: 30, color: '#f5c060', letterSpacing: '.12em', marginTop: 28, animation: anim(0) }}>
+                  LEVEL {String(levelUpOverlay.newLevel).padStart(2, '0')}
+                </div>
+                <div style={{ width: '80%', height: 1, background: '#c8963a', marginTop: 14, animation: anim(150) }} />
+                <div className="font-fell italic" style={{ fontSize: 18, color: '#e8e4ff', marginTop: 16, animation: anim(300) }}>
+                  The village is different now.
+                </div>
+                <div style={{ position: 'relative', width: 128, height: 128, margin: '20px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: anim(450) }}>
+                  <div aria-hidden="true" style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,213,138,.22) 0%, rgba(245,213,138,0) 70%)' }} />
+                  <PlayerAvatar palette={paletteFromColor(auraColor, registrationNumber)} size={64} walking={false} />
+                </div>
+                {titleUnlocked && (
+                  <div style={{ position: 'relative', width: '100%', background: '#0f1329', border: '1px solid #2f3560', padding: '12px 10px', animation: anim(600) }}>
+                    <PlateCorners />
+                    <div className="font-mono" style={{ fontSize: 11, color: '#8e99d0', letterSpacing: '.2em' }}>TITLE UNLOCKED</div>
+                    <div className="font-cinzel" style={{ fontSize: 16, color: '#f5c060', letterSpacing: '.08em', marginTop: 6 }}>{lvTitle}</div>
+                  </div>
+                )}
+                <button
+                  className="font-cinzel"
+                  onClick={async () => {
+                    setLevelUpHandled(true);
+                    const newLv = levelUpOverlay.newLevel;
+                    const newSocial = socialStatus + 1; // fixed gain per level-up
+                    if (user) {
+                      await restUpdate(
+                        'users',
+                        {
+                          title: overlaySelectedTitle,
+                          levelup_pending: false,
+                          levelup_newlevel: 0,
+                          level: newLv,
+                          social: newSocial,
+                        },
+                        'id',
+                        user.id,
+                      );
+                      setSocialStatus(newSocial);
+                    }
+                    setCurrentLevel(newLv);
+                    setLevelUpOverlay(null);
+                  }}
+                  style={{
+                    width: '100%',
+                    minHeight: 48,
+                    fontSize: 14,
+                    letterSpacing: '.3em',
+                    background: '#c8963a',
+                    color: '#1a1448',
+                    padding: '8px 14px',
+                    border: 'none',
+                    borderTop: '3px solid #f5c060',
+                    borderBottom: '3px solid #8a6420',
+                    cursor: 'pointer',
+                    marginTop: 24,
+                    animation: anim(750),
+                  }}
+                >
+                  CONTINUE
+                </button>
+              </div>
+            </PlateFrame>
           </div>
-
-          {(parseInt(getFlag('bernard_stage') || '0', 10) >= 5) && (
-            <>
-              <div
-                className="font-fell italic"
-                style={{
-                  fontSize: 16,
-                  color: 'rgba(160,140,200,0.5)',
-                  marginTop: 24,
-                  animation: 'villageLevelUpText 400ms ease-out 800ms both',
-                }}
-              >
-                New title unlocked:
-              </div>
-              <div
-                className="font-cinzel"
-                style={{
-                  fontSize: 20,
-                  color: '#f5c060',
-                  marginTop: 8,
-                  animation: 'villageLevelUpText 400ms ease-out 1000ms both',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                {TITLES_BY_LEVEL[levelUpOverlay.newLevel] || ''}
-              </div>
-
-              <div
-                className="font-cinzel"
-                style={{
-                  fontSize: 14,
-                  color: 'rgba(160,140,200,0.4)',
-                  letterSpacing: '0.2em',
-                  marginTop: 20,
-                  animation: 'villageLevelUpText 400ms ease-out 1200ms both',
-                }}
-              >
-                Select your title:
-              </div>
-
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 8,
-                  justifyContent: 'center',
-                  marginTop: 12,
-                  maxWidth: 360,
-                  animation: 'villageLevelUpText 400ms ease-out 1400ms both',
-                }}
-              >
-                {Array.from({ length: levelUpOverlay.newLevel }, (_, i) => i + 1).map((lv) => {
-                  const t = TITLES_BY_LEVEL[lv];
-                  const sel = overlaySelectedTitle === t;
-                  return (
-                    <button
-                      key={lv}
-                      className="font-cinzel"
-                      onClick={() => {
-                        setOverlaySelectedTitle(t);
-                        if (user) updateUser(user.id, { title: t });
-                        setCurrentTitle(t);
-                      }}
-                      style={{
-                        fontSize: 14,
-                        padding: '6px 14px',
-                        border: `0.5px solid ${sel ? '#c8963a' : 'rgba(160,140,200,0.3)'}`,
-                        borderRadius: 2,
-                        color: sel ? '#c8963a' : 'rgba(160,140,200,0.6)',
-                        background: 'transparent',
-                        cursor: 'pointer',
-                        letterSpacing: '0.1em',
-                      }}
-                    >
-                      {t}
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          )}
-
-          <button
-            className="font-cinzel"
-            onClick={async () => {
-              setLevelUpHandled(true);
-              const newLv = levelUpOverlay.newLevel;
-              const newSocial = socialStatus + 1; // fixed gain per level-up
-              if (user) {
-                await restUpdate(
-                  'users',
-                  {
-                    title: overlaySelectedTitle,
-                    levelup_pending: false,
-                    levelup_newlevel: 0,
-                    level: newLv,
-                    social: newSocial,
-                  },
-                  'id',
-                  user.id,
-                );
-                setSocialStatus(newSocial);
-              }
-              setCurrentLevel(newLv);
-              setLevelUpOverlay(null);
-            }}
-            style={{
-              width: '100%',
-              minHeight: 44,
-              fontSize: 14,
-              letterSpacing: '0.3em',
-              background: '#c8963a',
-              color: '#1a1448',
-              padding: '8px 14px',
-              border: 'none',
-              borderTop: '3px solid #f5c060',
-              borderBottom: '3px solid #8a6420',
-              cursor: 'pointer',
-              marginTop: 24,
-              animation: 'villageLevelUpText 400ms ease-out 1600ms both',
-            }}
-          >
-            CONTINUE
-          </button>
-        </div>
-        </PlateFrame>
-        </div>
-      )}
+        );
+      })()}
       {/* WHISPER — must remain outside map div, fixed to screen */}
       {eyeMessage && (
         <p

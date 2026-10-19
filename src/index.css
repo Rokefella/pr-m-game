@@ -37,6 +37,16 @@
     --gold: 36 55% 50%;
     --purple: 258 100% 78%;
     --teal: 161 71% 36%;
+    --village-background: #1a2038;
+    --village-vignette: radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 25%) 100%);
+    --instrument-shadow: #000;
+    --instrument-module: #6a74b0;
+    --instrument-roof: #565f9a;
+    --instrument-edge: #2f3560;
+    --instrument-highlight: #aab4e8;
+    --instrument-strip: #aef6ff;
+    --instrument-beacon: #f5c060;
+    --instrument-beacon-shadow: 0 0 14px rgb(245 192 96 / 65%);
 
     --sidebar-background: 240 43% 3%;
     --sidebar-foreground: 43 14% 85%;
@@ -105,4 +115,11 @@
 @keyframes eye-pulse {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1.0; }
+}
+
+@keyframes instrument-beacon { 0%,100% { opacity: .2; } 50% { opacity: .8; } }
+.instrument-beacon-ring { animation: instrument-beacon 2s ease-in-out infinite; }
+.instrument-building-touched { filter: drop-shadow(var(--instrument-beacon-shadow)); }
+@media (prefers-reduced-motion: reduce) {
+  .instrument-beacon-ring { animation: none; opacity: .8; }
 }

@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 // player ID sourced from localStorage
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
@@ -16,6 +16,12 @@ import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type S
 import { BETA_MODE } from '@/lib/config';
 import { supabase } from '@/lib/supabase';
 import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
+import FloorLayer from '@/components/theme/FloorLayer';
+import BuildingBlock from '@/components/theme/BuildingBlock';
+import VillageTerrain from '@/components/theme/VillageTerrain';
+import { VILLAGE_GLOW } from '@/lib/theme/tokens';
+import { VILLAGE_BG, VILLAGE_VIGNETTE } from '@/lib/theme/villageRendering';
+import { memo } from 'react';
 import bernardMarkerUrl from '@/assets/bernard_marker.svg';
 
 import { useNpcDialogue, type BernardDialogueData } from '@/hooks/useNpcDialogue';
@@ -113,189 +119,6 @@ function clusterCells(kind: ClusterKind, cells: { col: number; row: number }[]):
   }
   return out;
 }
-
-const CLUSTER_FILL: Record<ClusterKind, string> = {
-  S: '#7ec8e3',
-  M: '#3a86c4',
-  L: '#1e3a6b',
-};
-
-// Deterministic pseudo-random from cluster position (stable across renders)
-function clusterRand(seed: number) {
-  let s = seed * 9301 + 49297;
-  return () => {
-    s = (s * 9301 + 49297) % 233280;
-    return s / 233280;
-  };
-}
-
-// One grouped building image, sized to the cluster's bounding box.
-// Rooftop detail density scales with the cluster's total cell count.
-const ClusterBuilding = memo(function ClusterBuilding({ cluster }: { cluster: BuildingCluster }) {
-  const { x, y, w, h, cols, rows, cells, kind } = cluster;
-  const fill = CLUSTER_FILL[kind];
-  const rnd = clusterRand(x * 31 + y * 17 + cells);
-
-  // Detail counts interpolate with area
-  const ventCount = Math.max(1, Math.min(10, Math.round(cells * 0.8)));
-  const ventSize = Math.max(3, Math.min(8, Math.round(3 + Math.sqrt(cells))));
-  const skyW = Math.max(6, Math.min(w - 8, Math.round(6 + cells * 1.4)));
-  const skyH = Math.max(4, Math.min(h - 8, Math.round(4 + cells * 0.9)));
-  const hatch = Math.max(3, Math.min(7, Math.round(2 + Math.sqrt(cells))));
-
-  const vents = Array.from({ length: ventCount }, (_, i) => ({
-    i,
-    vx: 3 + rnd() * Math.max(1, w - ventSize - 6),
-    vy: 3 + rnd() * Math.max(1, h - ventSize - 6),
-  }));
-
-  const seams: React.ReactNode[] = [];
-  for (let c = 1; c < cols; c++) {
-    seams.push(
-      <rect key={`sv-${c}`} x={c * 20} y={0} width={1} height={h} fill="rgba(0,0,0,0.28)" />,
-    );
-  }
-  for (let r = 1; r < rows; r++) {
-    seams.push(
-      <rect key={`sh-${r}`} x={0} y={r * 20} width={w} height={1} fill="rgba(0,0,0,0.28)" />,
-    );
-  }
-
-  const skyX = Math.max(3, (w - skyW) / 2);
-  const skyY = Math.max(3, (h - skyH) / 2);
-
-  return (
-    <>
-      {/* dark offset shadow behind footprint */}
-      <div
-        style={{
-          position: 'absolute',
-          left: x + 3,
-          top: y + 3,
-          width: w,
-          height: h,
-          background: 'rgba(2,2,10,0.65)',
-          pointerEvents: 'none',
-          zIndex: 2,
-        }}
-      />
-      <svg
-        width={w}
-        height={h}
-        viewBox={`0 0 ${w} ${h}`}
-        style={{
-          position: 'absolute',
-          left: x,
-          top: y,
-          pointerEvents: 'none',
-          zIndex: 3,
-          display: 'block',
-          overflow: 'hidden',
-        }}
-      >
-        <rect x={0} y={0} width={w} height={h} fill={fill} />
-        {seams}
-        {/* rooftop HVAC vents */}
-        {vents.map((v) => (
-          <rect
-            key={`v-${v.i}`}
-            x={v.vx}
-            y={v.vy}
-            width={ventSize}
-            height={ventSize}
-            fill="rgba(10,14,26,0.85)"
-          />
-        ))}
-        {/* skylight panel */}
-        <rect
-          x={skyX + 0.5}
-          y={skyY + 0.5}
-          width={Math.max(0, skyW - 1)}
-          height={Math.max(0, skyH - 1)}
-          fill="rgba(226,240,250,0.55)"
-          stroke="rgba(10,14,26,0.5)"
-          strokeWidth={1}
-        />
-        {/* access hatch */}
-        <rect
-          x={w - 3 - hatch}
-          y={h - 3 - hatch}
-          width={hatch}
-          height={hatch}
-          fill="rgba(20,26,40,0.9)"
-        />
-        {/* outer border */}
-        <rect
-          x={0.5}
-          y={0.5}
-          width={Math.max(0, w - 1)}
-          height={Math.max(0, h - 1)}
-          fill="none"
-          stroke="rgba(4,4,10,0.55)"
-          strokeWidth={1}
-        />
-      </svg>
-    </>
-  );
-});
-
-
-
-
-// Decorative ground tile colors (muted, atmospheric — no border radius)
-const GROUND_TILE_COLORS: Record<GroundTile['kind'], string> = {
-  PATH: 'rgba(224,221,213,0.045)',
-  ROAD: 'rgba(224,221,213,0.075)',
-  SQUARE: 'rgba(169,140,255,0.07)',
-  LANDMARK: 'rgba(200,148,58,0.12)',
-};
-
-// Kasseien-style paving block tile for PATH/ROAD cells
-const PAVING_BLOCKS: Array<{ x: number; y: number; w: number; h: number; rx: number; fill: string }> = [
-  { x: 0.5, y: 0.5, w: 5, h: 6, rx: 0.8, fill: 'rgba(75,80,100,0.35)' },
-  { x: 6, y: 0.5, w: 6.5, h: 5.5, rx: 0.8, fill: 'rgba(68,72,92,0.35)' },
-  { x: 13, y: 0.5, w: 4, h: 6.5, rx: 0.8, fill: 'rgba(80,85,105,0.35)' },
-  { x: 17.3, y: 0.5, w: 2.2, h: 6, rx: 0.6, fill: 'rgba(70,74,94,0.35)' },
-  { x: 0.5, y: 7.3, w: 4, h: 6, rx: 0.8, fill: 'rgba(72,76,96,0.35)' },
-  { x: 4.8, y: 7, w: 5.5, h: 6.3, rx: 0.8, fill: 'rgba(80,85,105,0.35)' },
-  { x: 10.6, y: 7.3, w: 7, h: 5.7, rx: 0.8, fill: 'rgba(66,70,90,0.35)' },
-  { x: 17.9, y: 7, w: 1.8, h: 6.2, rx: 0.5, fill: 'rgba(76,80,100,0.35)' },
-  { x: 0.5, y: 13.7, w: 6, h: 6, rx: 0.8, fill: 'rgba(70,74,94,0.35)' },
-  { x: 6.8, y: 13.9, w: 4.2, h: 5.8, rx: 0.8, fill: 'rgba(82,87,107,0.35)' },
-  { x: 11.3, y: 13.6, w: 5.2, h: 6.1, rx: 0.8, fill: 'rgba(74,78,98,0.35)' },
-  { x: 16.8, y: 13.9, w: 2.7, h: 5.8, rx: 0.6, fill: 'rgba(78,82,102,0.35)' },
-];
-
-const PavingCell = memo(({ col, row }: { col: number; row: number }) => {
-  const v = (col + row) % 4;
-  const sx = v === 1 || v === 3 ? -1 : 1;
-  const sy = v === 2 || v === 3 ? -1 : 1;
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-    >
-      <rect width="20" height="20" fill="rgba(15,18,28,0.4)" />
-      <g transform={`translate(${sx === -1 ? 20 : 0} ${sy === -1 ? 20 : 0}) scale(${sx} ${sy})`}>
-        {PAVING_BLOCKS.map((b, i) => (
-          <rect
-            key={i}
-            x={b.x}
-            y={b.y}
-            width={b.w}
-            height={b.h}
-            rx={b.rx}
-            fill={b.fill}
-            stroke="rgba(140,150,190,0.15)"
-            strokeWidth={0.3}
-          />
-        ))}
-      </g>
-    </svg>
-  );
-});
 
 const WallCell = memo(() => (
   <svg
@@ -608,71 +431,6 @@ const OBSTACLES: Rect[] = [...TYPE_B, ...TYPE_C, ...TYPE_RIM];
 // ---------- Forest blocks (outside outermost ring, hardcoded via seeded RNG) ----------
 type ForestBlock = { x: number; y: number; w: number; h: number };
 
-// SVG tree rendered for every forest block/cell. Size variant derived from grid position.
-const ForestTreeCell = memo(({ x, y, w, h }: { x: number; y: number; w: number; h: number }) => {
-  const col = Math.floor(x / 20);
-  const row = Math.floor(y / 20);
-  const v = (col + row) % 3;
-  const outer =
-    v === 0
-      ? { cx: 10, cy: 9, rx: 6, ry: 7 }
-      : v === 1
-        ? { cx: 10, cy: 10, rx: 5, ry: 6 }
-        : { cx: 10, cy: 8, rx: 7, ry: 8 };
-  const inner =
-    v === 0
-      ? { cx: 10, cy: 7, rx: 4, ry: 5 }
-      : v === 1
-        ? { cx: 10, cy: 9, rx: 3, ry: 4 }
-        : { cx: 10, cy: 6, rx: 5, ry: 6 };
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: x,
-        top: y,
-        width: w,
-        height: h,
-        pointerEvents: 'none',
-        zIndex: 1,
-      }}
-    >
-      <svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 20 20"
-        preserveAspectRatio="none"
-        style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
-      >
-        <rect
-          x="0"
-          y="0"
-          width="20"
-          height="20"
-          rx="1"
-          fill="rgba(30,80,50,0.15)"
-          stroke="rgba(40,100,60,0.35)"
-          strokeWidth="0.5"
-        />
-        <ellipse
-          cx={outer.cx}
-          cy={outer.cy}
-          rx={outer.rx}
-          ry={outer.ry}
-          fill="rgba(25,70,40,0.65)"
-        />
-        <ellipse
-          cx={inner.cx}
-          cy={inner.cy}
-          rx={inner.rx}
-          ry={inner.ry}
-          fill="rgba(35,95,52,0.75)"
-        />
-        <rect x="9" y="16" width="2" height="3" rx="1" fill="rgba(20,50,30,0.8)" />
-      </svg>
-    </div>
-  );
-});
 const generateForest = (): ForestBlock[] => {
   const rng = makeRng(0xF0FE57);
   const blocks: ForestBlock[] = [];
@@ -791,6 +549,7 @@ const generateForest = (): ForestBlock[] => {
   return blocks;
 };
 const FOREST = generateForest();
+const EMPTY_GROUND: GroundTile[] = [];
 
 // Forest atmosphere text fragments
 const FOREST_TEXTS: { x: number; y: number; t: string }[] = [
@@ -2169,66 +1928,29 @@ const Village = () => {
     return () => cancelAnimationFrame(raf);
   }, [view]);
 
-  // Per-Type-A depth styling: rgb tuple + darker shade tuple
-  const TYPE_A_DEPTH: Record<number, { rgb: [number, number, number]; dark: [number, number, number] }> = {
-    23: { rgb: [74, 158, 255], dark: [30, 60, 120] },
-    47: { rgb: [29, 158, 117], dark: [10, 60, 45] },
-    89: { rgb: [200, 150, 58], dark: [90, 60, 20] },
-  };
+  // Neighbour indexes are presentation-only and built once per loaded layout.
+  const themedTiles = useMemo(() => {
+    const roads = new Set((dynamicBuildings?.groundTiles ?? []).filter(g => g.kind === 'ROAD').map(g => `${g.x / 20},${g.y / 20}`));
+    const trees = new Set((dynamicBuildings?.forest ?? FOREST).map(f => `${Math.floor(f.x / 20)},${Math.floor(f.y / 20)}`));
+    return { roads, trees };
+  }, [dynamicBuildings]);
 
-  const renderTypeA = (b: typeof A_23 | typeof A_47 | typeof A_89, pulsing: boolean) => {
-    const d = TYPE_A_DEPTH[b.id];
-    const [r, g, bl] = d.rgb;
-    const [dr, dg, db] = d.dark;
-    return (
-      <div
-        key={`a-${b.id}`}
-        style={{
-          position: 'absolute',
-          left: b.x,
-          top: b.y,
-          width: b.w,
-          height: b.h,
-          background: `linear-gradient(135deg, rgba(${r},${g},${bl},0.22) 0%, rgba(${r},${g},${bl},0.14) 60%, rgba(${dr},${dg},${db},0.25) 100%)`,
-          borderTop: `1px solid rgba(${r},${g},${bl},0.55)`,
-          borderLeft: `1px solid rgba(${r},${g},${bl},0.45)`,
-          borderBottom: '0.5px solid rgba(20,10,50,0.9)',
-          borderRight: '0.5px solid rgba(30,15,70,0.8)',
-          boxShadow: `inset -3px -3px 8px rgba(0,0,0,0.35), inset 1px 1px 4px rgba(${r},${g},${bl},0.08)`,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          animation: pulsing ? 'villagePulse 2s ease-in-out infinite' : undefined,
-          zIndex: 3,
-        }}
-      >
-        <span className="font-mono" style={{ fontSize: b.label, color: b.color }}>
-          {b.id}
-        </span>
-        {(b.id === 23 || b.id === 47) && feedback.id === b.id && (
-          <p
-            className="font-fell italic"
-            style={{
-              fontSize: 14,
-              color: 'rgba(160,140,200,0.5)',
-              marginTop: 4,
-              animation: 'villageNotYet 1.5s ease-out forwards',
-            }}
-          >
-            Not yet.
-          </p>
-        )}
-      </div>
-    );
-  };
+  const renderTypeA = (b: typeof A_23 | typeof A_47 | typeof A_89) => (
+    <div key={`a-${b.id}-${b.x}-${b.y}`} className={getFlag(`touched_${b.id}`) === 'true' ? 'instrument-building-touched' : undefined}
+      style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, pointerEvents: 'none', zIndex: 3 }}>
+      <BuildingBlock cols={b.w / 20} rows={b.h / 20} size={20} numbered label={String(b.id)} glow={VILLAGE_GLOW} />
+      {(b.id === 23 || b.id === 47) && feedback.id === b.id && (
+        <p className="font-fell italic" style={{ fontSize: 14, color: 'var(--instrument-beacon)', marginTop: 4, animation: 'villageNotYet 1.5s ease-out forwards' }}>Not yet.</p>
+      )}
+    </div>
+  );
 
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        background: '#04040a',
+        background: VILLAGE_BG,
         overflow: 'hidden',
       }}
     >
@@ -2293,108 +2015,19 @@ const Village = () => {
               position: 'absolute',
               left: 0,
               top: 0,
-              width: MAP_W,
-              height: MAP_H,
+              width: mapW,
+              height: mapH,
               transform: `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px)`,
               willChange: 'transform',
             }}
           >
 
 
-        {/* Grid overlay */}
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'linear-gradient(rgba(100,80,160,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(100,80,160,0.08) 1px, transparent 1px)',
-            backgroundSize: '40px 40px',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
+        {/* One repeating ground layer, no per-cell ground nodes or grid overlay. */}
+        <FloorLayer cols={mapW / 20} rows={mapH / 20} size={20} styleKey="ground" glow={VILLAGE_GLOW} />
 
-        {/* Outermost ring outline (hardcoded village only) */}
-        {!dynamicBuildings && (
-          <div
-            style={{
-              position: 'absolute',
-              left: CX - OUTERMOST_RX,
-              top: CY - OUTERMOST_RY,
-              width: OUTERMOST_RX * 2,
-              height: OUTERMOST_RY * 2,
-              border: '0.5px solid rgba(100,80,160,0.05)',
-              borderRadius: '50%',
-              pointerEvents: 'none',
-              zIndex: 1,
-            }}
-          />
-        )}
-
-        {/* Outer ring outline */}
-        <div
-          style={{
-            position: 'absolute',
-            left: CX - OUTER_RX,
-            top: CY - OUTER_RY,
-            width: OUTER_RX * 2,
-            height: OUTER_RY * 2,
-            border: '0.5px solid rgba(100,80,160,0.06)',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
-        {/* Middle ring outline */}
-        <div
-          style={{
-            position: 'absolute',
-            left: CX - MIDDLE_RX,
-            top: CY - MIDDLE_RY,
-            width: MIDDLE_RX * 2,
-            height: MIDDLE_RY * 2,
-            border: '0.5px solid rgba(100,80,160,0.08)',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
-        {/* Inner ring (pupil) outline */}
-        <div
-          style={{
-            position: 'absolute',
-            left: CX - INNER_RX,
-            top: CY - INNER_RY,
-            width: INNER_RX * 2,
-            height: INNER_RY * 2,
-            border: '0.5px solid rgba(100,80,160,0.10)',
-            borderRadius: '50%',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
-
-        {/* Decorative ground tiles (paths, roads, squares, landmarks) — non-blocking */}
-        {visible?.groundTiles.map((g) => {
-          const paved = g.kind === 'PATH' || g.kind === 'ROAD';
-          return (
-            <div
-              key={`gt-${g.x}-${g.y}`}
-              style={{
-                position: 'absolute',
-                left: g.x,
-                top: g.y,
-                width: 20,
-                height: 20,
-                background: paved ? undefined : GROUND_TILE_COLORS[g.kind],
-                pointerEvents: 'none',
-                zIndex: 2,
-              }}
-            >
-              {paved && <PavingCell col={Math.round(g.x / 20)} row={Math.round(g.y / 20)} />}
-            </div>
-          );
-        })}
+        {/* Decorative streets and plaza plates use cached CSS images. */}
+        <VillageTerrain ground={visible?.groundTiles ?? EMPTY_GROUND} forest={visible?.forest ?? FOREST} roads={themedTiles.roads} trees={themedTiles.trees} />
 
         {/* Rugs — decorative floor overlay, above base ground, below solids */}
         {visible?.rugTiles.map((r) => (
@@ -2442,10 +2075,6 @@ const Village = () => {
 
         {/* Forest blocks (outside outermost ring) */}
 
-        {(visible ? visible.forest : FOREST).map((f) => (
-          <ForestTreeCell key={`f-${f.x}-${f.y}`} x={f.x} y={f.y} w={f.w} h={f.h} />
-        ))}
-
         {/* Forest atmosphere text fragments (hardcoded village only) */}
         {!dynamicBuildings &&
           FOREST_TEXTS.map((ft, i) => (
@@ -2479,121 +2108,18 @@ const Village = () => {
           zIndex={1}
         />
 
-        {/* Outermost rim buildings (hardcoded village only) */}
-        {!dynamicBuildings &&
-          TYPE_RIM.map((b) => (
-            <div
-              key={`rim-${b.id}`}
-              style={{
-                position: 'absolute',
-                left: b.x,
-                top: b.y,
-                width: b.w,
-                height: b.h,
-                border: '0.5px solid rgba(100,80,160,0.25)',
-                background: 'rgba(100,80,160,0.07)',
-                zIndex: 1,
-              }}
-            />
-          ))}
-
-        {/* Clustered dynamic buildings (grouped by type, one image per cluster) */}
+        {/* One module SVG per existing building footprint. */}
         {visible?.clusters.map((c) => (
-          <ClusterBuilding key={c.id} cluster={c} />
+          <div key={c.id} style={{ position: 'absolute', left: c.x, top: c.y, width: c.w, height: c.h, zIndex: 3, pointerEvents: 'none' }}>
+            <BuildingBlock cols={c.cols} rows={c.rows} size={20} glow={VILLAGE_GLOW} />
+          </div>
         ))}
-
-        {/* Type C buildings (hardcoded village only) */}
-        {!dynamicBuildings && TYPE_C.map((b) => (
-          <div
-            key={`c-${b.id}`}
-            style={{
-              position: 'absolute',
-              left: b.x,
-              top: b.y,
-              width: b.w,
-              height: b.h,
-              background: 'linear-gradient(135deg, rgba(130,110,200,0.132) 0%, rgba(100,80,160,0.084) 60%, rgba(50,30,90,0.15) 100%)',
-              borderTop: '1px solid rgba(140,120,220,0.33)',
-              borderLeft: '1px solid rgba(130,110,200,0.27)',
-              borderBottom: '0.5px solid rgba(20,10,50,0.54)',
-              borderRight: '0.5px solid rgba(30,15,70,0.48)',
-              boxShadow: 'inset -3px -3px 8px rgba(0,0,0,0.21), inset 1px 1px 4px rgba(140,120,220,0.048)',
-              zIndex: 1,
-            }}
-          />
+        {!dynamicBuildings && [...TYPE_RIM, ...TYPE_C, ...TYPE_B].map((b) => (
+          <div key={b.id} style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, zIndex: 3, pointerEvents: 'none' }}>
+            <BuildingBlock cols={b.w / 20} rows={b.h / 20} size={20} glow={VILLAGE_GLOW} />
+          </div>
         ))}
-
-        {/* Type B buildings (hardcoded village only) */}
-        {!dynamicBuildings && TYPE_B.map((b) => (
-          <div
-            key={`b-${b.id}`}
-            style={{
-              position: 'absolute',
-              left: b.x,
-              top: b.y,
-              width: b.w,
-              height: b.h,
-              background: 'linear-gradient(135deg, rgba(130,110,200,0.22) 0%, rgba(100,80,160,0.14) 60%, rgba(50,30,90,0.25) 100%)',
-              borderTop: '1px solid rgba(140,120,220,0.55)',
-              borderLeft: '1px solid rgba(130,110,200,0.45)',
-              borderBottom: '0.5px solid rgba(20,10,50,0.9)',
-              borderRight: '0.5px solid rgba(30,15,70,0.8)',
-              boxShadow: 'inset -3px -3px 8px rgba(0,0,0,0.35), inset 1px 1px 4px rgba(140,120,220,0.08)',
-              zIndex: 2,
-            }}
-          />
-        ))}
-
-        {/* Type A — doors: pulsating gold markers in dynamic villages, boxes in hardcoded */}
-        {visible
-          ? visible.typeA.map((b) => (
-              <div
-                key={`door-${b.id}-${b.x}-${b.y}`}
-                style={{
-                  position: 'absolute',
-                  left: b.x,
-                  top: b.y,
-                  width: 20,
-                  height: 20,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  background: 'rgba(244,197,66,0.22)',
-                  border: '1px solid rgba(244,197,66,0.85)',
-                  boxShadow: '0 0 10px rgba(244,197,66,0.55)',
-                  animation: 'villagePulse 1.8s ease-in-out infinite',
-                  pointerEvents: 'none',
-                  zIndex: 6,
-                }}
-              >
-                <span className="font-mono" style={{ fontSize: 9, color: '#f4c542' }}>
-                  {b.id}
-                </span>
-                {(b.id === 23 || b.id === 47) && feedback.id === b.id && (
-                  <p
-                    className="font-fell italic"
-                    style={{
-                      position: 'absolute',
-                      top: 22,
-                      fontSize: 14,
-                      color: 'rgba(160,140,200,0.5)',
-                      whiteSpace: 'nowrap',
-                      animation: 'villageNotYet 1.5s ease-out forwards',
-                    }}
-                  >
-                    Not yet.
-                  </p>
-                )}
-              </div>
-            ))
-          : (
-            <>
-              {renderTypeA(A_23, false)}
-              {renderTypeA(A_47, false)}
-              {renderTypeA(A_89, true)}
-            </>
-
-          )}
+        {(visible ? visible.typeA : TYPE_A).map(renderTypeA)}
 
         {/* Villagers — rendered inside map div, positioned in map pixel coords */}
         {activeVillagers.map((v) => (
@@ -2648,6 +2174,7 @@ const Village = () => {
             left: bernardPos.x - 12,
             top: bernardPos.y - 12,
             pointerEvents: 'none',
+            zIndex: 4,
           }}
         />
         <span
@@ -2788,6 +2315,8 @@ const Village = () => {
     )}
 
 
+
+      <div aria-hidden="true" style={{ position: 'fixed', inset: 0, background: VILLAGE_VIGNETTE, pointerEvents: 'none', zIndex: 7 }} />
 
       {/* Ghost hover tooltip */}
       {tooltipState.visible && (

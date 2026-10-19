@@ -38,6 +38,7 @@
     --purple: 258 100% 78%;
     --teal: 161 71% 36%;
     --village-background: #1a2038;
+    --avatar-preview-ground: #35516e;
     --village-vignette: radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 25%) 100%);
     --instrument-shadow: #000;
     --instrument-module: #6a74b0;
@@ -110,6 +111,11 @@
 }
 
 /* PRÆM Animations */
+.avatar-preview, .avatar-preview-dark { background: var(--village-background); }
+.avatar-preview-ground { background: var(--avatar-preview-ground); }
+.avatar-preview-section { padding: 24px 16px; }
+.avatar-preview-sizes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(116px, 1.3fr); gap: 4px; }
+.avatar-preview-sprite { display: flex; align-items: center; justify-content: center; height: 136px; }
 @keyframes sigil-pulse {
   0%, 100% {
     opacity: 0.65;

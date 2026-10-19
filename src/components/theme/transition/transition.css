@@ -1,0 +1,23 @@
+.gate-panel { transition: transform 700ms steps(7, end); }
+.gate-light { opacity: 0; transition: opacity 400ms ease-out 300ms; }
+.gate-open .gate-panel-left { transform: translateX(-20px); }
+.gate-open .gate-panel-right { transform: translateX(20px); }
+.gate-open .gate-light { opacity: .9; }
+.gate-seam { opacity: 1; transition: opacity 200ms; }
+.gate-open .gate-seam { opacity: 0; }
+.gate-seam-glow { animation: gate-seam-pulse 2.4s ease-in-out infinite; }
+@keyframes gate-seam-pulse { 0%, 100% { opacity: .12; } 50% { opacity: .34; } }
+.transition-backdrop { position: fixed; inset: 0; z-index: 200; background: rgba(14,18,40,.96); display: flex; align-items: center; justify-content: center; overflow: hidden; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+.transition-stack { position: relative; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+.transition-flash { position: fixed; inset: 0; z-index: 300; pointer-events: none; opacity: 0; transition: opacity 400ms ease-in; }
+.transition-flash.on { opacity: 1; }
+.transition-btn { min-height: 44px; flex: 1 1 120px; font-size: 14px; letter-spacing: .3em; padding: 8px 14px; cursor: pointer; }
+.transition-btn:disabled { cursor: default; opacity: .6; }
+.transition-btn-primary { background: #c8963a; color: #1a1448; border: 0; border-top: 3px solid #f5c060; border-bottom: 3px solid #8a6420; }
+.transition-btn-secondary { background: transparent; color: #8e99d0; border: 1px solid #4a5385; }
+.transition-mote { position: absolute; width: 2px; height: 2px; opacity: .5; pointer-events: none; animation: transition-mote linear infinite; }
+@keyframes transition-mote { 0% { transform: translateY(0); opacity: 0; } 20% { opacity: .5; } 100% { transform: translateY(-120px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .gate-panel, .gate-light, .gate-seam, .transition-flash { transition: none !important; }
+  .gate-seam-glow, .transition-mote, .transition-backdrop * { animation: none !important; }
+}

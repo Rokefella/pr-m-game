@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
@@ -12,6 +12,15 @@ import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/levelLoader';
 import Thumbstick from '@/components/Thumbstick';
+import WallTile from '@/components/theme/WallTile';
+import FloorLayer from '@/components/theme/FloorLayer';
+import PrimeGlowLayer from '@/components/theme/PrimeGlowLayer';
+import { Gate, PrimeShard, Veil, RoomDoorTile, DropSpawnGlimmer, DropCrate, NpcPad, StartPad, Pylon } from '@/components/theme/objects';
+import { getThemeForLevel } from '@/lib/theme/themes';
+import { DIMENSION_GLOW } from '@/lib/theme/tokens';
+import { MAZE_VIGNETTE, SHOW_SPAWN_GLIMMER, pylonCells, visibleBounds } from '@/lib/theme/mazeRendering';
+import type { VisualCell } from '@/lib/levelLoader';
+import '@/components/theme/maze.css';
 
 // TODO: restore to real walking steps via HealthKit for production.
 const INITIAL_STEPS = 1000;
@@ -43,58 +52,9 @@ type LevelConfig = {
   fragmentsRequired: number;
   doorsToRoom?: DoorToRoom[];
   veilSet?: Set<string>;
+  theme?: string;
+  visualCells?: VisualCell[];
 };
-
-const wallPalettes = {
-  purple: { core: '#4a3d78', edge: '#1a1430', seam: '#8a5fd4', light: '#c9b8f0' },
-  amber: { core: '#78603d', edge: '#301f10', seam: '#d4a35f', light: '#e8cfa8' },
-  teal: { core: '#2f6b5c', edge: '#0d2a22', seam: '#3dd4a8', light: '#b8f5e4' },
-};
-
-const corrPalettes = {
-  purple: { glow: '#8a5fd4', line: '#c9a8f0' },
-  amber: { glow: '#d4a35f', line: '#f0d8a8' },
-  teal: { glow: '#3dd4a8', line: '#a8f0d8' },
-};
-
-const WallCell = memo(({ dimension }: { dimension: Dimension }) => {
-  const p = wallPalettes[dimension];
-  return (
-    <svg width={CELL} height={CELL} viewBox="0 0 20 20" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-      <defs>
-        <linearGradient id={`wallGrad-${dimension}`} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color={p.light} />
-          <stop offset="45%" stop-color={p.core} />
-          <stop offset="100%" stop-color={p.edge} />
-        </linearGradient>
-      </defs>
-      <rect x="1.2" y="1.2" width="18.8" height="18.8" fill="rgba(0,0,0,0.4)" />
-      <rect x="0" y="0" width="18.8" height="18.8" fill={`url(#wallGrad-${dimension})`} />
-      <line x1="0" y1="0.3" x2="18.8" y2="0.3" stroke={p.light} strokeOpacity="0.7" strokeWidth="0.7" />
-      <line x1="0.3" y1="0" x2="0.3" y2="18.8" stroke={p.light} strokeOpacity="0.5" strokeWidth="0.6" />
-      <line x1="0" y1="18.5" x2="18.8" y2="18.5" stroke={p.edge} strokeOpacity="0.8" strokeWidth="0.7" />
-      <line x1="18.5" y1="0" x2="18.5" y2="18.8" stroke={p.edge} strokeOpacity="0.8" strokeWidth="0.7" />
-      <line x1="0" y1="6.6" x2="18.8" y2="6.6" stroke={p.edge} strokeOpacity="0.5" strokeWidth="0.5" />
-      <line x1="0" y1="13.3" x2="18.8" y2="13.3" stroke={p.edge} strokeOpacity="0.5" strokeWidth="0.5" />
-      <line x1="6.6" y1="0" x2="6.6" y2="6.6" stroke={p.edge} strokeOpacity="0.4" strokeWidth="0.4" />
-      <line x1="13.3" y1="6.6" x2="13.3" y2="13.3" stroke={p.edge} strokeOpacity="0.4" strokeWidth="0.4" />
-      <line x1="6.6" y1="13.3" x2="6.6" y2="18.8" stroke={p.edge} strokeOpacity="0.4" strokeWidth="0.4" />
-    </svg>
-  );
-});
-
-const CorridorCell = memo(({ dimension }: { dimension: Dimension }) => {
-  const p = corrPalettes[dimension];
-  return (
-    <svg width={CELL} height={CELL} viewBox="0 0 20 20" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-      <rect width="20" height="20" fill="#08070c" />
-      <rect width="20" height="20" fill={p.glow} fillOpacity="0.04" />
-      <line x1="0" y1="10" x2="8" y2="10" stroke={p.line} strokeOpacity="0.3" strokeWidth="0.5" />
-      <line x1="12" y1="10" x2="20" y2="10" stroke={p.line} strokeOpacity="0.3" strokeWidth="0.5" />
-      <circle cx="10" cy="10" r="0.6" fill={p.glow} fillOpacity="0.5" />
-    </svg>
-  );
-});
 
 // =================== LEVEL 1 — corrected corridor layout ===================
 const LEVEL1_HINTS: Cell[] = [
@@ -510,7 +470,7 @@ const Maze = () => {
   const whisperTimer = useRef<number | null>(null);
 
   const [quoteIdx, setQuoteIdx] = useState(0);
-  const [cam, setCam] = useState({ x: 0, y: 0 });
+  const worldRef = useRef<HTMLDivElement>(null);
   const camRef = useRef({ x: 0, y: 0 });
   const heldKeysRef = useRef<Set<string>>(new Set());
   const lastMoveTimeRef = useRef(0);
@@ -558,7 +518,7 @@ const Maze = () => {
         y: window.innerHeight / 2 - (spawn.row * CELL + CELL / 2),
       };
       camRef.current = initialCam;
-      setCam(initialCam);
+      if (worldRef.current) worldRef.current.style.transform = `translate(${initialCam.x}px, ${initialCam.y}px)`;
     }
     if (config.claire) {
       clairePosRef.current = { ...config.claire };
@@ -687,9 +647,33 @@ const Maze = () => {
   const exchangeOpenRef = useRef(false);
   useEffect(() => { exchangeOpenRef.current = exchangeOpen; }, [exchangeOpen]);
 
-  const VIS_RADIUS = 120;
-  const VIS_INNER = Math.round(VIS_RADIUS * 0.75);
-  const VIS_MID = Math.round(VIS_RADIUS * 0.9);
+  const [viewport, setViewport] = useState({ width: window.innerWidth, height: window.innerHeight });
+  useEffect(() => {
+    const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, []);
+  const theme = getThemeForLevel(currentLevel, config?.theme);
+  const isFloor = useCallback((col: number, row: number) => config?.openSet.has(`${col},${row}`) ?? false, [config]);
+  const pylons = useMemo(() => config ? pylonCells(config.cols, config.rows, wallSet, config.openSet) : new Set<string>(), [config, wallSet]);
+  // Reuse the existing 400px camera margin, but recalculate only on a logical cell change/resize.
+  const bounds = useMemo(() => visibleBounds(pos, viewport.width, viewport.height, CELL), [pos.col, pos.row, viewport]);
+  const inView = (cell: Cell) => cell.col >= bounds.minCol && cell.col <= bounds.maxCol && cell.row >= bounds.minRow && cell.row <= bounds.maxRow;
+  const visibleWalls = useMemo(() => {
+    const cells: Cell[] = [];
+    if (!config) return cells;
+    for (let row = Math.max(0, bounds.minRow); row <= Math.min(config.rows - 1, bounds.maxRow); row++) {
+      for (let col = Math.max(0, bounds.minCol); col <= Math.min(config.cols - 1, bounds.maxCol); col++) {
+        if (wallSet.has(`${col},${row}`)) cells.push({ col, row });
+      }
+    }
+    return cells;
+  }, [config, wallSet, bounds]);
+  const visibleObjects = useMemo(() => (config?.visualCells ?? []).filter(cell =>
+    ['ROOM_DOOR', 'DROP_SPAWN', 'DROP', 'NPC'].includes(cell.type) &&
+    !(cell.type === 'ROOM_DOOR' && config?.doorsToRoom?.some(door => door.col === cell.col && door.row === cell.row)) &&
+    cell.col >= bounds.minCol && cell.col <= bounds.maxCol && cell.row >= bounds.minRow && cell.row <= bounds.maxRow
+  ), [config, bounds]);
 
   const showWhisper = (text: string, color = 'rgba(160,140,200,0.85)', dur = 3000) => {
     setWhisper(text);
@@ -1069,7 +1053,7 @@ const Maze = () => {
         x: camRef.current.x + (targetX - camRef.current.x) * 0.12,
         y: camRef.current.y + (targetY - camRef.current.y) * 0.12,
       };
-      setCam({ x: camRef.current.x, y: camRef.current.y });
+      if (worldRef.current) worldRef.current.style.transform = `translate(${camRef.current.x}px, ${camRef.current.y}px)`;
 
       pulseT += 1 / 60;
       const p = 1 + Math.sin((pulseT / 1.5) * Math.PI * 2) * 0.075 + 0.075;
@@ -1089,8 +1073,8 @@ const Maze = () => {
 
   
 
-  const playerScreenX = typeof window !== 'undefined' ? cam.x + displayPos.col * CELL + CELL / 2 : 0;
-  const playerScreenY = typeof window !== 'undefined' ? cam.y + displayPos.row * CELL + CELL / 2 : 0;
+  const playerScreenX = typeof window !== 'undefined' ? camRef.current.x + displayPos.col * CELL + CELL / 2 : 0;
+  const playerScreenY = typeof window !== 'undefined' ? camRef.current.y + displayPos.row * CELL + CELL / 2 : 0;
 
   // Level 3+ placeholder
   if (levelLoaded && currentLevel >= 3) {
@@ -1121,81 +1105,32 @@ const Maze = () => {
   const MAP_W = config.cols * CELL;
   const MAP_H = config.rows * CELL;
 
-  // Cull walls outside camera view for performance (Level 2 = 22500 cells)
-  const viewLeft = -cam.x - 400;
-  const viewTop = -cam.y - 400;
-  const viewRight = -cam.x + window.innerWidth + 400;
-  const viewBottom = -cam.y + window.innerHeight + 400;
-
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#04040a', overflow: 'hidden' }}>
+    <div className="maze-theme" style={{ position: 'fixed', inset: 0, background: 'hsl(var(--background))', overflow: 'hidden', '--maze-light-core': `${DIMENSION_GLOW[dimension]}14` } as CSSProperties}>
       <div
-        style={{
-          position: 'absolute',
-          width: MAP_W,
-          height: MAP_H,
-          transform: `translate(${cam.x}px, ${cam.y}px)`,
-          willChange: 'transform',
-        }}
+        ref={worldRef}
+        data-maze-world="true"
+        style={{ position: 'absolute', width: MAP_W, height: MAP_H, transform: `translate(${camRef.current.x}px, ${camRef.current.y}px)`, willChange: 'transform' }}
       >
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'linear-gradient(rgba(100,80,160,0.12) 1px, transparent 1px), linear-gradient(90deg, rgba(100,80,160,0.12) 1px, transparent 1px)',
-            backgroundSize: `${CELL}px ${CELL}px`,
-            pointerEvents: 'none',
-          }}
-        />
-
-        {config && Array.from(config.openSet).map((key) => {
-          const [c, r] = key.split(',').map(Number);
-          const x = c * CELL;
-          const y = r * CELL;
-          if (x + CELL < viewLeft || x > viewRight || y + CELL < viewTop || y > viewBottom) return null;
-          return (
-            <div
-              key={`c-${key}`}
-              style={{
-                position: 'absolute',
-                left: x,
-                top: y,
-                width: CELL,
-                height: CELL,
-                zIndex: 1,
-                pointerEvents: 'none',
-              }}
-            >
-              <CorridorCell dimension={dimension} />
-            </div>
-          );
-        })}
-
-        {Array.from(wallSet).map((key) => {
-          const [c, r] = key.split(',').map(Number);
-          const x = c * CELL;
-          const y = r * CELL;
-          if (x + CELL < viewLeft || x > viewRight || y + CELL < viewTop || y > viewBottom) return null;
-          return (
-            <div
-              key={`w-${key}`}
-              style={{
-                position: 'absolute',
-                left: x,
-                top: y,
-                width: CELL,
-                height: CELL,
-                boxSizing: 'border-box',
-                zIndex: 2,
-                opacity: 1,
-                pointerEvents: 'none',
-              }}
-            >
-              <WallCell dimension={dimension} />
-            </div>
-          );
-        })}
+        <FloorLayer cols={config.cols} rows={config.rows} size={CELL} styleKey={theme.floor} dimension={dimension} />
+        {theme.primeGlow && <PrimeGlowLayer cols={config.cols} rows={config.rows} size={CELL} dimension={dimension} isFloor={isFloor} />}
+        {visibleWalls.map(({ col, row }) => (
+          <div key={`w-${col},${row}`} data-wall-cell={`${col},${row}`} style={{ position: 'absolute', left: col * CELL, top: row * CELL, width: CELL, height: CELL, zIndex: 2, pointerEvents: 'none' }}>
+            <div className="maze-wall-shadow" />
+            <WallTile styleKey={theme.wall} dimension={dimension} size={CELL} />
+            {pylons.has(`${col},${row}`) && <div className="absolute inset-0"><Pylon dimension={dimension} size={CELL} /></div>}
+            {config.veilSet?.has(`${col},${row}`) && <div className="absolute inset-0"><Veil dimension={dimension} size={CELL} /></div>}
+          </div>
+        ))}
+        {inView(config.spawn) && <div data-object="start" style={{ position: 'absolute', left: config.spawn.col * CELL, top: config.spawn.row * CELL, zIndex: 3 }}><StartPad dimension={dimension} size={CELL} /></div>}
+        {visibleObjects.map((cell, index) => (
+          <div key={`object-${cell.type}-${cell.col},${cell.row}-${index}`} data-object={cell.type} style={{ position: 'absolute', left: cell.col * CELL, top: cell.row * CELL, width: CELL, height: CELL, zIndex: 9, pointerEvents: 'none' }}>
+            {cell.type === 'ROOM_DOOR' && <><WallTile styleKey={theme.wall} dimension={dimension} size={CELL} /><div className="absolute inset-0"><RoomDoorTile dimension={dimension} color={cell.color} size={CELL} /></div></>}
+            {cell.type === 'DROP_SPAWN' && SHOW_SPAWN_GLIMMER && <DropSpawnGlimmer dimension={dimension} size={CELL} />}
+            {cell.type === 'DROP' && <DropCrate dimension={dimension} size={CELL} />}
+            {cell.type === 'NPC' && <NpcPad dimension={dimension} size={CELL} />}
+          </div>
+        ))}
 
         {currentLevel === 1 && LEVEL1_HINTS.map((h, i) => (
           <div
@@ -1211,56 +1146,29 @@ const Maze = () => {
           />
         ))}
 
-        {config.fragments.filter((f) => !collected.has(f.prime)).map((f) => (
-          <div
-            key={`frag-${f.prime}`}
-            style={{
-              position: 'absolute',
-              left: f.col * CELL,
-              top: f.row * CELL,
-              width: CELL,
-              height: CELL,
-              background: 'rgba(91,79,212,0.15)',
-              border: '1px solid #5b4fd4',
-              animation: 'mazePurplePulse 1.8s ease-in-out infinite',
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}
-          />
+        {config.fragments.filter((f) => !collected.has(f.prime) && inView(f)).map((f) => (
+          <div key={`frag-${f.prime}`} data-object="fragment" style={{ position: 'absolute', left: f.col * CELL, top: f.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
+            <PrimeShard dimension={dimension} size={CELL} />
+          </div>
         ))}
-
-        <div
-          style={{
-            position: 'absolute',
-            left: config.door.col * CELL,
-            top: config.door.row * CELL,
-            width: CELL,
-            height: CELL,
-            background: 'rgba(200,150,58,0.12)',
-            border: '1px solid #c8963a',
-            animation: 'mazeGoldPulse 2.2s ease-in-out infinite',
-            zIndex: 10,
-            pointerEvents: 'none',
-          }}
-        />
-
-        {config.creditDoors.map((d, i) => (
-          <div
-            key={`cd-${i}`}
-            style={{
-              position: 'absolute',
-              left: d.col * CELL,
-              top: d.row * CELL,
-              width: CELL,
-              height: CELL,
-              background: 'rgba(59,130,246,0.12)',
-              border: '1px solid #3b82f6',
-              animation: 'mazeBluePulse 1.5s ease-in-out infinite',
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}
-          />
+        {inView(config.door) && <div data-object="golden-gate" style={{ position: 'absolute', left: config.door.col * CELL, top: config.door.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
+          <WallTile styleKey={theme.wall} dimension={dimension} size={CELL} />
+          <div className="absolute inset-0"><Gate variant="golden" dimension={dimension} size={CELL} /></div>
+        </div>}
+        {config.creditDoors.filter(inView).map((d, i) => (
+          <div key={`cd-${i}`} data-object="blue-gate" style={{ position: 'absolute', left: d.col * CELL, top: d.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
+            <WallTile styleKey={theme.wall} dimension={dimension} size={CELL} />
+            <div className="absolute inset-0"><Gate variant="blue" dimension={dimension} size={CELL} /></div>
+          </div>
         ))}
+        {config.doorsToRoom?.filter(inView).map((d, i) => (
+          <div key={`room-${i}`} data-object="room-door" style={{ position: 'absolute', left: d.col * CELL, top: d.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
+            <WallTile styleKey={theme.wall} dimension={dimension} size={CELL} />
+            <div className="absolute inset-0"><RoomDoorTile dimension={dimension} color={config.visualCells?.find(cell => cell.type === 'ROOM_DOOR' && cell.col === d.col && cell.row === d.row)?.color ?? (d as DoorToRoom & { color?: string }).color} size={CELL} /></div>
+          </div>
+        ))}
+        {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL, top: config.alexandra.row * CELL, zIndex: 9 }}><NpcPad dimension={dimension} size={CELL} /></div>}
+        {config.claire && claireVisible && inView(clairePos) && <div style={{ position: 'absolute', left: clairePos.col * CELL, top: clairePos.row * CELL, zIndex: 9 }}><NpcPad dimension={dimension} size={CELL} /></div>}
 
         {/* Alexandra — gold dot */}
         {config.alexandra && alexandraVisible && (
@@ -1335,11 +1243,12 @@ const Maze = () => {
         />
       </div>
 
+      <div className="maze-player-light" style={{ left: playerScreenX, top: playerScreenY }} />
       <div
         style={{
           position: 'fixed',
           inset: 0,
-          background: `radial-gradient(circle ${VIS_RADIUS}px at 50vw calc(50vh - 40px), transparent 0px, transparent ${VIS_INNER}px, rgba(4,4,10,0.85) ${VIS_MID}px, rgba(4,4,10,1) ${VIS_RADIUS}px)`,
+          background: `radial-gradient(ellipse at ${playerScreenX}px ${playerScreenY}px, transparent 0%, hsl(var(--background) / ${MAZE_VIGNETTE}) 100%)`,
           pointerEvents: 'none',
           zIndex: 50,
         }}

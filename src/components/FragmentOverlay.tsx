@@ -141,6 +141,22 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
 
   const canSave = reduced ? reducedReady : revealed && flashDone && typingDone;
 
+  const handleContinue = () => {
+    setFadingOut(true);
+    window.setTimeout(onContinue, 400);
+  };
+
+  const handleCapture = () => {
+    // Fragment is already persisted to the folder on collection.
+    // Confirm, then continue the original post-collection flow.
+    setSavedMsg(true);
+    if (savedTimerRef.current) window.clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = window.setTimeout(() => {
+      setSavedMsg(false);
+      handleContinue();
+    }, 800);
+  };
+
   return (
     <div className={`fragment-backdrop ${fadingOut ? 'fragment-fading' : ''}`} role="dialog" aria-modal="true" aria-label="Fragment reveal">
       <PlateFrame className="fragment-frame">

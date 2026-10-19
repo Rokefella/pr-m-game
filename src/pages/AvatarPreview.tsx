@@ -1,81 +1,27 @@
-import Avatar from "@/components/Avatar";
+import PlayerAvatar, { type AvatarPalette } from '@/components/PlayerAvatar';
 
-const HATS = ["none", "classic", "cap", "crown", "hood", "halo"];
-const AURA = "#5b4fd4";
+const PALETTES: AvatarPalette[] = ['purple', 'red', 'amber', 'teal'];
+const SIZES = [24, 30, 48, 96];
 
 export default function AvatarPreview() {
-  return (
-    <div
-      style={{
-        background: "#04040a",
-        color: "#e0ddd5",
-        minHeight: "100vh",
-        padding: 40,
-        fontFamily: "'IM Fell English', serif",
-      }}
-    >
-      <h2
-        className="font-cinzel"
-        style={{
-          fontSize: 20,
-          letterSpacing: "0.18em",
-          marginBottom: 32,
-          color: "#c8943a",
-        }}
-      >
-        avatar preview — verify against harness
-      </h2>
-
-      <h3
-        className="font-mono"
-        style={{ fontSize: 12, color: "rgba(160,140,200,0.6)", marginBottom: 16 }}
-      >
-        top-down · 120px
-      </h3>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 24, marginBottom: 40 }}>
-        {HATS.map((h) => (
-          <div key={h} style={{ textAlign: "center" }}>
-            <Avatar hat={h} view="topdown" size={120} auraColor={AURA} />
-            <div className="font-mono" style={{ fontSize: 10, marginTop: 8, color: "rgba(160,140,200,0.5)" }}>
-              {h}
+  return <main className="avatar-preview text-foreground">
+    <header className="px-4 py-6"><h1 className="font-cinzel text-xl">Player avatars</h1></header>
+    {(['dark', 'ground'] as const).map(surface => <section key={surface} className={`avatar-preview-section avatar-preview-${surface}`} aria-label={surface === 'dark' ? 'Dark background' : 'Village ground'}>
+      <div className="mx-auto max-w-5xl">
+        <h2 className="font-mono text-sm mb-6">{surface === 'dark' ? 'DARK' : 'VILLAGE GROUND'}</h2>
+        {PALETTES.map(palette => <div key={palette} className="mb-8" data-palette={palette}>
+          <h3 className="font-cinzel text-base capitalize mb-3">{palette}</h3>
+          {[false, true].map(walking => <div key={String(walking)} className="mb-5" data-walking={walking}>
+            <p className="font-mono text-xs mb-2">{walking ? 'WALKING' : 'IDLE'}</p>
+            <div className="avatar-preview-sizes">
+              {SIZES.map(size => <figure key={size} className="m-0 text-center min-w-0" data-size={size}>
+                <div className="avatar-preview-sprite"><PlayerAvatar palette={palette} walking={walking} size={size} /></div>
+                <figcaption className="font-mono text-xs mt-2">{size}px</figcaption>
+              </figure>)}
             </div>
-          </div>
-        ))}
+          </div>)}
+        </div>)}
       </div>
-
-      <h3
-        className="font-mono"
-        style={{ fontSize: 12, color: "rgba(160,140,200,0.6)", marginBottom: 16 }}
-      >
-        top-down · 32px (true maze scale)
-      </h3>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 24, marginBottom: 40 }}>
-        {HATS.map((h) => (
-          <div key={h} style={{ textAlign: "center" }}>
-            <Avatar hat={h} view="topdown" size={32} auraColor={AURA} />
-            <div className="font-mono" style={{ fontSize: 10, marginTop: 8, color: "rgba(160,140,200,0.5)" }}>
-              {h}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <h3
-        className="font-mono"
-        style={{ fontSize: 12, color: "rgba(160,140,200,0.6)", marginBottom: 16 }}
-      >
-        front · 150px
-      </h3>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 24 }}>
-        {HATS.map((h) => (
-          <div key={h} style={{ textAlign: "center" }}>
-            <Avatar hat={h} view="front" size={150} auraColor={AURA} />
-            <div className="font-mono" style={{ fontSize: 10, marginTop: 8, color: "rgba(160,140,200,0.5)" }}>
-              {h}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+    </section>)}
+  </main>;
 }

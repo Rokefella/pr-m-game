@@ -6,7 +6,11 @@ import { toRuns } from '@/components/theme/rooms/roomGeometry';
 
 const CELL = 20;
 
-const SPIRAL_PATH = 'M8,8h2v1h-2zM9,7h1v1h-1zM7,7h2v1h-2zM7,8h1v2h-1zM8,9h3v1h-3zM10,6h1v3h-1zM6,6h4v1h-4zM6,7h1v4h-1zM7,10h5v1h-5zM11,5h1v5h-1zM5,5h6v1h-6zM5,6h1v6h-1z';
+/** True square spiral, one-cell gap between turns, on a 13x13 grid (cell units). */
+const SPIRAL_RECTS: [number, number, number, number][] = [
+  [6, 6, 3, 1], [8, 4, 1, 3], [4, 4, 5, 1], [4, 4, 1, 5], [4, 8, 7, 1],
+  [10, 2, 1, 7], [2, 2, 9, 1], [2, 2, 1, 9], [2, 10, 11, 1], [12, 0, 1, 11],
+];
 
 const CSS = `
 @keyframes gardenHalo { 0%,100% { opacity: .05 } 50% { opacity: .14 } }
@@ -81,9 +85,9 @@ const GardenScene = memo(function GardenScene({ config }: { config: GardenConfig
         <circle cx={circleSize / 2} cy={circleSize / 2} r={(circle.r + 2) * CELL} fill={season.glow} opacity=".08" className="garden-halo" />
         <circle cx={circleSize / 2} cy={circleSize / 2} r={circle.r * CELL} fill="rgba(0,0,0,.25)" stroke={season.glow} strokeOpacity=".55" strokeWidth="2" />
         <circle cx={circleSize / 2} cy={circleSize / 2} r={(circle.r - 2) * CELL} fill="rgba(0,0,0,.3)" />
-        <g transform={`translate(${circleSize / 2} ${circleSize / 2}) translate(-187 -176) scale(22)`} fill={season.glow}>
-          <path d={SPIRAL_PATH} />
-          <rect x="8" y="8" width="1" height="1" fill="#fff3c4" />
+        <g transform={`translate(${circleSize / 2} ${circleSize / 2}) translate(-91 -91) scale(14)`} fill={season.glow}>
+          {SPIRAL_RECTS.map(([x, y, w, h], i) => <rect key={i} x={x} y={y} width={w} height={h} />)}
+          <rect x="6" y="6" width="1" height="1" fill="#fff3c4" />
         </g>
       </svg>
       {/* Flowers */}

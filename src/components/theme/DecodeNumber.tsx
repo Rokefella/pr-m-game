@@ -9,12 +9,16 @@ export default memo(function DecodeNumber({ value, run, glow, msPerDigit = 260, 
   const [locked, setLocked] = useState(0);
   const [random, setRandom] = useState(() => text.replace(/./g, () => String(Math.floor(Math.random() * 10))));
   const doneRef = useRef(onDone);
+  const completedValue = useRef<string | null>(null);
   doneRef.current = onDone;
   useEffect(() => {
     setLocked(0);
     if (reduced) {
       setLocked(text.length);
-      doneRef.current?.();
+      if (completedValue.current !== text) {
+        completedValue.current = text;
+        doneRef.current?.();
+      }
       return;
     }
     if (!run) return;
@@ -26,7 +30,10 @@ export default memo(function DecodeNumber({ value, run, glow, msPerDigit = 260, 
       if (resolved >= text.length) {
         window.clearInterval(scramble);
         window.clearInterval(resolve);
-        doneRef.current?.();
+        if (completedValue.current !== text) {
+          completedValue.current = text;
+          doneRef.current?.();
+        }
       }
     }, msPerDigit);
     return () => { window.clearInterval(scramble); window.clearInterval(resolve); };

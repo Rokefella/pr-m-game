@@ -10,6 +10,7 @@ import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import NpcDialogue from '@/components/NpcDialogue';
 import CharacterEye from '@/components/CharacterEye';
+import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
 import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { BETA_MODE } from '@/lib/config';
 import { supabase } from '@/lib/supabase';
@@ -411,6 +412,8 @@ const MAP_H = 1400;
 const CX = 1100;
 const CY = 700;
 const STEP = 12;
+/** Player glide lerp factor per frame (lower = slower glide). */
+const VILLAGE_GLIDE = 0.11;
 
 // Ring radii
 const OUTERMOST_RX = 900, OUTERMOST_RY = 500;
@@ -1945,7 +1948,7 @@ const Village = () => {
     };
   }, []);
 
-  // Player lerp loop — visual chases target at 0.18/frame
+  // Player lerp loop — visual chases target at VILLAGE_GLIDE/frame
   useEffect(() => {
     let raf = 0;
     let keyFrameCounter = 0;
@@ -1989,8 +1992,8 @@ const Village = () => {
           moved = Math.abs(target.x - cur.x) > 0.5 || Math.abs(target.y - cur.y) > 0.5;
         }
       } else {
-        const nx = cur.x + dx * 0.18;
-        const ny = cur.y + dy * 0.18;
+        const nx = cur.x + dx * VILLAGE_GLIDE;
+        const ny = cur.y + dy * VILLAGE_GLIDE;
         moved = Math.abs(nx - cur.x) > 0.5 || Math.abs(ny - cur.y) > 0.5;
         playerRef.current = { x: nx, y: ny };
         setPlayer(playerRef.current);
@@ -2653,29 +2656,29 @@ const Village = () => {
           />
         ))}
 
-        {/* Player dot */}
+        {/* Player avatar — orb centre sits at the player position */}
         <div
           style={{
             position: 'absolute',
-            left: player.x - 4,
-            top: player.y - 4,
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            background: registrationNumber === 1 ? '#8b1a1a' : auraColor,
-            boxShadow: `0 0 8px ${registrationNumber === 1 ? '#8b1a1a' : auraColor}`,
-            animation: 'playerPulse 1.6s ease-in-out infinite',
+            left: player.x - 15,
+            top: player.y - 15,
             pointerEvents: 'none',
             zIndex: 5,
           }}
-        />
+        >
+          <PlayerAvatar
+            palette={paletteFromColor(auraColor, registrationNumber)}
+            walking={Math.hypot(playerTargetRef.current.x - player.x, playerTargetRef.current.y - player.y) >= 0.5}
+            size={30}
+          />
+        </div>
         {currentTitle && (
           <p
             className="font-fell italic"
             style={{
               position: 'absolute',
               left: player.x,
-              top: player.y + 10,
+              top: player.y + 22,
               transform: 'translateX(-50%)',
               fontSize: 12,
               color: 'rgba(224,221,213,0.28)',

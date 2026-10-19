@@ -11,6 +11,7 @@ import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import NpcDialogue from '@/components/NpcDialogue';
 import CharacterEye from '@/components/CharacterEye';
 import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
+import { BETA_MODE } from '@/lib/config';
 import { supabase } from '@/lib/supabase';
 import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
 import bernardMarkerUrl from '@/assets/bernard_marker.svg';
@@ -993,7 +994,7 @@ const Village = () => {
     let cancelled = false;
     (async () => {
       const override = typeof window !== 'undefined' ? sessionStorage.getItem('dev_sub_override') : null;
-      const status = (override as SubscriptionStatus | null) ?? (await checkSubscriptionStatus(user.id));
+      const status = BETA_MODE ? 'active' : (override as SubscriptionStatus | null) ?? (await checkSubscriptionStatus(user.id));
       if (cancelled) return;
       setSubscriptionStatus(status);
       if (status === 'trial') {
@@ -1099,7 +1100,7 @@ const Village = () => {
   const acceptAlexandraQuest = useCallback(async () => {
     if (!user) return;
     const status = subscriptionStatusRef.current;
-    const allowed = status === 'active' || status === 'lifetime' || status === 'dev' || status === 'trial';
+    const allowed = BETA_MODE || status === 'active' || status === 'lifetime' || status === 'dev' || status === 'trial';
     if (allowed) {
       await setFlag(user.id, 'alexandra_quest', 'active');
       await setFlag(user.id, 'bernard_stage', '6');
@@ -1301,6 +1302,7 @@ const Village = () => {
   // Listen for global "open paywall" event (dispatched from ProfileOverlay etc.)
   useEffect(() => {
     const handler = async () => {
+      if (BETA_MODE) return;
       if (!user) return;
       const status = subscriptionStatusRef.current;
       const allowed = status === 'active' || status === 'lifetime' || status === 'dev' || status === 'trial';
@@ -1736,7 +1738,7 @@ const Village = () => {
       if (!navigatedRef.current) {
         navigatedRef.current = true;
         const status = subscriptionStatusRef.current;
-        const target = status && canAccessMaze(status) ? '/door' : '/paywall';
+        const target = BETA_MODE || (status && canAccessMaze(status)) ? '/door' : '/paywall';
         window.setTimeout(() => navigate(target), 600);
       }
       return true;
@@ -3401,7 +3403,7 @@ const Village = () => {
         tradeStat={tradeStat}
       />
 
-      {paywallOpen && (
+      {!BETA_MODE && paywallOpen && (
         <PaywallOverlay
           userId={user?.id ?? ''}
 

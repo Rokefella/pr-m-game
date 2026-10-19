@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { updateUser } from '@/lib/userData';
 import { getFlag } from '@/lib/questFlags';
+import { BETA_MODE } from '@/lib/config';
 
 
 
@@ -221,13 +222,14 @@ const ProfileOverlay = ({
 
   const stage = parseInt(getFlag('bernard_stage') ?? '0', 10);
   const alexandraActive = getFlag('alexandra_quest') === 'active';
-  const subscribed = accountRow ? ['active','lifetime','dev','beta'].includes(accountRow.subscription_status) : false;
+  const subscribed = BETA_MODE || (accountRow ? ['active','lifetime','dev','beta'].includes(accountRow.subscription_status) : false);
   const subType = accountRow?.subscription_tier ?? '';
 
 
   // Subscription display mapping
-  const subStatus: SubStatus = accountRow?.subscription_status ?? 'expired';
+  const subStatus: SubStatus = BETA_MODE ? 'active' : accountRow?.subscription_status ?? 'expired';
   const trialDays = (() => {
+    if (BETA_MODE) return 0;
     if (!accountRow?.trial_end) return 0;
     const end = new Date(accountRow.trial_end);
     const diff = end.getTime() - Date.now();
@@ -1031,7 +1033,7 @@ const ProfileOverlay = ({
               <div className="font-cinzel" style={{ ...valueStyle, color: subDisplay.color, letterSpacing: '0.18em' }}>
                 {subDisplay.text}
               </div>
-              <button
+              {!BETA_MODE && <button
                 type="button"
                 className="font-cinzel"
                 style={{
@@ -1047,7 +1049,7 @@ const ProfileOverlay = ({
                 onClick={() => { onClose(); navigate('/paywall'); }}
               >
                 MANAGE SUBSCRIPTION
-              </button>
+              </button>}
             </div>
 
             {/* SECTION 3 — DANGER */}

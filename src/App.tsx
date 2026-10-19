@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BETA_MODE } from '@/lib/config';
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -51,7 +52,7 @@ const App = () => (
 
             <Route path="/maze" element={<Maze />} />
             <Route path="/shadow" element={<ShadowRealm />} />
-            <Route path="/paywall" element={<Paywall />} />
+            <Route path="/paywall" element={BETA_MODE ? <Navigate to="/village" replace /> : <Paywall />} />
             <Route path="/bernard-room" element={<BernardRoomDynamic />} />
             <Route path="/avatar-preview" element={<AvatarPreview />} />
             <Route path="/room/:levelNumber/:locationKey" element={<DynamicRoom />} />

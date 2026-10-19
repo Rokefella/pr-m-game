@@ -422,6 +422,20 @@ const ShadowRealm = () => {
           .from('library')
           .upsert(rows, { onConflict: 'user_id,prime_number' });
         if (insErr) throw insErr;
+
+        // Cleanup: keep one Folder row per prime by removing older banked duplicates.
+        try {
+          const { error: cleanErr } = await supabase
+            .from('fragments')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('banked', true)
+            .in('prime_number', frags.map((f) => f.prime_number))
+            .not('id', 'in', `(${frags.map((f) => f.id).join(',')})`);
+          if (cleanErr) console.error('[ShadowRealm] duplicate cleanup failed', cleanErr);
+        } catch (cleanErr) {
+          console.error('[ShadowRealm] duplicate cleanup failed', cleanErr);
+        }
       }
 
       await updateUser(user.id, {

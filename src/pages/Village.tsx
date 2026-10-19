@@ -17,7 +17,7 @@ import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
 import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { BETA_MODE } from '@/lib/config';
 import { supabase } from '@/lib/supabase';
-import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
+import { getAllFlags, getFlag, setFlag, _resetQuestFlagCache } from '@/lib/questFlags';
 import FloorLayer from '@/components/theme/FloorLayer';
 import BuildingBlock from '@/components/theme/BuildingBlock';
 import VillageTerrain from '@/components/theme/VillageTerrain';
@@ -805,6 +805,8 @@ const Village = () => {
   const [devVillageLevel, setDevVillageLevel] = useState('1');
   const [devMazeLevel, setDevMazeLevel] = useState('1');
   const [devStageNote, setDevStageNote] = useState<string | null>(null);
+  const [fullResetArmed, setFullResetArmed] = useState(false);
+  const fullResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const devTapCountRef = useRef(0);
   const devLastTapRef = useRef(0);
   const registrationNumberRef = useRef<number | null>(null);
@@ -2594,30 +2596,28 @@ const Village = () => {
             <div style={{ opacity: 0.7, marginBottom: 6 }}>DEV MENU</div>
 
             <div style={{ opacity: 0.7, fontSize: 11 }}>PROFILE</div>
-            <button type="button" onClick={handleDevReset} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Reset profile</button>
+            <button type="button" onClick={handleDevReset} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Replay intro (identity only)</button>
             <button type="button" onClick={async () => {
-              Object.keys(localStorage).filter(k => k.startsWith('praem_')).forEach(k => localStorage.removeItem(k));
-              localStorage.removeItem('praem_aura_color');
-              sessionStorage.clear();
-              if (user) {
-                await supabase.from('quest_flags').delete().eq('user_id', user.id);
-                await supabase.from('fragments').delete().eq('user_id', user.id);
-                await updateUser(user.id, {
-                  entity_answer: null,
-                  username: null,
-                  aura_color: '#5b4fd4',
-                  level: 1,
-                  credits: 150,
-                  steps_remaining: 200,
-                  subscription_status: 'dev',
-                  title: null,
-                  unlocked_titles: [],
-                } as never);
+              if (!fullResetArmed) {
+                setFullResetArmed(true);
+                if (fullResetTimerRef.current) clearTimeout(fullResetTimerRef.current);
+                fullResetTimerRef.current = setTimeout(() => setFullResetArmed(false), 4000);
+                return;
               }
+              if (fullResetTimerRef.current) clearTimeout(fullResetTimerRef.current);
+              setFullResetArmed(false);
+              const { error } = await (supabase.rpc as unknown as (fn: string) => Promise<{ error: { message: string } | null }>)('dev_reset_progress');
+              if (error) {
+                setDevStageNote(error.message);
+                return;
+              }
+              _resetQuestFlagCache();
+              Object.keys(localStorage).filter(k => k.startsWith('praem_')).forEach(k => localStorage.removeItem(k));
+              sessionStorage.clear();
               setDevOverlay(false);
               await supabase.auth.signOut();
               navigate('/');
-            }} style={{ background: 'transparent', border: '1px solid #ff6b6b', color: '#ff6b6b', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>FULL RESET</button>
+            }} style={{ background: 'transparent', border: '1px solid #ff6b6b', color: '#ff6b6b', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>{fullResetArmed ? 'TAP AGAIN TO CONFIRM' : 'FULL RESET (everything)'}</button>
 
             <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
             <div style={{ opacity: 0.7, fontSize: 11 }}>SUBSCRIPTION OVERRIDES</div>

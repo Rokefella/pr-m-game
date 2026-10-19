@@ -1,7 +1,8 @@
 # Roadmap
 
-- [ ] Replace numbered Village buildings with coloured door entrances, preserving gates and legacy fallback; add safe door-specific returns.
-- [ ] Test four-direction door zones, refused gates, fallback precedence and safe return placement; verify the tile preview and village flow.
+- [x] Replace numbered Village buildings with coloured door entrances, preserving gates and legacy fallback; add safe door-specific returns.
+- [x] Test four-direction door zones, refused gates, fallback precedence and safe return placement (26 tests); isolated browser checks pass for twelve approaches/returns, refusal latch/retry, legacy Village 2 doors and 375px preview.
+- [ ] Verify door entry and returns with a real player's account — the game's external sign-in session is unavailable; isolated checks do not establish live persistence.
 
 - [x] Fix maze run lifecycle with explicit exits, twelve-hour resumption and Shadow transfer completion; preserve room round trips and gameplay rendering/movement.
 - [x] Test all five deliberate exits, room-return resumption and twelve-hour limits (21 new tests); isolated browser scenarios a–d pass with no runtime errors, including actual Bernard door navigation and full Shadow transfer.

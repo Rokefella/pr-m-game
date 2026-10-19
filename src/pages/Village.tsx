@@ -1473,7 +1473,7 @@ const Village = () => {
         }
 
       } catch (e) {
-        if (!cancelled) finishVillageLoading();
+        if (!cancelled) { restoreFallbackReturn(); finishVillageLoading(); }
         console.warn('[Village] dynamic layout load failed', e);
       }
     };

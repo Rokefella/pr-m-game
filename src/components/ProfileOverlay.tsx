@@ -769,8 +769,8 @@ const ProfileOverlay = ({
             <div style={{ marginTop: 24 }}>
               {/* Header row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 16 }}>
-                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>FOLDER</span>
-                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>{count} / 20</span>
+                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(200,190,230,0.8)' }}>FOLDER</span>
+                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(200,190,230,0.8)' }}>{count} / 20</span>
               </div>
 
               {/* Grid */}
@@ -784,7 +784,7 @@ const ProfileOverlay = ({
                       height: 60,
                       border: frag
                         ? '1px solid rgba(167,139,250,0.4)'
-                        : '1px dashed rgba(160,140,200,0.08)',
+                        : '1px dashed rgba(160,140,200,0.35)',
                       background: frag ? 'rgba(107,70,193,0.3)' : 'transparent',
                       cursor: frag ? 'pointer' : 'default',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -819,7 +819,7 @@ const ProfileOverlay = ({
 
               {/* Status text */}
               {count === 0 && (
-                <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.3)', marginTop: 24 }}>
+                <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.7)', marginTop: 24 }}>
                   Your folder is empty. Enter the maze.
                 </p>
               )}
@@ -835,7 +835,7 @@ const ProfileOverlay = ({
               )}
 
               {/* Shadow realm note */}
-              <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.2)', marginTop: 32 }}>
+              <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.75)', marginTop: 32 }}>
                 Fragments are lost if you leave the maze without visiting the Shadow Realm.
               </p>
 
@@ -875,8 +875,8 @@ const ProfileOverlay = ({
                   <div style={{ marginTop: 40 }}>
                     {/* Header row */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 16 }}>
-                      <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>DROPS</span>
-                      <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>{owned} / {dropCapacity}</span>
+                      <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(200,190,230,0.8)' }}>DROPS</span>
+                      <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(200,190,230,0.8)' }}>{owned} / {dropCapacity}</span>
                     </div>
 
                     {/* Grid */}
@@ -890,7 +890,7 @@ const ProfileOverlay = ({
                             height: 60,
                             border: drop
                               ? '1px solid rgba(200,150,58,0.4)'
-                              : '1px dashed rgba(160,140,200,0.08)',
+                              : '1px dashed rgba(160,140,200,0.35)',
                             background: drop ? 'rgba(200,150,58,0.15)' : 'transparent',
                             cursor: drop ? 'pointer' : 'default',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -920,7 +920,7 @@ const ProfileOverlay = ({
 
                     {/* Status text */}
                     {owned === 0 && (
-                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.3)', marginTop: 24 }}>
+                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.7)', marginTop: 24 }}>
                         You carry nothing. The village gives to those who ask.
                       </p>
                     )}

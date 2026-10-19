@@ -1,19 +1,8 @@
-import { useState, FormEvent } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px 14px',
-  border: '0.5px solid rgba(169,140,255,0.35)',
-  background: 'transparent',
-  color: '#e0ddd5',
-  fontFamily: 'Cinzel, serif',
-  fontSize: 16,
-  letterSpacing: '0.15em',
-  borderRadius: 0,
-  outline: 'none',
-};
+import { AuthPlate, AuthField, authErrorMessage } from '@/components/AuthPlate';
+import { Button } from '@/components/ui/button';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -22,6 +11,7 @@ const Signup = () => {
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -37,111 +27,32 @@ const Signup = () => {
     });
     setSubmitting(false);
     if (err) {
-      setError(err.message);
+      setError(authErrorMessage(err.message));
       return;
     }
     if (!data.user) {
       setError('Signup failed. Please try again.');
       return;
     }
+    if (data.session === null) {
+      setAwaitingConfirmation(true);
+      return;
+    }
     navigate('/intro');
   };
 
-  return (
-    <div
-      className="relative flex min-h-screen items-center justify-center overflow-hidden px-6"
-      style={{ backgroundColor: '#04040a' }}
-    >
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: 'radial-gradient(ellipse 45% 30% at 50% 50%, rgba(80,50,20,0.10) 0%, transparent 60%)',
-        }}
-      />
-      <div className="relative z-10 flex w-full max-w-sm flex-col items-center">
-        <img
-          src="/assets/sigils/PRAEM-logo-instrument-icon.svg"
-          alt="PRÆM"
-          width="80"
-          height="48"
-          className="object-contain"
-          style={{ opacity: 0.85 }}
-        />
-
-        <h1
-          className="font-cinzel font-normal uppercase text-[48px] sm:text-[56px]"
-          style={{ letterSpacing: '0.25em', color: '#e0ddd5', marginTop: 24 }}
-        >
-          PRÆM
-        </h1>
-
-        <form onSubmit={handleSubmit} className="mt-10 flex w-full flex-col gap-4">
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="email"
-            style={inputStyle}
-            className="placeholder:text-[#5a5855]"
-          />
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="password"
-            style={inputStyle}
-            className="placeholder:text-[#5a5855]"
-          />
-          <input
-            type="password"
-            required
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            placeholder="confirm password"
-            style={inputStyle}
-            className="placeholder:text-[#5a5855]"
-          />
-
-          {error && (
-            <p className="font-fell italic" style={{ color: '#c8943a', fontSize: 14, textAlign: 'center' }}>
-              {error}
-            </p>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="font-fell italic self-center"
-            style={{
-              fontSize: 16,
-              letterSpacing: '0.3em',
-              color: '#a98cff',
-              marginTop: 16,
-              padding: '10px 26px',
-              border: '0.5px solid rgba(169,140,255,0.35)',
-              background: 'transparent',
-              borderRadius: 0,
-              cursor: 'pointer',
-              textShadow: '0 0 12px rgba(169,140,255,0.6)',
-              animation: 'breathe 3s ease-in-out infinite',
-            }}
-          >
-            ENTER
-          </button>
-        </form>
-
-        <Link
-          to="/login"
-          className="font-cinzel mt-8"
-          style={{ color: 'rgba(160,140,200,0.4)', fontSize: 9, letterSpacing: '0.2em' }}
-        >
-          Already have an account?
-        </Link>
-      </div>
-    </div>
-  );
+  return <AuthPlate heading="PRÆM" linkTo="/login" linkText="Already have an account?">
+    {awaitingConfirmation ? <div className="auth-confirmation" role="status">
+      <p className="font-fell italic">Check your email to confirm your account, then come back and log in.</p>
+      <Button className="auth-submit font-cinzel" onClick={() => navigate('/login')}>GO TO LOGIN</Button>
+    </div> : <form onSubmit={handleSubmit} className="auth-form">
+      <AuthField id="email" label="EMAIL" value={email} onChange={setEmail} autoComplete="email" />
+      <AuthField id="password" label="PASSWORD" value={password} onChange={setPassword} autoComplete="new-password" password />
+      <AuthField id="confirm-password" label="CONFIRM PASSWORD" value={confirm} onChange={setConfirm} autoComplete="new-password" password />
+      {error && <p role="alert" className="auth-error font-fell italic">{error}</p>}
+      <Button type="submit" disabled={submitting} className="auth-submit font-cinzel">ENTER</Button>
+    </form>}
+  </AuthPlate>;
 };
 
 export default Signup;

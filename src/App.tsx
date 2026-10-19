@@ -22,7 +22,6 @@ import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
 import AvatarPreview from "./pages/AvatarPreview.tsx";
-import Welcome from "./pages/Welcome.tsx";
 import Intro from "./pages/Intro.tsx";
 import DynamicRoom from "./pages/DynamicRoom.tsx";
 import TilePreview from "./pages/TilePreview.tsx";
@@ -40,7 +39,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/welcome" element={<Welcome />} />
+            <Route path="/welcome" element={<Navigate to="/intro" replace />} />
             
             <Route path="/intro" element={<Intro />} />
             <Route path="/profile-setup" element={<ProfileSetup />} />

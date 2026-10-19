@@ -19,6 +19,7 @@ import { getAllFlags, getFlag, setFlag } from '@/lib/questFlags';
 import FloorLayer from '@/components/theme/FloorLayer';
 import BuildingBlock from '@/components/theme/BuildingBlock';
 import VillageTerrain from '@/components/theme/VillageTerrain';
+import { plazaEmblems } from '@/lib/theme/villageRendering';
 import { VillageDoor } from '@/components/theme/objects';
 import { DOOR_FLAGS, doorRefusal, footprintHasDoor, inDoorZone, nearestDoorReturn, villageDoors, type VillageDoorDef, type VillageDoorKind } from '@/lib/villageDoors';
 import { VILLAGE_GLOW } from '@/lib/theme/tokens';
@@ -243,6 +244,9 @@ const LIBRARY_MIN_LEVEL = 3;
 const EXCHANGE_MIN_LEVEL = 1;
 /** Player glide lerp factor per frame (lower = slower glide). */
 const VILLAGE_GLIDE = 0.11;
+// Rendering-only camera zoom and avatar size; world coordinates are unchanged.
+const VILLAGE_ZOOM = 1.5;
+const VILLAGE_AVATAR_SIZE = 25;
 
 // Ring radii
 const OUTERMOST_RX = 900, OUTERMOST_RY = 500;
@@ -1872,8 +1876,8 @@ const Village = () => {
 
   // Smooth camera (lerp via rAF)
   const initialCam = (() => {
-    const tx = camAxis(view.w, mapW, player.x);
-    const ty = camAxis(view.h, mapH, player.y);
+    const tx = camAxis(view.w / VILLAGE_ZOOM, mapW, player.x);
+    const ty = camAxis(view.h / VILLAGE_ZOOM, mapH, player.y);
     return { x: tx, y: ty };
   })();
   const cameraRef = useRef(initialCam);
@@ -1898,8 +1902,8 @@ const Village = () => {
     if (!dynamicBuildings) return null;
     const left = cullQx * CULL_STEP - CULL_MARGIN;
     const top = cullQy * CULL_STEP - CULL_MARGIN;
-    const right = cullQx * CULL_STEP + view.w + CULL_MARGIN;
-    const bottom = cullQy * CULL_STEP + view.h + CULL_MARGIN;
+    const right = cullQx * CULL_STEP + view.w / VILLAGE_ZOOM + CULL_MARGIN;
+    const bottom = cullQy * CULL_STEP + view.h / VILLAGE_ZOOM + CULL_MARGIN;
     const inBox = (x: number, y: number, w = 20, h = 20) =>
       x + w >= left && x <= right && y + h >= top && y <= bottom;
     return {
@@ -1922,8 +1926,8 @@ const Village = () => {
   useEffect(() => {
     let raf = 0;
     const loop = () => {
-      const targetX = camAxis(view.w, mapSizeRef.current.w, playerRef.current.x);
-      const targetY = camAxis(view.h, mapSizeRef.current.h, playerRef.current.y);
+      const targetX = camAxis(view.w / VILLAGE_ZOOM, mapSizeRef.current.w, playerRef.current.x);
+      const targetY = camAxis(view.h / VILLAGE_ZOOM, mapSizeRef.current.h, playerRef.current.y);
 
       const dx = targetX - cameraRef.current.x;
       const dy = targetY - cameraRef.current.y;
@@ -1937,7 +1941,7 @@ const Village = () => {
       }
       // Write the camera transform straight to the DOM — no React re-render.
       if (mapRef.current) {
-        mapRef.current.style.transform = `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px)`;
+        mapRef.current.style.transform = `translate(${cameraRef.current.x * VILLAGE_ZOOM}px, ${cameraRef.current.y * VILLAGE_ZOOM}px) scale(${VILLAGE_ZOOM})`;
       }
       // Commit state only when the quantized cull cell changes.
       const qx = Math.floor(-cameraRef.current.x / CULL_STEP);
@@ -1954,7 +1958,8 @@ const Village = () => {
   const themedTiles = useMemo(() => {
     const roads = new Set((dynamicBuildings?.groundTiles ?? []).filter(g => g.kind === 'ROAD').map(g => `${g.x / 20},${g.y / 20}`));
     const trees = new Set((dynamicBuildings?.forest ?? FOREST).map(f => `${Math.floor(f.x / 20)},${Math.floor(f.y / 20)}`));
-    return { roads, trees };
+    const squares = new Set((dynamicBuildings?.groundTiles ?? []).filter(g => g.kind === 'SQUARE').map(g => `${g.x / 20},${g.y / 20}`));
+    return { roads, trees, squares, emblems: plazaEmblems(squares) };
   }, [dynamicBuildings]);
 
   const renderTypeA = (b: typeof A_23 | typeof A_47 | typeof A_89) => (
@@ -2039,7 +2044,8 @@ const Village = () => {
               top: 0,
               width: mapW,
               height: mapH,
-              transform: `translate(${cameraRef.current.x}px, ${cameraRef.current.y}px)`,
+              transform: `translate(${cameraRef.current.x * VILLAGE_ZOOM}px, ${cameraRef.current.y * VILLAGE_ZOOM}px) scale(${VILLAGE_ZOOM})`,
+              transformOrigin: '0 0',
               willChange: 'transform',
             }}
           >
@@ -2049,7 +2055,7 @@ const Village = () => {
         <FloorLayer cols={mapW / 20} rows={mapH / 20} size={20} styleKey="ground" glow={VILLAGE_GLOW} />
 
         {/* Decorative streets and plaza plates use cached CSS images. */}
-        <VillageTerrain ground={visible?.groundTiles ?? EMPTY_GROUND} forest={visible?.forest ?? FOREST} roads={themedTiles.roads} trees={themedTiles.trees} />
+        <VillageTerrain ground={visible?.groundTiles ?? EMPTY_GROUND} forest={visible?.forest ?? FOREST} roads={themedTiles.roads} trees={themedTiles.trees} squares={themedTiles.squares} emblems={themedTiles.emblems} />
 
         {/* Rugs — decorative floor overlay, above base ground, below solids */}
         {visible?.rugTiles.map((r) => (
@@ -2253,8 +2259,8 @@ const Village = () => {
         <div
           style={{
             position: 'absolute',
-            left: player.x - 15,
-            top: player.y - 15,
+            left: player.x - VILLAGE_AVATAR_SIZE / 2,
+            top: player.y - VILLAGE_AVATAR_SIZE / 2,
             pointerEvents: 'none',
             zIndex: 5,
           }}
@@ -2262,7 +2268,7 @@ const Village = () => {
           <PlayerAvatar
             palette={paletteFromColor(auraColor, registrationNumber)}
             walking={Math.hypot(playerTargetRef.current.x - player.x, playerTargetRef.current.y - player.y) >= 0.5}
-            size={30}
+            size={VILLAGE_AVATAR_SIZE}
           />
         </div>
         {currentTitle && (
@@ -2271,7 +2277,7 @@ const Village = () => {
             style={{
               position: 'absolute',
               left: player.x,
-              top: player.y + 22,
+              top: player.y + 19,
               transform: 'translateX(-50%)',
               fontSize: 12,
               color: 'rgba(224,221,213,0.28)',

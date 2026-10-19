@@ -19,3 +19,18 @@ describe('Village neighbour rules', () => {
     }
   });
 });
+import { lampSide, plazaEmblems, treeTint } from './villageRendering';
+describe('Village polish rules', () => {
+  it('picks tree tint by (col*7+row*13)%3', () => { expect(treeTint(1, 0)).toBe(1); expect(treeTint(0, 1)).toBe(1); expect(treeTint(3, 0)).toBe(0); });
+  it('places lamps only on qualifying non-junction roads', () => {
+    expect(lampSide(0, 0, new Set(['1,0']))).toBe('n');
+    expect(lampSide(0, 0, new Set(['0,1']))).toBe('w');
+    expect(lampSide(0, 0, new Set(['1,0', '0,1']))).toBeNull();
+    expect(lampSide(1, 0, new Set(['0,0']))).toBeNull();
+  });
+  it('adds one emblem per square cluster of at least 4x4', () => {
+    const big = new Set<string>(); for (let c = 0; c < 4; c++) for (let r = 0; r < 4; r++) big.add(`${c},${r}`);
+    expect(plazaEmblems(big)).toEqual([{ col: 1, row: 1 }]);
+    expect(plazaEmblems(new Set(['0,0', '1,0', '2,0']))).toEqual([]);
+  });
+});

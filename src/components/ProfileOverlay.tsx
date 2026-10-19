@@ -75,11 +75,7 @@ const ProfileOverlay = ({
   const [stats, setStats] = useState({ social: socialStatProp, perception: perceptionStatProp, trade: tradeStatProp });
   // Props are only initial values; once the fetched users row is in, the
   // database wins and stale parent props must not overwrite the numbers.
-  useEffect(() => { if (!accountRow) setGrowthPoints(growthPointsProp); }, [growthPointsProp, accountRow]);
-  useEffect(() => {
-    if (accountRow) return;
-    setStats({ social: socialStatProp, perception: perceptionStatProp, trade: tradeStatProp });
-  }, [socialStatProp, perceptionStatProp, tradeStatProp, accountRow]);
+  // (Effects live below the accountRow state declaration.)
 
   const commitGrowthPoint = (key: 'social' | 'perception' | 'trade') => {
     if (!user) return;

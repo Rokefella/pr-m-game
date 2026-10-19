@@ -346,7 +346,7 @@ const ExchangeRoom = () => {
         const wallTiles: Rect[] = [];
         const furnitureTiles: Rect[] = [];
         const bookcaseTiles: Rect[] = [];
-        const lightTiles: Rect[] = [];
+        const lightTiles: (Rect & { color?: string | null })[] = [];
         const rugCells: { col: number; row: number }[] = [];
         const exitTiles: ExitTile[] = [];
         let bankerCenter: { x: number; y: number } | null = null;

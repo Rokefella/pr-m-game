@@ -1,7 +1,7 @@
 # Roadmap
 
-- [ ] Add isolated Instrument tile foundation, six wall/floor styles, and public /tiles preview without gameplay changes.
-- [ ] Test spiral/theme rules and verify preview controls at 375px and desktop widths.
+- [x] Add isolated Instrument tile foundation, six wall/floor styles, and public /tiles preview without gameplay changes.
+- [x] Test spiral/theme rules (10 passing tests) and verify preview controls at 375px and desktop widths; build passes, with existing preview ref warnings remaining.
 
 - [x] Add the single beta switch and bypass every subscription/paywall gate without changing stored subscriptions.
 - [x] Verify beta access and unchanged subscription behavior with the switch disabled (9 tests); confirm direct paywall navigation is bypassed.

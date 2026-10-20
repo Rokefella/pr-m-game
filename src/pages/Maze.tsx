@@ -1515,11 +1515,12 @@ const Maze = () => {
             tap to exchange
           </span>
         </span>
-        {currentLevel === 2 ? (
-          <span style={{ color: '#c8963a' }}>FRAGMENTS {collected.size}/{config.fragmentsRequired}</span>
-        ) : (
-          <span style={{ color: '#c8963a' }}>CREDITS {credits}</span>
-        )}
+        <span
+          style={{ color: collected.size >= config.fragmentsRequired ? '#f5c060' : '#c8963a', animation: collected.size >= config.fragmentsRequired ? 'fragment-hud-pulse 1.6s ease-in-out infinite' : undefined }}
+        >
+          FRAGMENTS {collected.size}/{config.fragmentsRequired}
+        </span>
+
         <span style={{ color: '#5b4fd4' }}>LEVEL {String(currentLevel).padStart(2, '0')}</span>
         <ProfileButton onClick={openProfile} />
       </div>

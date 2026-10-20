@@ -5,7 +5,7 @@ export type ConsoleResult =
   | { ok: true; rift: RiftTarget; already?: boolean }
   | { ok: false; reason: 'wrong'; attempts_left: number }
   | { ok: false; reason: 'locked'; retry_in_seconds: number }
-  | { ok: false; reason: 'no_key' | 'silent' | 'not_signed_in' };
+  | { ok: false; reason: 'wrong_key' | 'no_key' | 'silent' | 'not_signed_in' };
 
 export function consoleLevel(value: string | null): number {
   const level = Number(value);

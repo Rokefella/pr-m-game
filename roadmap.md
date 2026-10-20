@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Restyle ConsolePanel with eight tiles, plated keypad, carried-drop key socket and server-selected key; verify rules and 375px layout without changing rooms or doors.
+
 - [x] Format all visible fragment primes to at least five digits without changing stored values or gameplay; 21 tests and preview compilation pass, and isolated prime-2 reveal/save at 375×667 shows 00002 without wrapping (live authenticated Folder/Exchange reads remain unverified).
 
 - [x] Restyle Login and Signup in Instrument plates, with readable inputs, password toggles and existing auth destinations.

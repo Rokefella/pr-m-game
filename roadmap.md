@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Format all visible fragment primes to at least five digits; verify decoding timing and 375px fit without changing stored values or gameplay.
+
 - [x] Restyle Login and Signup in Instrument plates, with readable inputs, password toggles and existing auth destinations.
 - [x] Verify 375×667 phone layouts without scrolling, independent SHOW/HIDE controls, mapped errors and no-session signup confirmation using simulated auth responses; six navigation tests and build pass.
 - [ ] Verify real signup email delivery and hosted confirmation settings — the game's external auth service is not managed by this project's Cloud tools.

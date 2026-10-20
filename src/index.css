@@ -384,3 +384,7 @@
   .instrument-beacon-ring { animation: none; opacity: .8; }
   .fragment-backdrop, .fragment-backdrop *, .eye-opening, .decode-complete::before, .slot-new-revealed { animation: none !important; transition: none !important; }
 }
+.profile-drop-body { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.profile-key-badge { font-size: 10px; color: #f5c060; border: 1px solid #c8963a; padding: 0 4px; letter-spacing: .1em; }
+.console-drop-tile { gap: 10px; align-items: center; }
+.console-inserted .console-key-slot img { filter: drop-shadow(var(--console-key-glow)); }

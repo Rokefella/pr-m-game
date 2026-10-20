@@ -843,43 +843,23 @@ const Maze = () => {
   const rollDropSpawn = (col: number, row: number) => {
     const spawn = dropSpawnsRef.current.find((s) => s.col === col && s.row === row);
     if (!spawn) return;
-    const chance = Number(spawn.chance ?? 0);
-    if (!(chance > 0)) return;
-    if (Math.random() * 100 >= chance) return; // miss — no message, keep moving
 
     const uid = userIdRef.current;
     if (!uid) return;
 
+    // The server checks the tile, rolls the chance, applies the cooldown and
+    // inserts the drop; the browser only shows the whisper when granted.
     void (async () => {
       try {
-        let dropTypeId = spawn.drop_type_id ?? null;
-        let dropName: string | null = null;
-
-        if (dropTypeId) {
-          const { data } = await supabase
-            .from('drop_types' as never)
-            .select('id, name')
-            .eq('id', dropTypeId as never)
-            .maybeSingle();
-          dropName = (data as { name?: string } | null)?.name ?? null;
-        } else if (spawn.drop_key) {
-          const { data } = await supabase
-            .from('drop_types' as never)
-            .select('id, name')
-            .eq('drop_key', spawn.drop_key as never)
-            .maybeSingle();
-          const row2 = data as { id?: string; name?: string } | null;
-          dropTypeId = row2?.id ?? null;
-          dropName = row2?.name ?? null;
-        }
-        if (!dropTypeId) return;
-
-        const { error } = await supabase
-          .from('drops' as never)
-          .insert({ user_id: uid, drop_type_id: dropTypeId, source: 'random_pickup' } as never);
+        const { data, error } = await supabase.rpc('claim_drop_spawn' as never, {
+          p_level: currentLevelRef.current,
+          p_col: col,
+          p_row: row,
+        } as never);
         if (error) return;
-
-        showWhisper(`You found: ${dropName ?? 'something'}.`, '#c8963a', 3000);
+        const result = data as { granted?: boolean; drop_name?: string; reason?: string } | null;
+        if (!result || result.granted !== true) return;
+        showWhisper(`You found: ${result.drop_name ?? 'something'}.`, '#c8963a', 3000);
       } catch {
         /* silent — a failed drop must not interrupt movement */
       }

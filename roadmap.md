@@ -44,3 +44,6 @@
 - [x] Upgrade Shadow Realm walls to red-shadow beveled tiles.
 - [x] Add nearest-open-cell spawn safety and rounded wall collision keys.
 - [x] Verify the focused Shadow Realm source changes.
+
+- [x] Add Console Door maze round trips, shared Console Room, server-validated keypad and temporary rift card; 135 tests and preview compilation pass; isolated 375px/desktop walkthrough verifies wrong codes, countdown, silent answer, rift and exact-cell fragment-preserving return.
+- [ ] Verify console codes, keys and unlock persistence against a real player's published maze — the game uses a separate external auth session unavailable to the checker; isolated tests are not live server verification.

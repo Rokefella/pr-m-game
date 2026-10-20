@@ -4,6 +4,9 @@ import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser } from '@/lib/userData';
 import { supabase } from '@/lib/supabase';
 import Thumbstick from '@/components/Thumbstick';
+import ConsolePanel from '@/components/ConsolePanel';
+import ConsoleRift from '@/components/ConsoleRift';
+import { consoleLevel, type RiftTarget } from '@/lib/console';
 import { setFlag } from '@/lib/questFlags';
 import { checkSubscriptionStatus } from '@/lib/subscriptionStatus';
 import NpcDialogue from '@/components/NpcDialogue';
@@ -78,6 +81,7 @@ type ExitTile = Rect & { destination: string; dir: ExitDir };
 type ColorTile = { id: string; x: number; y: number; col: number; row: number; color: string };
 type NpcPlacement = { id: string; npcKey: string; x: number; y: number };
 type RoomLayout = {
+  consoleCell: Rect | null;
   wallTiles: Rect[];
   furnitureTiles: Rect[];
   bookcaseTiles: Rect[];
@@ -161,6 +165,7 @@ const ROOM_TITLES: Record<string, string> = {
   library: 'THE LIBRARY',
   exchange: 'THE EXCHANGE',
   bernard_room: "BERNARD'S ROOM",
+  console_room: 'THE CONSOLE ROOM',
 };
 
 const dialogueButtonStyle = {
@@ -359,6 +364,15 @@ const DynamicRoom = () => {
   // Maze-originated visits carry ?from=maze and exit back into the maze
   // instead of the room's own (statically authored) exit destination.
   const fromMaze = searchParams.get('from') === 'maze';
+  const consoleOriginLevel = consoleLevel(searchParams.get('level'));
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [riftTarget, setRiftTarget] = useState<RiftTarget | null>(null);
+  const consoleOpenRef = useRef(false);
+  const closeConsole = useCallback(() => {
+    consoleOpenRef.current = false;
+    setConsoleOpen(false);
+    setRiftTarget(null);
+  }, []);
   const locationKey = params.locationKey ?? '';
   const routeLevel = Number(params.levelNumber);
   const levelNumber = Number.isFinite(routeLevel) && routeLevel > 0 ? routeLevel : 1;
@@ -470,6 +484,7 @@ const DynamicRoom = () => {
         }
 
         const wallTiles: Rect[] = [];
+        let consoleCell: Rect | null = null;
         const furnitureTiles: Rect[] = [];
         const bookcaseTiles: Rect[] = [];
         const lightTiles: (Rect & { color?: string | null })[] = [];
@@ -486,6 +501,9 @@ const DynamicRoom = () => {
           const x = cell.col * CELL;
           const y = cell.row * CELL;
           switch (cell.type) {
+            case 'CONSOLE':
+              consoleCell = { id: `console-${cell.col}-${cell.row}`, x, y, w: CELL, h: CELL };
+              break;
             case 'WALL':
               wallTiles.push({ id: `wall-${cell.col}-${cell.row}`, x, y, w: CELL, h: CELL });
               break;
@@ -568,6 +586,7 @@ const DynamicRoom = () => {
         }));
 
         const layout: RoomLayout = {
+          consoleCell,
           wallTiles,
           furnitureTiles,
           bookcaseTiles,
@@ -587,7 +606,7 @@ const DynamicRoom = () => {
         };
 
         // Spawn safety net: nearest open cell around the preferred origin.
-        const solids = [...wallTiles, ...furnitureTiles, ...bookcaseTiles, ...lightTiles, ...treeTiles.map(t => ({ x: t.col * CELL, y: t.row * CELL, w: CELL, h: CELL }))];
+        const solids = [...wallTiles, ...furnitureTiles, ...bookcaseTiles, ...lightTiles, ...(consoleCell ? [consoleCell] : []), ...treeTiles.map(t => ({ x: t.col * CELL, y: t.row * CELL, w: CELL, h: CELL }))];
         const isOpenCell = (col: number, row: number) => {
           if (col < 0 || row < 0 || col >= gridSize || row >= gridSize) return false;
           const px = col * CELL + CELL / 2;
@@ -681,6 +700,7 @@ const DynamicRoom = () => {
       ...(room?.furnitureTiles ?? []),
       ...(room?.bookcaseTiles ?? []),
       ...(room?.lightTiles ?? []),
+      ...(room?.consoleCell ? [room.consoleCell] : []),
       ...(room?.treeTiles ?? []).map(t => ({ id: t.id, x: t.col * CELL, y: t.row * CELL, w: CELL, h: CELL })),
     ],
     [room],
@@ -713,6 +733,7 @@ const DynamicRoom = () => {
 
   // Movement + collision — same approach as the other room screens
   const move = (dx: number, dy: number) => {
+    if (consoleOpenRef.current) return;
     if (loadingRef.current || !roomRef.current) return;
     const prev = playerTargetRef.current;
     const nx = Math.max(0, Math.min(mapSize.w, prev.x + dx));
@@ -731,6 +752,15 @@ const DynamicRoom = () => {
         }
         return;
       }
+    }
+
+    const consoleCell = roomRef.current.consoleCell;
+    if (consoleCell && nx >= consoleCell.x - 2 && nx <= consoleCell.x + consoleCell.w + 2 && ny >= consoleCell.y - 2 && ny <= consoleCell.y + consoleCell.h + 2) {
+      consoleOpenRef.current = true;
+      heldKeysRef.current.clear();
+      stickDirRef.current = { dc: 0, dr: 0 };
+      setConsoleOpen(true);
+      return;
     }
 
     for (const o of obstacles) {
@@ -996,7 +1026,7 @@ const DynamicRoom = () => {
             <GardenScene config={room.garden} />
           ) : (
           <>
-          <RoomScene floorRuns={room.floorRuns} wallRuns={room.wallRuns} furniture={room.furnitureTiles} bookcases={room.bookcaseTiles} lights={room.lightTiles} rugs={room.rugTiles} exits={room.exitTiles} />
+          <RoomScene floorRuns={room.floorRuns} wallRuns={room.wallRuns} furniture={room.furnitureTiles} bookcases={room.bookcaseTiles} lights={room.lightTiles} rugs={room.rugTiles} exits={room.exitTiles} consoleCell={room.consoleCell} />
 
           {(room.groundTiles ?? []).map((t) => (
             <div
@@ -1059,9 +1089,11 @@ const DynamicRoom = () => {
       )}
       <Thumbstick
         onDirectionChange={(dc, dr) => { stickDirRef.current = { dc, dr }; }}
-        disabled={openNpcKey !== null}
+        disabled={openNpcKey !== null || consoleOpen}
       />
       {room?.garden && <GardenParticles config={room.garden} />}
+      <ConsolePanel open={consoleOpen && !riftTarget} level={consoleOriginLevel} onClose={closeConsole} onRift={setRiftTarget} />
+      {riftTarget && <ConsoleRift target={riftTarget} onClose={closeConsole} />}
     </div>
   );
 };

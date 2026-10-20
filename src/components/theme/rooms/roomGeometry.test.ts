@@ -3,6 +3,9 @@ import { exitDir, roomGeometry, toRuns } from './roomGeometry';
 import { roomCamAxis } from './roomConfig';
 
 describe('room geometry', () => {
+  it('keeps the console footprint on deck floor', () => {
+    expect(roomGeometry([{ col: 7, row: 5, type: 'CONSOLE' }], 15).floorRuns).toEqual([{ row: 5, col: 7, n: 1 }]);
+  });
   it('merges consecutive cells of a row into one run', () => {
     expect(toRuns(['0,0', '1,0', '2,0', '4,0'])).toEqual([{ row: 0, col: 0, n: 3 }, { row: 0, col: 4, n: 1 }]);
   });

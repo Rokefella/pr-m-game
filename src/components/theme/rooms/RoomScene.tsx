@@ -2,7 +2,7 @@ import { forwardRef, memo } from 'react';
 import { patternUri } from '@/lib/theme/patterns';
 import { DIMENSION_GLOW } from '@/lib/theme/tokens';
 import PlayerAvatar, { type AvatarPalette } from '@/components/PlayerAvatar';
-import { ConsoleDesk, DataShelf, FloorLamp, RoomExit, type ExitDir } from '../objects';
+import { ConsoleDesk, ConsoleTile, DataShelf, FloorLamp, RoomExit, type ExitDir } from '../objects';
 import { ROOM_AVATAR_SIZE, ROOM_CELL as CELL, ROOM_WALL_STYLE } from './roomConfig';
 import type { Run } from './roomGeometry';
 
@@ -42,16 +42,18 @@ type SceneProps = {
   floorRuns: Run[]; wallRuns: Run[];
   furniture: Pos[]; bookcases: Pos[]; lights: (Pos & { color?: string | null })[];
   rugs: (Pos & { trim: RugTrim })[]; exits: (Pos & { dir: ExitDir })[];
+  consoleCell?: Pos | null;
 };
 
 /** Shared Instrument interior: merged floor/wall runs plus one inline svg per object cell. */
-export const RoomScene = memo(function RoomScene({ floorRuns, wallRuns, furniture, bookcases, lights, rugs, exits }: SceneProps) {
+export const RoomScene = memo(function RoomScene({ floorRuns, wallRuns, furniture, bookcases, lights, rugs, exits, consoleCell }: SceneProps) {
   return <>
     <style>{CSS}</style>
     <FloorRuns runs={floorRuns} />
     {rugs.map(r => <div key={`rug-${r.x}-${r.y}`} style={at(r, 1)}><RugTile trim={r.trim} size={CELL} /></div>)}
     {exits.map(e => <div key={`exit-${e.x}-${e.y}`} style={at(e, 2)}><RoomExit size={CELL} dir={e.dir} /></div>)}
     <WallRuns runs={wallRuns} />
+    {consoleCell && <div data-object="CONSOLE" style={at(consoleCell, 3)}><ConsoleTile size={CELL} /></div>}
     {furniture.map(f => <div key={`furn-${f.x}-${f.y}`} style={at(f, 3)}><ConsoleDesk size={CELL} /></div>)}
     {bookcases.map(b => <div key={`book-${b.x}-${b.y}`} style={at(b, 3)}><DataShelf size={CELL} seed={Math.round(b.x / CELL) * 3 + Math.round(b.y / CELL)} /></div>)}
     {lights.map(l => <div key={`light-${l.x}-${l.y}`} style={at(l, 3)}><FloorLamp size={CELL} color={l.color ?? undefined} /></div>)}

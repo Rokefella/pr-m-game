@@ -6,7 +6,7 @@
 - Maze camera transforms are written through a DOM ref; memoize visible themed cells by logical player cell and viewport size, retaining the existing culling margin to avoid per-frame grid scans.
 - Village themes use one repeating floor, cached background images for streets/trees, and one SVG per building footprint; neighbour indexes are memoized by loaded layout and existing DOM-ref camera/culling remain unchanged to keep large villages smooth.
 - Keep village entrance geometry, legacy precedence and safe-return search in villageDoors; Village owns flags, gates and navigation, using the same memoized door collection for movement, spawning and culling to prevent divergent entrance zones.
-- Published level theme/object metadata is presentation-only in the loader; never derive collision, pickups or navigation from the visual cell collection.
+- Published theme/object metadata stays presentation-only except explicitly authored CONSOLE_DOOR interaction geometry, which the loader marks walkable; do not infer collision or pickups from decorative cells.
 
 - Keep the reversible beta subscription bypass in `src/lib/config.ts`; gate subscription access and paywall entry points without modifying stored entitlement data so disabling it restores the original behavior.
 
@@ -19,3 +19,4 @@
 - Door screens and the Shadow-to-level transfer share components/theme/transition (GateScene + DoorTransition + TransitionFlash); pages stay thin wrappers that own only data and destinations, with CSS-only timing and reduced-motion fallbacks.
 - Intro and ProfileSetup render through PlateFrame with sigils in components/theme/intro/PixelSigil; the username rule lives in ProfileSetup's exported nameError so it stays testable.
 - Login and Signup share presentation-only AuthPlate and AuthField controls; pages retain auth calls and own navigation/confirmation state so visual changes cannot alter authentication behavior.
+- ConsolePanel owns server validation and lockout display; DynamicRoom owns console bump blocking and placeholder rifts, and Maze reuses the existing exact-cell room-return marker to preserve runs.

@@ -44,3 +44,5 @@
 - [x] Upgrade Shadow Realm walls to red-shadow beveled tiles.
 - [x] Add nearest-open-cell spawn safety and rounded wall collision keys.
 - [x] Verify the focused Shadow Realm source changes.
+
+- [ ] Add Console Door maze round trips, shared Console Room, server-validated keypad and temporary rift card; verify rules and phone layout without changing other doors or banking.

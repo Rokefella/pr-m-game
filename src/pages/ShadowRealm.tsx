@@ -4,6 +4,7 @@ import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
 import { getAllFlags, setFlag } from '@/lib/questFlags';
 import { supabase } from '@/lib/supabase';
+import { formatPrime } from '@/lib/format';
 import { endRun } from '@/lib/runState';
 import Thumbstick from '@/components/Thumbstick';
 import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
@@ -756,7 +757,7 @@ const ShadowRealm = () => {
                     <div style={{ position: 'relative', width: '100%', background: '#0f1612', border: '1px solid #26312e', padding: '12px 8px', minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', '--plate-gold': '#c8963a' } as CSSProperties}>
                       <PlateCorners />
                       <span className="font-cinzel" style={{ fontSize: 'clamp(40px, 14vw, 56px)', color: '#f5c060', opacity: primeVisible && currentPrime !== null ? 1 : 0, transition: 'opacity 300ms ease-out' }}>
-                        {currentPrime ?? '\u00a0'}
+                        {currentPrime === null ? '\u00a0' : formatPrime(currentPrime)}
                       </span>
                     </div>
                     {bankedBefore !== null && (

@@ -18,11 +18,11 @@ describe('fragment reveal readiness', () => {
     await act(async () => {});
     const button = screen.getByRole('button', { name: 'SAVE TO FOLDER' });
     act(() => vi.advanceTimersByTime(800));
-    act(() => vi.advanceTimersByTime(520));
+    act(() => vi.advanceTimersByTime(1300));
     expect(button).toBeDisabled();
-    act(() => vi.advanceTimersByTime(500));
+    act(() => vi.advanceTimersByTime(499));
     expect(button).toBeDisabled();
-    act(() => vi.advanceTimersByTime(380));
+    act(() => vi.advanceTimersByTime(1));
     expect(button).toBeEnabled();
   });
   it('enables after 300ms under reduced motion even if the voice fetch is pending', () => {

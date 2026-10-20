@@ -156,6 +156,7 @@
 .drop-crate-glow { position: absolute; width: 90%; height: 90%; left: 5%; top: 5%; background: var(--drop-glow); opacity: .25; animation: drop-crate-pulse 1.8s ease-in-out infinite; pointer-events: none; }
 .drop-crate svg { position: relative; display: block; }
 @keyframes drop-crate-pulse { 0%, 100% { opacity: .15; } 50% { opacity: .35; } }
+@keyframes fragment-hud-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
 @media (prefers-reduced-motion: reduce) { .drop-crate-glow { animation: none; } }
 
 /* PRÆM Animations */

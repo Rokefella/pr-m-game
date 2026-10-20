@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PlateFrame from '@/components/theme/PlateFrame';
-import { TransitionFlash } from '@/components/theme/transition/DoorTransition';
 import { supabase } from '@/lib/supabase';
 import { DIMENSION_GLOW } from '@/lib/theme/tokens';
 import type { ConsoleResult, RiftTarget } from '@/lib/console';
@@ -175,6 +174,6 @@ export default memo(function ConsolePanel({ open, level, onClose, onRift }: Prop
         </>}
       </div>
     </PlateFrame>
-    {flash && <div className="console-flash"><TransitionFlash on color={DIMENSION_GLOW[flash]} /></div>}
+    {flash && <div className="console-rift-flash" aria-hidden="true" style={{ background: `color-mix(in srgb, ${DIMENSION_GLOW[flash]} 70%, #fff)` }} />}
   </div>, document.body);
 });

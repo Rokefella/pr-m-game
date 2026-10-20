@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Restyle ConsolePanel with eight tiles, plated keypad, carried-drop key socket and server-selected key; verify rules and 375px layout without changing rooms or doors.
+- [x] Restyle ConsolePanel with eight tiles, plated keypad, carried-drop key socket and server-selected key; 27 focused tests and preview compilation pass; isolated 375px/desktop checks verify one-row tiles, key selection, READY, wrong-key removal and close. Real account verification remains blocked by the external game session as noted below.
 
 - [x] Format all visible fragment primes to at least five digits without changing stored values or gameplay; 21 tests and preview compilation pass, and isolated prime-2 reveal/save at 375×667 shows 00002 without wrapping (live authenticated Folder/Exchange reads remain unverified).
 

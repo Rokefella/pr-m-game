@@ -1,6 +1,7 @@
 # Architecture rules
 
 - Format fragment primes only at presentation boundaries through `src/lib/format.ts`; decoding consumes its formatted string so timing includes padding while persisted values and gameplay comparisons remain numeric.
+- Derive carried and Library presentation counts from persisted banking status via `fragmentInventory`; reveal pre-count excludes the current prime only among carried rows so banked replays cannot skew it.
 
 - Keep tile-theme rendering isolated in theme modules: cache SVG background URIs for memoized walls and a single repeating floor layer, with one optional prime overlay; this preserves gameplay camera performance when themes are integrated later.
 - Maze camera transforms are written through a DOM ref; memoize visible themed cells by logical player cell and viewport size, retaining the existing culling margin to avoid per-frame grid scans.

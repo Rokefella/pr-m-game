@@ -10,6 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { sendBetaFeedback } from '@/lib/betaFeedback';
 import { formatPrime } from '@/lib/format';
+import PlateFrame from '@/components/theme/PlateFrame';
+import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
+import { X } from 'lucide-react';
+import { fragmentInventory, type FolderFragment } from '@/lib/carriedFragments';
 
 
 
@@ -88,7 +92,7 @@ const ProfileOverlay = ({
     updateUser(user.id, { growth_points: nextGp, [key]: nextVal } as never);
   };
 
-  const [folderFragments, setFolderFragments] = useState<Array<{ id: string; prime_number: number; banked?: boolean | null }>>([]);
+  const [folderFragments, setFolderFragments] = useState<FolderFragment[]>([]);
   const [folderTooltip, setFolderTooltip] = useState<string | null>(null);
   const [ownedDrops, setOwnedDrops] = useState<OwnedDrop[]>([]);
   const [dropTooltip, setDropTooltip] = useState<string | null>(null);
@@ -114,7 +118,7 @@ const ProfileOverlay = ({
   const [newName, setNewName] = useState('');
   const [nameStep, setNameStep] = useState<'input' | 'confirm'>('input');
   const [nameMsg, setNameMsg] = useState('');
-  const [nameMsgColor, setNameMsgColor] = useState('rgba(160,140,200,0.5)');
+  const [nameMsgColor, setNameMsgColor] = useState('var(--plate-label)');
   const [deleteForm, setDeleteForm] = useState(false);
   const [deleteText, setDeleteText] = useState('');
   const [deleteMsg, setDeleteMsg] = useState('');
@@ -253,13 +257,14 @@ const ProfileOverlay = ({
   } else {
     regNum = user ? user.id.slice(-4).toUpperCase() : '????';
   }
-  const auraColor = accountRow?.aura_color ?? '#5b4fd4';
+  const auraColor = accountRow?.aura_color ?? 'var(--plate-voice)';
   const credits = String(accountRow?.credits ?? 50);
   const steps = String(accountRow?.steps_remaining ?? 100);
   const level = String(accountRow?.level ?? 1);
   const titleRaw = accountRow?.title ?? null;
   const title = titleRaw && titleRaw.trim() !== '' ? titleRaw : '';
-  const fragmentCount = folderFragments.length;
+  const { carried: carriedFragments, bankedCount } = fragmentInventory(folderFragments);
+  const fragmentCount = carriedFragments.length;
   const fragmentDisplayValue =
     context === 'maze' && runProgress
       ? `${runProgress.collected}/${runProgress.required}`
@@ -282,13 +287,13 @@ const ProfileOverlay = ({
   })();
   const subDisplay = (() => {
     switch (subStatus) {
-      case 'dev': return { text: 'DEV ACCESS', color: '#c8963a' };
-      case 'trial': return { text: `TRIAL — ${trialDays} DAYS REMAINING`, color: 'rgba(160,140,200,0.7)' };
-      case 'active': return { text: 'SUBSCRIBED', color: '#c8963a' };
-      case 'lifetime': return { text: 'FOUNDING MEMBER', color: '#c8963a' };
-      case 'beta': return { text: 'BETA ACCESS', color: 'rgba(160,140,200,0.7)' };
-      case 'expired': return { text: 'NOT SUBSCRIBED', color: 'rgba(160,140,200,0.3)' };
-      default: return { text: 'NOT SUBSCRIBED', color: 'rgba(160,140,200,0.3)' };
+      case 'dev': return { text: 'DEV ACCESS', color: 'var(--plate-gold)' };
+      case 'trial': return { text: `TRIAL — ${trialDays} DAYS REMAINING`, color: 'var(--plate-label)' };
+      case 'active': return { text: 'SUBSCRIBED', color: 'var(--plate-gold)' };
+      case 'lifetime': return { text: 'FOUNDING MEMBER', color: 'var(--plate-gold)' };
+      case 'beta': return { text: 'BETA ACCESS', color: 'var(--plate-label)' };
+      case 'expired': return { text: 'NOT SUBSCRIBED', color: 'var(--plate-label)' };
+      default: return { text: 'NOT SUBSCRIBED', color: 'var(--plate-label)' };
     }
   })();
 
@@ -312,21 +317,21 @@ const ProfileOverlay = ({
 
   const cardStyle: React.CSSProperties = {
     position: 'relative',
-    background: 'rgba(100,80,160,0.08)',
-    border: '0.5px solid rgba(100,80,160,0.3)',
-    borderRadius: 'var(--border-radius-md)',
+    background: 'var(--plate-inset)',
+    border: '0.5px solid var(--plate-label)',
+    borderRadius: 0,
     padding: '10px 14px',
     marginBottom: 8,
   };
 
   const questNameStyle: React.CSSProperties = {
-    margin: 0, fontSize: 13, color: 'rgba(200,185,255,0.95)', letterSpacing: '0.12em',
+    margin: 0, fontSize: 13, color: 'var(--auth-text)', letterSpacing: '0.12em',
   };
   const giverStyle: React.CSSProperties = {
-    margin: '2px 0 0', fontSize: 12, color: 'rgba(160,140,200,0.7)',
+    margin: '2px 0 0', fontSize: 12, color: 'var(--plate-label)',
   };
   const statusStyle: React.CSSProperties = {
-    margin: '4px 0 0', fontSize: 13, color: 'rgba(200,185,255,0.85)',
+    margin: '4px 0 0', fontSize: 13, color: 'var(--auth-text)',
   };
 
   // Account tab styles
@@ -334,34 +339,34 @@ const ProfileOverlay = ({
     fontFamily: undefined,
     fontSize: 11,
     letterSpacing: '0.2em',
-    color: 'rgba(160,140,200,0.4)',
+    color: 'var(--plate-label)',
     margin: 0,
   };
   const valueStyle: React.CSSProperties = {
     fontSize: 13,
-    color: 'rgba(200,185,255,0.9)',
+    color: 'var(--auth-text)',
     marginTop: 6,
   };
   const ghostBtn: React.CSSProperties = {
     fontSize: 13,
     letterSpacing: '0.2em',
-    color: 'rgba(160,140,200,0.6)',
+    color: 'var(--plate-label)',
     background: 'transparent',
-    border: '0.5px solid rgba(160,140,200,0.2)',
+    border: '0.5px solid var(--plate-edge)',
     padding: '8px 16px',
     cursor: 'pointer',
     marginTop: 10,
   };
   const redGhostBtn: React.CSSProperties = {
     ...ghostBtn,
-    border: '0.5px solid rgba(200,80,80,0.2)',
-    color: 'rgba(200,80,80,0.4)',
+    border: '0.5px solid var(--auth-error)',
+    color: 'var(--auth-error)',
   };
   const inputStyle: React.CSSProperties = {
     background: 'transparent',
     border: 'none',
-    borderBottom: '1px solid rgba(160,140,200,0.3)',
-    color: '#e0ddd5',
+    borderBottom: '1px solid var(--plate-label)',
+    color: 'var(--auth-text)',
     fontStyle: 'italic',
     fontSize: 13,
     borderRadius: 0,
@@ -372,7 +377,7 @@ const ProfileOverlay = ({
   };
   const msgStyle: React.CSSProperties = {
     fontSize: 13,
-    color: 'rgba(160,140,200,0.5)',
+    color: 'var(--plate-label)',
     marginTop: 8,
   };
 
@@ -400,7 +405,7 @@ const ProfileOverlay = ({
     if (!user || !accountRow) return;
     if ((accountRow.credits ?? 0) < 10000) {
       setNameMsg('Insufficient credits.');
-      setNameMsgColor('rgba(200,80,80,0.4)');
+      setNameMsgColor('var(--auth-error)');
       return;
     }
     await updateUser(user.id, {
@@ -410,7 +415,7 @@ const ProfileOverlay = ({
     setAccountRow({ ...accountRow, credits: accountRow.credits - 10000, username: newName });
     await updateUser(user.id, { username: newName });
     setNameMsg('Name changed.');
-    setNameMsgColor('rgba(160,140,200,0.5)');
+    setNameMsgColor('var(--plate-label)');
     setNameStep('input');
     setNewName('');
     setNameForm(false);
@@ -446,96 +451,39 @@ const ProfileOverlay = ({
   };
 
   return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 150,
-        background: '#04040a',
-        overflow: 'auto',
-        display: isOpen ? 'block' : 'none',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute', inset: 0,
-          backgroundImage:
-            'linear-gradient(rgba(100,80,160,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(100,80,160,0.06) 1px, transparent 1px)',
-          backgroundSize: '40px 40px',
-          pointerEvents: 'none',
-        }}
-      />
-      <div style={{ position: 'relative', maxWidth: 520, margin: '0 auto', padding: '24px 20px 140px' }}>
-        {/* Header */}
-        <div className="font-mono" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: 'rgba(200,185,255,0.8)' }}>
-          <span>{accountRow?.username && accountRow.username.trim() !== '' ? accountRow.username : `#${regNum}`}</span>
-          <span>#{regNum}</span>
-        </div>
-
-        {/* Main tabs */}
-        <div style={{ display: 'flex', gap: 4, marginTop: 24, borderBottom: '0.5px solid rgba(100,80,160,0.2)' }}>
-          {(['profile', 'growth', 'quests', 'folder', 'account'] as const).map((t) => {
-            const active = mainTab === t;
-            return (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setMainTab(t)}
-                className="font-cinzel"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  borderBottom: active ? '1.5px solid #5b4fd4' : '1.5px solid transparent',
-                  padding: '8px 0',
-                  flex: 1,
-                  textAlign: 'center',
-                  fontSize: 10,
-                  letterSpacing: '0.15em',
-                  color: active ? '#e0ddd5' : 'rgba(160,140,200,0.5)',
-                  cursor: 'pointer',
-                  marginBottom: -1,
-                }}
-              >
-                {t.toUpperCase()}
-              </button>
-            );
-          })}
-        </div>
-
+    <div className="profile-overlay" style={{ display: isOpen ? 'flex' : 'none' }}>
+      <PlateFrame width="min(100vw, 440px)" className="profile-frame">
+        <div className="profile-content">
+          <header className="profile-header">
+            <PlayerAvatar size={56} palette={paletteFromColor(accountRow?.aura_color, accountRow?.registration_number)} walking={false} />
+            <div className="profile-identity">
+              <h2 className="font-cinzel">{accountRow?.username?.trim() || `#${regNum}`}</h2>
+              <div className="profile-header-plates font-mono"><span className="fragment-registration">#{regNum}</span><span className="profile-level">LEVEL {level.padStart(2, '0')}</span></div>
+              <p className="font-fell italic">{title || '—'}</p>
+            </div>
+            <Button variant="ghost" className="profile-close" aria-label="Close profile" onClick={onClose}><X /></Button>
+          </header>
+          <nav className="profile-tabs" aria-label="Profile tabs">
+            {(['profile', 'growth', 'quests', 'folder', 'account'] as const).map(t => <Button key={t} variant="ghost" className={`font-mono profile-tab ${mainTab === t ? 'profile-tab-active' : ''}`} aria-pressed={mainTab === t} onClick={() => setMainTab(t)}>{t.toUpperCase()}</Button>)}
+          </nav>
         {/* PROFILE content */}
         {mainTab === 'profile' && (
           <div style={{ marginTop: 8 }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
-              <div
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: '50%',
-                  background: `radial-gradient(circle at 30% 30%, ${auraColor}cc, ${auraColor}66)`,
-                  boxShadow: `0 0 28px ${auraColor}66, inset 0 0 20px ${auraColor}44`,
-                }}
-              />
-            </div>
-            <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 36, color: '#c8963a', margin: '24px 0 0' }}>
-              #{regNum}
-            </p>
-            <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 18, color: 'rgba(200,185,255,0.9)', margin: '8px 0 0', letterSpacing: '0.18em' }}>
-              LEVEL {level}
-            </p>
-
             <div
               style={{
                 display: 'flex', justifyContent: 'space-around',
                 marginTop: 24, paddingTop: 16, paddingBottom: 16,
-                borderTop: '0.5px solid rgba(100,80,160,0.2)',
-                borderBottom: '0.5px solid rgba(100,80,160,0.2)',
+                borderTop: '0.5px solid var(--plate-edge)',
+                borderBottom: '0.5px solid var(--plate-edge)',
               }}
             >
               {[
-                { label: 'CREDITS', value: credits, color: '#c8963a' },
-                { label: 'STEPS', value: steps, color: '#e0ddd5' },
-                { label: 'FRAGMENTS', value: fragmentDisplayValue, color: '#5b4fd4' },
+                { label: 'CREDITS', value: credits, color: 'var(--plate-gold)' },
+                { label: 'STEPS', value: steps, color: 'var(--auth-text)' },
+                { label: 'FRAGMENTS', value: fragmentDisplayValue, color: 'var(--plate-voice)' },
               ].map((s) => (
                 <div key={s.label} style={{ textAlign: 'center' }}>
-                  <div className="font-mono" style={{ fontSize: 9, letterSpacing: '0.18em', color: 'rgba(200,185,255,0.6)' }}>{s.label}</div>
+                  <div className="font-mono" style={{ fontSize: 11, letterSpacing: '0.18em', color: 'var(--plate-label)' }}>{s.label}</div>
                   <div className="font-mono" style={{ fontSize: 16, color: s.color, marginTop: 4 }}>{s.value}</div>
                 </div>
               ))}
@@ -547,11 +495,11 @@ const ProfileOverlay = ({
                 // attach outside-click handler via data attr; handled below
               }}
             >
-              <div className="font-mono" style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(200,185,255,0.6)' }}>TITLE</div>
+              <div className="font-mono" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'var(--plate-label)' }}>TITLE</div>
               {(() => {
                 const titles = accountRow?.unlocked_titles ?? [];
                 const hasMultiple = titles.length >= 2;
-                const titleColor = 'rgba(200,185,255,0.9)';
+                const titleColor = 'var(--auth-text)';
                 return (
                   <>
                     <div
@@ -570,7 +518,7 @@ const ProfileOverlay = ({
                     >
                       {accountRow?.title ?? '—'}
                       {hasMultiple && (
-                        <span style={{ fontSize: 10, color: titleColor }}>▾</span>
+                        <span style={{ fontSize: 11, color: titleColor }}>▾</span>
                       )}
                     </div>
                     {hasMultiple && titleDropdownOpen && (
@@ -598,7 +546,7 @@ const ProfileOverlay = ({
                                 style={{
                                   fontSize: 14,
                                   letterSpacing: '0.2em',
-                                  color: isActive ? '#c8963a' : 'rgba(160,140,200,0.6)',
+                                  color: isActive ? 'var(--plate-gold)' : 'var(--plate-label)',
                                   padding: '6px 0',
                                   cursor: 'pointer',
                                 }}
@@ -617,30 +565,30 @@ const ProfileOverlay = ({
 
 
             <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              <div className="font-cinzel" style={{ fontSize: 9, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.4)' }}>
+              <div className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'var(--plate-label)' }}>
                 DIMENSION
               </div>
               <div
                 aria-label="Dimension"
                 style={{
-                  width: 12, height: 12, borderRadius: '50%',
-                  background: accountRow?.aura_color ?? '#5b4fd4',
-                  boxShadow: `0 0 6px ${(accountRow?.aura_color ?? '#5b4fd4')}99`,
+                  width: 12, height: 12, borderRadius: 0,
+                  background: accountRow?.aura_color ?? 'var(--plate-voice)',
+                  boxShadow: 'var(--console-digit-shadow)',
                 }}
               />
             </div>
 
             <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center' }}>
               {subStatus === 'dev' ? (
-                <span className="font-cinzel" style={{ fontSize: 10, letterSpacing: '0.22em', color: '#c8963a' }}>
+                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.22em', color: 'var(--plate-gold)' }}>
                   DEV ACCESS
                 </span>
               ) : subscribed ? (
-                <span className="font-cinzel" style={{ fontSize: 10, letterSpacing: '0.22em', color: 'rgba(160,140,200,0.4)' }}>
+                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.22em', color: 'var(--plate-label)' }}>
                   {(subType || 'monthly').toUpperCase()} MEMBER
                 </span>
               ) : (
-                <span className="font-cinzel" style={{ fontSize: 10, letterSpacing: '0.22em', color: 'rgba(160,140,200,0.4)' }}>
+                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.22em', color: 'var(--plate-label)' }}>
                   NOT SUBSCRIBED
                 </span>
               )}
@@ -652,11 +600,11 @@ const ProfileOverlay = ({
         {mainTab === 'quests' && (
           <div style={{ marginTop: 16 }}>
             {/* Sub-tabs */}
-            <div style={{ display: 'flex', gap: 4, borderBottom: '0.5px solid rgba(100,80,160,0.15)' }}>
+            <div style={{ display: 'flex', gap: 4, borderBottom: '0.5px solid var(--plate-edge)' }}>
               {(['active', 'completed'] as const).map((t) => {
                 const active = questTab === t;
                 return (
-                  <button
+                  <Button variant="ghost"
                     key={t}
                     type="button"
                     onClick={() => setQuestTab(t)}
@@ -664,17 +612,17 @@ const ProfileOverlay = ({
                     style={{
                       background: 'transparent',
                       border: 'none',
-                      borderBottom: active ? '1px solid #5b4fd4' : '1px solid transparent',
+                      borderBottom: active ? '1px solid var(--plate-voice)' : '1px solid transparent',
                       padding: '6px 16px',
                       fontSize: 11,
                       letterSpacing: '0.2em',
-                      color: active ? '#e0ddd5' : 'rgba(160,140,200,0.4)',
+                      color: active ? 'var(--auth-text)' : 'var(--plate-label)',
                       cursor: 'pointer',
                       marginBottom: -1,
                     }}
                   >
                     {t.toUpperCase()}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -712,7 +660,7 @@ const ProfileOverlay = ({
                     {completed ? (
                       <span
                         className="font-cinzel"
-                        style={{ position: 'absolute', top: 8, right: 12, color: '#c8963a', fontSize: 14 }}
+                        style={{ position: 'absolute', top: 8, right: 12, color: 'var(--plate-gold)', fontSize: 14 }}
                       >
                         ✓
                       </span>
@@ -720,9 +668,9 @@ const ProfileOverlay = ({
                       <span
                         style={{
                           position: 'absolute', top: 12, right: 12,
-                          width: 6, height: 6, borderRadius: '50%',
-                          background: '#5b4fd4',
-                          boxShadow: '0 0 6px #5b4fd4',
+                          width: 6, height: 6, borderRadius: 0,
+                          background: 'var(--plate-voice)',
+                          boxShadow: '0 0 6px var(--plate-voice)',
                         }}
                       />
                     )}
@@ -738,26 +686,26 @@ const ProfileOverlay = ({
                       <div
                         style={{
                           ...cardStyle,
-                          background: 'rgba(200,150,58,0.06)',
-                          border: '0.5px solid rgba(200,150,58,0.3)',
+                          background: 'var(--plate-edge)',
+                          border: '0.5px solid var(--plate-edge)',
                           marginBottom: 16,
                         }}
                       >
                         <p
                           className="font-cinzel"
-                          style={{ margin: 0, fontSize: 8, letterSpacing: '0.2em', color: 'rgba(200,150,58,0.4)' }}
+                          style={{ margin: 0, fontSize: 11, letterSpacing: '0.2em', color: 'var(--plate-gold)' }}
                         >
                           PRIMARY QUEST
                         </p>
                         <p
                           className="font-cinzel"
-                          style={{ ...questNameStyle, color: '#c8963a', marginTop: 4 }}
+                          style={{ ...questNameStyle, color: 'var(--plate-gold)', marginTop: 4 }}
                         >
                           {alexandra.name.toUpperCase()}
                         </p>
                         <p
                           className="font-fell italic"
-                          style={{ ...giverStyle, color: 'rgba(160,140,200,0.6)' }}
+                          style={{ ...giverStyle, color: 'var(--plate-label)' }}
                         >
                           Given by {alexandra.giver}
                         </p>
@@ -768,17 +716,17 @@ const ProfileOverlay = ({
                     {groupNames.length === 0 ? (
                       <p
                         className="font-fell italic"
-                        style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.4)', margin: '24px 0' }}
+                        style={{ textAlign: 'center', fontSize: 13, color: 'var(--plate-label)', margin: '24px 0' }}
                       >
                         {questTab === 'active' ? 'No other active quests.' : 'Nothing completed yet.'}
                       </p>
                     ) : (
                       groupNames.map((name) => {
                         const expanded = openGroups.has(name);
-                        const items = groups.get(name)!;
+                        const items = groups.get(name) ?? [];
                         return (
                           <div key={name} style={{ marginBottom: 10 }}>
-                            <button
+                            <Button variant="ghost"
                               type="button"
                               onClick={() => toggleGroup(name)}
                               style={{
@@ -786,28 +734,28 @@ const ProfileOverlay = ({
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                background: 'rgba(100,80,160,0.06)',
-                                border: '0.5px solid rgba(100,80,160,0.15)',
-                                borderRadius: 'var(--border-radius-md)',
+                                background: 'var(--plate-inset)',
+                                border: '0.5px solid var(--plate-edge)',
+                                borderRadius: 0,
                                 padding: '10px 14px',
                                 cursor: 'pointer',
                               }}
                             >
                               <span
                                 className="font-cinzel"
-                                style={{ fontSize: 12, letterSpacing: '0.15em', color: 'rgba(200,185,255,0.9)' }}
+                                style={{ fontSize: 12, letterSpacing: '0.15em', color: 'var(--auth-text)' }}
                               >
                                 {name.toUpperCase()}
                               </span>
                               <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <span className="font-mono" style={{ fontSize: 10, color: 'rgba(160,140,200,0.5)' }}>
+                                <span className="font-mono" style={{ fontSize: 11, color: 'var(--plate-label)' }}>
                                   {items.length} quest{items.length === 1 ? '' : 's'}
                                 </span>
-                                <span style={{ fontSize: 10, color: 'rgba(160,140,200,0.5)' }}>
+                                <span style={{ fontSize: 11, color: 'var(--plate-label)' }}>
                                   {expanded ? '▲' : '▼'}
                                 </span>
                               </span>
-                            </button>
+                            </Button>
                             {expanded && (
                               <div style={{ marginTop: 8 }}>
                                 {items.map((q) => renderQuestCard(q, questTab === 'completed'))}
@@ -826,87 +774,30 @@ const ProfileOverlay = ({
 
         {/* FOLDER content */}
         {mainTab === 'folder' && (() => {
-          const count = folderFragments.length;
-          const cells = Array.from({ length: 20 }, (_, i) => folderFragments[i] || null);
+          const count = carriedFragments.length;
+          const cells = Array.from({ length: 20 }, (_, i) => carriedFragments[i] || null);
           return (
             <div style={{ marginTop: 24 }}>
-              {/* Header row */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 16 }}>
-                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(200,190,230,0.8)' }}>FOLDER</span>
-                <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(200,190,230,0.8)' }}>{count} / 20</span>
+              <div className="profile-section-label font-mono"><span>FOLDER</span><span>{count} / 20</span></div>
+              <div className="profile-inventory-grid">
+                {cells.map((frag, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${frag ? 'profile-fragment-carried' : 'profile-tile-empty'}`} disabled={!frag} aria-label={frag ? `Prime ${formatPrime(frag.prime_number)}` : `Empty fragment slot ${i + 1}`} onClick={() => frag && setFolderTooltip(folderTooltip === frag.id ? null : frag.id)}>{frag && <span className="font-cinzel">{formatPrime(frag.prime_number)}</span>}</Button>)}
               </div>
-
-              {/* Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 60px)', gap: 8, justifyContent: 'center' }}>
-                {cells.map((frag, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      position: 'relative',
-                      width: 60,
-                      height: 60,
-                      border: frag
-                        ? frag.banked === false ? '1.5px dashed #f5c060' : '1px solid rgba(167,139,250,0.4)'
-                        : '1px dashed rgba(160,140,200,0.35)',
-                      background: frag ? 'rgba(107,70,193,0.3)' : 'transparent',
-                      cursor: frag ? 'pointer' : 'default',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}
-                    onClick={() => frag && setFolderTooltip(folderTooltip === frag.id ? null : frag.id)}
-                  >
-                    {frag && (
-                      <span
-                        className="font-cinzel"
-                        style={{ fontSize: 14, color: '#a78bfa' }}
-                      >
-                        {formatPrime(frag.prime_number)}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {folderFragments.some((f) => f.banked === false) && (
-                <p className="font-mono" style={{ textAlign: 'center', fontSize: 11, color: '#8e99d0', marginTop: 12, letterSpacing: '0.04em' }}>
-                  Dashed fragments are carried. Bank them in the Shadow Realm or lose them if you leave.
-                </p>
-              )}
+              <p className="profile-library font-mono">LIBRARY {bankedCount} banked</p>
+              <p className="profile-carry-note font-fell italic">{count > 0 ? 'Carried fragments are lost if you leave the maze without visiting the Shadow Realm.' : 'Nothing carried. Fragments you find in the maze appear here until you bank them.'}</p>
 
               {/* Tooltip / flavour text */}
               {(() => {
-                const selected = folderFragments.find((f) => f.id === folderTooltip);
+                const selected = carriedFragments.find((f) => f.id === folderTooltip);
                 if (!selected) return null;
                 return (
                   <p
                     className="font-fell italic"
-                    style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.6)', marginTop: 16 }}
+                    style={{ textAlign: 'center', fontSize: 13, color: 'var(--plate-label)', marginTop: 16 }}
                   >
                     Prime {formatPrime(selected.prime_number)}. You are inside the instrument now.
                   </p>
                 );
               })()}
-
-              {/* Status text */}
-              {count === 0 && (
-                <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.7)', marginTop: 24 }}>
-                  Your folder is empty. Enter the maze.
-                </p>
-              )}
-              {count === 20 && (
-                <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(200,80,80,0.4)', marginTop: 24 }}>
-                  Your folder is full. You cannot collect further fragments.
-                </p>
-              )}
-              {count >= 18 && count < 20 && (
-                <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(200,150,58,0.5)', marginTop: 24 }}>
-                  Your folder is nearly full. Find the Shadow Realm.
-                </p>
-              )}
-
-              {/* Shadow realm note */}
-              <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.75)', marginTop: 32 }}>
-                Fragments are lost if you leave the maze without visiting the Shadow Realm.
-              </p>
 
               {/* DROPS section */}
               {(() => {
@@ -942,46 +833,16 @@ const ProfileOverlay = ({
 
                 return (
                   <div style={{ marginTop: 40 }}>
-                    {/* Header row */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 16 }}>
-                      <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(200,190,230,0.8)' }}>DROPS</span>
-                      <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: 'rgba(200,190,230,0.8)' }}>{owned} / {dropCapacity}</span>
-                    </div>
-
-                    {/* Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 60px)', gap: 8, justifyContent: 'center' }}>
-                      {dropCells.map((drop, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            position: 'relative',
-                            width: 60,
-                            height: 60,
-                            border: drop
-                              ? '1px solid rgba(200,150,58,0.4)'
-                              : '1px dashed rgba(160,140,200,0.35)',
-                            background: drop ? 'rgba(200,150,58,0.15)' : 'transparent',
-                            cursor: drop ? 'pointer' : 'default',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            padding: 4,
-                            textAlign: 'center',
-                          }}
-                          onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}
-                        >
-                          {drop && (
-                            <span className="font-cinzel" style={{ fontSize: 10, letterSpacing: '0.06em', color: '#c8963a', lineHeight: 1.2 }}>
-                              {drop.name}
-                            </span>
-                          )}
-                        </div>
-                      ))}
+                    <div className="profile-section-label font-mono"><span>DROPS</span><span>{owned} / {dropCapacity}</span></div>
+                    <div className="profile-inventory-grid">
+                      {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? 'profile-drop-filled' : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="font-fell italic">{drop.name}</span>}</Button>)}
                     </div>
 
                     {/* Tooltip / flavour text */}
                     {selectedDrop && (
                       <p
                         className="font-fell italic"
-                        style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.6)', marginTop: 16 }}
+                        style={{ textAlign: 'center', fontSize: 13, color: 'var(--plate-label)', marginTop: 16 }}
                       >
                         {selectedDrop.name}. {selectedDrop.description ?? 'Its purpose is not yet clear.'}
                       </p>
@@ -989,19 +850,19 @@ const ProfileOverlay = ({
 
                     {/* Status text */}
                     {owned === 0 && (
-                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.7)', marginTop: 24 }}>
+                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'var(--plate-label)', marginTop: 24 }}>
                         You carry nothing. The village gives to those who ask.
                       </p>
                     )}
                     {owned >= dropCapacity && (
-                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(200,80,80,0.4)', marginTop: 24 }}>
+                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'var(--auth-error)', marginTop: 24 }}>
                         You cannot carry more. Widen the folder.
                       </p>
                     )}
 
                     {/* Buy slot */}
                     <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      <button
+                      <Button variant="ghost"
                         onClick={buySlot}
                         disabled={!canAfford || buyingSlot}
                         className="font-cinzel"
@@ -1013,10 +874,10 @@ const ProfileOverlay = ({
                         }}
                       >
                         BUY +1 SLOT — {SLOT_COST} CREDITS
-                      </button>
+                      </Button>
                     </div>
                     {dropSlotMsg && (
-                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.5)', marginTop: 10 }}>
+                      <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'var(--plate-label)', marginTop: 10 }}>
                         {dropSlotMsg}
                       </p>
                     )}
@@ -1031,42 +892,42 @@ const ProfileOverlay = ({
 
         {/* ACCOUNT content */}
         {mainTab === 'account' && (
-          <div style={{ marginTop: 24 }}>
+          <div className="profile-account" style={{ marginTop: 24 }}>
             {/* SECTION 1 — CREDENTIALS */}
             <div style={{ marginBottom: 32 }}>
               {/* EMAIL */}
-              <p className="font-cinzel" style={sectionLabelStyle}>EMAIL</p>
+              <p className="font-mono" style={sectionLabelStyle}>EMAIL</p>
               {!emailForm ? (
-                <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(true); setEmailMsg(''); }}>
+                <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(true); setEmailMsg(''); }}>
                   CHANGE EMAIL
-                </button>
+                </Button>
               ) : (
                 <div>
                   <p className="font-fell italic" style={msgStyle}>
                     A confirmation link will be sent to your current email address.
                   </p>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleSendEmailChangeLink}>SEND LINK</button>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(false); setEmailMsg(''); }}>CANCEL</button>
+                    <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={handleSendEmailChangeLink}>SEND LINK</Button>
+                    <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setEmailForm(false); setEmailMsg(''); }}>CANCEL</Button>
                   </div>
                 </div>
               )}
               {emailMsg && <p className="font-fell italic" style={msgStyle}>{emailMsg}</p>}
 
               {/* PASSWORD */}
-              <p className="font-cinzel" style={{ ...sectionLabelStyle, marginTop: 24 }}>PASSWORD</p>
-              <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleSendPasswordReset}>
+              <p className="font-mono" style={{ ...sectionLabelStyle, marginTop: 24 }}>PASSWORD</p>
+              <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={handleSendPasswordReset}>
                 CHANGE PASSWORD
-              </button>
+              </Button>
               {passwordMsg && <p className="font-fell italic" style={msgStyle}>{passwordMsg}</p>}
 
               {/* NAME */}
-              <p className="font-cinzel" style={{ ...sectionLabelStyle, marginTop: 24 }}>NAME</p>
+              <p className="font-mono" style={{ ...sectionLabelStyle, marginTop: 24 }}>NAME</p>
               <div className="font-mono" style={valueStyle}>{accountRow?.username ?? username}</div>
               {!nameForm ? (
-                <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setNameForm(true); setNameStep('input'); setNameMsg(''); }}>
+                <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setNameForm(true); setNameStep('input'); setNameMsg(''); }}>
                   CHANGE NAME
-                </button>
+                </Button>
               ) : nameStep === 'input' ? (
                 <div>
                   <input
@@ -1078,8 +939,8 @@ const ProfileOverlay = ({
                     placeholder="new name"
                   />
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => newName && setNameStep('confirm')}>NEXT</button>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setNameForm(false); setNewName(''); }}>CANCEL</button>
+                    <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={() => newName && setNameStep('confirm')}>NEXT</Button>
+                    <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setNameForm(false); setNewName(''); }}>CANCEL</Button>
                   </div>
                 </div>
               ) : (
@@ -1088,8 +949,8 @@ const ProfileOverlay = ({
                     Changing your name costs 10,000 credits. This cannot be undone.
                   </p>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={handleConfirmName}>CONFIRM</button>
-                    <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setNameForm(false); setNameStep('input'); setNewName(''); }}>CANCEL</button>
+                    <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={handleConfirmName}>CONFIRM</Button>
+                    <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setNameForm(false); setNameStep('input'); setNewName(''); }}>CANCEL</Button>
                   </div>
                 </div>
               )}
@@ -1098,19 +959,19 @@ const ProfileOverlay = ({
 
             {/* SECTION 2 — SUBSCRIPTION */}
             <div style={{ marginBottom: 32 }}>
-              <p className="font-cinzel" style={sectionLabelStyle}>SUBSCRIPTION</p>
+              <p className="font-mono" style={sectionLabelStyle}>SUBSCRIPTION</p>
               <div className="font-cinzel" style={{ ...valueStyle, color: subDisplay.color, letterSpacing: '0.18em' }}>
                 {subDisplay.text}
               </div>
-              {!BETA_MODE && <button
+              {!BETA_MODE && <Button variant="ghost"
                 type="button"
                 className="font-cinzel"
                 style={{
                   fontSize: 13,
                   letterSpacing: '0.2em',
                   background: 'transparent',
-                  border: '0.5px solid rgba(160,140,200,0.2)',
-                  color: 'rgba(160,140,200,0.4)',
+                  border: '0.5px solid var(--plate-edge)',
+                  color: 'var(--plate-label)',
                   padding: '8px 16px',
                   cursor: 'pointer',
                   marginTop: 12,
@@ -1118,11 +979,11 @@ const ProfileOverlay = ({
                 onClick={() => { onClose(); navigate('/paywall'); }}
               >
                 MANAGE SUBSCRIPTION
-              </button>}
+              </Button>}
             </div>
 
             <div className="mb-8">
-              <Button type="button" variant="outline" className="font-cinzel rounded-none border-purple/20 bg-transparent text-purple/80 text-[13px] font-normal" onClick={() => {
+              <Button type="button" variant="outline" className="font-cinzel profile-secondary" onClick={() => {
                 setFeedbackError(''); setFeedbackThanks(false); setFeedbackOpen(true);
               }}>
                 Send feedback
@@ -1132,15 +993,15 @@ const ProfileOverlay = ({
 
             {/* SECTION 3 — DANGER */}
             <div>
-              <p className="font-cinzel" style={{ ...sectionLabelStyle, color: 'rgba(200,80,80,0.4)' }}>DANGER</p>
+              <p className="font-mono" style={{ ...sectionLabelStyle, color: 'var(--auth-error)' }}>DANGER</p>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8, marginTop: 4 }}>
-                <button type="button" className="font-cinzel" style={redGhostBtn} onClick={handleSignOut}>
+                <Button type="button" className="font-cinzel profile-signout" onClick={handleSignOut}>
                   SIGN OUT
-                </button>
+                </Button>
                 {!deleteForm ? (
-                  <button type="button" className="font-cinzel" style={redGhostBtn} onClick={() => { setDeleteForm(true); setDeleteMsg(''); }}>
+                  <Button variant="ghost" type="button" className="font-cinzel" style={redGhostBtn} onClick={() => { setDeleteForm(true); setDeleteMsg(''); }}>
                     DELETE ACCOUNT
-                  </button>
+                  </Button>
                 ) : (
                   <div style={{ width: '100%' }}>
                     <p className="font-fell italic" style={msgStyle}>Type DELETE to confirm</p>
@@ -1152,8 +1013,8 @@ const ProfileOverlay = ({
                       onChange={(e) => setDeleteText(e.target.value)}
                     />
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button type="button" className="font-cinzel" style={redGhostBtn} onClick={handleDeleteConfirm}>CONFIRM</button>
-                      <button type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setDeleteForm(false); setDeleteText(''); setDeleteMsg(''); }}>CANCEL</button>
+                      <Button variant="ghost" type="button" className="font-cinzel" style={redGhostBtn} onClick={handleDeleteConfirm}>CONFIRM</Button>
+                      <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setDeleteForm(false); setDeleteText(''); setDeleteMsg(''); }}>CANCEL</Button>
                     </div>
                     {deleteMsg && <p className="font-fell italic" style={msgStyle}>{deleteMsg}</p>}
                   </div>
@@ -1167,14 +1028,14 @@ const ProfileOverlay = ({
         {mainTab === 'growth' && (
           <div style={{ marginTop: 24 }}>
             {([
-              { key: 'social' as const, name: 'SOCIAL', color: '#c8963a', borderRgba: 'rgba(200,150,58,0.2)', desc: "Social affinity grants deeper resonance with the village's inhabitants. Dialogue paths others cannot hear." },
-              { key: 'perception' as const, name: 'PERCEPTION', color: '#2dd4bf', borderRgba: 'rgba(45,212,191,0.2)', desc: 'Perception affinity extends your awareness within the maze. What others stumble into, you see first.' },
-              { key: 'trade' as const, name: 'TRADE', color: '#a78bfa', borderRgba: 'rgba(167,139,250,0.2)', desc: 'Trade affinity reduces the friction of movement. Every step costs less when you know the value of things.' },
+              { key: 'social' as const, name: 'SOCIAL', color: 'var(--plate-gold)', borderRgba: 'var(--plate-edge)', desc: "Social affinity grants deeper resonance with the village's inhabitants. Dialogue paths others cannot hear." },
+              { key: 'perception' as const, name: 'PERCEPTION', color: 'var(--console-teal)', borderRgba: 'var(--plate-edge)', desc: 'Perception affinity extends your awareness within the maze. What others stumble into, you see first.' },
+              { key: 'trade' as const, name: 'TRADE', color: 'var(--plate-voice)', borderRgba: 'var(--plate-edge)', desc: 'Trade affinity reduces the friction of movement. Every step costs less when you know the value of things.' },
             ]).map((a, idx) => {
               const open = growthOpen[a.key];
               return (
                 <div key={a.key} style={{ marginBottom: idx < 2 ? 20 : 0 }}>
-                  <button
+                  <Button variant="ghost"
                     type="button"
                     onClick={() => setGrowthOpen((s) => ({ ...s, [a.key]: !s[a.key] }))}
                     style={{
@@ -1184,17 +1045,17 @@ const ProfileOverlay = ({
                       justifyContent: 'space-between',
                       background: 'transparent',
                       border: 'none',
-                      borderBottom: open ? '1px solid transparent' : '1px solid rgba(160,140,200,0.08)',
+                      borderBottom: open ? '1px solid transparent' : '1px solid var(--plate-inset)',
                       padding: '12px 0',
                       cursor: 'pointer',
                     }}
                   >
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: a.color, display: 'inline-block' }} />
-                      <span className="font-cinzel" style={{ fontSize: 11, letterSpacing: '0.2em', color: '#e0ddd5' }}>{a.name}</span>
+                      <span style={{ width: 8, height: 8, borderRadius: 0, background: a.color, display: 'inline-block' }} />
+                      <span className="font-mono profile-stat-label">{a.name}</span>
                     </span>
-                    <span style={{ color: 'rgba(160,140,200,0.3)', fontSize: 11 }}>{open ? '▲' : '▼'}</span>
-                  </button>
+                    <span className="profile-stat-summary"><span className="font-cinzel profile-stat-value">{stats[a.key]}</span><span className="profile-pips" aria-label={`${stats[a.key]} of 5`} >{Array.from({ length: 10 }, (_, i) => <i key={i} className={i < stats[a.key] * 2 ? 'profile-pip-filled' : ''} />)}</span><span>{open ? '▲' : '▼'}</span></span>
+                  </Button>
                   <div
                     style={{
                       maxHeight: open ? 400 : 0,
@@ -1203,29 +1064,11 @@ const ProfileOverlay = ({
                     }}
                   >
                     <div style={{ padding: '12px 0 16px' }}>
-                      <p className="font-fell italic" style={{ fontSize: 15, color: 'rgba(160,140,200,0.5)', marginBottom: 16 }}>
+                      <p className="font-fell italic" style={{ fontSize: 15, color: 'var(--plate-label)', marginBottom: 16 }}>
                         {a.desc}
                       </p>
-                      <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginBottom: 10 }}>
-                        {[0, 1, 2, 3, 4].map((n) => (
-                          <span
-                            key={n}
-                            style={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: '50%',
-                              background: n < stats[a.key] ? a.color : 'transparent',
-                              border: n < stats[a.key] ? 'none' : `1px solid ${a.borderRgba}`,
-                              display: 'inline-block',
-                            }}
-                          />
-                        ))}
-                      </div>
-                      <p className="font-cinzel" style={{ textAlign: 'center', fontSize: 8, letterSpacing: '0.2em', color: 'rgba(160,140,200,0.3)', margin: 0 }}>
-                        LEVEL {stats[a.key]} / 5
-                      </p>
                       {growthPoints > 0 ? (
-                        <button
+                        <Button variant="ghost"
                           type="button"
                           onClick={() => commitGrowthPoint(a.key)}
                           disabled={stats[a.key] >= 5}
@@ -1235,17 +1078,17 @@ const ProfileOverlay = ({
                             margin: '12px auto 0',
                             padding: '8px 16px',
                             background: 'transparent',
-                            border: `1px solid ${stats[a.key] >= 5 ? 'rgba(160,140,200,0.15)' : a.borderRgba}`,
-                            color: stats[a.key] >= 5 ? 'rgba(160,140,200,0.25)' : a.color,
-                            fontSize: 10,
+                            border: `1px solid ${stats[a.key] >= 5 ? 'var(--plate-edge)' : a.borderRgba}`,
+                            color: stats[a.key] >= 5 ? 'var(--plate-edge)' : a.color,
+                            fontSize: 11,
                             letterSpacing: '0.2em',
                             cursor: stats[a.key] >= 5 ? 'default' : 'pointer',
                           }}
                         >
                           COMMIT A GROWTH POINT
-                        </button>
+                        </Button>
                       ) : (
-                        <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 12, color: 'rgba(160,140,200,0.25)', marginTop: 8 }}>
+                        <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 12, color: 'var(--plate-edge)', marginTop: 8 }}>
                           No growth points available — earn them by completing quests.
                         </p>
                       )}
@@ -1259,28 +1102,7 @@ const ProfileOverlay = ({
         )}
       </div>
 
-      {/* LEAVE button */}
-      <button
-        type="button"
-        onClick={onClose}
-        className="font-cinzel"
-        style={{
-          position: 'fixed',
-          bottom: 32,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          fontSize: 14,
-          letterSpacing: '0.25em',
-          color: '#e0ddd5',
-          padding: '12px 32px',
-          border: '0.5px solid rgba(200,185,255,0.4)',
-          background: 'transparent',
-          cursor: 'pointer',
-          zIndex: 160,
-        }}
-      >
-        LEAVE
-      </button>
+      </PlateFrame>
       <DialogPrimitive.Root open={feedbackOpen && isOpen} onOpenChange={(open) => {
         if (!feedbackSending) { setFeedbackOpen(open); setFeedbackError(''); }
       }}>

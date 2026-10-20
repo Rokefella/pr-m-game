@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Replace existing initial loading placeholders with the shared Instrument spiral; verify 150ms no-flash delay, 500ms minimum visibility and reduced motion without changing usable screens or fetching.
+- [x] Replace Index, Maze, Village, DynamicRoom and ExchangeRoom initial loading placeholders with the shared Instrument spiral; 144 tests pass, timing tests verify 150ms no-flash/500ms hold, browser checks verify all five loaders and static reduced motion, and preview compilation passes. ShadowRealm's entry guard and the already-usable Intro/ProfileSetup stay unchanged because they have no blocking data-loading placeholder.
 
 - [x] Show carried-only Folder/reveal counts with a separate Library total; restyle every Profile tab in Instrument plates without changing handlers or banking; 140 tests pass and isolated 375px checks verify all tabs, 1/20 carried, Library 5 banked and reveal Folder 1 of 20.
 - [ ] Verify carried-only Folder and Library totals against a real account — the game's external sign-in session is unavailable; isolated checks are not live persistence verification.

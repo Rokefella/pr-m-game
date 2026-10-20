@@ -157,7 +157,7 @@
 .drop-crate svg { position: relative; display: block; }
 @keyframes drop-crate-pulse { 0%, 100% { opacity: .15; } 50% { opacity: .35; } }
 @keyframes fragment-hud-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
-@media (prefers-reduced-motion: reduce) { .drop-crate-glow { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .drop-crate-glow { animation: none; } [data-fragment-hud="full"] { animation: none; } }
 
 /* PRÆM Animations */
 .loading-screen { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; background-color: var(--auth-backdrop); background-image: var(--loading-grid); background-size: 24px 24px; animation: loading-in 200ms ease-out both; }

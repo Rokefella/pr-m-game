@@ -1516,10 +1516,12 @@ const Maze = () => {
           </span>
         </span>
         <span
+          data-fragment-hud={collected.size >= config.fragmentsRequired ? 'full' : undefined}
           style={{ color: collected.size >= config.fragmentsRequired ? '#f5c060' : '#c8963a', animation: collected.size >= config.fragmentsRequired ? 'fragment-hud-pulse 1.6s ease-in-out infinite' : undefined }}
         >
           FRAGMENTS {collected.size}/{config.fragmentsRequired}
         </span>
+
 
         <span style={{ color: '#5b4fd4' }}>LEVEL {String(currentLevel).padStart(2, '0')}</span>
         <ProfileButton onClick={openProfile} />

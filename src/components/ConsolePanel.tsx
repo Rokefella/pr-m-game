@@ -78,7 +78,7 @@ export default memo(function ConsolePanel({ open, level, onClose, onRift }: Prop
       if (version !== generation.current) return;
       const result = data as unknown as ConsoleResult | null;
       if (error || !result) throw error ?? new Error('No signal');
-      if (result.ok) {
+      if (result.ok === true) {
         setFlash(result.rift);
         timer.current = setTimeout(() => {
           if (version === generation.current) { setFlash(null); onRift(result.rift); }

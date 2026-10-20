@@ -2400,24 +2400,6 @@ const Village = () => {
 
 
 
-      {/* Entity quote (screen-fixed) */}
-      <p
-        className="font-fell italic"
-        style={{
-          position: 'absolute',
-          top: 24,
-          left: 0,
-          right: 0,
-          textAlign: 'center',
-          fontSize: 18,
-          margin: 0,
-          zIndex: 10,
-          pointerEvents: 'none',
-        }}
-      >
-        Another one enters?
-      </p>
-
       {/* Villager whisper */}
       {villagerWhisper && (
         <p

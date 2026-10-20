@@ -9,6 +9,7 @@ import DecodeNumber from '@/components/theme/DecodeNumber';
 import FolderSlots from '@/components/theme/FolderSlots';
 import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { DIMENSION_GLOW } from '@/lib/theme/tokens';
+import { formatPrime } from '@/lib/format';
 import {
   EYE_MS, TYPE_MS_PER_CHAR, DECODE_MS_PER_DIGIT, REVEAL_FLASH_MS,
   REDUCED_REVEAL_MS, FOLDER_TOTAL, countBeforeFragment,
@@ -101,7 +102,7 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
       }
     };
     void fetchRandomReveal().then((text) => {
-      if (!cancelled) setFullLine(text ?? `${prime}.`);
+      if (!cancelled) setFullLine(text ?? `${formatPrime(prime)}.`);
     });
     return () => {
       cancelled = true;

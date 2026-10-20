@@ -1,10 +1,11 @@
 import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useReducedMotion } from './useReducedMotion';
+import { formatPrime } from '@/lib/format';
 
 type Props = { value: number | string; run: boolean; glow: string; msPerDigit?: number; onDone?: () => void };
 
 export default memo(function DecodeNumber({ value, run, glow, msPerDigit = 260, onDone }: Props) {
-  const text = String(value);
+  const text = formatPrime(value);
   const reduced = useReducedMotion();
   const [locked, setLocked] = useState(0);
   const [random, setRandom] = useState(() => text.replace(/./g, () => String(Math.floor(Math.random() * 10))));

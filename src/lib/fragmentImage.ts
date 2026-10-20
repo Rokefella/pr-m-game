@@ -1,3 +1,5 @@
+import { formatPrime } from './format';
+
 // Generates the saved fragment image as a PNG data URL.
 // Mirrors the canvas drawing in FragmentOverlay's "Save to folder" action.
 export const generateFragmentImage = (prime: number, registrationNumber: number): string | null => {
@@ -47,7 +49,7 @@ export const generateFragmentImage = (prime: number, registrationNumber: number)
   ctx.font = '96px Cinzel, serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(String(prime), 300, 420);
+  ctx.fillText(formatPrime(prime), 300, 420);
 
   // player avatar
   ctx.strokeStyle = 'rgba(91,79,212,0.4)';

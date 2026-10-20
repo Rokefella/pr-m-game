@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser } from '@/lib/userData';
 import { supabase } from '@/lib/supabase';
+import { formatPrime } from '@/lib/format';
 import Thumbstick from '@/components/Thumbstick';
 import { setFlag } from '@/lib/questFlags';
 import { checkSubscriptionStatus } from '@/lib/subscriptionStatus';
@@ -186,7 +187,7 @@ const ExchangeRoom = () => {
     if (error) {
       setMarketError(error.message || 'The purchase failed.');
     } else {
-      setMarketNotice(`Acquired Prime ${listing.prime_number ?? '?'}.`);
+      setMarketNotice(`Acquired Prime ${listing.prime_number == null ? '?' : formatPrime(listing.prime_number)}.`);
       await loadMarket();
     }
     setMarketBusy(false);
@@ -212,7 +213,7 @@ const ExchangeRoom = () => {
     if (error) {
       setMarketError(error.message || 'The listing was refused.');
     } else {
-      setMarketNotice(`Prime ${frag.prime_number} offered for ${Math.floor(price)} credits.`);
+      setMarketNotice(`Prime ${formatPrime(frag.prime_number)} offered for ${Math.floor(price)} credits.`);
       setSellPrice('');
       await loadMarket();
     }
@@ -739,7 +740,7 @@ const ExchangeRoom = () => {
               }}
             >
               <span className="font-mono" style={{ fontSize: 11, color: 'rgba(200,196,186,0.8)' }}>
-                Prime {l.prime_number ?? '?'}, Level {l.level ?? '?'} — {l.price} credits — sold by{' '}
+                Prime {l.prime_number == null ? '?' : formatPrime(l.prime_number)}, Level {l.level ?? '?'} — {l.price} credits — sold by{' '}
                 {l.seller_username ?? 'unknown'}
               </span>
               <button
@@ -791,7 +792,7 @@ const ExchangeRoom = () => {
               >
                 {myFragments.map((f) => (
                   <option key={f.id} value={f.id}>
-                    Prime {f.prime_number}, Level {f.level}
+                    Prime {formatPrime(f.prime_number)}, Level {f.level}
                   </option>
                 ))}
               </select>
@@ -856,7 +857,7 @@ const ExchangeRoom = () => {
                 }}
               >
                 <span className="font-mono" style={{ fontSize: 11, color: 'rgba(200,196,186,0.8)' }}>
-                  Prime {l.prime_number ?? '?'}, Level {l.level ?? '?'} — {l.price} credits
+                  Prime {l.prime_number == null ? '?' : formatPrime(l.prime_number)}, Level {l.level ?? '?'} — {l.price} credits
                 </span>
                 <button
                   type="button"

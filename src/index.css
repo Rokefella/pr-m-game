@@ -200,7 +200,7 @@
 .fragment-voice { font-size: 15px; line-height: 1.35; color: var(--plate-voice); text-align: center; min-height: 41px; max-height: 122px; width: 100%; overflow-y: auto; overflow-wrap: anywhere; margin: 0; }
 .fragment-number-plate { position: relative; background: var(--plate-inset); border: 1px solid var(--plate-edge); padding: 14px 10px; width: 100%; }
 .fragment-number-plate .plate-inner { border: 0; }
-.decode-number { position: relative; display: flex; justify-content: center; font-size: clamp(40px, 14vw, 56px); line-height: 1.2; font-variant-numeric: tabular-nums; }
+.decode-number { position: relative; display: flex; justify-content: center; font-size: clamp(34px, 11.5vw, 50px); line-height: 1.2; font-variant-numeric: tabular-nums; }
 .decode-number span { width: .65em; text-align: center; }
 .decode-unresolved { color: var(--decode-glow); opacity: .6; }
 .decode-locked { color: var(--instrument-beacon); }
@@ -230,7 +230,6 @@
   .fragment-frame { padding: 14px 20px; }
   .fragment-voice { max-height: 81px; }
   .fragment-number-plate { padding: 10px; }
-  .decode-number { font-size: 40px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .instrument-beacon-ring { animation: none; opacity: .8; }

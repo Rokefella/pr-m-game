@@ -14,6 +14,7 @@ import PlateFrame from '@/components/theme/PlateFrame';
 import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
 import { X } from 'lucide-react';
 import { fragmentInventory, type FolderFragment } from '@/lib/carriedFragments';
+import DropIcon from '@/components/DropIcon';
 
 
 
@@ -60,6 +61,8 @@ type OwnedDrop = {
   drop_key: string;
   name: string;
   description: string | null;
+  category: string | null;
+  icon_svg: string | null;
 };
 
 const ProfileOverlay = ({
@@ -192,16 +195,13 @@ const ProfileOverlay = ({
     (supabase.from('drops' as never) as never as {
       select: (q: string) => { eq: (c: string, v: string) => Promise<{ data: unknown; error: unknown }> };
     })
-      .select('id, drop_types(drop_key, name, description)')
+      .select('id, drop_types(drop_key, name, description, category, icon_svg)')
       .eq('user_id', user.id)
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) { console.error('[Folder] drops fetch failed', error); return; }
-        const rows = (data || []) as Array<{
-          id: string;
-          drop_types?: { drop_key?: string; name?: string; description?: string | null }
-            | Array<{ drop_key?: string; name?: string; description?: string | null }>;
-        }>;
+        type DT = { drop_key?: string; name?: string; description?: string | null; category?: string | null; icon_svg?: string | null };
+        const rows = (data || []) as Array<{ id: string; drop_types?: DT | DT[] }>;
         const mapped: OwnedDrop[] = rows.map((r) => {
           const dt = Array.isArray(r.drop_types) ? r.drop_types[0] : r.drop_types;
           return {
@@ -209,6 +209,8 @@ const ProfileOverlay = ({
             drop_key: dt?.drop_key ?? '',
             name: dt?.name ?? 'Unknown',
             description: dt?.description ?? null,
+            category: dt?.category ?? null,
+            icon_svg: dt?.icon_svg ?? null,
           };
         });
         setOwnedDrops(mapped);
@@ -835,7 +837,7 @@ const ProfileOverlay = ({
                   <div style={{ marginTop: 40 }}>
                     <div className="profile-section-label font-mono"><span>DROPS</span><span>{owned} / {dropCapacity}</span></div>
                     <div className="profile-inventory-grid">
-                      {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? 'profile-drop-filled' : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="font-fell italic">{drop.name}</span>}</Button>)}
+                      {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? 'profile-drop-filled' : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="profile-drop-body"><DropIcon svg={drop.icon_svg} category={drop.category} size={40} />{drop.category === 'key' && <span className="profile-key-badge font-mono">KEY</span>}<span className="font-fell italic">{drop.name}</span></span>}</Button>)}
                     </div>
 
                     {/* Tooltip / flavour text */}

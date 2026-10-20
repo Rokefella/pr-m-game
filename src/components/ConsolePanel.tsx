@@ -8,9 +8,11 @@ import { supabase } from '@/lib/supabase';
 import { DIMENSION_GLOW } from '@/lib/theme/tokens';
 import type { ConsoleResult, RiftTarget } from '@/lib/console';
 import { useAuth } from '@/context/AuthContext';
+import DropIcon from '@/components/DropIcon';
 
-type CarriedDrop = { id: string; name: string; category: string };
-type DropRow = { id: string; drop_type_id: string; drop_types?: { name: string; category: string } | { name: string; category: string }[] | null };
+type CarriedDrop = { id: string; name: string; category: string; icon_svg?: string | null };
+type DropType = { name: string; category: string; icon_svg?: string | null };
+type DropRow = { id: string; drop_type_id: string; drop_types?: DropType | DropType[] | null };
 function KeyIcon() {
   return <svg aria-hidden="true" viewBox="0 0 32 24" width="32" height="24" shapeRendering="crispEdges"><path fill="currentColor" fillRule="evenodd" d="M2 4h12v12H2V4Zm4 4v4h4V8H6Zm8 1h16v4h-4v6h-4v-6h-8V9Z" /></svg>;
 }
@@ -78,12 +80,12 @@ export default memo(function ConsolePanel({ open, level, onClose, onRift }: Prop
     void (async () => {
       try {
         const { data, error } = await supabase.from('drops' as never)
-          .select('id, drop_type_id, drop_types(name, category)').eq('user_id', userId);
+          .select('id, drop_type_id, drop_types(name, category, icon_svg)').eq('user_id', userId);
         if (cancelled) return;
         if (error) throw error;
         const carried = ((data ?? []) as unknown as DropRow[]).map(row => {
           const type = Array.isArray(row.drop_types) ? row.drop_types[0] : row.drop_types;
-          return { id: row.id, name: type?.name ?? 'Unknown', category: type?.category ?? '' };
+          return { id: row.id, name: type?.name ?? 'Unknown', category: type?.category ?? '', icon_svg: type?.icon_svg ?? null };
         });
         carried.sort((a, b) => Number(b.category === 'key') - Number(a.category === 'key'));
         setDrops(carried);
@@ -161,13 +163,13 @@ export default memo(function ConsolePanel({ open, level, onClose, onRift }: Prop
               <Button variant="ghost" className="console-socket-button" aria-label={selectedDrop ? `Remove key: ${selectedDrop.name}` : pickerOpen ? 'Close key picker' : 'Insert key'} disabled={disabled} onClick={() => {
                 if (selectedDrop) { setSelectedDrop(null); setPickerOpen(false); }
                 else setPickerOpen(value => !value);
-              }}><span className="console-key-slot"><KeyIcon /></span><span className="console-socket-copy"><span className="font-mono console-socket-label">KEY</span><span className={selectedDrop ? 'font-cinzel console-drop-name' : 'font-fell italic'}>{selectedDrop?.name ?? 'Insert key'}</span></span></Button>
+              }}><span className="console-key-slot">{selectedDrop ? <DropIcon svg={selectedDrop.icon_svg} category={selectedDrop.category} size={36} /> : <KeyIcon />}</span><span className="console-socket-copy"><span className="font-mono console-socket-label">KEY</span><span className={selectedDrop ? 'font-cinzel console-drop-name' : 'font-fell italic'}>{selectedDrop?.name ?? 'Insert key'}</span></span></Button>
               {selectedDrop && <Button variant="ghost" className="console-remove-key" aria-label="Remove inserted key" disabled={disabled} onClick={() => { setSelectedDrop(null); setPickerOpen(false); }}><X size={14} /></Button>}
             </div>
             <div className="console-lamps font-mono"><span><i className="console-lamp console-lamp-locked" />LOCKED</span><span><i className={`console-lamp console-lamp-ready ${selectedDrop && digits.length > 0 ? 'console-ready-lit' : ''}`} />READY</span></div>
           </div>
           {pickerOpen ? <div className="console-picker" aria-label="Carried drops">
-            {dropsLoading ? <p className="font-fell italic">…</p> : drops.length === 0 ? <p className="font-fell italic">No keys carried</p> : drops.map(drop => <Button key={drop.id} variant="outline" className="console-drop-tile font-cinzel" disabled={disabled} onClick={() => { setSelectedDrop(drop); setPickerOpen(false); }}>{drop.name}</Button>)}
+            {dropsLoading ? <p className="font-fell italic">…</p> : drops.length === 0 ? <p className="font-fell italic">No keys carried</p> : drops.map(drop => <Button key={drop.id} variant="outline" className="console-drop-tile font-cinzel" disabled={disabled} onClick={() => { setSelectedDrop(drop); setPickerOpen(false); }}><DropIcon svg={drop.icon_svg} category={drop.category} size={32} /><span>{drop.name}</span></Button>)}
           </div> : <div className="console-keypad">{['1','2','3','4','5','6','7','8','9','CLEAR','0','DEL'].map(key => <Button key={key} variant="outline" className={`console-key ${key.length > 1 ? 'font-mono console-command' : 'font-cinzel'}`} disabled={disabled || (digits.length >= 8 && key.length === 1)} onClick={() => setDigits(value => key === 'CLEAR' ? '' : key === 'DEL' ? value.slice(0, -1) : (value + key).slice(0, 8))}>{key}</Button>)}</div>}
           <Button className="auth-submit font-cinzel" disabled={disabled || !digits} onClick={() => void enter()}>ENTER</Button>
         </>}

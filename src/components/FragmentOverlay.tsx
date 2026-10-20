@@ -54,7 +54,7 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
     return () => window.clearTimeout(timer);
   }, [reduced]);
 
-  // Same user-wide rows and ordering as ProfileOverlay's FOLDER tab. Exclude
+  // Same carried-only rows and ordering as ProfileOverlay's FOLDER tab. Exclude
   // this prime because Maze may have already persisted the pickup by now.
   useEffect(() => {
     if (!user) return;
@@ -62,7 +62,7 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
     void (async () => {
       try {
         const { data, error } = await supabase.from('fragments')
-          .select('id,prime_number,collected_at')
+          .select('id,prime_number,collected_at,banked')
           .eq('user_id', user.id).order('collected_at', { ascending: false });
         if (!cancelled && !error && Array.isArray(data)) {
           setFilled(countBeforeFragment(data, prime));

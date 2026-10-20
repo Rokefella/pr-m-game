@@ -76,6 +76,9 @@
     --auth-error: #d07a6a;
     --console-screen: #05121a;
     --console-teal: #62e6f0;
+    --drop-edge: #62e6f0;
+    --drop-key-edge: #f5c060;
+    --drop-glow: radial-gradient(circle, currentColor 0%, transparent 70%);
     --console-purple: #b79bff;
     --console-amber: #f5c060;
     --console-tile: #0a2a33;
@@ -147,6 +150,13 @@
     user-select: text;
   }
 }
+
+.drop-crate { position: relative; display: inline-block; color: var(--drop-edge); }
+.drop-crate-key { color: var(--drop-key-edge); }
+.drop-crate-glow { position: absolute; width: 90%; height: 90%; left: 5%; top: 5%; background: var(--drop-glow); opacity: .25; animation: drop-crate-pulse 1.8s ease-in-out infinite; pointer-events: none; }
+.drop-crate svg { position: relative; display: block; }
+@keyframes drop-crate-pulse { 0%, 100% { opacity: .15; } 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .drop-crate-glow { animation: none; } }
 
 /* PRÆM Animations */
 .loading-screen { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; background-color: var(--auth-backdrop); background-image: var(--loading-grid); background-size: 24px 24px; animation: loading-in 200ms ease-out both; }

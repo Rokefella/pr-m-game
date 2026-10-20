@@ -34,9 +34,19 @@ export const DropSpawnGlimmer = memo(function DropSpawnGlimmer({ dimension, size
   return <Art size={size}><path d="M24 16V32M16 24H32M18 18L30 30M30 18L18 30" stroke={glow} opacity=".28" /><rect x="22" y="22" width="4" height="4" fill={glow} opacity=".5" /></Art>;
 });
 
-export const DropCrate = memo(function DropCrate({ dimension, size }: Props) {
-  const glow = DIMENSION_GLOW[dimension];
-  return <Art size={size}><path d="M11 15L24 9L37 15V35L24 41L11 35Z" fill="hsl(var(--background))" stroke={glow} opacity=".9" /><path d="M11 15L24 21L37 15M24 21V41M17 12L30 18V38" stroke={glow} opacity=".5" /><rect x="21" y="25" width="6" height="5" fill={glow} opacity=".65" /></Art>;
+export const DropCrate = memo(function DropCrate({ size, lit = false, tone = 'drop' }: Props & { lit?: boolean; tone?: 'key' | 'drop' }) {
+  return <span className={`drop-crate${lit && tone === 'key' ? ' drop-crate-key' : ''}`} data-lit={lit} data-tone={tone}>
+    {lit && <span className="drop-crate-glow" />}
+    <Art size={size}>
+      <path d="M11 15L24 9L37 15V35L24 41L11 35Z" fill="hsl(var(--background))" />
+      <g stroke="currentColor" opacity={lit ? 1 : .35}>
+        <path d="M11 15L24 9L37 15V35L24 41L11 35Z" fill="none" />
+        <path d="M11 15L24 21L37 15M24 21V41M17 12L30 18V38" fill="none" />
+        <rect x="21" y="25" width="6" height="5" fill="currentColor" />
+      </g>
+      {lit && <path d="M21 14L24 12L27 14L24 16Z" fill="currentColor" />}
+    </Art>
+  </span>;
 });
 
 export const NpcPad = memo(function NpcPad({ dimension, size }: Props) {

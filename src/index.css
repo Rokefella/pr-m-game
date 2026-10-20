@@ -132,7 +132,7 @@
 .console-art { image-rendering: pixelated; pointer-events: none; display: block; }
 .console-layer { position: fixed; inset: 0; z-index: 400; }
 .console-backdrop { position: absolute; inset: 0; background: var(--plate-backdrop); }
-.console-sheet { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); max-height: min(80vh, 560px); overflow-y: auto; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
+.plate-frame.console-sheet { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); max-height: min(80vh, 560px); overflow-y: auto; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
 .console-stack { position: relative; display: flex; flex-direction: column; gap: 12px; outline: none; }
 .console-stack header { position: relative; text-align: center; padding: 0 36px; }
 .console-stack h2 { margin: 0; font-size: 14px; letter-spacing: .2em; color: var(--console-teal); }

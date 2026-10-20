@@ -379,6 +379,9 @@ const DynamicRoom = () => {
   const levelNumber = Number.isFinite(routeLevel) && routeLevel > 0 ? routeLevel : 1;
 
   const { user, loading: authLoading } = useAuth();
+  // Auth refreshes hand out a new user object; key room effects on the id so a
+  // token refresh never reloads the room (and wipes an open rift card).
+  const userId = user?.id ?? null;
 
   const [room, setRoom] = useState<RoomLayout | null>(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -443,7 +446,8 @@ const DynamicRoom = () => {
       setCurrentLevel(levelNumber);
     })();
     return () => { cancelled = true; };
-  }, [user, authLoading, navigate, levelNumber]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, authLoading, navigate, levelNumber]);
 
   // Load this room's layout: exact level_number + location_key
   useEffect(() => {
@@ -657,7 +661,8 @@ const DynamicRoom = () => {
 
     void loadRoom();
     return () => { cancelled = true; };
-  }, [user, authLoading, levelNumber, locationKey]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, authLoading, levelNumber, locationKey]);
 
   // Fetch marker assets + display names for every NPC placed in this room
   const npcKeys = useMemo(

@@ -12,11 +12,11 @@ beforeEach(() => { vi.resetAllMocks(); api.maybeSingle.mockResolvedValue({ data:
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 async function open(level = 4, onRift = vi.fn(), onClose = vi.fn()) {
   render(<ConsolePanel open level={level} onClose={onClose} onRift={onRift} />);
-  await waitFor(() => expect(screen.getByRole('button', { name: '2', exact: true })).not.toBeDisabled());
+  await waitFor(() => expect(screen.getByRole('button', { name: '2' })).not.toBeDisabled());
   return { onRift, onClose };
 }
-function digit(n = '2') { fireEvent.click(screen.getByRole('button', { name: n, exact: true })); }
-function enter() { fireEvent.click(screen.getByRole('button', { name: 'ENTER', exact: true })); }
+function digit(n = '2') { fireEvent.click(screen.getByRole('button', { name: n })); }
+function enter() { fireEvent.click(screen.getByRole('button', { name: 'ENTER' })); }
 
 describe('console server interaction rules', () => {
   it('uses a positive integer query level or defaults to 1', () => {
@@ -26,24 +26,24 @@ describe('console server interaction rules', () => {
   it('sends the originating level and digits once and clears a wrong code', async () => {
     api.rpc.mockResolvedValue({ data: { ok: false, reason: 'wrong', attempts_left: 2 }, error: null });
     await open(); digit(); enter(); enter();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'ENTER', exact: true })).toBeDisabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'ENTER' })).toBeDisabled());
     expect(api.rpc).toHaveBeenCalledExactlyOnceWith('use_console', { p_level: 4, p_code: '2' });
   });
   it('caps input at 12 digits and supports deletion and clearing', async () => {
     api.rpc.mockResolvedValue({ data: { ok: false, reason: 'silent' }, error: null });
     await open(); for (let i = 0; i < 13; i++) digit();
-    fireEvent.click(screen.getByRole('button', { name: 'DEL', exact: true })); enter();
+    fireEvent.click(screen.getByRole('button', { name: 'DEL' })); enter();
     await waitFor(() => expect(api.rpc).toHaveBeenCalledWith('use_console', { p_level: 4, p_code: '22222222222' }));
-    fireEvent.click(screen.getByRole('button', { name: 'CLEAR', exact: true }));
-    expect(screen.getByRole('button', { name: 'ENTER', exact: true })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'CLEAR' }));
+    expect(screen.getByRole('button', { name: 'ENTER' })).toBeDisabled();
   });
   it('blocks keypad and submissions until the server lockout ends', async () => {
     api.rpc.mockResolvedValue({ data: { ok: false, reason: 'locked', retry_in_seconds: 3 }, error: null });
     await open(); vi.useFakeTimers(); digit(); enter();
     await act(async () => { await Promise.resolve(); });
-    expect(screen.getByRole('button', { name: '2', exact: true })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '2' })).toBeDisabled();
     await act(async () => { vi.advanceTimersByTime(3000); });
-    expect(screen.getByRole('button', { name: '2', exact: true })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: '2' })).not.toBeDisabled();
     expect(api.rpc).toHaveBeenCalledTimes(1);
   });
   it('waits 500ms before sending a successful rift target to the room', async () => {
@@ -71,7 +71,7 @@ describe('console server interaction rules', () => {
     api.rpc.mockImplementation(() => new Promise(done => { resolve = done; }));
     const onRift = vi.fn(); const onClose = vi.fn();
     const view = render(<ConsolePanel open level={2} onClose={onClose} onRift={onRift} />);
-    await waitFor(() => expect(screen.getByRole('button', { name: '2', exact: true })).not.toBeDisabled());
+    await waitFor(() => expect(screen.getByRole('button', { name: '2' })).not.toBeDisabled());
     digit(); enter();
     fireEvent.click(screen.getByRole('button', { name: 'Close console' })); expect(onClose).toHaveBeenCalledTimes(1);
     view.rerender(<ConsolePanel open={false} level={2} onClose={onClose} onRift={onRift} />);

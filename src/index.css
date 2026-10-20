@@ -95,6 +95,9 @@
     --profile-danger: #a83a3a;
     --profile-danger-top: #c85a5a;
     --profile-danger-bottom: #6e1a1a;
+    --loading-grid: radial-gradient(rgba(169,140,255,.07) 1px, transparent 1.5px);
+    --loading-glow: radial-gradient(rgba(245,192,96,.10), transparent 70%);
+    --loading-centre: #fff3c4;
 
     --sidebar-background: 240 43% 3%;
     --sidebar-foreground: 43 14% 85%;
@@ -146,6 +149,19 @@
 }
 
 /* PRÆM Animations */
+.loading-screen { position: fixed; inset: 0; z-index: 300; display: grid; place-items: center; background-color: var(--auth-backdrop); background-image: var(--loading-grid); background-size: 24px 24px; animation: loading-in 200ms ease-out both; }
+.loading-stack { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.loading-sigil { position: relative; width: 132px; height: 132px; }
+.loading-sigil svg { position: relative; }
+.loading-glow { position: absolute; width: 200px; height: 200px; left: 50%; top: 50%; transform: translate(-50%, -50%); border-radius: 50%; background: var(--loading-glow); animation: loading-pulse 3.2s ease-in-out infinite; }
+.loading-segment { fill: var(--instrument-beacon); opacity: 0; animation: loadSeg 3.2s infinite; }
+.loading-centre { fill: var(--loading-centre); animation: loading-pulse 2s ease-in-out infinite; }
+.loading-wordmark { margin-top: 24px; font-size: 18px; letter-spacing: .4em; color: var(--plate-label); }
+.loading-label { margin-top: 12px; font-size: 11px; color: var(--plate-disabled-text); }
+@keyframes loadSeg { 0% { opacity: 0; } 12%,80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes loading-pulse { 0%,100% { opacity: .6; } 50% { opacity: 1; } }
+@keyframes loading-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .loading-screen, .loading-screen * { animation: none !important; } .loading-segment, .loading-centre, .loading-glow { opacity: 1; } }
 .profile-overlay { position: fixed; inset: 0; z-index: 150; background: var(--profile-backdrop); justify-content: center; align-items: flex-start; }
 .plate-frame.profile-frame { max-height: 100dvh; height: 100dvh; overflow-y: auto; padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); }
 .profile-content { position: relative; min-width: 0; }

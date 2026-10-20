@@ -197,7 +197,7 @@ const ShadowRealm = () => {
   const [error, setError] = useState(false);
   const [saving, setSaving] = useState(false);
   const runFragsRef = useRef<RunFragment[]>([]);
-  const [bankedBefore, setBankedBefore] = useState<number | null>(null);
+  const [libraryCount, setLibraryCount] = useState<number | null>(null);
   const [shownCount, setShownCount] = useState(0);
   const [nextLevel, setNextLevel] = useState<number | null>(null);
   const [levelFlash, setLevelFlash] = useState(false);
@@ -521,8 +521,20 @@ const ShadowRealm = () => {
     const ok = await bankFirst();
     setSaving(false);
     if (!ok) { setError(true); return; }
+    // Presentation-only read after saving; count failures cannot fail the transfer.
+    if (user && runFragsRef.current.length > 0) {
+      void (async () => {
+        try {
+          const { count, error: countError } = await supabase
+            .from('library')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id);
+          if (!countError && count !== null) setLibraryCount(count);
+        } catch { /* Hide unknown totals without interrupting the level gate. */ }
+      })();
+    }
     playAfterBank();
-  }, [bankFirst, playAfterBank]);
+  }, [bankFirst, playAfterBank, user]);
 
   const transferStartedRef = useRef(false);
   const startTransfer = useCallback(() => {
@@ -540,15 +552,7 @@ const ShadowRealm = () => {
       if (p < 1) requestAnimationFrame(animateEye);
     };
     requestAnimationFrame(animateEye);
-    void (async () => {
-      const { count } = await supabase
-        .from('fragments')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('banked', true);
-      setBankedBefore(count ?? 0);
-      await finish();
-    })();
+    void finish();
   }, [user, finish]);
 
   // ---------------- movement ----------------
@@ -738,7 +742,7 @@ const ShadowRealm = () => {
       </div>
 
       {transferring && (() => {
-        const folderCount = Math.min(20, (bankedBefore ?? 0) + shownCount);
+        const transferCount = runFragsRef.current.length;
         return (
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(6,10,8,.96)', opacity: overlayIn ? 1 : 0, transition: 'opacity 600ms ease-in', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', overflowY: 'auto' }}>
             <PlateFrame tone="shadow" glow={SHADOW.glow} width="min(92vw, 340px)">
@@ -760,12 +764,13 @@ const ShadowRealm = () => {
                         {currentPrime === null ? '\u00a0' : formatPrime(currentPrime)}
                       </span>
                     </div>
-                    {bankedBefore !== null && (
+                    {transferCount > 0 && (
                       <>
-                        <FolderSlots total={20} filled={shownCount > 0 ? folderCount - 1 : folderCount} revealed={shownCount > 0} />
-                        <p className="font-mono" style={{ margin: 0, fontSize: 11, color: SHADOW.glow, letterSpacing: '0.12em' }}>Folder {folderCount} of 20</p>
+                        <FolderSlots total={Math.max(5, transferCount)} filled={Math.max(0, shownCount - 1)} revealed={shownCount > 0} />
+                        <p className="font-mono" style={{ margin: 0, fontSize: 11, color: SHADOW.glow, letterSpacing: '0.12em' }}>Banking {shownCount} of {transferCount}</p>
                       </>
                     )}
+                    {doneMsg && libraryCount !== null && <p className="font-mono" style={{ margin: 0, fontSize: 11, color: SHADOW.glow }}>Library {libraryCount}</p>}
                     {doneMsg && <p className="font-fell italic" style={{ margin: 0, fontSize: 16, color: SHADOW.eye, animation: 'shadowFadeIn 500ms ease-out' }}>The record is permanent now.</p>}
                   </>
                 )}

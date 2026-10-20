@@ -389,3 +389,6 @@
 .console-drop-tile { gap: 10px; align-items: center; }
 .console-inserted .console-key-slot img { filter: drop-shadow(var(--console-key-glow)); }
 .console-inserted .console-key-slot { height: 40px; }
+.console-rift-flash { position: fixed; inset: 0; z-index: 420; pointer-events: none; opacity: 0; animation: console-rift-flash 500ms ease-out forwards; }
+@keyframes console-rift-flash { 0% { opacity: 0; } 40% { opacity: .7; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .console-rift-flash { animation: none; opacity: .35; } }

@@ -18,6 +18,7 @@ function KeyIcon() {
 type Props = { open: boolean; level: number; onClose: () => void; onRift: (target: RiftTarget) => void };
 export default memo(function ConsolePanel({ open, level, onClose, onRift }: Props) {
   const { user } = useAuth();
+  const userId = user?.id;
   const [drops, setDrops] = useState<CarriedDrop[]>([]);
   const [selectedDrop, setSelectedDrop] = useState<CarriedDrop | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -71,13 +72,13 @@ export default memo(function ConsolePanel({ open, level, onClose, onRift }: Prop
   }, [open, level]);
 
   useEffect(() => {
-    if (!open || !user || unlocked) { setDrops([]); return; }
+    if (!open || !userId || unlocked) { setDrops([]); return; }
     let cancelled = false;
     setDropsLoading(true);
     void (async () => {
       try {
         const { data, error } = await supabase.from('drops' as never)
-          .select('id, drop_type_id, drop_types(name, category)').eq('user_id', user.id);
+          .select('id, drop_type_id, drop_types(name, category)').eq('user_id', userId);
         if (cancelled) return;
         if (error) throw error;
         const carried = ((data ?? []) as unknown as DropRow[]).map(row => {
@@ -90,7 +91,7 @@ export default memo(function ConsolePanel({ open, level, onClose, onRift }: Prop
       finally { if (!cancelled) setDropsLoading(false); }
     })();
     return () => { cancelled = true; };
-  }, [open, user, unlocked]);
+  }, [open, userId, unlocked]);
 
   useEffect(() => {
     if (!deadline) return;

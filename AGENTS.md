@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Maze reuses its existing fresh/resume decision to load server-owned run-drop contents after config and lifecycle readiness; ref-backed placements and in-flight claims isolate pickup failures from movement, and DropCrate owns presentation only.
+
 - Keep blocking loading presentation and its delayed minimum-visibility timing in LoadingScreen/useMinLoading; pages retain their original data and navigation state so loader changes cannot affect gameplay.
 
 - Format fragment primes only at presentation boundaries through `src/lib/format.ts`; decoding consumes its formatted string so timing includes padding while persisted values and gameplay comparisons remain numeric.

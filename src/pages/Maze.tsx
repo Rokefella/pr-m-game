@@ -22,10 +22,10 @@ import StepExchangeSheet from '@/components/StepExchangeSheet';
 import WallTile from '@/components/theme/WallTile';
 import FloorLayer from '@/components/theme/FloorLayer';
 import PrimeGlowLayer from '@/components/theme/PrimeGlowLayer';
-import { Gate, PrimeShard, Veil, RoomDoorTile, ConsoleDoorTile, DropSpawnGlimmer, DropCrate, NpcPad, StartPad, Pylon } from '@/components/theme/objects';
+import { Gate, PrimeShard, Veil, RoomDoorTile, ConsoleDoorTile, DropCrate, NpcPad, StartPad, Pylon } from '@/components/theme/objects';
 import { getThemeForLevel } from '@/lib/theme/themes';
 import { DIMENSION_GLOW, mazeGlowForLevel } from '@/lib/theme/tokens';
-import { SHOW_SPAWN_GLIMMER, pylonCells, visibleBounds } from '@/lib/theme/mazeRendering';
+import { pylonCells, visibleBounds } from '@/lib/theme/mazeRendering';
 import type { VisualCell } from '@/lib/levelLoader';
 import '@/components/theme/maze.css';
 
@@ -407,6 +407,7 @@ const Maze = () => {
 
   // Capture the room return before config initialization consumes its coordinates.
   const roomReturnRef = useRef(Boolean(sessionStorage.getItem('praem_maze_return_col')));
+  const runResumeRef = useRef(false);
   const userIdRef = useRef<string | null>(null);
   useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
   const leavingRef = useRef(false);
@@ -716,6 +717,7 @@ const Maze = () => {
           storedRun = null;
         }
         const resume = roomReturnRef.current || Boolean(sessionStorage.getItem('praem_maze_return_col')) || (!STRICT_FORFEIT && Boolean(storedRun));
+        runResumeRef.current = resume;
         let rows = existing as UserFragmentRow[];
         if (!resume) {
           await forfeitUnbanked(user.id);
@@ -828,42 +830,64 @@ const Maze = () => {
     });
   };
 
-  // DROP_SPAWN tiles — repeatable random drop rolls (never marked as used)
-  type DropSpawn = { col: number; row: number; drop_type_id?: string | null; drop_key?: string | null; chance?: number | null };
-  const dropSpawnsRef = useRef<DropSpawn[]>([]);
+  // Placement contents belong to the server; the existing lifecycle decides resume.
+  type RunDrop = { name: string; kind: 'key' | 'drop' };
+  const [runDrops, setRunDrops] = useState<Map<string, RunDrop>>(new Map());
+  const runDropsRef = useRef<Map<string, RunDrop>>(new Map());
+  const pendingDropClaimsRef = useRef(new Set<string>());
+  const dropGenerationRef = useRef(0);
   useEffect(() => {
-    const raw = configRef.current as unknown as
-      | { dropSpawns?: DropSpawn[]; extraCells?: Array<DropSpawn & { type?: string }> }
-      | null;
-    const fromExtra = (raw?.extraCells ?? []).filter((c) => c && c.type === 'DROP_SPAWN');
-    const cells = [...(raw?.dropSpawns ?? []), ...fromExtra];
-    dropSpawnsRef.current = cells.filter(
-      (c) => c && typeof c.col === 'number' && typeof c.row === 'number',
-    );
-  }, [config]);
-
-  const rollDropSpawn = (col: number, row: number) => {
-    const spawn = dropSpawnsRef.current.find((s) => s.col === col && s.row === row);
-    if (!spawn) return;
-
-    const uid = userIdRef.current;
-    if (!uid) return;
-
-    // The server checks the tile, rolls the chance, applies the cooldown and
-    // inserts the drop; the browser only shows the whisper when granted.
+    const generation = ++dropGenerationRef.current;
+    runDropsRef.current = new Map();
+    setRunDrops(runDropsRef.current);
+    pendingDropClaimsRef.current.clear();
+    if (!config || !levelLoaded || !user) return;
+    let cancelled = false;
     void (async () => {
       try {
-        const { data, error } = await supabase.rpc('claim_drop_spawn' as never, {
+        const { data, error } = await supabase.rpc('start_run_drops' as never, {
+          p_level: currentLevelRef.current,
+          p_resume: runResumeRef.current,
+        } as never);
+        if (cancelled || leavingRef.current || generation !== dropGenerationRef.current || error || !Array.isArray(data)) return;
+        const points = new Set((config.visualCells ?? []).filter(c => c.type === 'DROP_SPAWN' || c.type === 'DROP').map(c => `${c.col},${c.row}`));
+        const placements = new Map<string, RunDrop>();
+        for (const item of data as Array<RunDrop & Cell>) {
+          if (!item || !Number.isFinite(item.col) || !Number.isFinite(item.row) || typeof item.name !== 'string' || (item.kind !== 'key' && item.kind !== 'drop')) continue;
+          const key = `${item.col},${item.row}`;
+          if (points.has(key)) placements.set(key, { name: item.name, kind: item.kind });
+        }
+        runDropsRef.current = placements;
+        setRunDrops(placements);
+      } catch { /* no placements; maze loading and movement stay independent */ }
+    })();
+    return () => { cancelled = true; };
+  }, [config, levelLoaded, user]);
+
+  const claimRunDrop = (col: number, row: number) => {
+    const key = `${col},${row}`;
+    if (!userIdRef.current || !runDropsRef.current.has(key) || pendingDropClaimsRef.current.has(key)) return;
+    pendingDropClaimsRef.current.add(key);
+    const generation = dropGenerationRef.current;
+    void (async () => {
+      try {
+        const { data, error } = await supabase.rpc('claim_run_drop' as never, {
           p_level: currentLevelRef.current,
           p_col: col,
           p_row: row,
         } as never);
-        if (error) return;
-        const result = data as { granted?: boolean; drop_name?: string; reason?: string } | null;
-        if (!result || result.granted !== true) return;
-        showWhisper(`You found: ${result.drop_name ?? 'something'}.`, '#c8963a', 3000);
-      } catch {
-        /* silent — a failed drop must not interrupt movement */
+        if (generation !== dropGenerationRef.current || leavingRef.current || error) return;
+        const result = data as { granted?: boolean; drop_name?: string; kind?: 'key' | 'drop' } | null;
+        if (result?.granted === true) showWhisper(`You found: ${result.drop_name ?? 'something'}.`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
+      } catch { /* silent — a failed claim must not interrupt movement */ }
+      finally {
+        if (generation === dropGenerationRef.current) {
+          pendingDropClaimsRef.current.delete(key);
+          const next = new Map(runDropsRef.current);
+          next.delete(key);
+          runDropsRef.current = next;
+          setRunDrops(next);
+        }
       }
     })();
   };
@@ -1041,8 +1065,8 @@ const Maze = () => {
       triggerTileWhisper(nc, nr);
     }
 
-    // DROP_SPAWN tiles — repeatable random drop roll
-    rollDropSpawn(nc, nr);
+    // Only filled points are claimed, once per entry and never concurrently.
+    claimRunDrop(nc, nr);
 
 
 
@@ -1229,8 +1253,7 @@ const Maze = () => {
           <div key={`object-${cell.type}-${cell.col},${cell.row}-${index}`} data-object={cell.type} style={{ position: 'absolute', left: cell.col * CELL, top: cell.row * CELL, width: CELL, height: CELL, zIndex: 9, pointerEvents: 'none' }}>
             {cell.type === 'ROOM_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><RoomDoorTile dimension={glow} color={cell.color} size={CELL} /></div></>}
             {cell.type === 'CONSOLE_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><ConsoleDoorTile dimension={glow} size={CELL} /></div></>}
-            {cell.type === 'DROP_SPAWN' && SHOW_SPAWN_GLIMMER && <DropSpawnGlimmer dimension={glow} size={CELL} />}
-            {cell.type === 'DROP' && <DropCrate dimension={glow} size={CELL} />}
+            {(cell.type === 'DROP_SPAWN' || cell.type === 'DROP') && <DropCrate dimension={glow} size={CELL} lit={runDrops.has(`${cell.col},${cell.row}`)} tone={runDrops.get(`${cell.col},${cell.row}`)?.kind} />}
             {cell.type === 'NPC' && <NpcPad dimension={glow} size={CELL} />}
           </div>
         ))}

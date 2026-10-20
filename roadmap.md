@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Fix Shadow transfer counters to use only the current snapshot and query the saved Library total; preserve saving and level gates.
+- [x] Fix Shadow transfer counters to use only the current snapshot and query the saved Library total; seven focused tests and preview compilation pass, with saving and level gates unchanged.
+- [ ] Verify Shadow transfer totals against a real player's Library — the game's separate external sign-in session is unavailable.
 
 - [x] Replace step-roll drops with server-filled run placements and lit/dim crates; 154 tests pass, preview compilation passes, and isolated desktop/375px walkthrough verifies fresh fills, key/drop grants and dimming, Console Room preservation, rerolls and static reduced motion.
 - [ ] Verify real published-maze drop placement, claiming and carried-key exclusion — external game authentication is unavailable.

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
 import { BETA_MODE } from '@/lib/config';
+import { CONSOLE_ROOM_KEY, CONSOLE_ROOM_LEVEL } from '@/lib/console';
 import { getAllFlags, getFlag } from '@/lib/questFlags';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
@@ -20,7 +21,7 @@ import StepExchangeSheet from '@/components/StepExchangeSheet';
 import WallTile from '@/components/theme/WallTile';
 import FloorLayer from '@/components/theme/FloorLayer';
 import PrimeGlowLayer from '@/components/theme/PrimeGlowLayer';
-import { Gate, PrimeShard, Veil, RoomDoorTile, DropSpawnGlimmer, DropCrate, NpcPad, StartPad, Pylon } from '@/components/theme/objects';
+import { Gate, PrimeShard, Veil, RoomDoorTile, ConsoleDoorTile, DropSpawnGlimmer, DropCrate, NpcPad, StartPad, Pylon } from '@/components/theme/objects';
 import { getThemeForLevel } from '@/lib/theme/themes';
 import { DIMENSION_GLOW, mazeGlowForLevel } from '@/lib/theme/tokens';
 import { SHOW_SPAWN_GLIMMER, pylonCells, visibleBounds } from '@/lib/theme/mazeRendering';
@@ -771,7 +772,7 @@ const Maze = () => {
     return cells;
   }, [config, wallSet, bounds]);
   const visibleObjects = useMemo(() => (config?.visualCells ?? []).filter(cell =>
-    ['ROOM_DOOR', 'DROP_SPAWN', 'DROP', 'NPC'].includes(cell.type) &&
+    ['ROOM_DOOR', 'CONSOLE_DOOR', 'DROP_SPAWN', 'DROP', 'NPC'].includes(cell.type) &&
     !(cell.type === 'ROOM_DOOR' && config?.doorsToRoom?.some(door => door.col === cell.col && door.row === cell.row)) &&
     cell.col >= bounds.minCol && cell.col <= bounds.maxCol && cell.row >= bounds.minRow && cell.row <= bounds.maxRow
   ), [config, bounds]);
@@ -1066,6 +1067,14 @@ const Maze = () => {
       }
     }
 
+    // Console visits use the same exact-cell room-return marker as Bernard.
+    if (cfg.visualCells?.some(cell => cell.type === 'CONSOLE_DOOR' && cell.col === nc && cell.row === nr)) {
+      window.sessionStorage.setItem('praem_maze_return_col', String(nc));
+      window.sessionStorage.setItem('praem_maze_return_row', String(nr));
+      navigate(`/room/${CONSOLE_ROOM_LEVEL}/${CONSOLE_ROOM_KEY}?from=maze&level=${currentLevelRef.current}`);
+      return;
+    }
+
     // blue door — Bernard's room (Level 1) / credit game (other levels)
     if (cfg.creditDoors.some((d) => d.col === nc && d.row === nr)) {
       if (currentLevelRef.current === 1) {
@@ -1216,6 +1225,7 @@ const Maze = () => {
         {visibleObjects.map((cell, index) => (
           <div key={`object-${cell.type}-${cell.col},${cell.row}-${index}`} data-object={cell.type} style={{ position: 'absolute', left: cell.col * CELL, top: cell.row * CELL, width: CELL, height: CELL, zIndex: 9, pointerEvents: 'none' }}>
             {cell.type === 'ROOM_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><RoomDoorTile dimension={glow} color={cell.color} size={CELL} /></div></>}
+            {cell.type === 'CONSOLE_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><ConsoleDoorTile dimension={glow} size={CELL} /></div></>}
             {cell.type === 'DROP_SPAWN' && SHOW_SPAWN_GLIMMER && <DropSpawnGlimmer dimension={glow} size={CELL} />}
             {cell.type === 'DROP' && <DropCrate dimension={glow} size={CELL} />}
             {cell.type === 'NPC' && <NpcPad dimension={glow} size={CELL} />}

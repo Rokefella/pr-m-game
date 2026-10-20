@@ -141,6 +141,10 @@ export async function loadLevelFromSupabase(
   creditDoors.forEach(addSpecial);
   doorsToRoom.forEach((dr) => addSpecial({ col: dr.col, row: dr.row }));
   veils.forEach((v) => openSet.add(`${v.col},${v.row}`));
+  // Authored console entrances are interaction geometry, not inferred visual cells.
+  const consoleDoors = ((Array.isArray(d.extraCells) ? d.extraCells : []) as VisualCell[])
+    .filter(cell => cell?.type === 'CONSOLE_DOOR' && Number.isFinite(cell.col) && Number.isFinite(cell.row));
+  consoleDoors.forEach(cell => addSpecial(rot(cell)));
 
   const veilSet = new Set(veils.map((v) => `${v.col},${v.row}`));
 

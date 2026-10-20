@@ -1,3 +1,4 @@
+import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
 import { useNavigate } from 'react-router-dom';
@@ -1175,6 +1176,8 @@ const Maze = () => {
   const playerScreenX = typeof window !== 'undefined' ? camRef.current.x + displayPos.col * CELL + CELL / 2 : 0;
   const playerScreenY = typeof window !== 'undefined' ? camRef.current.y + displayPos.row * CELL + CELL / 2 : 0;
 
+  const showLoading = useMinLoading(!config);
+
   // Level 3+ placeholder
   if (levelLoaded && currentLevel >= 3) {
     return (
@@ -1197,8 +1200,8 @@ const Maze = () => {
     );
   }
 
-  if (!config) {
-    return <div style={{ position: 'fixed', inset: 0, background: '#04040a' }} />;
+  if (showLoading || !config) {
+    return <LoadingScreen />;
   }
 
   const MAP_W = config.cols * CELL;

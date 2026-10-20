@@ -1,3 +1,4 @@
+import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
 import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -1985,6 +1986,8 @@ const Village = () => {
     return { roads, trees, squares, emblems: plazaEmblems(squares) };
   }, [dynamicBuildings]);
 
+  const showLoading = useMinLoading(villageLoading);
+
   const renderTypeA = (b: typeof A_23 | typeof A_47 | typeof A_89) => (
     <div key={`a-${b.id}-${b.x}-${b.y}`} 
       style={{ position: 'absolute', left: b.x, top: b.y, width: b.w, height: b.h, pointerEvents: 'none', zIndex: 3 }}>
@@ -2316,61 +2319,7 @@ const Village = () => {
       </>
     )}
 
-    {villageLoading && (
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 5,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 24,
-            maxWidth: 'min(720px, 84vw)',
-          }}
-        >
-          <img
-            src="/assets/sigils/PRAEM-logo-instrument-icon.svg"
-            alt="PRÆM"
-            width="64"
-            height="38"
-            className="object-contain"
-            style={{ display: 'block', marginBottom: 8 }}
-          />
-          <p
-            className="font-fell italic"
-            style={{
-              fontSize: 18,
-              lineHeight: 1.55,
-              color: 'rgba(200,185,255,0.7)',
-              textAlign: 'center',
-              margin: 0,
-            }}
-          >
-            You will now enter The Instrument PRÆM. Numbers answer to nothing but themselves. And One. Remember where you came from. It guides your flow. Now enter The Instrument PRÆM to become part of it.
-          </p>
-          <div
-            className="font-cinzel"
-            style={{
-              fontSize: 14,
-              letterSpacing: '0.2em',
-              color: 'rgba(160,140,200,0.5)',
-              animation: 'villagePulse 2s ease-in-out infinite',
-            }}
-          >
-            LOADING
-          </div>
-        </div>
-      </div>
-    )}
+    {showLoading && <LoadingScreen />}
 
 
 

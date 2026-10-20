@@ -1,3 +1,4 @@
+import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -621,6 +622,8 @@ const ExchangeRoom = () => {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  const showLoading = useMinLoading(roomLoading);
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: ROOM_BG, overflow: 'hidden' }}>
       <style>{`
@@ -904,25 +907,7 @@ const ExchangeRoom = () => {
         </div>
       )}
 
-      {roomLoading && (
-        <div
-          className="font-cinzel"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 14,
-            letterSpacing: '0.2em',
-            color: 'rgba(160,140,200,0.5)',
-            animation: 'roomPulse 2s ease-in-out infinite',
-            zIndex: 5,
-          }}
-        >
-          LOADING
-        </div>
-      )}
+      {showLoading && <LoadingScreen />}
 
       {!roomLoading && !room && (
         <div

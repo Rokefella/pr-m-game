@@ -1,3 +1,4 @@
+import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 const SIGIL_PATTERN: ('filled' | 'dim' | 'empty')[][] = [
   ['empty', 'filled', 'empty', 'filled', 'empty'],
   ['empty', 'empty', 'filled', 'empty', 'empty'],
@@ -68,6 +69,7 @@ const Index = () => {
     });
   };
 
+  const showLoading = useMinLoading(!redirectChecked);
   let filledIndex = 0;
 
   return (
@@ -75,21 +77,8 @@ const Index = () => {
       className="relative flex min-h-screen items-center justify-center overflow-hidden"
       style={{ backgroundColor: '#04040a' }}
     >
-      {!redirectChecked ? (
-        <div
-          className="absolute inset-0 flex items-center justify-center"
-          aria-label="Loading"
-        >
-          <div
-            className="rounded-full"
-            style={{
-              width: 6,
-              height: 6,
-              backgroundColor: 'rgba(169,140,255,0.35)',
-              animation: 'breathe 2s ease-in-out infinite',
-            }}
-          />
-        </div>
+      {showLoading ? (
+        <LoadingScreen />
       ) : (
         <>
           {/* Background Glow */}

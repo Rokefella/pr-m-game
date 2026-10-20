@@ -11,10 +11,10 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 describe('left-to-right prime decoding', () => {
-  it.each([7, 23, 997, 1009, 10007, 999983])('finishes %s once, at 260ms per digit', value => {
+  it.each([2, 7, 23, 829, 997, 1009, 10007, 999983])('finishes %s once, at 260ms per padded digit', value => {
     const done = vi.fn();
     render(<DecodeNumber value={value} run glow="teal" onDone={done} />);
-    act(() => vi.advanceTimersByTime(String(value).length * 260 - 1));
+    act(() => vi.advanceTimersByTime(Math.max(5, String(value).length) * 260 - 1));
     expect(done).not.toHaveBeenCalled();
     act(() => vi.advanceTimersByTime(1));
     expect(done).toHaveBeenCalledTimes(1);

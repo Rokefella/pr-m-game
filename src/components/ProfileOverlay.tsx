@@ -9,6 +9,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { sendBetaFeedback } from '@/lib/betaFeedback';
+import { formatPrime } from '@/lib/format';
 
 
 
@@ -858,7 +859,7 @@ const ProfileOverlay = ({
                         className="font-cinzel"
                         style={{ fontSize: 14, color: '#a78bfa' }}
                       >
-                        {frag.prime_number}
+                        {formatPrime(frag.prime_number)}
                       </span>
                     )}
                   </div>
@@ -880,7 +881,7 @@ const ProfileOverlay = ({
                     className="font-fell italic"
                     style={{ textAlign: 'center', fontSize: 13, color: 'rgba(160,140,200,0.6)', marginTop: 16 }}
                   >
-                    Prime {selected.prime_number}. You are inside the instrument now.
+                    Prime {formatPrime(selected.prime_number)}. You are inside the instrument now.
                   </p>
                 );
               })()}

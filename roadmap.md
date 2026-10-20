@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Replace step-roll drops with server-filled run placements and lit/dim crates; verify fresh/resume loading, one-time claims, silent failures and reduced motion.
+- [x] Replace step-roll drops with server-filled run placements and lit/dim crates; 154 tests pass, preview compilation passes, and isolated desktop/375px walkthrough verifies fresh fills, key/drop grants and dimming, Console Room preservation, rerolls and static reduced motion.
 - [ ] Verify real published-maze drop placement, claiming and carried-key exclusion — external game authentication is unavailable.
 
 - [x] Replace Index, Maze, Village, DynamicRoom and ExchangeRoom initial loading placeholders with the shared Instrument spiral; 144 tests pass, timing tests verify 150ms no-flash/500ms hold, browser checks verify all five loaders and static reduced motion, and preview compilation passes. ShadowRealm's entry guard and the already-usable Intro/ProfileSetup stay unchanged because they have no blocking data-loading placeholder.

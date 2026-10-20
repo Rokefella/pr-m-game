@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Show carried-only Folder/reveal counts with a separate Library total; restyle every Profile tab in Instrument plates and verify 375px without changing handlers or banking.
+- [x] Show carried-only Folder/reveal counts with a separate Library total; restyle every Profile tab in Instrument plates without changing handlers or banking; 140 tests pass and isolated 375px checks verify all tabs, 1/20 carried, Library 5 banked and reveal Folder 1 of 20.
+- [ ] Verify carried-only Folder and Library totals against a real account — the game's external sign-in session is unavailable; isolated checks are not live persistence verification.
 
 - [x] Restyle ConsolePanel with eight tiles, plated keypad, carried-drop key socket and server-selected key; 27 focused tests and preview compilation pass; isolated 375px/desktop checks verify one-row tiles, key selection, READY, wrong-key removal and close. Real account verification remains blocked by the external game session as noted below.
 

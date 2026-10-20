@@ -159,8 +159,8 @@
 .profile-close { position: absolute; right: -12px; top: -10px; width: 44px; height: 44px; padding: 0; color: var(--plate-label); border-radius: 0; }
 .profile-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); margin: 20px 0; border: 1px solid var(--plate-edge); background: var(--plate-inset); }
 .profile-tab { min-width: 0; min-height: 44px; height: auto; padding: 6px 0; border-radius: 0; font-size: 11px; letter-spacing: .15em; color: var(--plate-label); background: transparent; border-bottom: 2px solid transparent; }
-.profile-tab:hover { color: var(--auth-text); background: var(--plate-edge); }
-.profile-tab-active, .profile-tab-active:hover { background: var(--profile-active); border-bottom-color: var(--plate-gold); color: var(--instrument-beacon); }
+.profile-tabs .profile-tab:hover { color: var(--auth-text); background: var(--plate-edge); }
+.profile-tabs .profile-tab-active, .profile-tabs .profile-tab-active:hover { background: var(--profile-active); border-bottom-color: var(--plate-gold); color: var(--instrument-beacon); }
 .profile-section-label { display: flex; align-items: center; justify-content: space-between; font-size: 11px; letter-spacing: .18em; color: var(--plate-label); margin-bottom: 16px; }
 .profile-inventory-grid { display: grid; grid-template-columns: repeat(4, minmax(64px, 1fr)); gap: 8px; }
 .profile-inventory-tile { min-width: 64px; min-height: 64px; height: auto; aspect-ratio: 1; padding: 4px; border-radius: 0; background: var(--plate-inset); white-space: normal; color: var(--auth-text); }

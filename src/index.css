@@ -152,6 +152,8 @@
 .console-key { height: auto; min-height: 56px; border-radius: 0; background: var(--plate-inset); border: 1px solid var(--plate-filled); color: var(--auth-text); font-size: 20px; }
 .console-key:hover { background: var(--plate-edge); color: var(--auth-text); }
 .console-command { font-size: 12px; }
+.console-layer .auth-submit:hover, .console-rift .auth-submit:hover { background: var(--plate-gold); color: var(--eye-pupil); }
+.console-layer .auth-submit:disabled, .console-rift .auth-submit:disabled { background: var(--plate-edge); color: var(--plate-disabled-text); }
 .console-rift { position: fixed; inset: 0; z-index: 410; display: grid; place-items: center; background: var(--plate-backdrop); padding: 12px; }
 .dimension-amber { --rift-color: var(--console-amber); }
 .dimension-teal { --rift-color: var(--console-teal); }

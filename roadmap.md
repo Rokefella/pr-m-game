@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Format all visible fragment primes to at least five digits; verify decoding timing and 375px fit without changing stored values or gameplay.
+- [x] Format all visible fragment primes to at least five digits without changing stored values or gameplay; 21 tests and preview compilation pass, and isolated prime-2 reveal/save at 375×667 shows 00002 without wrapping (live authenticated Folder/Exchange reads remain unverified).
 
 - [x] Restyle Login and Signup in Instrument plates, with readable inputs, password toggles and existing auth destinations.
 - [x] Verify 375×667 phone layouts without scrolling, independent SHOW/HIDE controls, mapped errors and no-session signup confirmation using simulated auth responses; six navigation tests and build pass.

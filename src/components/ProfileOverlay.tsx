@@ -573,7 +573,7 @@ const ProfileOverlay = ({
                 style={{
                   width: 12, height: 12, borderRadius: 0,
                   background: accountRow?.aura_color ?? 'var(--plate-voice)',
-                  boxShadow: `0 0 6px ${(accountRow?.aura_color ?? 'var(--plate-voice)')}99`,
+                  boxShadow: 'var(--console-digit-shadow)',
                 }}
               />
             </div>
@@ -1139,24 +1139,24 @@ const ProfileOverlay = ({
 };
 
 export const ProfileButton = ({ onClick }: { onClick: () => void }) => (
-  <Button variant="ghost"
+  <button
     type="button"
     onClick={onClick}
     aria-label="Open profile"
     className="font-cinzel"
     style={{
-      width: 24, height: 24, borderRadius: 0,
-      background: 'var(--plate-edge)',
-      border: '0.5px solid var(--plate-label)',
-      color: 'var(--auth-text)',
-      fontSize: 11,
+      width: 24, height: 24, borderRadius: '50%',
+      background: 'rgba(91,79,212,0.2)',
+      border: '0.5px solid rgba(91,79,212,0.4)',
+      color: 'rgba(160,140,200,0.8)',
+      fontSize: 10,
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
       cursor: 'pointer', padding: 0,
       letterSpacing: 0,
     }}
   >
     P
-  </Button>
+  </button>
 );
 
 export default React.memo(ProfileOverlay, (prev, next) => prev.isOpen === next.isOpen);

@@ -18,6 +18,11 @@ it('never places lamps for cobble or plates', () => {
   expect(pathLamps(paths, 'cobble')).toEqual([]);
   expect(pathLamps(paths, 'plates')).toEqual([]);
 });
+it('places lamps along straight paths wider than one cell', () => {
+  const paths = new Set(Array.from({ length: 24 }, (_, i) => `${i},0`));
+  for (let i = 0; i < 24; i++) paths.add(`${i},1`);
+  expect(pathLamps(paths, 'brick')).toEqual([{ x: 90, y: -6 }, { x: 250, y: -6 }, { x: 410, y: -6 }]);
+});
 it('omits a lamp at a junction', () => {
   const paths = new Set(Array.from({ length: 24 }, (_, i) => `${i},0`));
   paths.add('12,1');

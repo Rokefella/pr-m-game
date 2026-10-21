@@ -1,5 +1,4 @@
 import type { VillageStreetStyle } from './tokens';
-import { streetStyle } from './villageRendering';
 
 export type PathEdge = { side: 'n' | 's' | 'w' | 'e'; x: number; y: number; w: number; h: number };
 export type PathLamp = { x: number; y: number };
@@ -43,7 +42,13 @@ export function pathLamps(paths: ReadonlySet<string>, style: VillageStreetStyle)
     const horizontal = edge.side === 'n', count = (horizontal ? edge.w : edge.h) / CELL;
     for (let i = 4; i < count; i += 8) {
       const col = edge.x / CELL + (horizontal ? i : 0), row = edge.y / CELL + (horizontal ? 0 : i);
-      if (streetStyle(col, row, paths) !== (horizontal ? 'h' : 'v')) continue;
+      const depth = (c: number, r: number) => {
+        let n = 0;
+        while (paths.has(`${c + (horizontal ? 0 : n)},${r + (horizontal ? n : 0)}`)) n++;
+        return n;
+      };
+      const width = depth(col, row);
+      if (depth(col - (horizontal ? 1 : 0), row - (horizontal ? 0 : 1)) !== width || depth(col + (horizontal ? 1 : 0), row + (horizontal ? 0 : 1)) !== width) continue;
       // Skip ends and junctions: both neighbours along the straight axis must exist.
       if (!paths.has(`${col - (horizontal ? 1 : 0)},${row - (horizontal ? 0 : 1)}`) || !paths.has(`${col + (horizontal ? 1 : 0)},${row + (horizontal ? 0 : 1)}`)) continue;
       lamps.push({ x: col * CELL + (horizontal ? CELL / 2 : -6), y: row * CELL + (horizontal ? -6 : CELL / 2) });

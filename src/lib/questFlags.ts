@@ -4,6 +4,13 @@ type FlagMap = Record<string, string>;
 
 let cache: FlagMap = {};
 let loadedForUser: string | null = null;
+const listeners = new Set<() => void>();
+export function subscribeQuestFlags(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => { listeners.delete(listener); };
+}
+export function questFlagSnapshot(): Readonly<FlagMap> { return cache; }
+function publishFlags() { listeners.forEach(listener => listener()); }
 
 export async function getAllFlags(userId: string): Promise<FlagMap> {
   const { data, error } = await supabase
@@ -22,6 +29,7 @@ export async function getAllFlags(userId: string): Promise<FlagMap> {
   }
   cache = next;
   loadedForUser = userId;
+  publishFlags();
   return cache;
 }
 
@@ -30,7 +38,9 @@ export function getFlag(key: string): string | null {
 }
 
 export async function setFlag(userId: string, key: string, value: string): Promise<void> {
-  cache[key] = value;
+  cache = { ...cache, [key]: value };
+  loadedForUser = userId;
+  publishFlags();
   const { error } = await supabase
     .from('quest_flags')
     .upsert(
@@ -49,6 +59,7 @@ export function hasFlags(keys: string[]): boolean {
 export function _resetQuestFlagCache(): void {
   cache = {};
   loadedForUser = null;
+  publishFlags();
 }
 
 export function _getLoadedUser(): string | null {

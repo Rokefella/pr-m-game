@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Add shared dialogue-aligned NPC quest states, event-driven refresh, and gold/grey/green orb markers across game screens; 212 tests and preview compilation pass; isolated desktop/375px and static reduced-motion checks pass.
+- [ ] Verify quest acceptance and hand-in markers in real signed-in gameplay — the game's external authentication session is unavailable; isolated checks do not verify published gameplay.
+
 - [x] Read Weaver's top-level village streetStyle and pass it to cached terrain artwork, defaulting missing/invalid metadata to cobble; preserve gameplay geometry.
 
 - [x] Replace village streets with switchable cobble/plates/brick patterns, merged exposed edges and brick-only lamps; layout/collision/camera unchanged. 195 tests and preview compilation pass; isolated artwork verifies all three styles, clean junctions, brick-only lamps and reduced motion.

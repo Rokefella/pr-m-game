@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getFlag, setFlag } from '@/lib/questFlags';
+import { getFlag, setFlag, questFlagSnapshot, subscribeQuestFlags } from '@/lib/questFlags';
 import { updateUser } from '@/lib/userData';
+import { npcConditionsMet, npcStageMet, npcEntryBucket } from '@/lib/npcQuestState';
+import { NPC_DIALOGUE_CLOSED, NPC_INVENTORY_CHANGED } from '@/hooks/useNpcQuestStates';
 
 export type BernardOption = {
   label: string;
@@ -78,11 +80,6 @@ export type BernardBookEntry = {
 export const BERNARD_QUEST_ROOT = 'quest_intro_root';
 export const BERNARD_CHAR_ROOT = 'char_temper_root';
 
-const DEFAULT_ENTRY_BUCKETS: Record<string, string> = {
-  banker: 'bnk_root_menu',
-};
-
-
 export type UseNpcDialogueOptions = {
   /** NPC key in the `npcs` table (e.g. 'bernard', 'banker'). */
   npcKey?: string;
@@ -153,22 +150,18 @@ function useNpcDialogueImpl({
   // Forces re-render of Bernard dialogue when quest flags change.
   const [flagsVersion, setFlagsVersion] = useState(0);
   const bumpFlags = useCallback(() => setFlagsVersion((v) => v + 1), []);
+  const [inventoryVersion, setInventoryVersion] = useState(0);
+  useEffect(() => subscribeQuestFlags(bumpFlags), [bumpFlags]);
+  useEffect(() => {
+    const refresh = () => setInventoryVersion(v => v + 1);
+    window.addEventListener(NPC_DIALOGUE_CLOSED, refresh);
+    window.addEventListener(NPC_INVENTORY_CHANGED, refresh);
+    return () => { window.removeEventListener(NPC_DIALOGUE_CLOSED, refresh); window.removeEventListener(NPC_INVENTORY_CHANGED, refresh); };
+  }, []);
 
   /** Entry point for casual conversation: quest root until the three buildings are done. */
   const defaultBucket = useCallback((): string => {
-    if (npcKey === 'bernard') {
-      const stage = getFlag(stageFlagKey);
-      if (stage === '1') return 'quest_check_status';
-      if (stage === '3') return 'quest_stage3_root';
-      if (stage === '4') return 'quest_stage4_root';
-      if (stage === '6') return 'quest_stage6_root';
-      const done =
-        getFlag('touched_23') === 'true' &&
-        getFlag('touched_47') === 'true' &&
-        getFlag('touched_89') === 'true';
-      return done ? BERNARD_CHAR_ROOT : BERNARD_QUEST_ROOT;
-    }
-    return DEFAULT_ENTRY_BUCKETS[npcKey] ?? 'temper_root';
+    return npcEntryBucket(npcKey, questFlagSnapshot());
   }, [npcKey, stageFlagKey]);
 
 
@@ -216,27 +209,12 @@ function useNpcDialogueImpl({
       if (cancelled) return;
       const rows = (data as unknown as BernardBookEntry[]) || [];
       // Per-entry gating: flat stat thresholds + the dialogue flag-matching semantics.
-      const eligible = rows.filter((r) => {
-        if (typeof r.min_level === 'number' && currentLevel < r.min_level) return false;
-        if (typeof r.min_social === 'number' && socialStat < r.min_social) return false;
-        if (typeof r.min_perception === 'number' && perceptionStat < r.min_perception) return false;
-        if (typeof r.min_trade === 'number' && tradeStat < r.min_trade) return false;
-        const requires = r.requires_flags;
-        if (requires && Object.keys(requires).length > 0) {
-          const allMatch = Object.keys(requires).every((k) => getFlag(k) === requires[k]);
-          if (r.flags_equal === false ? allMatch : !allMatch) return false;
-        }
-        const requiredDrops = r.requires_drops;
-        if (requiredDrops && requiredDrops.length > 0) {
-          if (!requiredDrops.every((k) => ownedDropKeys.has(k))) return false;
-        }
-        return true;
-      });
+      const eligible = rows.filter(r => npcConditionsMet(r, { level: currentLevel, social: socialStat, perception: perceptionStat, trade: tradeStat, flags: questFlagSnapshot(), drops: ownedDropKeys }));
       setBernardBookEntries(eligible);
       setBookLoaded(true);
     })();
     return () => { cancelled = true; };
-  }, [npcKey, currentLevel, socialStat, perceptionStat, tradeStat, ownedDropKeys]);
+  }, [npcKey, currentLevel, socialStat, perceptionStat, tradeStat, ownedDropKeys, flagsVersion]);
 
   // Fetch the player's owned drops once per hook instance (or when user changes).
   useEffect(() => {
@@ -272,7 +250,7 @@ function useNpcDialogueImpl({
       setDropsLoaded(true);
     })();
     return () => { cancelled = true; };
-  }, [user?.id]);
+  }, [user?.id, inventoryVersion]);
 
   // A different NPC means a fresh load — close the readiness gate again.
   useEffect(() => {
@@ -360,16 +338,8 @@ function useNpcDialogueImpl({
     condition: BernardStageRow['condition'],
     flags: (key: string) => string | null,
   ): boolean => {
-    if (!condition) return false;
-    if (condition.stage !== stage) return false;
-    // Numeric-threshold gates — independent of the flag checks below.
-    if (typeof condition.min_level === 'number' && currentLevel < condition.min_level) return false;
-    if (typeof condition.min_social === 'number' && socialStat < condition.min_social) return false;
-    const requires = condition.requires_flags;
-    if (!requires) return true;
-    const keys = Object.keys(requires);
-    const allMatch = keys.every((k) => flags(k) === requires[k]);
-    return condition.flags_equal === false ? !allMatch : allMatch;
+    const values = Object.fromEntries(Object.keys(condition?.requires_flags ?? {}).map(k => [k, flags(k) ?? '']));
+    return npcStageMet(stage, condition, { level: currentLevel, social: socialStat, flags: values, drops: ownedDropKeys });
   };
 
   // Maps action keys from the database to concrete handlers.
@@ -436,6 +406,7 @@ function useNpcDialogueImpl({
         return;
       }
       onMessage?.(`You purchased ${dropType.name ?? 'Traded Spice'} for ${price} credits.`);
+      window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
     },
     complete_chef_recipe: async () => {
       if (!user) return;

@@ -1,4 +1,5 @@
 import { memo } from 'react';
+import type { NpcQuestState } from '@/lib/npcQuestState';
 
 const SYMBOLS = {
   bernard: 'M1 0h3v1h-3zM0 1h5v3h-5zM2 4h1v1h-1z',
@@ -19,11 +20,13 @@ export function npcOrbIdentity(npc: string): keyof typeof SYMBOLS | 'unknown' {
 }
 
 /** The SVG's halo centre, not its body, is anchored at the caller's position. */
-export default memo(function NpcOrb({ npc, size = 44 }: { npc: string; size?: number }) {
+export default memo(function NpcOrb({ npc, size = 44, quest = 'none' }: { npc: string; size?: number; quest?: NpcQuestState }) {
   const identity = npcOrbIdentity(npc);
   const c = (i: number) => `var(--npc-${identity}-${i})`;
-  return <svg className="npc-orb" data-npc={identity} aria-hidden="true" width={size} height={size * 80 / 60} viewBox="0 0 60 80" shapeRendering="crispEdges">
-    <ellipse className="npc-orb-halo" cx="30" cy="70" rx="26" ry="7" fill={c(1)} fillOpacity=".14" stroke={c(1)} strokeOpacity=".6" />
+  const lit = quest === 'available' || quest === 'ready';
+  return <svg className={`npc-orb npc-quest-${quest}`} data-npc={identity} data-quest={quest} aria-hidden="true" width={size} height={size * 80 / 60} viewBox="0 0 60 80" shapeRendering="crispEdges">
+    {lit && <circle className="npc-quest-glow" cx="30" cy="44" r="25" fill="var(--npc-quest-light)" opacity=".2" />}
+    <ellipse className={`npc-orb-halo${lit ? ' npc-quest-halo' : ''}`} cx="30" cy="70" rx="26" ry="7" fill={lit ? 'var(--npc-quest-light)' : c(1)} fillOpacity={lit ? '.3' : '.14'} stroke={lit ? 'var(--npc-quest-light)' : c(1)} strokeOpacity={lit ? '.95' : '.6'} strokeWidth={lit ? 2 : 1} />
     <g transform="translate(12,26)">
       <ellipse cx="18" cy="40" rx="14" ry="3" fill="var(--instrument-shadow)" opacity=".4" />
       <path d="M12,0H24V3H30V6H33V9H36V27H33V30H30V33H24V36H12V33H6V30H3V27H0V9H3V6H6V3H12Z" fill={c(0)} stroke={c(0)} strokeWidth="3" />
@@ -33,5 +36,11 @@ export default memo(function NpcOrb({ npc, size = 44 }: { npc: string; size?: nu
       <rect x="9" y="9" width="3" height="3" fill="var(--npc-specular)" />
     </g>
     {identity !== 'unknown' && <g transform="translate(22,4)"><g className="npc-orb-symbol"><path transform="scale(3)" d={SYMBOLS[identity]} fill={c(3)} /></g></g>}
+    {lit && <g transform="translate(19,-24)"><g className="npc-quest-marker">
+      <path d="M11 0L22 11L11 22L0 11Z" fill="var(--npc-quest-plate)" stroke="var(--npc-quest-outline)" strokeWidth="2" />
+      <path d="M11 4L18 11L11 18L4 11Z" fill="var(--npc-quest-light)" />
+      <path d={quest === 'ready' ? 'M8 6H14V8H16V12H12V14H10V11H13V8H10V10H8ZM10 16H12V18H10Z' : 'M10 5H12V13H10ZM10 15H12V17H10Z'} fill="var(--npc-quest-ink)" />
+    </g></g>}
+    {quest === 'active' && <g fill="var(--plate-label)"><rect x="22" y="-9" width="3" height="3" /><rect x="29" y="-9" width="3" height="3" /><rect x="36" y="-9" width="3" height="3" /></g>}
   </svg>;
 });

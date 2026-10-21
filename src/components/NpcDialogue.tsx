@@ -1,6 +1,8 @@
 import { ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import { NPC_DIALOGUE_CLOSED, useNpcQuestStates } from '@/hooks/useNpcQuestStates';
+import { useAuth } from '@/context/AuthContext';
 
 interface Props {
   text: string;
@@ -17,8 +19,11 @@ interface Props {
 // against the transformed map instead of the real viewport. A portal avoids any
 // transformed ancestor entirely.
 const NpcDialogue = ({ text, npcName, children, onShow }: Props) => {
+  const { user } = useAuth();
+  const questState = useNpcQuestStates(user?.id);
   useEffect(() => {
     onShow?.();
+    return () => { window.dispatchEvent(new Event(NPC_DIALOGUE_CLOSED)); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -56,7 +61,7 @@ const NpcDialogue = ({ text, npcName, children, onShow }: Props) => {
             animation: 'bernardImgIn 600ms ease-out',
           }}
         >
-          <div className="npc-dialogue-orb"><NpcOrb npc={npcName} /></div>
+          <div className="npc-dialogue-orb"><NpcOrb npc={npcName} quest={questState(npcName)} /></div>
         </div>
 
         {/* Right: dialogue */}

@@ -1,3 +1,4 @@
+import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
 import { ROOM_AVATAR_SIZE } from '@/components/theme/rooms/roomConfig';
@@ -234,6 +235,7 @@ const NpcActor = ({
   openSignal,
 }: NpcActorProps) => {
   const { npcKey, x, y } = placement;
+  const questState = useNpcQuestStates(stats.user?.id, { level: stats.currentLevel, social: stats.socialStat, perception: stats.perceptionStat, trade: stats.tradeStat });
 
   const {
     resolvedDialogue,
@@ -297,7 +299,7 @@ const NpcActor = ({
 
   return (
     <>
-      <div style={{ position: 'absolute', left: mx, top: my, pointerEvents: 'none', zIndex: 4, transition: 'left 2.4s ease-in-out, top 2.4s ease-in-out' }}><NpcOrb npc={`${npcKey} ${displayName}`} /></div>
+      <div style={{ position: 'absolute', left: mx, top: my, pointerEvents: 'none', zIndex: 4, transition: 'left 2.4s ease-in-out, top 2.4s ease-in-out' }}><NpcOrb npc={`${npcKey} ${displayName}`} quest={questState(npcKey)} /></div>
 
       {isOpen && resolvedDialogue && (
         <NpcDialogue

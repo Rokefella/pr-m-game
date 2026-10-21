@@ -220,7 +220,7 @@ const BernardRoomDynamic = () => {
       if (cancelled || !row) return;
       setCurrentLevel(row.level);
       if (row.aura_color) setAuraColor(row.aura_color);
-      setOrbIdentity({ title: row.title ?? '', name: row.username ?? '' });
+      setOrbIdentity(previous => previous.title === (row.title ?? '') && previous.name === (row.username ?? '') ? previous : { title: row.title ?? '', name: row.username ?? '' });
       const r = row as unknown as Record<string, number | null>;
       setSocialStat(Number(r.social ?? 0));
       setPerceptionStat(Number(r.perception ?? 0));

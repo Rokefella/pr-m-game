@@ -313,7 +313,7 @@ const ExchangeRoom = () => {
       if (cancelled || !row) return;
       setCurrentLevel(row.level);
       if (row.aura_color) setAuraColor(row.aura_color);
-      setOrbIdentity({ title: row.title ?? '', name: row.username ?? '' });
+      setOrbIdentity(previous => previous.title === (row.title ?? '') && previous.name === (row.username ?? '') ? previous : { title: row.title ?? '', name: row.username ?? '' });
       setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
       const r = row as unknown as Record<string, number | null>;
       setRegistrationNumber(r.registration_number ?? null);

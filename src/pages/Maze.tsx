@@ -694,7 +694,7 @@ const Maze = () => {
       setPosition({ level: row.level, dimension: 'purple' });
       currentLevelRef.current = row.level;
       setCredits(row.credits);
-      setOrbIdentity({ title: row.title ?? '', name: row.username ?? '' });
+      setOrbIdentity(previous => previous.title === (row.title ?? '') && previous.name === (row.username ?? '') ? previous : { title: row.title ?? '', name: row.username ?? '' });
       if (row.aura_color) setAuraColor(row.aura_color);
       setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
       setRegistrationNumber(row.registration_number);

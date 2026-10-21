@@ -393,7 +393,7 @@ const ShadowRealm = () => {
       setRegistrationNumber(row.registration_number);
       registrationRef.current = row.registration_number;
       setAuraColor(row.aura_color ?? null);
-      setOrbIdentity({ title: row.title ?? '', name: row.username ?? '' });
+      setOrbIdentity(previous => previous.title === (row.title ?? '') && previous.name === (row.username ?? '') ? previous : { title: row.title ?? '', name: row.username ?? '' });
       setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
       setFlag(user.id, 'shadow_visited', 'true');
 

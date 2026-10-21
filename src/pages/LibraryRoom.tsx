@@ -187,7 +187,7 @@ const LibraryRoom = () => {
       if (cancelled || !row) return;
       setCurrentLevel(row.level);
       if (row.aura_color) setAuraColor(row.aura_color);
-      setOrbIdentity({ title: row.title ?? '', name: row.username ?? '' });
+      setOrbIdentity(previous => previous.title === (row.title ?? '') && previous.name === (row.username ?? '') ? previous : { title: row.title ?? '', name: row.username ?? '' });
     })();
     return () => { cancelled = true; };
   }, [user, authLoading, navigate]);

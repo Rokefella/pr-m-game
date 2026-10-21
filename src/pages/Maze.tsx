@@ -1,4 +1,5 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import OrbLabels from '@/components/OrbLabels';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
 import { corridorCell } from '@/lib/ghostMotion';
 import { placedGhosts, nearbyGhostLine } from '@/lib/placedGhosts';
@@ -401,6 +402,7 @@ const Maze = () => {
   const [levelLoaded, setLevelLoaded] = useState(false);
   const [credits, setCredits] = useState(50);
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
+  const [orbIdentity, setOrbIdentity] = useState({ title: '', name: '' });
   const [orbDye, setOrbDye] = useState<string | null>(null);
   useOrbSync(setAuraColor, setOrbDye);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
@@ -692,6 +694,7 @@ const Maze = () => {
       setPosition({ level: row.level, dimension: 'purple' });
       currentLevelRef.current = row.level;
       setCredits(row.credits);
+      setOrbIdentity({ title: row.title ?? '', name: row.username ?? '' });
       if (row.aura_color) setAuraColor(row.aura_color);
       setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
       setRegistrationNumber(row.registration_number);
@@ -1335,15 +1338,15 @@ const Maze = () => {
           position: 'fixed',
           left: playerScreenX - 15,
           top: playerScreenY - 15,
-          zIndex: 60,
           pointerEvents: 'none',
         }}
       >
-        <PlayerAvatar
+        <div style={{ position: 'relative', zIndex: 60 }}><PlayerAvatar
           palette={orbLook(auraColor, orbDye, registrationNumber)}
           walking={Math.abs(posRef.current.col - displayPos.col) >= 0.01 || Math.abs(posRef.current.row - displayPos.row) >= 0.01}
           size={MAZE_AVATAR_SIZE}
-        />
+        /></div>
+        <OrbLabels title={orbIdentity.title} name={orbIdentity.name} size={MAZE_AVATAR_SIZE} />
       </div>
 
       <div

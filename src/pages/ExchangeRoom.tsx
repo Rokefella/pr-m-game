@@ -44,6 +44,7 @@ type RoomCell = {
   title?: string;
   line?: string;
   tone?: string;
+  name?: string;
   col: number;
   row: number;
   type: string;
@@ -81,6 +82,7 @@ const ExchangeRoom = () => {
   const ghostFeedback = useRoomGhostWhisper(room?.ghosts ?? []);
   const [roomLoading, setRoomLoading] = useState(true);
   const [auraColor, setAuraColor] = useState('#a98cff');
+  const [orbIdentity, setOrbIdentity] = useState({ title: '', name: '' });
   const [orbDye, setOrbDye] = useState<string | null>(null);
   useOrbSync(setAuraColor, setOrbDye);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
@@ -311,6 +313,7 @@ const ExchangeRoom = () => {
       if (cancelled || !row) return;
       setCurrentLevel(row.level);
       if (row.aura_color) setAuraColor(row.aura_color);
+      setOrbIdentity({ title: row.title ?? '', name: row.username ?? '' });
       setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
       const r = row as unknown as Record<string, number | null>;
       setRegistrationNumber(r.registration_number ?? null);
@@ -985,7 +988,7 @@ const ExchangeRoom = () => {
           <RoomGhosts ghosts={room.ghosts} size={ROOM_AVATAR_SIZE} solids={obstacles} gridSize={room.gridSize} player={() => ({ col: playerTargetRef.current.x / CELL - .5, row: playerTargetRef.current.y / CELL - .5 })} />
           <div style={{ position: 'absolute', left: bankerPos.x, top: bankerPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="banker" /></div>
 
-          <RoomAvatar ref={avatarRef} palette={orbLook(auraColor, orbDye, registrationNumber)} walking={walking} />
+          <RoomAvatar ref={avatarRef} palette={orbLook(auraColor, orbDye, registrationNumber)} walking={walking} title={orbIdentity.title} name={orbIdentity.name} />
         </div>
       )}
 

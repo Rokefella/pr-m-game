@@ -1,4 +1,5 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import OrbLabels from '@/components/OrbLabels';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
 import { placedGhosts, randomSpawnCell, nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
@@ -859,7 +860,7 @@ const Village = () => {
   useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
   const lastPositionWriteRef = useRef(0);
   const [ghostDots, setGhostDots] = useState<
-    { user_id: string; x: number; y: number; village_level: number }[]
+    { user_id: string; x: number; y: number; village_level: number; username?: string | null }[]
   >([]);
   const [tooltipState, setTooltipState] = useState<{
     visible: boolean; x: number; y: number; level: number;
@@ -2284,7 +2285,9 @@ const Village = () => {
               zIndex: 2,
               cursor: 'default',
             }}
-          />
+          >
+            {ghost.username && <OrbLabels name={ghost.username} size={6} />}
+          </div>
         ))}
 
         {/* Player avatar — orb centre sits at the player position */}
@@ -2302,25 +2305,8 @@ const Village = () => {
             walking={Math.hypot(playerTargetRef.current.x - player.x, playerTargetRef.current.y - player.y) >= 0.5}
             size={VILLAGE_AVATAR_SIZE}
           />
+          <OrbLabels title={currentTitle} name={username} size={VILLAGE_AVATAR_SIZE} />
         </div>
-        {currentTitle && (
-          <p
-            className="font-fell italic"
-            style={{
-              position: 'absolute',
-              left: player.x,
-              top: player.y + 19,
-              transform: 'translateX(-50%)',
-              fontSize: 12,
-              color: 'rgba(224,221,213,0.28)',
-              whiteSpace: 'nowrap',
-              pointerEvents: 'none',
-              zIndex: 5,
-            }}
-          >
-            {currentTitle}
-          </p>
-        )}
       </div>
       </>
     )}

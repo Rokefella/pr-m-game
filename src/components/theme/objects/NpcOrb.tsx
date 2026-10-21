@@ -1,5 +1,6 @@
 import { memo, useRef } from 'react';
 import type { NpcQuestState } from '@/lib/npcQuestState';
+import { NPC_BODY_SCALE } from '@/lib/orbSizes';
 import OrbLabels from '@/components/OrbLabels';
 import { useNpcDisplayName } from '@/hooks/useNpcQuestStates';
 

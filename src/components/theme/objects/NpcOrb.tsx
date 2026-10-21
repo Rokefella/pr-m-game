@@ -23,7 +23,7 @@ export function npcOrbIdentity(npc: string): keyof typeof SYMBOLS | 'unknown' {
 }
 
 /** The SVG's halo centre, not its body, is anchored at the caller's position. */
-export function npcBodySize(avatarSize: number) { return Math.round(avatarSize * NPC_BODY_SCALE); }
+export function npcBodySize(avatarSize: number) { return Math.round(avatarSize * AVATAR_BODY_RATIO * NPC_BODY_SCALE); }
 export function npcSvgWidth(bodySize: number) { return bodySize * 60 / 36; }
 export default memo(function NpcOrb({ npc, name, size = 29, quest = 'none' }: { npc: string; name?: string; size?: number; quest?: NpcQuestState }) {
   const svg = useRef<SVGSVGElement>(null);

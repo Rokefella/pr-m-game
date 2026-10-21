@@ -16,6 +16,7 @@ import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailyStep
 import { useAuth } from '@/context/AuthContext';
 import Thumbstick from '@/components/Thumbstick';
 import { startResilientLoop } from '@/lib/resilientLoop';
+import { MOVEMENT_DEBUG_EVENT } from '@/components/MovementDebugOverlay';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { type MerchantItem } from '@/components/MerchantOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
@@ -2533,6 +2534,12 @@ const Village = () => {
               navigate('/');
             }} style={{ background: 'transparent', border: '1px solid #ff6b6b', color: '#ff6b6b', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>{fullResetArmed ? 'TAP AGAIN TO CONFIRM' : 'FULL RESET (everything)'}</button>
 
+            <button type="button" onClick={() => {
+              const on = localStorage.getItem('praem_movement_debug') === '1';
+              if (on) localStorage.removeItem('praem_movement_debug'); else localStorage.setItem('praem_movement_debug', '1');
+              window.dispatchEvent(new Event(MOVEMENT_DEBUG_EVENT));
+              setDevOverlay(false);
+            }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>MOVEMENT DEBUG</button>
             <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
             <div style={{ opacity: 0.7, fontSize: 11 }}>SUBSCRIPTION OVERRIDES</div>
             <button type="button" onClick={() => { sessionStorage.setItem('dev_sub_override', 'active'); setDevOverlay(false); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>SET SUB: ACTIVE</button>

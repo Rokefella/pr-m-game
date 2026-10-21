@@ -1,3 +1,4 @@
+import MovementDebugOverlay from "@/components/MovementDebugOverlay";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { BETA_MODE } from '@/lib/config';
@@ -35,6 +36,7 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        <MovementDebugOverlay />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />

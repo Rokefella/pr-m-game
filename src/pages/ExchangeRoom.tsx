@@ -1,3 +1,4 @@
+import { Z } from '@/lib/zIndex';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
 import { ROOM_AVATAR_SIZE } from '@/components/theme/rooms/roomConfig';
@@ -669,7 +670,7 @@ const ExchangeRoom = () => {
           fontSize: 13,
           letterSpacing: '0.3em',
           color: 'rgba(200,196,186,0.6)',
-          zIndex: 6,
+          zIndex: Z.HUD,
           pointerEvents: 'none',
         }}
       >
@@ -689,7 +690,7 @@ const ExchangeRoom = () => {
             background: 'rgba(6,5,12,0.94)',
             border: '0.5px solid rgba(200,150,58,0.35)',
             padding: 16,
-            zIndex: 8,
+            zIndex: Z.HUD,
             boxSizing: 'border-box',
           }}
         >
@@ -925,7 +926,7 @@ const ExchangeRoom = () => {
             textAlign: 'center',
             fontSize: 16,
             color: 'rgba(200,150,58,0.8)',
-            zIndex: 6,
+            zIndex: Z.HUD,
             pointerEvents: 'none',
           }}
         >
@@ -973,7 +974,7 @@ const ExchangeRoom = () => {
 
       {!roomLoading && room && (
         <div
-          ref={worldRef}
+          data-game-world ref={worldRef}
           style={{
             position: 'absolute',
             left: 0,

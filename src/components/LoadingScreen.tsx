@@ -39,7 +39,7 @@ const LoadingScreen = memo(({ label }: { label?: string }) => {
   }, []);
   if (!visible) return null;
   return (
-    <div className="loading-screen" role="status" aria-label={label ?? 'Loading PRÆM'}>
+    <div className="loading-screen" data-game-ui="open" role="status" aria-label={label ?? 'Loading PRÆM'}>
       <div className="loading-stack">
         <div className="loading-sigil">
           <div className="loading-glow" aria-hidden="true" />

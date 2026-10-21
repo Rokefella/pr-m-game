@@ -1,3 +1,4 @@
+import { Z } from '@/lib/zIndex';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { purchaseTier, type PurchaseTier } from '@/lib/purchase';
@@ -59,9 +60,9 @@ const PaywallOverlay = ({ userId, onContinue, onDismiss }: Props) => {
   const showLifetime = lifetimeRemaining > 0;
 
   return (
-    <div
+    <div data-game-ui="open"
       style={{
-        position: 'fixed', inset: 0, zIndex: 200,
+        position: 'fixed', inset: 0, zIndex: Z.OVERLAY,
         background: '#04040a',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start',
         padding: '32px 20px', overflow: 'auto',

@@ -1,3 +1,4 @@
+import { Z } from '@/lib/zIndex';
 import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
 import OrbLabels from '@/components/OrbLabels';
 import { placedGhosts, randomSpawnCell, type GhostCell } from '@/lib/placedGhosts';
@@ -485,7 +486,7 @@ const LibraryRoom = () => {
           fontSize: 13,
           letterSpacing: '0.3em',
           color: 'rgba(200,196,186,0.6)',
-          zIndex: 6,
+          zIndex: Z.HUD,
           pointerEvents: 'none',
         }}
       >

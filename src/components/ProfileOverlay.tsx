@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { Z } from '@/lib/zIndex';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
@@ -12,7 +14,7 @@ import { sendBetaFeedback } from '@/lib/betaFeedback';
 import { formatPrime } from '@/lib/format';
 import PlateFrame from '@/components/theme/PlateFrame';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
-import { OrbWardrobe, DropDetail } from '@/components/OrbWardrobe';
+import { DropDetail } from '@/components/DropDetail';
 import { publishOrb, type OrbChange } from '@/lib/orb';
 import { X } from 'lucide-react';
 import { fragmentInventory, type FolderFragment } from '@/lib/carriedFragments';
@@ -463,8 +465,8 @@ const ProfileOverlay = ({
     }
   };
 
-  return (
-    <div className="profile-overlay" style={{ display: isOpen ? 'flex' : 'none' }}>
+  return createPortal(
+    <div className="profile-overlay" data-game-ui={isOpen ? 'open' : undefined} data-profile-open={isOpen ? 'true' : undefined} style={{ display: isOpen ? 'flex' : 'none' }}>
       <PlateFrame width="min(100vw, 440px)" className="profile-frame">
         <div className="profile-content">
           <header className="profile-header">
@@ -482,7 +484,6 @@ const ProfileOverlay = ({
         {/* PROFILE content */}
         {mainTab === 'profile' && (
           <div style={{ marginTop: 8 }}>
-            <OrbWardrobe auraColor={accountRow?.aura_color ?? null} orbDye={accountRow?.orb_dye ?? null} registrationNumber={accountRow?.registration_number ?? null} reloadKey={dropsNonce} onChange={applyOrb} />
             <div
               style={{
                 display: 'flex', justifyContent: 'space-around',
@@ -539,10 +540,10 @@ const ProfileOverlay = ({
                       <>
                         <div
                           onClick={() => setTitleDropdownOpen(false)}
-                          style={{ position: 'fixed', inset: 0, zIndex: 200 }}
+                          style={{ position: 'fixed', inset: 0, zIndex: Z.MODAL }}
                         />
                         <div
-                          style={{ position: 'relative', zIndex: 201, marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                          style={{ position: 'relative', zIndex: Z.MODAL, marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
                           onClick={(e) => e.stopPropagation()}
                         >
                           {titles.map((t) => {
@@ -852,7 +853,7 @@ const ProfileOverlay = ({
                       {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? 'profile-drop-filled' : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="profile-drop-body"><DropIcon svg={drop.icon_svg} category={drop.category} size={40} />{drop.category === 'key' && <span className="profile-key-badge font-mono">KEY</span>}<span className="font-fell italic">{drop.name}</span></span>}</Button>)}
                     </div>
 
-                    {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
+                    {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); setOwnedDrops(drops => drops.filter(d => d.id !== selectedDrop.id)); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
                     {dyeWhisper && <p className="font-fell italic dye-whisper">{dyeWhisper}</p>}
 
                     {/* Status text */}
@@ -1063,6 +1064,7 @@ const ProfileOverlay = ({
                     </span>
                     <span className="profile-stat-summary"><span className="font-cinzel profile-stat-value">{stats[a.key]}</span><span className="profile-pips" aria-label={`${stats[a.key]} of 5`} >{Array.from({ length: 10 }, (_, i) => <i key={i} className={i < stats[a.key] * 2 ? 'profile-pip-filled' : ''} />)}</span><span>{open ? '▲' : '▼'}</span></span>
                   </Button>
+                  {a.key === 'perception' && <p className="font-mono profile-perception-note">Widens your light: +0.5 cells per point</p>}
                   <div
                     style={{
                       maxHeight: open ? 400 : 0,
@@ -1114,11 +1116,11 @@ const ProfileOverlay = ({
         if (!feedbackSending) { setFeedbackOpen(open); setFeedbackError(''); }
       }}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-[200] bg-background/80" />
+          <DialogPrimitive.Overlay className="fixed inset-0 bg-background/80" style={{ zIndex: Z.MODAL }} />
           <DialogPrimitive.Content
             aria-describedby={undefined}
-            className="fixed left-0 right-0 z-[210] mx-auto w-full max-w-[520px] -translate-y-full overflow-y-auto border-t border-purple/30 bg-background p-5 pb-[max(20px,env(safe-area-inset-bottom))] text-foreground focus:outline-none"
-            style={{ top: feedbackViewport.top + feedbackViewport.height, maxHeight: Math.max(0, feedbackViewport.height - 12) }}
+            className="fixed left-0 right-0 mx-auto w-full max-w-[520px] -translate-y-full overflow-y-auto border-t border-purple/30 bg-background p-5 pb-[max(20px,env(safe-area-inset-bottom))] text-foreground focus:outline-none"
+            style={{ zIndex: Z.MODAL, top: feedbackViewport.top + feedbackViewport.height, maxHeight: Math.max(0, feedbackViewport.height - 12) }}
             onEscapeKeyDown={(event) => { if (feedbackSending) event.preventDefault(); }}
             onPointerDownOutside={(event) => { if (feedbackSending) event.preventDefault(); }}
           >
@@ -1141,7 +1143,7 @@ const ProfileOverlay = ({
           </DialogPrimitive.Content>
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
-    </div>
+    </div>, document.body
   );
 };
 

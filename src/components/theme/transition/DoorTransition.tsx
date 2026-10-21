@@ -46,7 +46,7 @@ export default memo(function DoorTransition({ kind, lines, destination, onStay }
   const onStayClick = () => (onStay ? onStay() : navigate('/village'));
 
   return (
-    <div className="transition-backdrop">
+    <div className="transition-backdrop" data-game-ui="open">
       <PlateFrame glow={color} width="min(92vw, 340px)">
         {MOTES.map((m, i) => (
           <span key={i} className="transition-mote" style={{ left: m.left, top: m.top, background: color, animationDuration: `${m.dur}s`, animationDelay: `${m.delay}s` }} />

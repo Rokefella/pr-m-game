@@ -1,3 +1,4 @@
+import { Z } from '@/lib/zIndex';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 /**
@@ -253,7 +254,7 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 55,
+        zIndex: Z.HUD,
         pointerEvents: 'none',
         ...noSelect,
       }}

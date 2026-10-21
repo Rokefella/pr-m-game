@@ -136,7 +136,7 @@ export default memo(function ConsolePanel({ open, level, onClose, onRift }: Prop
   };
   if (!open) return null;
   const disabled = busy || seconds > 0 || flash !== null;
-  return createPortal(<div className="console-layer">
+  return createPortal(<div className="console-layer" data-game-ui="open">
     <div className="console-backdrop" onClick={onClose} aria-hidden="true" />
     <PlateFrame width="min(100vw, 420px)" className="console-sheet" glow={DIMENSION_GLOW.teal}>
       <span className="console-rivets" aria-hidden="true">{['tl', 'tr', 'bl', 'br'].map(corner => <i key={corner} className={`console-rivet-${corner}`} />)}</span>

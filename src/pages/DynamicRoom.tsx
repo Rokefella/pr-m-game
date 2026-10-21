@@ -1,3 +1,4 @@
+import { Z } from '@/lib/zIndex';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
@@ -937,7 +938,7 @@ const DynamicRoom = () => {
           fontSize: 13,
           letterSpacing: '0.3em',
           color: 'rgba(200,196,186,0.6)',
-          zIndex: 6,
+          zIndex: Z.HUD,
           pointerEvents: 'none',
         }}
       >
@@ -956,7 +957,7 @@ const DynamicRoom = () => {
             textAlign: 'center',
             fontSize: 16,
             color: 'rgba(200,150,58,0.8)',
-            zIndex: 6,
+            zIndex: Z.HUD,
             pointerEvents: 'none',
           }}
         >
@@ -1011,7 +1012,7 @@ const DynamicRoom = () => {
             top: 44,
             left: '50%',
             transform: 'translateX(-50%)',
-            zIndex: 7,
+            zIndex: Z.HUD,
             background: 'transparent',
             color: '#9a9890',
             padding: '10px 22px',
@@ -1028,7 +1029,7 @@ const DynamicRoom = () => {
 
       {!roomLoading && room && (
         <div
-          ref={worldRef}
+          data-game-world ref={worldRef}
           style={{
             position: 'absolute',
             left: 0,

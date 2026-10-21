@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getAllFlags, _getLoadedUser, questFlagSnapshot, subscribeQuestFlags } from '@/lib/questFlags';
 import { getNpcQuestState, type QuestContext, type QuestEntry, type QuestStage } from '@/lib/npcQuestState';
@@ -13,10 +13,11 @@ let pending: Promise<void> | null = null;
 let revision = 0;
 let consumers = 0;
 let stopRefresh: (() => void) | null = null;
+let refreshQueued = false;
 const listeners = new Set<() => void>();
 const subscribe = (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn); }; };
 function refresh(userId: string): Promise<void> {
-  if (pending) return pending;
+  if (pending) { refreshQueued = true; return pending; }
   const version = revision;
   const request = (async () => {
     try {
@@ -43,7 +44,11 @@ function refresh(userId: string): Promise<void> {
       snapshot = { npcs, drops: keys, level: stats?.level ?? 1, social: stats?.social ?? 0, perception: stats?.perception ?? 0, trade: stats?.trade ?? 0 };
       listeners.forEach(fn => fn());
     } catch { /* Marker failures must never interrupt gameplay. */ }
-  })().finally(() => { if (pending === request) pending = null; });
+  })().finally(() => {
+    if (pending !== request) return;
+    pending = null;
+    if (refreshQueued && owner === userId) { refreshQueued = false; void refresh(userId); }
+  });
   pending = request;
   return pending;
 }

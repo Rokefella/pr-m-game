@@ -28,7 +28,11 @@ export function npcConditionsMet(condition: QuestCondition, context: QuestContex
 }
 
 export function npcStageMet(stage: number, condition: QuestCondition | null, context: QuestContext): boolean {
-  return condition !== null && condition.stage === stage && npcConditionsMet(condition, context);
+  if (condition === null || condition.stage !== stage) return false;
+  if (!npcConditionsMet({ min_level: condition.min_level, min_social: condition.min_social }, context)) return false;
+  if (!condition.requires_flags) return true;
+  const all = Object.keys(condition.requires_flags).every(k => context.flags[k] === condition.requires_flags?.[k]);
+  return condition.flags_equal === false ? !all : all;
 }
 
 /** The same entry buckets used by the dialogue; no inferred quests from character/trade prose. */
@@ -83,8 +87,6 @@ export function getNpcQuestState(npcKey: string, context: QuestContext): NpcQues
   if (actions.has('accept_alexandra_quest') && !context.flags.alexandra_quest) return 'available';
   // Chef readiness comes solely from the configured completion option and its exact gates.
   if (key === 'chef' && context.flags.chef_recipe_complete !== 'true' && actions.has('complete_chef_recipe')) return 'ready';
-  // An explicit recipe start flag can show progress; never invent ingredient requirements or an accept action.
-  if (key === 'chef' && context.flags.chef_recipe_complete !== 'true' && context.flags.chef_recipe_started === 'true') return 'active';
   // Bernard's underway stages have no hand-in action; traders and character-only NPCs are not quests.
   if (key === 'bernard' && ([1, 2, 3].includes(stage) || context.flags.alexandra_quest === 'active')) return 'active';
   return 'none';

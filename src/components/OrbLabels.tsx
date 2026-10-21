@@ -42,7 +42,7 @@ export default memo(function OrbLabels({ title, name, size, kind = 'avatar', tar
   if (!shownTitle && !shownName) return null;
   return <>
     <span ref={anchor} className="orb-label-anchor" aria-hidden="true" />
-    {createPortal(<div className="orb-label-overlay">
+    {createPortal(<div className="orb-label-overlay" data-scene={window.location.pathname.startsWith('/maze') ? 'maze' : window.location.pathname.includes('shadow') ? 'shadow' : window.location.pathname.startsWith('/village') ? 'village' : 'room'}>
       {shownTitle && <span ref={titleRef} className="orb-label orb-label-title font-fell italic" style={{ fontSize: LABEL_TITLE_PX }}>{shownTitle}</span>}
       {shownName && <span ref={nameRef} className="orb-label orb-label-name font-fell" style={{ fontSize: LABEL_NAME_PX }}>{shownName}</span>}
     </div>, document.body)}

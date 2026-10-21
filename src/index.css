@@ -470,7 +470,10 @@
 .ghost-tone-gold { color: var(--ghost-gold); }
 .ghost-tone-rose { color: var(--ghost-rose); }
 .orb-label-anchor { display: none; }
-.orb-label-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 65; }
+.orb-label-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+.orb-label-overlay[data-scene="village"] { z-index: 10; }
+.orb-label-overlay[data-scene="maze"] { z-index: 55; }
+.orb-label-overlay[data-scene="shadow"] { z-index: 46; }
 .orb-label { position: absolute; left: 0; top: 0; visibility: hidden; display: block; width: max-content; max-width: 160px; pointer-events: none; text-align: center; white-space: nowrap; text-shadow: var(--ghost-title-shadow); line-height: 1.2; will-change: transform; }
 .orb-label-title { color: var(--ghost-title); }
 .orb-label-name { font-style: normal; text-transform: none; letter-spacing: .02em; color: var(--auth-text); opacity: .85; }

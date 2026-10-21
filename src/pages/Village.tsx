@@ -1,4 +1,6 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import GhostOrb from '@/components/theme/objects/GhostOrb';
+import { placedGhosts, randomSpawnCell, nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
 import { useReducedMotion } from '@/components/theme/useReducedMotion';
@@ -48,7 +50,7 @@ const MERCHANT_LINES = [
 ];
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
-type VillageCell = { col: number; row: number; type: string; npc_name?: string; npc_key?: string; name?: string };
+type VillageCell = { col: number; row: number; type: string; npc_name?: string; npc_key?: string; name?: string; title?: string; line?: string; tone?: string };
 type GroundTile = { x: number; y: number; kind: 'PATH' | 'ROAD' | 'SQUARE' | 'LANDMARK' };
 type RugTrim = { top: boolean; bottom: boolean; left: boolean; right: boolean };
 type RugTile = { id: string; x: number; y: number; trim: RugTrim };
@@ -66,6 +68,7 @@ type BuildingCluster = {
   look?: BuildingLook;
 };
 type DynamicVillage = {
+  ghosts: GhostCell[];
   typeA: typeof TYPE_A;
   doors: VillageDoorDef[];
   typeB: Rect[];
@@ -1336,6 +1339,7 @@ const Village = () => {
         const lightTiles: Rect[] = [];
         const rugCells: { col: number; row: number }[] = [];
         const npcs: { x: number; y: number; name: string }[] = [];
+        const ghosts = placedGhosts(cells);
 
         let eyeCenter: { x: number; y: number } | null = null;
         let bernardCenter: { x: number; y: number } | null = null;
@@ -1457,7 +1461,7 @@ const Village = () => {
 
           const forestCells = new Set(forest.map(f => `${Math.floor(f.x / 20)},${Math.floor(f.y / 20)}`));
           const forestRects: Rect[] = forest.map((f, i) => ({ id: `forest-${i}`, x: Math.floor(f.x / 20) * 20, y: Math.floor(f.y / 20) * 20, w: 20, h: 20 }));
-          setDynamicBuildings({ typeA, doors, typeB, typeC, clusters, forest, forestCells, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
+          setDynamicBuildings({ typeA, doors, typeB, typeC, clusters, forest, forestCells, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, ghosts, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
 
 
           // Reposition the player once, when the dynamic village loads
@@ -1474,7 +1478,32 @@ const Village = () => {
             ];
             const returned = returnSpawn(obstacles, loadedDoors, dynW, dynH);
             if (returned) sp = returned;
-            if (!start && !returned) {
+            const spawnCell = cells.find(c => c.type === 'SPAWN' && Number.isFinite(c.col) && Number.isFinite(c.row));
+            if (spawnCell && !returned) {
+              const chars = [eyeCenter, bernardCenter, merchantCenter].filter(Boolean) as { x: number; y: number }[];
+              const free = (col: number, row: number) => {
+                const x = col * CELL + CELL / 2, y = row * CELL + CELL / 2;
+                return col >= 0 && row >= 0 && col < gridSize && row < gridSize &&
+                  !obstacles.some(o => x >= o.x - 2 && x <= o.x + o.w + 2 && y >= o.y - 2 && y <= o.y + o.h + 2) &&
+                  !chars.some(c => Math.hypot(x - c.x, y - c.y) <= 40) &&
+                  !npcs.some(n => Math.floor(n.x / CELL) === col && Math.floor(n.y / CELL) === row) &&
+                  !ghosts.some(g => g.col === col && g.row === row) &&
+                  !loadedDoors.some(d => inDoorZone({ x, y }, d));
+              };
+              let chosen = randomSpawnCell(spawnCell, free);
+              if (!chosen && free(spawnCell.col, spawnCell.row)) chosen = spawnCell;
+              if (!chosen) {
+                searchSpawn: for (let ring = 1; ring <= gridSize; ring++) {
+                  for (let dr = -ring; dr <= ring; dr++) for (let dc = -ring; dc <= ring; dc++) {
+                    if (Math.max(Math.abs(dc), Math.abs(dr)) !== ring) continue;
+                    const col = spawnCell.col + dc, row = spawnCell.row + dr;
+                    if (free(col, row)) { chosen = { col, row }; break searchSpawn; }
+                  }
+                }
+              }
+              sp = chosen ? { x: chosen.col * CELL + CELL / 2, y: chosen.row * CELL + CELL / 2 } : { x: spawnCell.col * CELL, y: spawnCell.row * CELL };
+            }
+            if (!start && !returned && !spawnCell) {
               // Nearest free cell to the centre: outside every obstacle and off any character.
               const chars = [eyeCenter, bernardCenter, merchantCenter].filter(Boolean) as { x: number; y: number }[];
               const free = (x: number, y: number) =>
@@ -1718,6 +1747,12 @@ const Village = () => {
     if (!activeDoors.some(d => inDoorZone({ x: fx, y: fy }, d))) doorLockRef.current = false;
 
     // Whisper tiles (within 16px of the tile centre), 30s cooldown per tile
+    const ghostLine = nearbyGhostLine(dynamicBuildings?.ghosts ?? [], fx / 20 - .5, fy / 20 - .5, ghostCooldowns.current);
+    if (ghostLine) {
+      setGhostMessage(ghostLine);
+      if (ghostTimer.current) clearTimeout(ghostTimer.current);
+      ghostTimer.current = setTimeout(() => setGhostMessage(null), 4000);
+    }
     for (const wc of whisperCellsRef.current) {
       if (Math.hypot(fx - wc.x, fy - wc.y) <= 16) {
         triggerTileWhisper(wc.key);
@@ -2209,6 +2244,7 @@ const Village = () => {
 
         {/* NPC halo centres retain the existing world positions. */}
         {visible?.npcs.map(n => <div key={`dnpc-${n.x}-${n.y}`} title={n.name || undefined} style={{ position: 'absolute', left: n.x, top: n.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc={n.name} /></div>)}
+        {visible?.ghosts.map(g => <div key={`ghost-${g.col}-${g.row}`} style={{ position: 'absolute', left: g.col * 20 + 10, top: g.row * 20 + 10, zIndex: 4, pointerEvents: 'none' }}><GhostOrb title={g.title} tone={g.tone} /></div>)}
         {merchantPos && <div style={{ position: 'absolute', left: merchantPos.x, top: merchantPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" /></div>}
         {bernardPos && <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" /></div>}
 

@@ -2258,14 +2258,14 @@ const Village = () => {
               pointerEvents: 'none',
               zIndex: 4,
             }}
-          ><NpcOrb npc="" /></div>
+          ><NpcOrb npc="" size={Math.round(VILLAGE_AVATAR_SIZE * 1.15)} /></div>
         ))}
 
         {/* NPC halo centres retain the existing world positions. */}
-        {visible?.npcs.map(n => <div key={`dnpc-${n.x}-${n.y}`} title={n.name || undefined} style={{ position: 'absolute', left: n.x, top: n.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc={n.name} quest={questState(n.name)} /></div>)}
+        {visible?.npcs.map(n => <div key={`dnpc-${n.x}-${n.y}`} title={n.name || undefined} style={{ position: 'absolute', left: n.x, top: n.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc={n.name} size={Math.round(VILLAGE_AVATAR_SIZE * 1.15)} quest={questState(n.name)} /></div>)}
         {dynamicBuildings && <GhostLayer ghosts={dynamicBuildings.ghosts} size={VILLAGE_AVATAR_SIZE} cellSize={20} free={ghostFree} path={ghostPath} player={() => ({ col: playerTargetRef.current.x / 20 - .5, row: playerTargetRef.current.y / 20 - .5 })} />}
-        {merchantPos && <div style={{ position: 'absolute', left: merchantPos.x, top: merchantPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" quest={questState('merchant')} /></div>}
-        {bernardPos && <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" quest={questState('bernard')} /></div>}
+        {merchantPos && <div style={{ position: 'absolute', left: merchantPos.x, top: merchantPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" size={Math.round(VILLAGE_AVATAR_SIZE * 1.15)} quest={questState('merchant')} /></div>}
+        {bernardPos && <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" size={Math.round(VILLAGE_AVATAR_SIZE * 1.15)} quest={questState('bernard')} /></div>}
 
         {/* Ghost players */}
         {ghostDots.map((ghost) => (
@@ -2291,7 +2291,7 @@ const Village = () => {
               cursor: 'default',
             }}
           >
-            {ghost.username && <OrbLabels name={ghost.username} size={6} />}
+            {ghost.username && <OrbLabels name={ghost.username} size={6} kind="dot" />}
           </div>
         ))}
 

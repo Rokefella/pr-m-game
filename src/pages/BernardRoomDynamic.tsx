@@ -715,7 +715,7 @@ const BernardRoomDynamic = () => {
           ))}
 
           <RoomGhosts ghosts={room.ghosts} size={8 * 92 / 52} solids={obstacles} gridSize={room.gridSize} player={() => ({ col: playerTargetRef.current.x / CELL - .5, row: playerTargetRef.current.y / CELL - .5 })} />
-          <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" quest={questState('bernard')} /></div>
+          <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" size={Math.round(8 * 1.15)} quest={questState('bernard')} /></div>
 
           <div
             style={{
@@ -732,7 +732,7 @@ const BernardRoomDynamic = () => {
             }}
           >
             <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: auraColor, animation: 'playerPulse 1.6s ease-in-out infinite' }} />
-            <OrbLabels title={orbIdentity.title} name={orbIdentity.name} size={8} />
+            <OrbLabels title={orbIdentity.title} name={orbIdentity.name} size={8} kind="dot" />
           </div>
         </div>
       )}

@@ -108,7 +108,7 @@ const MerchantOverlay = ({
         overflowY: 'auto',
       }}
     >
-      <div className="npc-dialogue-orb" style={{ marginTop: 40 }}><NpcOrb npc="merchant" quest={questState('merchant')} /></div>
+      <div className="npc-dialogue-orb" style={{ marginTop: 40 }}><NpcOrb npc="merchant" size={Math.round(25 * 1.15)} quest={questState('merchant')} /></div>
       <div
         className="font-cinzel"
         style={{
@@ -233,6 +233,6 @@ export const MerchantCharacter = ({
   const { user } = useAuth();
   const questState = useNpcQuestStates(user?.id);
   return (
-    <div style={{ position: 'absolute', left: x, top: y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" quest={questState('merchant')} /></div>
+    <div style={{ position: 'absolute', left: x, top: y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" size={Math.round(25 * 1.15)} quest={questState('merchant')} /></div>
   );
 };

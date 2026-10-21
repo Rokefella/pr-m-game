@@ -988,7 +988,7 @@ const ExchangeRoom = () => {
           <RoomScene floorRuns={room.floorRuns} wallRuns={room.wallRuns} furniture={room.furnitureTiles} bookcases={room.bookcaseTiles} lights={room.lightTiles} rugs={room.rugTiles} exits={room.exitTiles} />
 
           <RoomGhosts ghosts={room.ghosts} size={ROOM_AVATAR_SIZE} solids={obstacles} gridSize={room.gridSize} player={() => ({ col: playerTargetRef.current.x / CELL - .5, row: playerTargetRef.current.y / CELL - .5 })} />
-          <div style={{ position: 'absolute', left: bankerPos.x, top: bankerPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="banker" quest={questState('banker')} /></div>
+          <div style={{ position: 'absolute', left: bankerPos.x, top: bankerPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="banker" size={Math.round(ROOM_AVATAR_SIZE * 1.15)} quest={questState('banker')} /></div>
 
           <RoomAvatar ref={avatarRef} palette={orbLook(auraColor, orbDye, registrationNumber)} walking={walking} title={orbIdentity.title} name={orbIdentity.name} />
         </div>

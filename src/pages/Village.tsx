@@ -31,7 +31,7 @@ import VillageTerrain from '@/components/theme/VillageTerrain';
 import { plazaEmblems } from '@/lib/theme/villageRendering';
 import { VillageDoor } from '@/components/theme/objects';
 import { DOOR_FLAGS, doorRefusal, footprintHasDoor, inDoorZone, nearestDoorReturn, villageDoors, type VillageDoorDef, type VillageDoorKind } from '@/lib/villageDoors';
-import { VILLAGE_GLOW } from '@/lib/theme/tokens';
+import { VILLAGE_GLOW, villageStreetStyle, type VillageStreetStyle } from '@/lib/theme/tokens';
 import { VILLAGE_BG, VILLAGE_VIGNETTE } from '@/lib/theme/villageRendering';
 import { memo } from 'react';
 import bernardMarkerUrl from '@/assets/bernard_marker.svg';
@@ -69,6 +69,7 @@ type BuildingCluster = {
   look?: BuildingLook;
 };
 type DynamicVillage = {
+  streetStyle: VillageStreetStyle;
   ghosts: GhostCell[];
   typeA: typeof TYPE_A;
   doors: VillageDoorDef[];
@@ -1316,6 +1317,7 @@ const Village = () => {
         }
         const vData = (villageRow as {
           data?: {
+            streetStyle?: unknown;
             extraCells?: VillageCell[];
             grid_size?: number;
             gridSize?: number;
@@ -1466,7 +1468,7 @@ const Village = () => {
 
           const forestCells = new Set(forest.map(f => `${Math.floor(f.x / 20)},${Math.floor(f.y / 20)}`));
           const forestRects: Rect[] = forest.map((f, i) => ({ id: `forest-${i}`, x: Math.floor(f.x / 20) * 20, y: Math.floor(f.y / 20) * 20, w: 20, h: 20 }));
-          setDynamicBuildings({ typeA, doors, typeB, typeC, clusters, forest, forestCells, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, ghosts, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
+          setDynamicBuildings({ streetStyle: villageStreetStyle(vData?.streetStyle), typeA, doors, typeB, typeC, clusters, forest, forestCells, groundTiles, wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, npcs, ghosts, eyeCenter, bernardCenter, merchantCenter, gridSize, start });
 
 
           // Reposition the player once, when the dynamic village loads
@@ -2143,7 +2145,7 @@ const Village = () => {
         <FloorLayer cols={mapW / 20} rows={mapH / 20} size={20} styleKey="ground" glow={VILLAGE_GLOW} />
 
         {/* Decorative streets and plaza plates use cached CSS images. */}
-        <VillageTerrain ground={visible?.groundTiles ?? EMPTY_GROUND} forest={visible?.forest ?? FOREST} roads={themedTiles.roads} paths={themedTiles.paths} trees={themedTiles.trees} squares={themedTiles.squares} emblems={themedTiles.emblems} />
+        <VillageTerrain ground={visible?.groundTiles ?? EMPTY_GROUND} forest={visible?.forest ?? FOREST} roads={themedTiles.roads} paths={themedTiles.paths} trees={themedTiles.trees} squares={themedTiles.squares} emblems={themedTiles.emblems} streetStyle={dynamicBuildings?.streetStyle} />
 
         {/* Rugs — decorative floor overlay, above base ground, below solids */}
         {visible?.rugTiles.map((r) => (

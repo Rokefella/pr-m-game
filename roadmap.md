@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Read Weaver's top-level village streetStyle and pass it to cached terrain artwork, defaulting missing/invalid metadata to cobble; preserve gameplay geometry.
+
 - [x] Replace village streets with switchable cobble/plates/brick patterns, merged exposed edges and brick-only lamps; layout/collision/camera unchanged. 195 tests and preview compilation pass; isolated artwork verifies all three styles, clean junctions, brick-only lamps and reduced motion.
 - [ ] Verify paths in the real signed-in Village — the game's external authentication session is unavailable; isolated artwork checks do not verify the published layout.
 

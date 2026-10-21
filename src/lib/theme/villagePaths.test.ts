@@ -1,5 +1,19 @@
 import { expect, it } from 'vitest';
 import { pathEdges, pathLamps } from './villagePaths';
+import { villageStreetStyle } from './tokens';
+
+it('reads the published brick street style', () => {
+  expect(villageStreetStyle('brick')).toBe('brick');
+});
+it('reads the published plates street style', () => {
+  expect(villageStreetStyle('plates')).toBe('plates');
+});
+it('uses cobble when village streetStyle is absent', () => {
+  expect(villageStreetStyle(undefined)).toBe('cobble');
+});
+it('uses cobble for invalid streetStyle metadata', () => {
+  expect(villageStreetStyle('road')).toBe('cobble');
+});
 
 it('merges exposed edges without an internal seam between joined cells', () => {
   expect(pathEdges(new Set(['0,0', '1,0']))).toEqual([

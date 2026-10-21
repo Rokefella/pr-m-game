@@ -46,7 +46,7 @@ const MERCHANT_LINES = [
 ];
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
-type VillageCell = { col: number; row: number; type: string; npc_name?: string };
+type VillageCell = { col: number; row: number; type: string; npc_name?: string; npc_key?: string; name?: string };
 type GroundTile = { x: number; y: number; kind: 'PATH' | 'ROAD' | 'SQUARE' | 'LANDMARK' };
 type RugTrim = { top: boolean; bottom: boolean; left: boolean; right: boolean };
 type RugTile = { id: string; x: number; y: number; trim: RugTrim };
@@ -1368,7 +1368,7 @@ const Village = () => {
               forest.push({ x, y, w: 18, h: 15 });
               break;
             case 'NPC':
-              npcs.push({ x, y, name: cell.npc_name || '' });
+              npcs.push({ x, y, name: cell.npc_key || cell.npc_name || cell.name || '' });
               break;
             case 'EYE':
               eyeCenter = { x, y };

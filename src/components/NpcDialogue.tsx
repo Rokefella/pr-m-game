@@ -1,5 +1,6 @@
 import { ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import NpcOrb from '@/components/theme/objects/NpcOrb';
 
 interface Props {
   text: string;
@@ -15,7 +16,7 @@ interface Props {
 // world containers use CSS transforms, which make position:fixed inside them size
 // against the transformed map instead of the real viewport. A portal avoids any
 // transformed ancestor entirely.
-const NpcDialogue = ({ text, npcName, npcPortraitSrc, children, onShow }: Props) => {
+const NpcDialogue = ({ text, npcName, children, onShow }: Props) => {
   useEffect(() => {
     onShow?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -59,17 +60,7 @@ const NpcDialogue = ({ text, npcName, npcPortraitSrc, children, onShow }: Props)
             animation: 'bernardImgIn 600ms ease-out',
           }}
         >
-          <img
-            src={npcPortraitSrc}
-            alt={npcName}
-            style={{
-              height: 280,
-              maxHeight: '100%',
-              objectFit: 'contain',
-              objectPosition: 'bottom',
-              animation: 'bernardImgFloat 3s ease-in-out infinite',
-            }}
-          />
+          <div className="npc-dialogue-orb"><NpcOrb npc={npcName} /></div>
         </div>
 
         {/* Right: dialogue */}

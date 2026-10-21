@@ -5,6 +5,7 @@ import GhostLayer from '@/components/theme/objects/GhostLayer';
 import EchoLayer, { type EchoLayerHandle } from '@/components/theme/objects/EchoLayer';
 import { echoCount, spawnEchoes } from '@/lib/echoGhosts';
 import { lanternRadii } from '@/lib/mazeLight';
+import { MAZE_AVATAR_SIZE, echoBodyPx, ghostBodyPx, npcBodyPx } from '@/lib/orbSizes';
 import { Z } from '@/lib/zIndex';
 import { corridorCell } from '@/lib/ghostMotion';
 import { placedGhosts, nearbyGhostLine } from '@/lib/placedGhosts';
@@ -43,7 +44,6 @@ import '@/components/theme/maze.css';
 // TODO: restore to real walking steps via HealthKit for production.
 const INITIAL_STEPS = 1000;
 const CELL = 40;
-const MAZE_AVATAR_SIZE = 30;
 // Lantern: clear radius around the player, widened by Perception; beyond it a dim (not black) fog.
 const FOG_OPACITY = 0.9;
 const FOG_RGB = '8,10,24';

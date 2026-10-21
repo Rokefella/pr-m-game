@@ -717,7 +717,7 @@ const BernardRoomDynamic = () => {
           ))}
 
           <RoomGhosts ghosts={room.ghosts} size={8} solids={obstacles} gridSize={room.gridSize} player={() => ({ col: playerTargetRef.current.x / CELL - .5, row: playerTargetRef.current.y / CELL - .5 })} />
-          <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" size={roomNpcBodySize(8)} quest={questState('bernard')} /></div>
+          <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" size={roomNpcBodySize(8, 'dot')} quest={questState('bernard')} /></div>
 
           <div
             style={{

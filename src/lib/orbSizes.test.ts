@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ECHO_BODY_SCALE, GHOST_BODY_SCALE, LABEL_NAME_PX, LABEL_TITLE_PX, NPC_BODY_SCALE,
+  AVATAR_BODY_RATIO, ECHO_BODY_SCALE, GHOST_BODY_SCALE, LABEL_NAME_PX, LABEL_TITLE_PX, NPC_BODY_SCALE,
   avatarPx, echoBodyPx, ghostBodyPx, npcBodyPx,
 } from './orbSizes';
 
@@ -11,12 +11,12 @@ describe('orb size single source', () => {
     expect(avatarPx('room')).toBe(25);
     expect(avatarPx('shadow')).toBe(30);
   });
-  it('derives every NPC body from the shared scale on every screen', () => {
+  it('derives every NPC body from the player body on every screen', () => {
     for (const screen of ['village', 'maze', 'room', 'shadow'] as const) {
-      expect(npcBodyPx(screen)).toBe(Math.round(avatarPx(screen) * NPC_BODY_SCALE));
+      expect(npcBodyPx(screen)).toBe(Math.round(avatarPx(screen) * AVATAR_BODY_RATIO * NPC_BODY_SCALE));
     }
-    expect(npcBodyPx('village')).toBe(29);
-    expect(npcBodyPx('maze')).toBe(35);
+    expect(npcBodyPx('village')).toBe(14);
+    expect(npcBodyPx('maze')).toBe(17);
   });
   it('matches ghost and Echo bodies to the player orb', () => {
     for (const screen of ['village', 'maze', 'room', 'shadow'] as const) {

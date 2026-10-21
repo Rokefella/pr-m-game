@@ -5,9 +5,9 @@ describe('Screen-space orb geometry', () => {
   it('keeps name and title at eight screen pixels', () => {
     expect(LABEL_NAME_PX).toBe(8); expect(LABEL_TITLE_PX).toBe(8);
   });
-  it('limits NPC bodies to rounded screen-avatar times 1.15 and derives the full art width', () => {
-    expect(npcBodySize(25)).toBe(29); expect(npcBodySize(30)).toBe(35);
-    expect(npcSvgWidth(29) * 36 / 60).toBeCloseTo(29);
+  it('matches NPC bodies to the player orb body and derives the full art width', () => {
+    expect(npcBodySize(25)).toBe(14); expect(npcBodySize(30)).toBe(17);
+    expect(npcSvgWidth(14) * 36 / 60).toBeCloseTo(14);
   });
   it('keeps the two-pixel name gap and three-pixel title gap regardless of zoom', () => {
     for (const zoom of [1, 1.5, 2]) {

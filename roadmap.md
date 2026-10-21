@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Add maze-only Echo ghosts with size-based counts, safe corridor spawning and ref-driven wandering under the lantern; verify rules and rendering.
+
 - [x] Repair Bernard stage 3 → 4 after banking/on every Village load from shadow_visited or Library; preserve existing title until its reward unlocks. Published quest/stage/book records audited; 231 tests pass, including cleared-progress action spine through stage 6 and Village 2 hand-in; preview compilation passes.
 - [ ] Verify Bernard FULL RESET → stage 6 with a real player — external game authentication is unavailable; published records and simulated action tests do not establish live persistence.
 

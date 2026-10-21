@@ -30,6 +30,8 @@ import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/levelLoader';
 import Thumbstick from '@/components/Thumbstick';
+import { enqueueSave, movementDebug } from '@/lib/netQueue';
+import { startResilientLoop } from '@/lib/resilientLoop';
 import StepExchangeSheet from '@/components/StepExchangeSheet';
 import WallTile from '@/components/theme/WallTile';
 import FloorLayer from '@/components/theme/FloorLayer';
@@ -963,6 +965,7 @@ const Maze = () => {
   };
 
   const tryMove = (dc: number, dr: number) => {
+    movementDebug.locks = { stepsReady: stepsReadyRef.current, exchangeOpen: exchangeOpenRef.current, noSteps: stepsRemainingRef.current <= 0, leaving: leavingRef.current };
     if (!stepsReadyRef.current) return;
     const cfg = configRef.current;
     if (!cfg) return;
@@ -992,7 +995,11 @@ const Maze = () => {
     stepsRemainingRef.current -= 1;
     setStepsRemaining(stepsRemainingRef.current);
     const uidStep = userIdRef.current;
-    if (uidStep) updateUser(uidStep, { steps_remaining: stepsRemainingRef.current });
+    if (uidStep) {
+      const remaining = stepsRemainingRef.current;
+      // Background, coalesced, never awaited: movement must not wait for the network.
+      enqueueSave('steps', signal => supabase.from('users').update({ steps_remaining: remaining }).eq('id', uidStep).abortSignal(signal));
+    }
 
     moveCountRef.current += 1;
 
@@ -1171,7 +1178,6 @@ const Maze = () => {
   // rAF loop
   const [pulse, setPulse] = useState(1);
   useEffect(() => {
-    let raf = 0;
     let pulseT = 0;
     let previousTime = 0;
     const tick = (time: number) => {
@@ -1219,10 +1225,8 @@ const Maze = () => {
       const p = 1 + Math.sin((pulseT / 1.5) * Math.PI * 2) * 0.075 + 0.075;
       setPulse(p);
 
-      raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return startResilientLoop(tick, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

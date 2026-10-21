@@ -1,5 +1,6 @@
 import { Z } from '@/lib/zIndex';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { movementDebug } from '@/lib/netQueue';
 
 /**
  * Shared floating thumbstick used by every movement screen.
@@ -20,6 +21,7 @@ const RAMP_DELAY = 1000;
 const RAMP_DURATION = 1000;
 const BOTTOM_EXCLUSION = 64; // status bar height
 const LOWER_FRACTION = 0.6; // only the lower 40% of the viewport activates
+const WATCHDOG_MS = 800;
 
 const INTERACTIVE = 'button, a, input, textarea, select, label, [role="button"], [data-no-thumbstick]';
 
@@ -99,6 +101,7 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
     (next: { dc: Dir; dr: Dir } | null) => {
       const cur = dirRef.current;
       if (!next) {
+        movementDebug.dir = '0,0';
         if (cur) {
           dirRef.current = null;
           clearTimer();
@@ -107,6 +110,7 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
         return;
       }
       if (cur && cur.dc === next.dc && cur.dr === next.dr) return;
+      movementDebug.dir = `${next.dc},${next.dr}`;
       clearTimer();
       dirRef.current = next;
       dirStartRef.current = Date.now();
@@ -119,8 +123,16 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
     [schedule],
   );
 
+  const targetRef = useRef<Element | null>(null);
+  const detachRef = useRef<(() => void) | null>(null);
+  const lastEventRef = useRef(0);
+
   const stop = useCallback(() => {
+    detachRef.current?.();
+    detachRef.current = null;
+    targetRef.current = null;
     activeRef.current = false;
+    movementDebug.active = false;
     pointerIdRef.current = null;
     originRef.current = null;
     setDirection(null);
@@ -147,7 +159,23 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
       if (activeRef.current) return false;
       if (isExcluded(target, y)) return false;
       activeRef.current = true;
+      movementDebug.active = true;
+      lastEventRef.current = movementDebug.lastInputAt = Date.now();
       pointerIdRef.current = id;
+      // iOS delivers touch/pointer events to the ORIGINAL target even after it
+      // is removed from the DOM (culled maze cells), so they never bubble to
+      // window. Listen on the target itself as well.
+      const el = target as Element | null;
+      targetRef.current = el;
+      if (el && typeof el.addEventListener === 'function') {
+        const pairs: [string, EventListener][] = [
+          ['touchmove', onTouchMove as EventListener], ['touchend', onTouchEnd], ['touchcancel', onTouchEnd],
+          ['pointermove', onPointerMove as EventListener], ['pointerup', onPointerEnd as EventListener],
+          ['pointercancel', onPointerEnd as EventListener], ['lostpointercapture', onPointerEnd as EventListener],
+        ];
+        pairs.forEach(([t, f]) => el.addEventListener(t, f, { passive: false }));
+        detachRef.current = () => pairs.forEach(([t, f]) => el.removeEventListener(t, f));
+      }
       const o = { x, y };
       originRef.current = o;
       setOrigin(o);
@@ -157,6 +185,7 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
     };
 
     const moveTo = (x: number, y: number) => {
+      lastEventRef.current = movementDebug.lastInputAt = Date.now();
       const o = originRef.current;
       if (!o) return;
       let dx = x - o.x;
@@ -173,24 +202,19 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
 
     const onPointerDown = (e: PointerEvent) => {
       if (e.pointerType === 'mouse' && e.button !== 0) return;
-      if (!start(e.clientX, e.clientY, e.pointerId, e.target)) return;
-      const el = e.target as Element | null;
-      try {
-        el?.setPointerCapture?.(e.pointerId);
-      } catch {
-        /* capture is best-effort */
-      }
+      // No pointer capture: capturing to an element that later unmounts strands the release.
+      start(e.clientX, e.clientY, e.pointerId, e.target);
     };
 
-    const onPointerMove = (e: PointerEvent) => {
+    function onPointerMove(e: PointerEvent) {
       if (!activeRef.current || pointerIdRef.current !== e.pointerId) return;
       moveTo(e.clientX, e.clientY);
-    };
+    }
 
-    const onPointerEnd = (e: PointerEvent) => {
+    function onPointerEnd(e: PointerEvent) {
       if (!activeRef.current || pointerIdRef.current !== e.pointerId) return;
       stop();
-    };
+    }
 
     // Touch fallback: some engines (and iOS gesture cancellation) do not deliver
     // a usable pointer stream once touchstart's default is prevented.
@@ -203,17 +227,26 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
       start(t.clientX, t.clientY, t.identifier, e.target);
     };
 
-    const onTouchMove = (e: TouchEvent) => {
+    function onTouchMove(e: TouchEvent) {
       if (!activeRef.current) return;
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       const t = e.touches[0];
       if (t) moveTo(t.clientX, t.clientY);
-    };
+    }
 
-    const onTouchEnd = () => {
+    function onTouchEnd(e?: Event) {
       if (!activeRef.current) return;
+      // A second finger lifting must not end the stick while the first is still down.
+      if (e && 'touches' in e && (e as TouchEvent).touches.length > 0 && e.type === 'touchend') return;
       stop();
-    };
+    }
+    const onHidden = () => { if (document.visibilityState !== 'visible') stop(); };
+    const watchdog = window.setInterval(() => {
+      if (!activeRef.current) return;
+      const t = targetRef.current;
+      // Silence + detached target means the release can never arrive.
+      if (Date.now() - lastEventRef.current > WATCHDOG_MS && (!t || !t.isConnected)) stop();
+    }, 200);
 
     window.addEventListener('pointerdown', onPointerDown, { passive: false });
     window.addEventListener('pointermove', onPointerMove, { passive: false });
@@ -224,6 +257,10 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
     window.addEventListener('touchend', onTouchEnd, { passive: false });
     window.addEventListener('touchcancel', onTouchEnd, { passive: false });
     window.addEventListener('blur', stop);
+    window.addEventListener('pagehide', stop);
+    window.addEventListener('pageshow', stop);
+    window.addEventListener('orientationchange', stop);
+    document.addEventListener('visibilitychange', onHidden);
 
     return () => {
       window.removeEventListener('pointerdown', onPointerDown);
@@ -235,6 +272,12 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
       window.removeEventListener('touchend', onTouchEnd);
       window.removeEventListener('touchcancel', onTouchEnd);
       window.removeEventListener('blur', stop);
+      window.removeEventListener('pagehide', stop);
+      window.removeEventListener('pageshow', stop);
+      window.removeEventListener('orientationchange', stop);
+      document.removeEventListener('visibilitychange', onHidden);
+      window.clearInterval(watchdog);
+      detachRef.current?.();
       clearTimer();
     };
   }, [setDirection, stop]);

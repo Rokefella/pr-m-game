@@ -15,6 +15,8 @@ import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailySteps';
 import { useAuth } from '@/context/AuthContext';
 import Thumbstick from '@/components/Thumbstick';
+import { startResilientLoop } from '@/lib/resilientLoop';
+import { MOVEMENT_DEBUG_EVENT } from '@/components/MovementDebugOverlay';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { type MerchantItem } from '@/components/MerchantOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
@@ -1843,7 +1845,6 @@ const Village = () => {
 
   // Player lerp loop — visual chases target at VILLAGE_GLIDE/frame
   useEffect(() => {
-    let raf = 0;
     let keyFrameCounter = 0;
     const loop = () => {
       // Held-keys movement — process every 2 frames (~30Hz) for responsive feel
@@ -1932,11 +1933,8 @@ const Village = () => {
       } else {
         eyeTriggeredRef.current = false;
       }
-
-      raf = requestAnimationFrame(loop);
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    return startResilientLoop(loop, true);
   }, []);
 
   // Camera offset for one axis: center the map when it's smaller than the
@@ -1997,7 +1995,6 @@ const Village = () => {
 
 
   useEffect(() => {
-    let raf = 0;
     const loop = () => {
       const targetX = camAxis(view.w / VILLAGE_ZOOM, mapSizeRef.current.w, playerRef.current.x);
       const targetY = camAxis(view.h / VILLAGE_ZOOM, mapSizeRef.current.h, playerRef.current.y);
@@ -2020,11 +2017,8 @@ const Village = () => {
       const qx = Math.floor(-cameraRef.current.x / CULL_STEP);
       const qy = Math.floor(-cameraRef.current.y / CULL_STEP);
       setCullAnchor((prev) => (prev.qx === qx && prev.qy === qy ? prev : { qx, qy }));
-
-      raf = requestAnimationFrame(loop);
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    return startResilientLoop(loop);
   }, [view]);
 
   // Neighbour indexes are presentation-only and built once per loaded layout.
@@ -2540,6 +2534,12 @@ const Village = () => {
               navigate('/');
             }} style={{ background: 'transparent', border: '1px solid #ff6b6b', color: '#ff6b6b', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>{fullResetArmed ? 'TAP AGAIN TO CONFIRM' : 'FULL RESET (everything)'}</button>
 
+            <button type="button" onClick={() => {
+              const on = localStorage.getItem('praem_movement_debug') === '1';
+              if (on) localStorage.removeItem('praem_movement_debug'); else localStorage.setItem('praem_movement_debug', '1');
+              window.dispatchEvent(new Event(MOVEMENT_DEBUG_EVENT));
+              setDevOverlay(false);
+            }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>MOVEMENT DEBUG</button>
             <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
             <div style={{ opacity: 0.7, fontSize: 11 }}>SUBSCRIPTION OVERRIDES</div>
             <button type="button" onClick={() => { sessionStorage.setItem('dev_sub_override', 'active'); setDevOverlay(false); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>SET SUB: ACTIVE</button>

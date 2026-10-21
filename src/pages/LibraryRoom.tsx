@@ -1,4 +1,5 @@
 import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
+import OrbLabels from '@/components/OrbLabels';
 import { placedGhosts, randomSpawnCell, type GhostCell } from '@/lib/placedGhosts';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +15,7 @@ type Rect = { id: string; x: number; y: number; w: number; h: number };
 type RugTrim = { top: boolean; bottom: boolean; left: boolean; right: boolean };
 type RugTile = { id: string; x: number; y: number; trim: RugTrim };
 type RoomCell = {
+  name?: string;
   title?: string;
   line?: string;
   tone?: string;
@@ -159,6 +161,7 @@ const LibraryRoom = () => {
   const ghostFeedback = useRoomGhostWhisper(room?.ghosts ?? []);
   const [roomLoading, setRoomLoading] = useState(true);
   const [auraColor, setAuraColor] = useState('#a98cff');
+  const [orbIdentity, setOrbIdentity] = useState({ title: '', name: '' });
 
   const [player, setPlayer] = useState({ x: 0, y: 0 });
   const playerRef = useRef({ x: 0, y: 0 });
@@ -184,6 +187,7 @@ const LibraryRoom = () => {
       if (cancelled || !row) return;
       setCurrentLevel(row.level);
       if (row.aura_color) setAuraColor(row.aura_color);
+      setOrbIdentity({ title: row.title ?? '', name: row.username ?? '' });
     })();
     return () => { cancelled = true; };
   }, [user, authLoading, navigate]);
@@ -648,11 +652,13 @@ const LibraryRoom = () => {
               borderRadius: '50%',
               background: auraColor,
               boxShadow: `0 0 8px ${auraColor}`,
-              animation: 'playerPulse 1.6s ease-in-out infinite',
               pointerEvents: 'none',
               zIndex: 5,
             }}
-          />
+          >
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: auraColor, animation: 'playerPulse 1.6s ease-in-out infinite' }} />
+            <OrbLabels title={orbIdentity.title} name={orbIdentity.name} size={8} />
+          </div>
         </div>
       )}
       {ghostFeedback.whisper}

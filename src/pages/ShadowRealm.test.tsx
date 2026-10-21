@@ -14,7 +14,7 @@ vi.mock('@/lib/userData', () => ({
   fetchOrCreateUser: async () => ({ level: 1, registration_number: 2 }),
   updateUser: async () => { state.calls.push({ table: 'users', method: 'save', args: [] }); },
 }));
-vi.mock('@/lib/questFlags', () => ({ getAllFlags: async () => ({}), setFlag: vi.fn() }));
+vi.mock('@/lib/questFlags', () => ({ getAllFlags: async () => ({}), setFlag: vi.fn(), reconcileBernardAfterShadow: async (...args: unknown[]) => { state.calls.push({ table: 'bernard', method: 'recover', args }); return true; } }));
 vi.mock('@/lib/runState', () => ({ endRun: vi.fn() }));
 vi.mock('@/components/Thumbstick', () => ({ default: () => null }));
 vi.mock('@/components/theme/FolderSlots', () => ({ default: (props: { total: number; filled: number; revealed: boolean }) => { state.slots.push(props); return null; } }));
@@ -51,6 +51,12 @@ async function beginTransfer() {
 }
 
 describe('Shadow transfer counts', () => {
+  it('repairs Bernard only after banking and level-up have been saved', async () => {
+    await beginTransfer();
+    const recovery = state.calls.findIndex(c => c.table === 'bernard');
+    expect(recovery).toBeGreaterThan(state.calls.findIndex(c => c.table === 'users' && c.method === 'save'));
+    expect(state.calls[recovery].args).toEqual(['player', true]);
+  });
   it('fills only five current-transfer slots, never earlier banked rows', async () => {
     await beginTransfer();
     for (let i = 0; i < 140; i++) await act(async () => { await vi.advanceTimersByTimeAsync(100); });

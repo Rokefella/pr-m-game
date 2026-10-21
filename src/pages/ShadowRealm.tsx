@@ -8,7 +8,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { useNavigate } from 'react-router-dom';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
-import { getAllFlags, setFlag } from '@/lib/questFlags';
+import { getAllFlags, setFlag, reconcileBernardAfterShadow } from '@/lib/questFlags';
 import { supabase } from '@/lib/supabase';
 import { formatPrime } from '@/lib/format';
 import { endRun } from '@/lib/runState';
@@ -473,6 +473,7 @@ const ShadowRealm = () => {
       endRun();
       sessionStorage.removeItem('visited_shadow_this_run');
       sessionStorage.removeItem(SHADOW_ENTRY_KEY);
+      await reconcileBernardAfterShadow(user.id, true);
       return true;
     } catch (e) {
       console.error('[ShadowRealm] transfer failed', e);

@@ -21,6 +21,10 @@ describe('NPC quest rules shared with dialogue', () => {
     expect(getNpcQuestState('bernard', { ...base, stages, flags: { bernard_stage: '3' } })).toBe('active');
     expect(getNpcQuestState('bernard', { ...base, stages, flags: { bernard_stage: '4' } })).toBe('ready');
   });
+  it('offers the stage 4 Wanderer hand-in in Village 2 from quest flags, not village level', () => {
+    expect(getNpcQuestState('bernard', { ...base, level: 2, stages, flags: { bernard_stage: '4' } })).toBe('ready');
+    expect(getNpcQuestState('bernard', { ...base, level: 2, stages, flags: { bernard_stage: '3' } })).toBe('active');
+  });
   it('removes Alexandra offer after accepting it', () => {
     expect(getNpcQuestState('bernard', { ...base, stages, flags: { bernard_stage: '5' } })).toBe('available');
     expect(getNpcQuestState('bernard', { ...base, stages, flags: { bernard_stage: '6', alexandra_quest: 'active' } })).toBe('active');

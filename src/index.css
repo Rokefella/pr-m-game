@@ -101,6 +101,8 @@
     --loading-grid: radial-gradient(rgba(169,140,255,.07) 1px, transparent 1.5px);
     --loading-glow: radial-gradient(rgba(245,192,96,.10), transparent 70%);
     --loading-centre: #fff3c4;
+    --snake-gold: #f5c060;
+    --snake-tail: #ffffff;
     --npc-specular: #fff;
     --npc-quest-gold-outline: #6a4a10;
     --npc-quest-green-outline: #0f3a28;
@@ -336,7 +338,7 @@
 .auth-screen { min-height: 100dvh; height: 100dvh; overflow-y: auto; display: flex; align-items: center; justify-content: center; background: var(--auth-backdrop); padding: max(12px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); color: var(--auth-text); }
 .auth-stack { display: flex; flex-direction: column; align-items: center; max-width: 100%; margin: auto; }
 .auth-plate { padding: 24px; }
-.auth-logo { width: 64px; height: 64px; object-fit: contain; display: block; margin: 0 auto; }
+.auth-logo { width: 64px; height: 64px; display: flex; justify-content: center; margin: 0 auto; }
 .auth-heading { font-size: clamp(32px, 11vw, 44px); font-weight: 400; letter-spacing: .25em; text-align: center; line-height: 1.2; margin: 12px 0 24px; color: var(--auth-text); }
 .auth-form { display: flex; flex-direction: column; gap: 16px; }
 .auth-field { min-width: 0; }
@@ -355,7 +357,7 @@
 .auth-link:hover { color: var(--auth-text); }
 .auth-confirmation { display: flex; flex-direction: column; gap: 24px; }
 .auth-confirmation p { margin: 0; text-align: center; font-size: 17px; line-height: 1.45; color: var(--auth-text); }
-@media (max-height: 600px) { .auth-plate { padding: 16px 24px; } .auth-logo { height: 48px; } .auth-heading { margin: 8px 0 16px; } .auth-form { gap: 12px; } }
+@media (max-height: 600px) { .auth-plate { padding: 16px 24px; } .auth-logo { height: 48px; } .auth-logo svg { width: 48px; height: 48px; } .auth-heading { margin: 8px 0 16px; } .auth-form { gap: 12px; } }
 .avatar-preview, .avatar-preview-dark { background: var(--village-background); }
 .avatar-preview-ground { background: var(--avatar-preview-ground); }
 .avatar-preview-section { padding: 24px 16px; }
@@ -514,3 +516,17 @@ body:has([data-profile-open="true"]) :is([data-game-world], .ghost-position, .ec
 .drop-detail-use:hover { background: #c8963a; }
 .drop-detail-use:disabled { background: #2f3560; color: #6a74b0; }
 .dye-whisper { text-align: center; font-size: 14px; color: #c8963a; margin-top: 12px; }
+
+/* PraemSnake in-game logo */
+.praem-snake { display: block; }
+.praem-snake .snake-seg { fill: var(--snake-gold); }
+.praem-snake .snake-centre { fill: var(--loading-centre); }
+.praem-snake .snake-tail { fill: var(--snake-tail); }
+.praem-snake .snake-glow { fill: var(--snake-gold); opacity: .25; }
+.snake-draw .snake-seg, .snake-draw .snake-tail { opacity: 0; animation: snakeIn 160ms ease-out forwards; }
+.snake-draw .snake-glow { opacity: 0; animation: snakeIn 160ms ease-out forwards, snakeGlow 2s ease-in-out infinite; }
+.snake-loop .snake-seg, .snake-loop .snake-tail { opacity: 0; animation: loadSeg 3.2s infinite; }
+.snake-loop .snake-glow { animation: snakeGlow 2s ease-in-out infinite; }
+@keyframes snakeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes snakeGlow { 0%,100% { opacity: .25; } 50% { opacity: .5; } }
+@media (prefers-reduced-motion: reduce) { .praem-snake * { animation: none !important; opacity: 1 !important; } .praem-snake .snake-glow { opacity: .35 !important; } }

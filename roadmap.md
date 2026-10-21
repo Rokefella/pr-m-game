@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Add attached title/name labels to player and authored ghost orbs, retaining sizes, movement and fog layering; test name truncation and visible attachment.
+- [x] Add attached title/name labels to player and authored ghost orbs, retaining sizes, movement and fog layering; 190 tests and preview compilation pass. Isolated desktop/375px checks verify Glorious/Marcel, optional labels, stable moving offsets and pointer pass-through.
+- [ ] Verify orb labels on real signed-in game screens — the game's external authentication session is unavailable; isolated checks do not verify real profile data or fog placement.
 
 - [x] Match ghost/player orb sizes and add ref-driven radius-five wander, straight-path patrol and current-position whispers; 189 tests and preview compilation pass. Isolated 375px/desktop checks verify matching 25px sprites, street patrol, wandering and static reduced motion; real-account gameplay verification remains blocked as noted below.
 

@@ -2,7 +2,7 @@ import { Z } from '@/lib/zIndex';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
-import { ROOM_AVATAR_SIZE } from '@/components/theme/rooms/roomConfig';
+import { ROOM_AVATAR_SIZE, ROOM_NPC_BODY_SIZE } from '@/components/theme/rooms/roomConfig';
 import { placedGhosts, randomSpawnCell, nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -300,7 +300,7 @@ const NpcActor = ({
 
   return (
     <>
-      <div style={{ position: 'absolute', left: mx, top: my, pointerEvents: 'none', zIndex: 4, transition: 'left 2.4s ease-in-out, top 2.4s ease-in-out' }}><NpcOrb npc={npcKey} name={displayName} size={Math.round(ROOM_AVATAR_SIZE * 1.15)} quest={questState(npcKey)} /></div>
+      <div style={{ position: 'absolute', left: mx, top: my, pointerEvents: 'none', zIndex: 4, transition: 'left 2.4s ease-in-out, top 2.4s ease-in-out' }}><NpcOrb npc={npcKey} name={displayName} size={ROOM_NPC_BODY_SIZE} quest={questState(npcKey)} /></div>
 
       {isOpen && resolvedDialogue && (
         <NpcDialogue

@@ -18,7 +18,7 @@
 - Coordinate daily step claims through one per-user in-memory session promise; Village publishes a refreshed balance and Maze waits before loading or writing steps to prevent stale balances overwriting grants.
 - Render ACCOUNT feedback through a portaled modal sized against the visual viewport; keyboard resize must keep the message and submission controls visible.
 - Keep fragment plate primitives presentation-only; coordinate eye, voice and digit readiness in FragmentOverlay, deriving pre-collection counts by excluding the current prime from the Folder query so asynchronous pickup persistence cannot skew the count.
-- Ghosts use caller walkability; Echoes use BFS/Maze rAF; OrbLabels uses fixed-pixel ref portals and fog opacity. NPC size is body width; retain anchors/interactions.
+- Ghosts use caller walkability; Echoes use BFS/Maze rAF; OrbLabels uses fixed-pixel ref portals and fog opacity. NPC size is body width; retain anchors.
 - Use zIndex's scale and data-game-ui markers to hide labels during UI; portal Profile to body to escape transforms. Preserve local world ordering.
 - mazeLight owns Perception radii; DropDetail consumes via RPC, refreshes the row and publishes orb changes, never storing unlocks.
 - Keep maze run records and unbanked deletion in runState; Maze owns awaited deliberate exits and captures room-return intent before config consumes coordinates, while successful Shadow persistence ends the run so banking never suppresses later forfeiture.- Room interiors (DynamicRoom, ExchangeRoom) render through components/theme/rooms: floor/wall cells merged into one CSS-background div per row run, implicit wall ring added to collision, avatar and camera written via DOM refs; keeps rooms cheap and visually consistent.

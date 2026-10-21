@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Shrink Perception-scaled maze light, remove dye wardrobe and refresh consumed dyes, unify game layers and hide orb labels during UI; verify focused tests and visible flows.
+- [x] Shrink Perception-scaled maze light, remove dye wardrobe and refresh consumed dyes, unify game layers and hide orb labels during UI. 254 tests and preview compilation pass; controlled browser checks verify Profile/sheet label hiding, world hiding behind Profile, Growth note and two repeated dye uses removing both drops and changing the header orb.
+- [ ] Verify smaller maze light and dye consumption against a real player — the game uses separate external authentication unavailable to the checker; controlled data does not verify server persistence.
 
 - [x] Add maze-only Echo ghosts with size-based/override counts, BFS-safe spawns, smooth non-reversing corridor movement and fog-aware title opacity driven by Maze's frame loop. 246 tests and preview compilation pass; isolated browser checks using published Level 1 geometry show 3 Echoes, moving transforms and hidden bodies/titles outside light, with no page errors.
 - [ ] Verify Echoes during real signed-in gameplay — external game authentication is unavailable; published geometry and isolated rendering do not establish the live player flow.
@@ -91,6 +92,6 @@
 - [x] Add Console Door maze round trips, shared Console Room, server-validated keypad and temporary rift card; 135 tests and preview compilation pass; isolated 375px/desktop walkthrough verifies wrong codes, countdown, silent answer, rift and exact-cell fragment-preserving return.
 - [ ] Verify console codes, keys and unlock persistence against a real player's published maze — the game uses a separate external auth session unavailable to the checker; isolated tests are not live server verification.
 
-- [x] Dyes: any-colour orb, USE dye sheet, ORB COLOUR wardrobe, live orb updates; 174 tests pass.
+- [x] Dyes: any-colour orb, consume-only USE dye sheet and live orb updates; wardrobe removed.
 - [ ] Ghost players show the dye colour — the positions table has no colour column (needs a database change on the game server).
-- [ ] Verify dye USE/wardrobe on a real account — the game sign-in is unavailable to the checker.
+- [ ] Verify consume-only dye USE on a real account — the game sign-in is unavailable to the checker.

@@ -2121,7 +2121,7 @@ const Village = () => {
         <>
           {/* Map layer */}
           <div
-            ref={mapRef}
+            data-game-world ref={mapRef}
             style={{
               position: 'absolute',
               left: 0,

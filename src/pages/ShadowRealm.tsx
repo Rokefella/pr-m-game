@@ -785,7 +785,7 @@ const ShadowRealm = () => {
       {transferring && (() => {
         const transferCount = runFragsRef.current.length;
         return (
-          <div data-game-ui="open" style={{ position: 'fixed', inset: 0, background: 'rgba(6,10,8,.96)', opacity: overlayIn ? 1 : 0, transition: 'opacity 600ms ease-in', zIndex: Z.WORLD00, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', overflowY: 'auto' }}>
+          <div data-game-ui="open" style={{ position: 'fixed', inset: 0, background: 'rgba(6,10,8,.96)', opacity: overlayIn ? 1 : 0, transition: 'opacity 600ms ease-in', zIndex: Z.OVERLAY, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', overflowY: 'auto' }}>
             <PlateFrame tone="shadow" glow={SHADOW.glow} width="min(92vw, 340px)">
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, textAlign: 'center' }}>
                 {error ? (

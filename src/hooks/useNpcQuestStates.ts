@@ -67,7 +67,9 @@ export function useNpcQuestStates(userId?: string, overrides?: Partial<Omit<Ques
       const update = () => { void refresh(userId); };
       window.addEventListener(NPC_DIALOGUE_CLOSED, update);
       window.addEventListener(NPC_INVENTORY_CHANGED, update);
-      const channel = supabase.channel(`npc-quests-${userId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'drops', filter: `user_id=eq.${userId}` }, update).subscribe();
+      const channel = supabase.channel(`npc-quests-${userId}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'drops', filter: `user_id=eq.${userId}` }, update)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${userId}` }, update).subscribe();
       stopRefresh = () => { window.removeEventListener(NPC_DIALOGUE_CLOSED, update); window.removeEventListener(NPC_INVENTORY_CHANGED, update); void supabase.removeChannel(channel); };
     }
     return () => { consumers--; if (!consumers) { stopRefresh?.(); stopRefresh = null; } };

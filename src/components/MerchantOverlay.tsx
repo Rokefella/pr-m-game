@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '@/lib/userData';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import { useAuth } from '@/context/AuthContext';
+import { NPC_DIALOGUE_CLOSED, useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 
 export type MerchantPalette = 'green' | 'orange';
 
@@ -40,6 +42,7 @@ const MerchantOverlay = ({
   credits,
   onCreditsChange,
 }: MerchantOverlayProps) => {
+  const questState = useNpcQuestStates(userId);
   const { rgb } = PALETTE[palette];
   const [shown, setShown] = useState(false);
   const lineIndexRef = useRef(0);
@@ -57,6 +60,10 @@ const MerchantOverlay = ({
       setShown(false);
     }
   }, [open, openingLines]);
+  useEffect(() => {
+    if (!open) return;
+    return () => { window.dispatchEvent(new Event(NPC_DIALOGUE_CLOSED)); };
+  }, [open]);
 
   if (!open) return null;
 
@@ -101,7 +108,7 @@ const MerchantOverlay = ({
         overflowY: 'auto',
       }}
     >
-      <div className="npc-dialogue-orb" style={{ marginTop: 40 }}><NpcOrb npc="merchant" /></div>
+      <div className="npc-dialogue-orb" style={{ marginTop: 40 }}><NpcOrb npc="merchant" quest={questState('merchant')} /></div>
       <div
         className="font-cinzel"
         style={{
@@ -223,7 +230,9 @@ export const MerchantCharacter = ({
   x,
   y,
 }: { x: number; y: number; palette: MerchantPalette }) => {
+  const { user } = useAuth();
+  const questState = useNpcQuestStates(user?.id);
   return (
-    <div style={{ position: 'absolute', left: x, top: y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" /></div>
+    <div style={{ position: 'absolute', left: x, top: y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" quest={questState('merchant')} /></div>
   );
 };

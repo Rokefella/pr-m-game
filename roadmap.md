@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Add shared dialogue-aligned NPC quest states, event-driven refresh, and gold/grey/green orb markers across game screens; preserve dialogue, placement and gameplay.
+- [x] Add shared dialogue-aligned NPC quest states, event-driven refresh, and gold/grey/green orb markers across game screens; 212 tests and preview compilation pass; isolated desktop/375px and static reduced-motion checks pass.
+- [ ] Verify quest acceptance and hand-in markers in real signed-in gameplay — the game's external authentication session is unavailable; isolated checks do not verify published gameplay.
 
 - [x] Read Weaver's top-level village streetStyle and pass it to cached terrain artwork, defaulting missing/invalid metadata to cobble; preserve gameplay geometry.
 

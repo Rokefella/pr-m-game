@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { ROOM_AVATAR_SIZE, ROOM_NPC_BODY_SIZE, ROOM_ZOOM, roomNpcBodySize } from './roomConfig';
+import { ROOM_AVATAR_SIZE, ROOM_NPC_BODY_SIZE, roomNpcBodySize } from './roomConfig';
+import { NPC_BODY_SCALE } from '@/lib/orbSizes';
 
 describe('room NPC body sizing', () => {
-  it('matches 1.15 times the visible player orb, rounded in world pixels', () => {
-    const visiblePlayerBody = ROOM_AVATAR_SIZE * 52 / 92;
-    expect(ROOM_NPC_BODY_SIZE).toBe(Math.round(visiblePlayerBody * 1.15));
-    expect(ROOM_NPC_BODY_SIZE).toBe(16);
-    expect(Math.abs(ROOM_NPC_BODY_SIZE * ROOM_ZOOM - visiblePlayerBody * 1.15 * ROOM_ZOOM)).toBeLessThanOrEqual(0.5 * ROOM_ZOOM);
+  it('is the room avatar size times the shared NPC scale, in world pixels', () => {
+    expect(ROOM_NPC_BODY_SIZE).toBe(Math.round(ROOM_AVATAR_SIZE * NPC_BODY_SCALE));
+    expect(ROOM_NPC_BODY_SIZE).toBe(29);
   });
-  it('uses actual dot width for legacy Bernard rooms, without canvas conversion', () => {
-    expect(roomNpcBodySize(8, 'dot')).toBe(Math.round(8 * 1.15));
-    expect(roomNpcBodySize(8, 'dot')).toBe(9);
+  it('scales legacy dot rooms from their dot width', () => {
+    expect(roomNpcBodySize(8)).toBe(Math.round(8 * NPC_BODY_SCALE));
+    expect(roomNpcBodySize(8)).toBe(9);
   });
 });

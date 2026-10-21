@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { LABEL_NAME_PX, LABEL_TITLE_PX, labelPositions, truncateOrbText } from './orbLabelGeometry';
 import { npcBodySize, npcSvgWidth } from '@/components/theme/objects/NpcOrb';
 describe('Screen-space orb geometry', () => {
-  it('keeps name and title at six and six-and-a-half screen pixels', () => {
-    expect(LABEL_NAME_PX).toBe(6); expect(LABEL_TITLE_PX).toBe(6.5);
+  it('keeps name and title at eight screen pixels', () => {
+    expect(LABEL_NAME_PX).toBe(8); expect(LABEL_TITLE_PX).toBe(8);
   });
   it('limits NPC bodies to rounded screen-avatar times 1.15 and derives the full art width', () => {
     expect(npcBodySize(25)).toBe(29); expect(npcBodySize(30)).toBe(35);

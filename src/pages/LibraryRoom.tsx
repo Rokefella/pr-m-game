@@ -602,7 +602,7 @@ const LibraryRoom = () => {
             />
           ))}
 
-          <RoomGhosts ghosts={room.ghosts} />
+          <RoomGhosts ghosts={room.ghosts} size={8 * 92 / 52} solids={obstacles} gridSize={room.gridSize} player={() => ({ col: playerTargetRef.current.x / CELL - .5, row: playerTargetRef.current.y / CELL - .5 })} />
           {/* Walls & furniture */}
           {room.wallTiles.map((w) => (
             <div

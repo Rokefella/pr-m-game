@@ -1,5 +1,6 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
-import GhostOrb from '@/components/theme/objects/GhostOrb';
+import GhostLayer from '@/components/theme/objects/GhostLayer';
+import { corridorCell } from '@/lib/ghostMotion';
 import { placedGhosts, nearbyGhostLine } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -36,6 +37,7 @@ import '@/components/theme/maze.css';
 // TODO: restore to real walking steps via HealthKit for production.
 const INITIAL_STEPS = 1000;
 const CELL = 40;
+const MAZE_AVATAR_SIZE = 30;
 // Lantern: clear radius around the player, widened by Perception; beyond it a dim (not black) fog.
 const LANTERN_BASE_RADIUS_CELLS = 5;
 const LANTERN_PERCEPTION_BONUS = 0.5;
@@ -787,6 +789,8 @@ const Maze = () => {
     cell.col >= bounds.minCol && cell.col <= bounds.maxCol && cell.row >= bounds.minRow && cell.row <= bounds.maxRow
   ), [config, bounds]);
   const ghosts = useMemo(() => placedGhosts(config?.visualCells ?? []), [config]);
+  const ghostFree = useCallback((col: number, row: number) => !!config && col >= 0 && row >= 0 && col < config.cols && row < config.rows && config.openSet.has(`${col},${row}`), [config]);
+  const ghostPath = useCallback((col: number, row: number) => corridorCell(col, row, ghostFree), [ghostFree]);
   const ghostCooldowns = useRef(new Map<string, number>());
 
   const showWhisper = (text: string, color = 'rgba(160,140,200,0.85)', dur = 3000) => {
@@ -1266,10 +1270,10 @@ const Maze = () => {
             {cell.type === 'CONSOLE_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><ConsoleDoorTile dimension={glow} size={CELL} /></div></>}
             {(cell.type === 'DROP_SPAWN' || cell.type === 'DROP') && <DropCrate dimension={glow} size={CELL} lit={runDrops.has(`${cell.col},${cell.row}`)} tone={runDrops.get(`${cell.col},${cell.row}`)?.kind} />}
             {cell.type === 'NPC' && <div className="npc-orb-cell"><NpcOrb npc={cell.npc_key || cell.npc_name || cell.name || ''} size={40} /></div>}
-            {cell.type === 'GHOST' && <div className="npc-orb-cell"><GhostOrb title={cell.title} tone={cell.tone} size={36} cellSize={CELL} /></div>}
           </div>
         ))}
 
+        <GhostLayer ghosts={ghosts} size={MAZE_AVATAR_SIZE} cellSize={CELL} free={ghostFree} path={ghostPath} player={() => posRef.current} />
         {currentLevel === 1 && LEVEL1_HINTS.map((h, i) => (
           <div
             key={`hint-${i}`}
@@ -1338,7 +1342,7 @@ const Maze = () => {
         <PlayerAvatar
           palette={orbLook(auraColor, orbDye, registrationNumber)}
           walking={Math.abs(posRef.current.col - displayPos.col) >= 0.01 || Math.abs(posRef.current.row - displayPos.row) >= 0.01}
-          size={30}
+          size={MAZE_AVATAR_SIZE}
         />
       </div>
 

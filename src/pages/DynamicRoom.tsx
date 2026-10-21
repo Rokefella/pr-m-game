@@ -1,5 +1,6 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
-import GhostOrb from '@/components/theme/objects/GhostOrb';
+import GhostLayer from '@/components/theme/objects/GhostLayer';
+import { ROOM_AVATAR_SIZE } from '@/components/theme/rooms/roomConfig';
 import { placedGhosts, randomSpawnCell, nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -726,6 +727,11 @@ const DynamicRoom = () => {
     const size = (room?.gridSize ?? 1) * CELL;
     return { w: size, h: size };
   }, [room]);
+  const ghostFree = useCallback((col: number, row: number) => {
+    const x = col * CELL + CELL / 2, y = row * CELL + CELL / 2;
+    return !!room && col >= 0 && row >= 0 && col < room.gridSize && row < room.gridSize &&
+      !obstacles.some(o => x >= o.x - 2 && x <= o.x + o.w + 2 && y >= o.y - 2 && y <= o.y + o.h + 2);
+  }, [room, obstacles]);
 
   // Camera-follow: eases toward centering the player each frame (same pattern
   // as Village). On an axis where the map is smaller than the viewport, that
@@ -1074,7 +1080,7 @@ const DynamicRoom = () => {
           )}
 
           {/* Generic NPCs — one actor per placed NPC cell */}
-          {room.ghosts.map(g => <div key={`ghost-${g.col}-${g.row}`} style={{ position: 'absolute', left: g.col * CELL + CELL / 2, top: g.row * CELL + CELL / 2, zIndex: 4, pointerEvents: 'none' }}><GhostOrb title={g.title} tone={g.tone} cellSize={CELL} /></div>)}
+          <GhostLayer ghosts={room.ghosts} size={ROOM_AVATAR_SIZE} cellSize={CELL} free={ghostFree} player={() => ({ col: playerTargetRef.current.x / CELL - .5, row: playerTargetRef.current.y / CELL - .5 })} />
           {room.npcs.map((n) => (
             <NpcActor
               key={n.id}

@@ -448,13 +448,14 @@
 /* NPC art anchors its halo centre at the existing logical position. */
 .npc-orb { display: block; overflow: visible; pointer-events: none; image-rendering: pixelated; transform: translate(-50%, -87.5%); }
 .npc-orb-cell { position: absolute; left: 50%; top: 50%; }
-.ghost-orb { position: relative; transform: translate(-50%, -50%); pointer-events: none; }
+.ghost-position { position: absolute; z-index: 4; pointer-events: none; will-change: transform; }
+.ghost-orb { position: relative; transform: translate(-50%, -46%); pointer-events: none; --ghost-outline: color-mix(in srgb, currentColor 65%, var(--instrument-shadow)); --ghost-mid: color-mix(in srgb, currentColor 90%, var(--npc-specular)); --ghost-light: color-mix(in srgb, currentColor 65%, var(--npc-specular)); --ghost-highlight: color-mix(in srgb, currentColor 40%, var(--npc-specular)); --ghost-glow: drop-shadow(0 0 4px currentColor); }
 .ghost-tone-pale { color: var(--ghost-pale); }
 .ghost-tone-mist { color: var(--ghost-mist); }
 .ghost-tone-gold { color: var(--ghost-gold); }
 .ghost-tone-rose { color: var(--ghost-rose); }
-.ghost-title { position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%); font-size: 12px; line-height: 16px; color: var(--ghost-title); text-shadow: var(--ghost-title-shadow); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ghost-body { display: block; opacity: .55; animation: ghostFlicker 3s ease-in-out infinite, ghostDrift 4s ease-in-out infinite; }
+.ghost-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 11px; line-height: 16px; color: var(--ghost-title); text-shadow: var(--ghost-title-shadow); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ghost-body { display: block; overflow: visible; filter: var(--ghost-glow); opacity: .55; animation: ghostFlicker 3s ease-in-out infinite, ghostDrift 4s ease-in-out infinite; }
 .ghost-whisper { color: var(--ghost-title) !important; }
 .ghost-proximity-whisper { position: fixed; left: 0; right: 0; top: 18%; margin: 0; padding: 0 16px; text-align: center; font-size: 16px; color: var(--ghost-title); text-shadow: var(--ghost-title-shadow); pointer-events: none; z-index: 50; }
 @keyframes ghostFlicker { 0%,100% { opacity: .45; } 50% { opacity: .65; } }

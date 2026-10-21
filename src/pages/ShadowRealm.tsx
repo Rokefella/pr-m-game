@@ -1,5 +1,6 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
-import GhostOrb from '@/components/theme/objects/GhostOrb';
+import GhostLayer from '@/components/theme/objects/GhostLayer';
+import { corridorCell } from '@/lib/ghostMotion';
 import { nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -672,6 +673,11 @@ const ShadowRealm = () => {
   const palette = orbLook(auraColor, orbDye, registrationNumber);
   const floorUri = useMemo(() => patternUri('floor', 'shadow', SHADOW.seam), []);
   const wallUri = useMemo(() => patternUri('wall', 'shadow', SHADOW.seam), []);
+  const ghostFree = useCallback((col: number, row: number) => {
+    const x = col * STEP, y = row * STEP;
+    return !wallSetRef.current.has(wallKey(x, y)) && (!mapRect || (x >= mapRect.x && y >= mapRect.y && x < mapRect.x + mapRect.w && y < mapRect.y + mapRect.h));
+  }, [mapRect]);
+  const ghostPath = useCallback((col: number, row: number) => corridorCell(col, row, ghostFree), [ghostFree]);
   const cellAt = (p: { x: number; y: number }, w = STEP, h = STEP): CSSProperties => ({
     position: 'absolute', left: '50%', top: '50%', width: w, height: h,
     marginLeft: -w / 2 + p.x, marginTop: -h / 2 + p.y, pointerEvents: 'none',
@@ -716,7 +722,7 @@ const ShadowRealm = () => {
         {eyes.map((e, i) => <div key={`e${i}`} style={cellAt(e)}><ShadowEye /></div>)}
 
         {npcs.map((n, i) => <div key={`n${i}`} style={cellAt(n, 0, 0)}><NpcOrb npc={n.npc_key || n.npc_name || n.name || ''} /></div>)}
-        {authoredGhosts.map(g => <div key={`ghost-${g.col}-${g.row}`} style={cellAt({ x: g.col * STEP, y: g.row * STEP }, 0, 0)}><GhostOrb title={g.title} tone={g.tone} size={36} cellSize={STEP} /></div>)}
+        <div style={cellAt({ x: 0, y: 0 }, 0, 0)}><GhostLayer ghosts={authoredGhosts} size={SHADOW_AVATAR_SIZE} cellSize={STEP} offset={0} free={ghostFree} path={ghostPath} player={() => ({ col: posRef.current.x / STEP, row: posRef.current.y / STEP })} /></div>
         {drops.map((d, i) => <div key={`d${i}`} style={{ ...cellAt(d, 6, 6), background: SHADOW.glow, opacity: 0.7 }} />)}
 
         {roomDoors.map((d, i) => <div key={`rd${i}`} style={cellAt(d)}><GardenDoorTile open={gardenOpen} /></div>)}

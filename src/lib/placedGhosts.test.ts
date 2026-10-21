@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { GHOST_COOLDOWN, SPAWN_RADIUS, nearbyGhostLine, placedGhosts, randomSpawnCell } from './placedGhosts';
+import { GHOST_COOLDOWN, SPAWN_RADIUS, nearbyGhostLine, placedGhosts, randomSpawnCell, ghostPositions } from './placedGhosts';
 
 describe('Authored spawn cells', () => {
   it('limits all candidates to Euclidean radius four and the existing free test', () => {
@@ -29,5 +29,12 @@ describe('Ghost proximity lines', () => {
     expect(nearbyGhostLine(ghosts, 4, 4, cooldowns, 0)).toBe('Remember.');
     expect(nearbyGhostLine(ghosts, 4, 4, cooldowns, 29_999)).toBeNull();
     expect(nearbyGhostLine(ghosts, 4, 4, cooldowns, 30_000)).toBe('Remember.');
+  });
+  it('measures proximity to the wandering position instead of home', () => {
+    const ghost = { type: 'GHOST' as const, col: 4, row: 4, line: 'Remember.' };
+    ghostPositions.set(ghost, { col: 7, row: 4 });
+    expect(nearbyGhostLine([ghost], 4, 4, new Map(), 0)).toBeNull();
+    expect(nearbyGhostLine([ghost], 7, 4, new Map(), 0)).toBe('Remember.');
+    ghostPositions.delete(ghost);
   });
 });

@@ -1,4 +1,5 @@
 import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
+import { ROOM_AVATAR_SIZE } from '@/components/theme/rooms/roomConfig';
 import { placedGhosts, randomSpawnCell, type GhostCell } from '@/lib/placedGhosts';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
@@ -981,7 +982,7 @@ const ExchangeRoom = () => {
         >
           <RoomScene floorRuns={room.floorRuns} wallRuns={room.wallRuns} furniture={room.furnitureTiles} bookcases={room.bookcaseTiles} lights={room.lightTiles} rugs={room.rugTiles} exits={room.exitTiles} />
 
-          <RoomGhosts ghosts={room.ghosts} />
+          <RoomGhosts ghosts={room.ghosts} size={ROOM_AVATAR_SIZE} solids={obstacles} gridSize={room.gridSize} player={() => ({ col: playerTargetRef.current.x / CELL - .5, row: playerTargetRef.current.y / CELL - .5 })} />
           <div style={{ position: 'absolute', left: bankerPos.x, top: bankerPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="banker" /></div>
 
           <RoomAvatar ref={avatarRef} palette={orbLook(auraColor, orbDye, registrationNumber)} walking={walking} />

@@ -102,6 +102,12 @@
     --loading-glow: radial-gradient(rgba(245,192,96,.10), transparent 70%);
     --loading-centre: #fff3c4;
     --npc-specular: #fff;
+    --ghost-pale: #dfe8ff;
+    --ghost-mist: #cfeedd;
+    --ghost-gold: #fff0c0;
+    --ghost-rose: #ffd6e4;
+    --ghost-title: #b8c4ff;
+    --ghost-title-shadow: 0 1px 4px var(--instrument-shadow);
     --npc-bernard-0: #6a4a10;
     --npc-bernard-1: #c8963a;
     --npc-bernard-2: #e0b055;
@@ -442,6 +448,17 @@
 /* NPC art anchors its halo centre at the existing logical position. */
 .npc-orb { display: block; overflow: visible; pointer-events: none; image-rendering: pixelated; transform: translate(-50%, -87.5%); }
 .npc-orb-cell { position: absolute; left: 50%; top: 50%; }
+.ghost-orb { position: relative; transform: translate(-50%, -50%); pointer-events: none; }
+.ghost-tone-pale { color: var(--ghost-pale); }
+.ghost-tone-mist { color: var(--ghost-mist); }
+.ghost-tone-gold { color: var(--ghost-gold); }
+.ghost-tone-rose { color: var(--ghost-rose); }
+.ghost-title { position: absolute; bottom: calc(100% + 5px); left: 50%; transform: translateX(-50%); font-size: 12px; line-height: 16px; color: var(--ghost-title); text-shadow: var(--ghost-title-shadow); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ghost-body { display: block; opacity: .55; animation: ghostFlicker 3s ease-in-out infinite, ghostDrift 4s ease-in-out infinite; }
+.ghost-whisper { color: var(--ghost-title) !important; }
+@keyframes ghostFlicker { 0%,100% { opacity: .45; } 50% { opacity: .65; } }
+@keyframes ghostDrift { 0%,100% { transform: translateY(1px); } 50% { transform: translateY(-1px); } }
+@media (prefers-reduced-motion: reduce) { .ghost-body { animation: none; opacity: .55; } }
 .npc-dialogue-orb .npc-orb { transform: none; }
 .npc-orb-halo { animation: npcHalo 3s ease-in-out infinite; }
 .npc-orb-symbol { animation: npcSymbol 2.4s ease-in-out infinite; }

@@ -1,5 +1,5 @@
-export const LABEL_NAME_PX = 6;
-export const LABEL_TITLE_PX = 6.5;
+import { LABEL_NAME_PX, LABEL_TITLE_PX } from './orbSizes';
+export { LABEL_NAME_PX, LABEL_TITLE_PX };
 export function truncateOrbText(value: string | null | undefined, limit: number): string {
   const text = value?.trim() ?? '';
   const chars = Array.from(text);

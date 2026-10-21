@@ -2,6 +2,8 @@ export type PlacedCell = { col: number; row: number; type: string; title?: strin
 export type GhostCell = PlacedCell & { type: 'GHOST' };
 export const SPAWN_RADIUS = 4;
 export const GHOST_COOLDOWN = 30_000;
+// Art writes transient coordinates here; proximity reads them without rerendering.
+export const ghostPositions = new WeakMap<GhostCell, { col: number; row: number }>();
 
 export function placedGhosts(cells: readonly PlacedCell[]): GhostCell[] {
   return cells.filter((c): c is GhostCell => c.type === 'GHOST' && Number.isFinite(c.col) && Number.isFinite(c.row));
@@ -22,7 +24,8 @@ export function randomSpawnCell(origin: { col: number; row: number }, free: (col
 
 export function nearbyGhostLine(ghosts: readonly GhostCell[], col: number, row: number, cooldowns: Map<string, number>, now = Date.now()): string | null {
   for (const ghost of ghosts) {
-    if (!ghost.line || Math.hypot(col - ghost.col, row - ghost.row) > 1) continue;
+    const position = ghostPositions.get(ghost) ?? ghost;
+    if (!ghost.line || Math.hypot(col - position.col, row - position.row) > 1) continue;
     const key = `${ghost.col},${ghost.row}`;
     const last = cooldowns.get(key);
     if (last !== undefined && now - last < GHOST_COOLDOWN) continue;

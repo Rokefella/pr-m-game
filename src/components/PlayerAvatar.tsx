@@ -19,6 +19,37 @@ const PALETTES: Record<AvatarPalette, Pal> = {
   teal: { dark: '#0f5c4b', mid: '#1a9e7a', light: '#3cc4a0', hi: '#86e3cb', spec: '#e0fff6', outline: '#072e26', aura: '#1a9e7a', footDark: '#0f5c4b', footMid: '#22b08a', footHi: '#b5efdd' },
 };
 
+/** A dyed orb: any hex, or the prism dye cycling hues over the violet palette. */
+export type OrbLook = AvatarPalette | { hex: string; prism?: boolean };
+
+const PRISM_HEX = '#8a5cff';
+export const PRISM_DYE = 'dye_prism';
+
+function shade(hex: string, t: number): string {
+  const n = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+  const to = t < 0 ? 0 : 255, a = Math.abs(t);
+  return '#' + n.map(c => Math.round(c + (to - c) * a).toString(16).padStart(2, '0')).join('');
+}
+
+/** Palette derived from a hex: base, mid +18%, light +45%, outline -55%, feet -15%, glow = hex. */
+export function paletteFromHex(input: string): Pal & { rim?: boolean } {
+  const hex = /^#[0-9a-f]{6}$/i.test(input) ? input.toLowerCase() : '#5b4fd4';
+  const p: Pal & { rim?: boolean } = {
+    dark: hex, mid: shade(hex, 0.18), light: shade(hex, 0.45), hi: shade(hex, 0.65), spec: shade(hex, 0.88),
+    outline: shade(hex, -0.55), aura: hex, footDark: shade(hex, -0.35), footMid: shade(hex, -0.15), footHi: shade(hex, 0.5),
+  };
+  if (hex === '#f4f4ff') p.outline = '#6a6a90';
+  if (hex === '#15151c') { p.outline = '#5a5a7a'; p.light = '#4a4a66'; p.rim = true; }
+  return p;
+}
+
+/** orb_dye null keeps the original rule (red for registration 1, else hue mapping). */
+export function orbLook(auraColor: string | null | undefined, orbDye: string | null | undefined, registrationNumber?: number | null): OrbLook {
+  if (!orbDye) return paletteFromColor(auraColor, registrationNumber);
+  if (orbDye === PRISM_DYE) return { hex: PRISM_HEX, prism: true };
+  return { hex: auraColor ?? '#5b4fd4' };
+}
+
 /** Maps an arbitrary aura hex to the nearest avatar palette by hue. */
 export function paletteFromColor(hex: string | null | undefined, registrationNumber?: number | null): AvatarPalette {
   if (registrationNumber === 1) return 'red';
@@ -47,20 +78,24 @@ const CSS = `
 .pa-walk .pa-foot { animation-name: paFoot; }
 .pa-walk .pa-fshadow { animation-name: paShadow; }
 .pa-walk .pa-r { animation-delay: -.225s; }
+@keyframes paPrism { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
+.pa-prism { animation: paPrism 6s linear infinite; }
 @media (prefers-reduced-motion: reduce) {
+  .pa-prism { animation: none !important; }
   .pa-glow, .pa-orb, .pa-foot, .pa-fshadow { animation: none !important; }
 }
 `;
 
-interface Props { palette: AvatarPalette; walking: boolean; size?: number }
+interface Props { palette: OrbLook; walking: boolean; size?: number }
 
 function PlayerAvatar({ palette, walking, size = 30 }: Props) {
-  const p = PALETTES[palette];
-  const glowId = `pa-glow-${palette}`;
+  const p: Pal & { rim?: boolean } = typeof palette === 'string' ? PALETTES[palette] : paletteFromHex(palette.hex);
+  const prism = typeof palette !== 'string' && palette.prism;
+  const glowId = `pa-glow-${typeof palette === 'string' ? palette : palette.hex.slice(1)}`;
   const height = (size * 100) / 92;
   return (
     <svg viewBox="-46 -46 92 100" width={size} height={height}
-      className={walking ? 'pa-walk' : undefined}
+      className={[walking ? 'pa-walk' : '', prism ? 'pa-prism' : ''].join(' ').trim() || undefined}
       style={{ display: 'block', overflow: 'visible', pointerEvents: 'none' }} aria-hidden="true">
       <style>{CSS}</style>
       <defs>
@@ -89,6 +124,7 @@ function PlayerAvatar({ palette, walking, size = 30 }: Props) {
           <path d="M9,6H21V9H15V12H12V15H9V18H6V9H9Z" fill={p.light} />
           <path d="M9,9H15V12H12V15H9Z" fill={p.hi} />
           <rect x="9" y="9" width="3" height="3" fill={p.spec} />
+          {p.rim && <path d="M12,-1.5H24V1.5H30V4.5H33V7.5H36V10.5H37.5V25.5H36V28.5H33V31.5H30V34.5H24V37.5H12V34.5H6V31.5H3V28.5H0V25.5H-1.5V10.5H0V7.5H3V4.5H6V1.5H12Z" fill="none" stroke="#9a9ac0" strokeWidth=".75" opacity=".8" />}
         </g>
       </g>
     </svg>

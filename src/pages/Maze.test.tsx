@@ -3,6 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Maze from './Maze';
 import { getActiveRun, startRun } from '@/lib/runState';
+vi.mock('@/hooks/useNpcQuestStates', () => ({ useNpcQuestStates: () => () => 'none', NPC_INVENTORY_CHANGED: 'praem:npc-inventory-changed' }));
 
 const fixture = vi.hoisted(() => ({
   level: 2, beta: true, flags: 0, consoleDoor: false,

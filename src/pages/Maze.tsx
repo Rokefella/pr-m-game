@@ -896,7 +896,10 @@ const Maze = () => {
         } as never);
         if (generation !== dropGenerationRef.current || leavingRef.current || error) return;
         const result = data as { granted?: boolean; drop_name?: string; kind?: 'key' | 'drop' } | null;
-        if (result?.granted === true) showWhisper(`You found: ${result.drop_name ?? 'something'}.`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
+        if (result?.granted === true) {
+          window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
+          showWhisper(`You found: ${result.drop_name ?? 'something'}.`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
+        }
       } catch { /* silent — a failed claim must not interrupt movement */ }
       finally {
         if (generation === dropGenerationRef.current) {

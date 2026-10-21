@@ -11,12 +11,14 @@ let snapshot = empty;
 let owner: string | null = null;
 let pending: Promise<void> | null = null;
 let revision = 0;
+let consumers = 0;
+let stopRefresh: (() => void) | null = null;
 const listeners = new Set<() => void>();
 const subscribe = (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn); }; };
 function refresh(userId: string): Promise<void> {
   if (pending) return pending;
   const version = revision;
-  pending = (async () => {
+  const request = (async () => {
     try {
       const [npcRows, stages, entries, drops, player] = await Promise.all([
         supabase.from('npcs').select('id, npc_key'),
@@ -41,7 +43,8 @@ function refresh(userId: string): Promise<void> {
       snapshot = { npcs, drops: keys, level: stats?.level ?? 1, social: stats?.social ?? 0, perception: stats?.perception ?? 0, trade: stats?.trade ?? 0 };
       listeners.forEach(fn => fn());
     } catch { /* Marker failures must never interrupt gameplay. */ }
-  })().finally(() => { pending = null; });
+  })().finally(() => { if (pending === request) pending = null; });
+  pending = request;
   return pending;
 }
 
@@ -49,17 +52,20 @@ function refresh(userId: string): Promise<void> {
 export function useNpcQuestStates(userId?: string, overrides?: Partial<Omit<QuestContext, 'flags' | 'drops' | 'stages' | 'entries'>>) {
   const data = useSyncExternalStore(subscribe, () => snapshot);
   const flags = useSyncExternalStore(subscribeQuestFlags, questFlagSnapshot);
-  const [closedVersion, setClosedVersion] = useState(0);
   useEffect(() => {
     if (!userId) return;
-    if (owner !== userId) { owner = userId; revision++; snapshot = empty; pending = null; }
+    if (owner !== userId) { stopRefresh?.(); stopRefresh = null; owner = userId; revision++; snapshot = empty; pending = null; }
     if (_getLoadedUser() !== userId) void getAllFlags(userId);
-    void refresh(userId);
-    const update = () => { setClosedVersion(v => v + 1); void refresh(userId); };
-    window.addEventListener(NPC_DIALOGUE_CLOSED, update);
-    window.addEventListener(NPC_INVENTORY_CHANGED, update);
-    const channel = supabase.channel(`npc-quests-${userId}-${Math.random()}`).on('postgres_changes', { event: '*', schema: 'public', table: 'drops', filter: `user_id=eq.${userId}` }, update).subscribe();
-    return () => { window.removeEventListener(NPC_DIALOGUE_CLOSED, update); window.removeEventListener(NPC_INVENTORY_CHANGED, update); void supabase.removeChannel(channel); };
+    consumers++;
+    if (!stopRefresh) {
+      void refresh(userId);
+      const update = () => { void refresh(userId); };
+      window.addEventListener(NPC_DIALOGUE_CLOSED, update);
+      window.addEventListener(NPC_INVENTORY_CHANGED, update);
+      const channel = supabase.channel(`npc-quests-${userId}`).on('postgres_changes', { event: '*', schema: 'public', table: 'drops', filter: `user_id=eq.${userId}` }, update).subscribe();
+      stopRefresh = () => { window.removeEventListener(NPC_DIALOGUE_CLOSED, update); window.removeEventListener(NPC_INVENTORY_CHANGED, update); void supabase.removeChannel(channel); };
+    }
+    return () => { consumers--; if (!consumers) { stopRefresh?.(); stopRefresh = null; } };
   }, [userId]);
   const level = overrides?.level ?? data.level;
   const social = overrides?.social ?? data.social;
@@ -77,5 +83,5 @@ export function useNpcQuestStates(userId?: string, overrides?: Partial<Omit<Ques
       result.set(key, state);
       return state;
     };
-  }, [userId, data, flags, level, social, perception, trade, rescue?.alexandraFound, rescue?.claireFound, rescue?.following, closedVersion]);
+  }, [userId, data, flags, level, social, perception, trade, rescue?.alexandraFound, rescue?.claireFound, rescue?.following]);
 }

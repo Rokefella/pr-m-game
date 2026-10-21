@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Resize NPC body widths to screen avatar × 1.15, add dialogue names and move all orb labels into a fixed-size screen-space overlay; preserve interactions and movement.
+
 - [x] Add shared dialogue-aligned NPC quest states, event-driven refresh, and gold/grey/green orb markers across game screens; 212 tests and preview compilation pass; isolated desktop/375px and static reduced-motion checks pass.
 - [ ] Verify quest acceptance and hand-in markers in real signed-in gameplay — the game's external authentication session is unavailable; isolated checks do not verify published gameplay.
 

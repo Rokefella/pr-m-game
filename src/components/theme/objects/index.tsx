@@ -50,11 +50,6 @@ export const DropCrate = memo(function DropCrate({ size, lit = false, tone = 'dr
   </span>;
 });
 
-export const NpcPad = memo(function NpcPad({ dimension, size }: Props) {
-  const glow = DIMENSION_GLOW[dimension];
-  return <Art size={size}><ellipse cx="24" cy="28" rx="17" ry="10" fill={glow} opacity=".08" /><ellipse cx="24" cy="28" rx="17" ry="10" stroke={glow} fill="none" opacity=".45" /><path d="M8 28H12M36 28H40M24 15V19M24 37V41" stroke={glow} opacity=".6" /></Art>;
-});
-
 export const StartPad = memo(function StartPad({ dimension, size }: Props) {
   const glow = DIMENSION_GLOW[dimension];
   return <Art size={size}><path d="M6 17V6H17M31 6H42V17M6 31V42H17M31 42H42V31" stroke={glow} fill="none" opacity=".55" /><path d="M18 24L24 18L30 24L24 30Z" fill={glow} opacity=".15" /></Art>;

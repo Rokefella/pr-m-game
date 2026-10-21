@@ -29,10 +29,6 @@ const NpcDialogue = ({ text, npcName, children, onShow }: Props) => {
           from { transform: translateY(20px); opacity: 0; }
           to { transform: translateY(0); opacity: 1; }
         }
-        @keyframes bernardImgFloat {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-6px); }
-        }
       `}</style>
       <div
         style={{

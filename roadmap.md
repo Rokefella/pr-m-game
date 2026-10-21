@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Correct room NPC body sizes relative to the visible player orb, preserving positions, dialogue and village/maze sizes; test and inspect rendered room orbs.
+- [x] Correct DynamicRoom/Exchange room NPC body sizing using visible player width rather than glow canvas; preserve legacy dot sizing and village/maze. 39 focused tests pass, preview compilation passes, and isolated rendering measures Bernard/Banker/Keeper at 1.132 times the player body with no page errors; real signed-in room checks remain unavailable as noted below.
 
 - [x] Shrink Perception-scaled maze light, remove dye wardrobe and refresh consumed dyes, unify game layers and hide orb labels during UI. 254 tests and preview compilation pass; controlled browser checks verify Profile/sheet label hiding, world hiding behind Profile, Growth note and two repeated dye uses removing both drops and changing the header orb.
 - [ ] Verify smaller maze light and dye consumption against a real player — the game uses separate external authentication unavailable to the checker; controlled data does not verify server persistence.

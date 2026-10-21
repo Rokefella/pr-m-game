@@ -554,6 +554,8 @@ const Maze = () => {
   const worldRef = useRef<HTMLDivElement>(null);
   const fogRef = useRef<HTMLDivElement>(null);
   const [perception, setPerception] = useState(0);
+  const perceptionRef = useRef(perception);
+  perceptionRef.current = perception;
   const camRef = useRef({ x: 0, y: 0 });
   const heldKeysRef = useRef<Set<string>>(new Set());
   const lastMoveTimeRef = useRef(0);

@@ -1,4 +1,6 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import GhostOrb from '@/components/theme/objects/GhostOrb';
+import { nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
@@ -55,7 +57,7 @@ type RunFragment = {
 };
 
 // ----- published shadow realm level data -----
-type RealmCell = { col: number; row: number; type?: string; color?: string; name?: string; npc_key?: string; npc_name?: string };
+type RealmCell = { col: number; row: number; type?: string; color?: string; name?: string; npc_key?: string; npc_name?: string; title?: string; line?: string; tone?: string };
 type PlacedCell = { x: number; y: number; color?: string; name?: string; npc_key?: string; npc_name?: string };
 
 const wallKey = (x: number, y: number): string => `${Math.round(x)},${Math.round(y)}`;
@@ -185,6 +187,12 @@ const ShadowRealm = () => {
   // ----- realm state -----
   const [atmoIndex, setAtmoIndex] = useState(0);
   const [pos, setPos] = useState({ x: 0, y: 0 }); // offset from screen center, px
+  const [authoredGhosts, setAuthoredGhosts] = useState<GhostCell[]>([]);
+  const authoredGhostsRef = useRef<GhostCell[]>([]);
+  const ghostCooldowns = useRef(new Map<string, number>());
+  const [ghostMessage, setGhostMessage] = useState<string | null>(null);
+  const ghostTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (ghostTimer.current) clearTimeout(ghostTimer.current); }, []);
   const posRef = useRef({ x: 0, y: 0 });
   const [runCount, setRunCount] = useState(0);
 
@@ -267,6 +275,10 @@ const ShadowRealm = () => {
         npc_key: c.npc_key,
         npc_name: c.npc_name,
       });
+      const authored = cells.filter(c => c.type === 'GHOST' && Number.isFinite(c.col) && Number.isFinite(c.row))
+        .map(c => ({ ...c, type: 'GHOST' as const, col: c.col - origin.col, row: c.row - origin.row }));
+      authoredGhostsRef.current = authored;
+      setAuthoredGhosts(authored);
 
       const nextWalls: PlacedCell[] = [];
       const nextGhosts: PlacedCell[] = [];
@@ -572,6 +584,12 @@ const ShadowRealm = () => {
       if (wallSetRef.current.has(wallKey(next.x, next.y))) return;
       posRef.current = next;
       setPos(next);
+      const ghostLine = nearbyGhostLine(authoredGhostsRef.current, next.x / STEP, next.y / STEP, ghostCooldowns.current);
+      if (ghostLine) {
+        setGhostMessage(ghostLine);
+        if (ghostTimer.current) clearTimeout(ghostTimer.current);
+        ghostTimer.current = setTimeout(() => setGhostMessage(null), 4000);
+      }
 
       const t = transferOffsetRef.current;
       const dist = Math.hypot(next.x - t.x, next.y - t.y);
@@ -698,6 +716,7 @@ const ShadowRealm = () => {
         {eyes.map((e, i) => <div key={`e${i}`} style={cellAt(e)}><ShadowEye /></div>)}
 
         {npcs.map((n, i) => <div key={`n${i}`} style={cellAt(n, 0, 0)}><NpcOrb npc={n.npc_key || n.npc_name || n.name || ''} /></div>)}
+        {authoredGhosts.map(g => <div key={`ghost-${g.col}-${g.row}`} style={cellAt({ x: g.col * STEP, y: g.row * STEP }, 0, 0)}><GhostOrb title={g.title} tone={g.tone} size={36} cellSize={STEP} /></div>)}
         {drops.map((d, i) => <div key={`d${i}`} style={{ ...cellAt(d, 6, 6), background: SHADOW.glow, opacity: 0.7 }} />)}
 
         {roomDoors.map((d, i) => <div key={`rd${i}`} style={cellAt(d)}><GardenDoorTile open={gardenOpen} /></div>)}
@@ -731,6 +750,7 @@ const ShadowRealm = () => {
         {ATMOSPHERE[atmoIndex]}
       </div>
 
+      {ghostMessage && <p className="ghost-proximity-whisper font-fell italic">{ghostMessage}</p>}
       {gateMsg && (
         <div className="font-fell italic" style={{ position: 'fixed', left: 0, right: 0, top: '38%', textAlign: 'center', fontSize: 16, color: 'rgba(111,211,154,0.8)', pointerEvents: 'none', animation: 'shadowFadeIn 400ms ease-out', zIndex: 50 }}>
           {gateMsg}

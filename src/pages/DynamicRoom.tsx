@@ -1,4 +1,6 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import GhostOrb from '@/components/theme/objects/GhostOrb';
+import { placedGhosts, randomSpawnCell, nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -79,11 +81,15 @@ type RoomCell = {
   npc_name?: string | null;
   exit?: { destination?: string } | null;
   color?: string | null;
+  title?: string;
+  line?: string;
+  tone?: string;
 };
 type ExitTile = Rect & { destination: string; dir: ExitDir };
 type ColorTile = { id: string; x: number; y: number; col: number; row: number; color: string };
 type NpcPlacement = { id: string; npcKey: string; x: number; y: number };
 type RoomLayout = {
+  ghosts: GhostCell[];
   consoleCell: Rect | null;
   wallTiles: Rect[];
   furnitureTiles: Rect[];
@@ -389,6 +395,10 @@ const DynamicRoom = () => {
   const [credits, setCredits] = useState(0);
   const [growthPoints, setGrowthPoints] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
+  const [ghostMessage, setGhostMessage] = useState<string | null>(null);
+  const ghostCooldowns = useRef(new Map<string, number>());
+  const ghostTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (ghostTimer.current) clearTimeout(ghostTimer.current); }, []);
 
   const [npcMeta, setNpcMeta] = useState<Record<string, { name: string; marker: string }>>({});
   const [openNpcKey, setOpenNpcKey] = useState<string | null>(null);
@@ -583,6 +593,7 @@ const DynamicRoom = () => {
         }));
 
         const layout: RoomLayout = {
+          ghosts: placedGhosts(cells),
           consoleCell,
           wallTiles,
           furnitureTiles,
@@ -613,8 +624,15 @@ const DynamicRoom = () => {
           );
         };
 
-        const originCol = start ? start.col : Math.floor(gridSize / 2);
-        const originRow = start ? start.row : Math.floor(gridSize / 2);
+        const spawnCell = cells.find(c => c.type === 'SPAWN' && Number.isFinite(c.col) && Number.isFinite(c.row));
+        const randomCell = spawnCell ? randomSpawnCell(spawnCell, (col, row) =>
+          isOpenCell(col, row) &&
+          !exitTiles.some(e => e.x === col * CELL && e.y === row * CELL) &&
+          !npcs.some(n => n.x === col * CELL && n.y === row * CELL) &&
+          !layout.ghosts.some(g => g.col === col && g.row === row)
+        ) : null;
+        const originCol = randomCell?.col ?? spawnCell?.col ?? start?.col ?? Math.floor(gridSize / 2);
+        const originRow = randomCell?.row ?? spawnCell?.row ?? start?.row ?? Math.floor(gridSize / 2);
 
         let spawnCol = originCol;
         let spawnRow = originRow;
@@ -768,6 +786,12 @@ const DynamicRoom = () => {
     }
 
     playerTargetRef.current = { x: nx, y: ny };
+    const ghostLine = nearbyGhostLine(roomRef.current.ghosts, nx / CELL - .5, ny / CELL - .5, ghostCooldowns.current);
+    if (ghostLine) {
+      setGhostMessage(ghostLine);
+      if (ghostTimer.current) clearTimeout(ghostTimer.current);
+      ghostTimer.current = setTimeout(() => setGhostMessage(null), 4000);
+    }
 
     // NPC proximity (40px) — measured against the placed position, never the
     // wandered visual offset, so triggering stays predictable.
@@ -909,6 +933,7 @@ const DynamicRoom = () => {
         {title}
       </div>
 
+      {ghostMessage && <p className="ghost-proximity-whisper font-fell italic">{ghostMessage}</p>}
       {message && (
         <div
           className="font-fell italic"
@@ -1049,6 +1074,7 @@ const DynamicRoom = () => {
           )}
 
           {/* Generic NPCs — one actor per placed NPC cell */}
+          {room.ghosts.map(g => <div key={`ghost-${g.col}-${g.row}`} style={{ position: 'absolute', left: g.col * CELL + CELL / 2, top: g.row * CELL + CELL / 2, zIndex: 4, pointerEvents: 'none' }}><GhostOrb title={g.title} tone={g.tone} cellSize={CELL} /></div>)}
           {room.npcs.map((n) => (
             <NpcActor
               key={n.id}

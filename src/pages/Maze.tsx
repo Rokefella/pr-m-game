@@ -1,4 +1,6 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import GhostOrb from '@/components/theme/objects/GhostOrb';
+import { placedGhosts, nearbyGhostLine } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
@@ -780,10 +782,12 @@ const Maze = () => {
     return cells;
   }, [config, wallSet, bounds]);
   const visibleObjects = useMemo(() => (config?.visualCells ?? []).filter(cell =>
-    ['ROOM_DOOR', 'CONSOLE_DOOR', 'DROP_SPAWN', 'DROP', 'NPC'].includes(cell.type) &&
+    ['ROOM_DOOR', 'CONSOLE_DOOR', 'DROP_SPAWN', 'DROP', 'NPC', 'GHOST'].includes(cell.type) &&
     !(cell.type === 'ROOM_DOOR' && config?.doorsToRoom?.some(door => door.col === cell.col && door.row === cell.row)) &&
     cell.col >= bounds.minCol && cell.col <= bounds.maxCol && cell.row >= bounds.minRow && cell.row <= bounds.maxRow
   ), [config, bounds]);
+  const ghosts = useMemo(() => placedGhosts(config?.visualCells ?? []), [config]);
+  const ghostCooldowns = useRef(new Map<string, number>());
 
   const showWhisper = (text: string, color = 'rgba(160,140,200,0.85)', dur = 3000) => {
     setWhisper(text);
@@ -1066,6 +1070,8 @@ const Maze = () => {
     }
 
     // whisper tile check — 60s cooldown per cell
+    const ghostLine = nearbyGhostLine(ghosts, nc, nr, ghostCooldowns.current);
+    if (ghostLine) showWhisper(ghostLine, 'var(--ghost-title)', 4000);
     if (whisperCellsRef.current.some((w) => w.col === nc && w.row === nr)) {
       triggerTileWhisper(nc, nr);
     }
@@ -1260,6 +1266,7 @@ const Maze = () => {
             {cell.type === 'CONSOLE_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><ConsoleDoorTile dimension={glow} size={CELL} /></div></>}
             {(cell.type === 'DROP_SPAWN' || cell.type === 'DROP') && <DropCrate dimension={glow} size={CELL} lit={runDrops.has(`${cell.col},${cell.row}`)} tone={runDrops.get(`${cell.col},${cell.row}`)?.kind} />}
             {cell.type === 'NPC' && <div className="npc-orb-cell"><NpcOrb npc={cell.npc_key || cell.npc_name || cell.name || ''} size={40} /></div>}
+            {cell.type === 'GHOST' && <div className="npc-orb-cell"><GhostOrb title={cell.title} tone={cell.tone} size={36} cellSize={CELL} /></div>}
           </div>
         ))}
 

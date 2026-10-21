@@ -1,3 +1,5 @@
+import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
+import { placedGhosts, randomSpawnCell, type GhostCell } from '@/lib/placedGhosts';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -12,6 +14,9 @@ type Rect = { id: string; x: number; y: number; w: number; h: number };
 type RugTrim = { top: boolean; bottom: boolean; left: boolean; right: boolean };
 type RugTile = { id: string; x: number; y: number; trim: RugTrim };
 type RoomCell = {
+  title?: string;
+  line?: string;
+  tone?: string;
   col: number;
   row: number;
   type: string;
@@ -19,6 +24,7 @@ type RoomCell = {
 };
 type ExitTile = Rect & { destination: string };
 type RoomLayout = {
+  ghosts: GhostCell[];
   wallTiles: Rect[];
   furnitureTiles: Rect[];
   bookcaseTiles: Rect[];
@@ -150,6 +156,7 @@ const LibraryRoom = () => {
 
   const [currentLevel, setCurrentLevel] = useState(1);
   const [room, setRoom] = useState<RoomLayout | null>(null);
+  const ghostFeedback = useRoomGhostWhisper(room?.ghosts ?? []);
   const [roomLoading, setRoomLoading] = useState(true);
   const [auraColor, setAuraColor] = useState('#a98cff');
 
@@ -285,7 +292,7 @@ const LibraryRoom = () => {
           },
         }));
 
-        const layout: RoomLayout = { wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, exitTiles, gridSize, start };
+        const layout: RoomLayout = { ghosts: placedGhosts(cells), wallTiles, furnitureTiles, bookcaseTiles, lightTiles, rugTiles, exitTiles, gridSize, start };
 
         // Spawn safety net: pick the nearest open cell (expanding ring search)
         // around the preferred origin so we never spawn inside walls/furniture.
@@ -299,8 +306,14 @@ const LibraryRoom = () => {
           );
         };
 
-        const originCol = start ? start.col : Math.floor(gridSize / 2);
-        const originRow = start ? start.row : Math.floor(gridSize / 2);
+        const spawnCell = cells.find(c => c.type === 'SPAWN' && Number.isFinite(c.col) && Number.isFinite(c.row));
+        const randomCell = spawnCell ? randomSpawnCell(spawnCell, (col, row) =>
+          isOpenCell(col, row) && !exitTiles.some(e => e.x === col * CELL && e.y === row * CELL) &&
+          !layout.ghosts.some(g => g.col === col && g.row === row) &&
+          !cells.some(c => ['NPC', 'BERNARD', 'MERCHANT', 'BANKER'].includes(c.type) && c.col === col && c.row === row)
+        ) : null;
+        const originCol = randomCell?.col ?? spawnCell?.col ?? start?.col ?? Math.floor(gridSize / 2);
+        const originRow = randomCell?.row ?? spawnCell?.row ?? start?.row ?? Math.floor(gridSize / 2);
 
         let spawnCol = originCol;
         let spawnRow = originRow;
@@ -383,6 +396,7 @@ const LibraryRoom = () => {
     }
 
     playerTargetRef.current = { x: nx, y: ny };
+    ghostFeedback.check(nx, ny, CELL);
   };
   moveRef.current = move;
 
@@ -588,6 +602,7 @@ const LibraryRoom = () => {
             />
           ))}
 
+          <RoomGhosts ghosts={room.ghosts} />
           {/* Walls & furniture */}
           {room.wallTiles.map((w) => (
             <div
@@ -640,6 +655,7 @@ const LibraryRoom = () => {
           />
         </div>
       )}
+      {ghostFeedback.whisper}
       <Thumbstick
         onDirectionChange={(dc, dr) => { stickDirRef.current = { dc, dr }; }}
         disabled={false}

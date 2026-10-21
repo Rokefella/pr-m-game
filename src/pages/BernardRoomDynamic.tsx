@@ -1,3 +1,5 @@
+import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
+import { placedGhosts, randomSpawnCell, type GhostCell } from '@/lib/placedGhosts';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -18,6 +20,9 @@ type Rect = { id: string; x: number; y: number; w: number; h: number };
 type RugTrim = { top: boolean; bottom: boolean; left: boolean; right: boolean };
 type RugTile = { id: string; x: number; y: number; trim: RugTrim };
 type RoomCell = {
+  title?: string;
+  line?: string;
+  tone?: string;
   col: number;
   row: number;
   type: string;
@@ -25,6 +30,7 @@ type RoomCell = {
 };
 type ExitTile = Rect & { destination: string };
 type RoomLayout = {
+  ghosts: GhostCell[];
   wallTiles: Rect[];
   furnitureTiles: Rect[];
   bookcaseTiles: Rect[];
@@ -130,6 +136,7 @@ const BernardRoomDynamic = () => {
 
   const [currentLevel, setCurrentLevel] = useState(1);
   const [room, setRoom] = useState<RoomLayout | null>(null);
+  const ghostFeedback = useRoomGhostWhisper(room?.ghosts ?? []);
   const [roomLoading, setRoomLoading] = useState(true);
   const [auraColor, setAuraColor] = useState('#a98cff');
 
@@ -325,6 +332,7 @@ const BernardRoomDynamic = () => {
         }));
 
         const layout: RoomLayout = {
+          ghosts: placedGhosts(cells),
           wallTiles,
           furnitureTiles,
           bookcaseTiles,
@@ -347,8 +355,14 @@ const BernardRoomDynamic = () => {
           );
         };
 
-        const originCol = start ? start.col : Math.floor(gridSize / 2);
-        const originRow = start ? start.row : Math.floor(gridSize / 2);
+        const spawnCell = cells.find(c => c.type === 'SPAWN' && Number.isFinite(c.col) && Number.isFinite(c.row));
+        const randomCell = spawnCell ? randomSpawnCell(spawnCell, (col, row) =>
+          isOpenCell(col, row) && !exitTiles.some(e => e.x === col * CELL && e.y === row * CELL) &&
+          !layout.ghosts.some(g => g.col === col && g.row === row) &&
+          !cells.some(c => ['NPC', 'BERNARD', 'MERCHANT', 'BANKER'].includes(c.type) && c.col === col && c.row === row) && !(bernardCenter && Math.floor(bernardCenter.x / CELL) === col && Math.floor(bernardCenter.y / CELL) === row)
+        ) : null;
+        const originCol = randomCell?.col ?? spawnCell?.col ?? start?.col ?? Math.floor(gridSize / 2);
+        const originRow = randomCell?.row ?? spawnCell?.row ?? start?.row ?? Math.floor(gridSize / 2);
 
         let spawnCol = originCol;
         let spawnRow = originRow;
@@ -434,6 +448,7 @@ const BernardRoomDynamic = () => {
     }
 
     playerTargetRef.current = { x: nx, y: ny };
+    ghostFeedback.check(nx, ny, CELL);
 
     // Bernard proximity → open the shared dialogue (40px)
     const db = Math.hypot(nx - bernardPos.x, ny - bernardPos.y);
@@ -693,6 +708,7 @@ const BernardRoomDynamic = () => {
             </div>
           ))}
 
+          <RoomGhosts ghosts={room.ghosts} />
           <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" /></div>
 
           <div
@@ -781,6 +797,7 @@ const BernardRoomDynamic = () => {
           </button>
         </NpcDialogue>
       )}
+      {ghostFeedback.whisper}
       <Thumbstick
         onDirectionChange={(dc, dr) => { stickDirRef.current = { dc, dr }; }}
         disabled={bernardOpen}

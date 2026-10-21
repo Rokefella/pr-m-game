@@ -1290,12 +1290,12 @@ const Maze = () => {
             {cell.type === 'ROOM_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><RoomDoorTile dimension={glow} color={cell.color} size={CELL} /></div></>}
             {cell.type === 'CONSOLE_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><ConsoleDoorTile dimension={glow} size={CELL} /></div></>}
             {(cell.type === 'DROP_SPAWN' || cell.type === 'DROP') && <DropCrate dimension={glow} size={CELL} lit={runDrops.has(`${cell.col},${cell.row}`)} tone={runDrops.get(`${cell.col},${cell.row}`)?.kind} />}
-            {cell.type === 'NPC' && <div className="npc-orb-cell"><NpcOrb npc={cell.npc_key || cell.npc_name || cell.name || ''} size={Math.round(MAZE_AVATAR_SIZE * 1.15)} quest={questState(cell.npc_key || cell.npc_name || cell.name || '')} /></div>}
+            {cell.type === 'NPC' && <div className="npc-orb-cell"><NpcOrb npc={cell.npc_key || cell.npc_name || cell.name || ''} size={npcBodyPx('maze')} quest={questState(cell.npc_key || cell.npc_name || cell.name || '')} /></div>}
           </div>
         ))}
 
-        <GhostLayer ghosts={ghosts} size={MAZE_AVATAR_SIZE} cellSize={CELL} free={ghostFree} path={ghostPath} player={() => posRef.current} />
-        <EchoLayer ref={echoLayerRef} spawns={echoSpawns} open={config.openSet} size={MAZE_AVATAR_SIZE} cellSize={CELL} />
+        <GhostLayer ghosts={ghosts} size={ghostBodyPx('maze')} cellSize={CELL} free={ghostFree} path={ghostPath} player={() => posRef.current} />
+        <EchoLayer ref={echoLayerRef} spawns={echoSpawns} open={config.openSet} size={echoBodyPx('maze')} cellSize={CELL} />
         {currentLevel === 1 && LEVEL1_HINTS.map((h, i) => (
           <div
             key={`hint-${i}`}
@@ -1331,8 +1331,8 @@ const Maze = () => {
             <div className="absolute inset-0"><RoomDoorTile dimension={glow} color={config.visualCells?.find(cell => cell.type === 'ROOM_DOOR' && cell.col === d.col && cell.row === d.row)?.color ?? (d as DoorToRoom & { color?: string }).color} size={CELL} /></div>
           </div>
         ))}
-        {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL + CELL / 2, top: config.alexandra.row * CELL + CELL / 2, zIndex: Z.OBJECTS, pointerEvents: 'none' }}><NpcOrb npc="alexandra" size={Math.round(MAZE_AVATAR_SIZE * 1.15)} quest={questState('alexandra')} /></div>}
-        {config.claire && claireVisible && inView(clairePos) && <div style={{ position: 'absolute', left: clairePos.col * CELL + CELL / 2, top: clairePos.row * CELL + CELL / 2, zIndex: Z.OBJECTS, pointerEvents: 'none' }}><NpcOrb npc="claire" size={Math.round(MAZE_AVATAR_SIZE * 1.15)} quest={questState('claire')} /></div>}
+        {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL + CELL / 2, top: config.alexandra.row * CELL + CELL / 2, zIndex: Z.OBJECTS, pointerEvents: 'none' }}><NpcOrb npc="alexandra" size={npcBodyPx('maze')} quest={questState('alexandra')} /></div>}
+        {config.claire && claireVisible && inView(clairePos) && <div style={{ position: 'absolute', left: clairePos.col * CELL + CELL / 2, top: clairePos.row * CELL + CELL / 2, zIndex: Z.OBJECTS, pointerEvents: 'none' }}><NpcOrb npc="claire" size={npcBodyPx('maze')} quest={questState('claire')} /></div>}
       </div>
 
       <style>{`

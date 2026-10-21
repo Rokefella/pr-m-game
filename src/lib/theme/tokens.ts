@@ -8,6 +8,9 @@ export const DIMENSION_GLOW: Record<Dimension, string> = {
 export const VILLAGE_GLOW = '#f5c060';
 export type VillageStreetStyle = 'cobble' | 'plates' | 'brick';
 export const VILLAGE_STREET_STYLE: VillageStreetStyle = 'cobble';
+/** Published village metadata affects artwork only; absent/invalid values use cobble. */
+export const villageStreetStyle = (value: unknown): VillageStreetStyle =>
+  value === 'brick' || value === 'plates' || value === 'cobble' ? value : 'cobble';
 /** Maze rendering glow per level (presentation only; does not change the dimension). */
 export const MAZE_GLOW_BY_LEVEL: Record<number, Dimension> = { 1: 'teal', 2: 'purple', 3: 'amber' };
 export const mazeGlowForLevel = (level: number): Dimension => MAZE_GLOW_BY_LEVEL[level] ?? 'teal';

@@ -1,3 +1,4 @@
+import NpcOrb from '@/components/theme/objects/NpcOrb';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -961,34 +962,7 @@ const ExchangeRoom = () => {
         >
           <RoomScene floorRuns={room.floorRuns} wallRuns={room.wallRuns} furniture={room.furnitureTiles} bookcases={room.bookcaseTiles} lights={room.lightTiles} rugs={room.rugTiles} exits={room.exitTiles} />
 
-          {/* Banker marker — same asset & placement parsing as the village */}
-          <img
-            src={bankerMarkerUrl}
-            alt="The Banker"
-            width={24}
-            height={24}
-            style={{
-              position: 'absolute',
-              left: bankerPos.x - 12,
-              top: bankerPos.y - 12,
-              pointerEvents: 'none',
-              zIndex: 4,
-            }}
-          />
-          <span
-            className="font-mono"
-            style={{
-              position: 'absolute',
-              left: bankerPos.x - 4,
-              top: bankerPos.y - 24,
-              fontSize: 14,
-              color: 'rgba(200,150,58,0.6)',
-              pointerEvents: 'none',
-              zIndex: 4,
-            }}
-          >
-            $
-          </span>
+          <div style={{ position: 'absolute', left: bankerPos.x, top: bankerPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="banker" /></div>
 
           <RoomAvatar ref={avatarRef} palette={registrationNumber === 1 ? 'red' : paletteFromColor(auraColor)} walking={walking} />
         </div>

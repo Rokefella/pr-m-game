@@ -2,6 +2,7 @@ import { memo, type ReactNode } from 'react';
 import { DIMENSION_GLOW, type Dimension } from '@/lib/theme/tokens';
 export { default as VillageDoor } from './VillageDoor';
 export { ConsoleDoorTile, ConsoleTile } from './ConsoleTiles';
+export { default as NpcOrb } from './NpcOrb';
 
 type Props = { dimension: Dimension; size: number };
 function Art({ size, children }: { size: number; children: ReactNode }) {
@@ -47,11 +48,6 @@ export const DropCrate = memo(function DropCrate({ size, lit = false, tone = 'dr
       {lit && <path d="M21 14L24 12L27 14L24 16Z" fill="currentColor" />}
     </Art>
   </span>;
-});
-
-export const NpcPad = memo(function NpcPad({ dimension, size }: Props) {
-  const glow = DIMENSION_GLOW[dimension];
-  return <Art size={size}><ellipse cx="24" cy="28" rx="17" ry="10" fill={glow} opacity=".08" /><ellipse cx="24" cy="28" rx="17" ry="10" stroke={glow} fill="none" opacity=".45" /><path d="M8 28H12M36 28H40M24 15V19M24 37V41" stroke={glow} opacity=".6" /></Art>;
 });
 
 export const StartPad = memo(function StartPad({ dimension, size }: Props) {

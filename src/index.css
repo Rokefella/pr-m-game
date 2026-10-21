@@ -101,6 +101,51 @@
     --loading-grid: radial-gradient(rgba(169,140,255,.07) 1px, transparent 1.5px);
     --loading-glow: radial-gradient(rgba(245,192,96,.10), transparent 70%);
     --loading-centre: #fff3c4;
+    --npc-specular: #fff;
+    --npc-bernard-0: #6a4a10;
+    --npc-bernard-1: #c8963a;
+    --npc-bernard-2: #e0b055;
+    --npc-bernard-3: #fff0c0;
+    --npc-merchant-0: #14402a;
+    --npc-merchant-1: #2f8f5a;
+    --npc-merchant-2: #4fbf7a;
+    --npc-merchant-3: #c9ffd9;
+    --npc-chef-0: #5a200e;
+    --npc-chef-1: #c8502a;
+    --npc-chef-2: #ee7a4a;
+    --npc-chef-3: #ffd8c0;
+    --npc-painter-0: #4a1038;
+    --npc-painter-1: #b83a8a;
+    --npc-painter-2: #e070b8;
+    --npc-painter-3: #ffd0ee;
+    --npc-hacker-0: #0a3a44;
+    --npc-hacker-1: #1f9fb0;
+    --npc-hacker-2: #4fd0e0;
+    --npc-hacker-3: #d0fbff;
+    --npc-priest-0: #3a2f80;
+    --npc-priest-1: #7a6ad8;
+    --npc-priest-2: #a898f0;
+    --npc-priest-3: #eae6ff;
+    --npc-keeper-0: #1f2a40;
+    --npc-keeper-1: #5a6a8a;
+    --npc-keeper-2: #8ea0c0;
+    --npc-keeper-3: #dbe6ff;
+    --npc-banker-0: #3a4a10;
+    --npc-banker-1: #8aa030;
+    --npc-banker-2: #b8d050;
+    --npc-banker-3: #f0ffb0;
+    --npc-alexandra-0: #6a3008;
+    --npc-alexandra-1: #d0701a;
+    --npc-alexandra-2: #f0a040;
+    --npc-alexandra-3: #ffe8c8;
+    --npc-architect-0: #0f3a36;
+    --npc-architect-1: #2a8a80;
+    --npc-architect-2: #4fc0b0;
+    --npc-architect-3: #c8fff4;
+    --npc-unknown-0: #2a2f45;
+    --npc-unknown-1: #5a6382;
+    --npc-unknown-2: #8a94b8;
+    --npc-unknown-3: #dfe4f5;
 
     --sidebar-background: 240 43% 3%;
     --sidebar-foreground: 43 14% 85%;
@@ -393,3 +438,13 @@
 .console-rift-flash { position: fixed; inset: 0; z-index: 420; pointer-events: none; opacity: 0; animation: console-rift-flash 500ms ease-out forwards; }
 @keyframes console-rift-flash { 0% { opacity: 0; } 40% { opacity: .7; } 100% { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .console-rift-flash { animation: none; opacity: .35; } }
+
+/* NPC art anchors its halo centre at the existing logical position. */
+.npc-orb { display: block; overflow: visible; pointer-events: none; image-rendering: pixelated; transform: translate(-50%, -87.5%); }
+.npc-orb-cell { position: absolute; left: 50%; top: 50%; }
+.npc-dialogue-orb .npc-orb { transform: none; }
+.npc-orb-halo { animation: npcHalo 3s ease-in-out infinite; }
+.npc-orb-symbol { animation: npcSymbol 2.4s ease-in-out infinite; }
+@keyframes npcHalo { 0%,100% { fill-opacity: .10; } 50% { fill-opacity: .22; } }
+@keyframes npcSymbol { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .npc-orb-halo, .npc-orb-symbol { animation: none; } }

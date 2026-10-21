@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '@/lib/userData';
+import NpcOrb from '@/components/theme/objects/NpcOrb';
 
 export type MerchantPalette = 'green' | 'orange';
 
@@ -100,16 +101,7 @@ const MerchantOverlay = ({
         overflowY: 'auto',
       }}
     >
-      <div
-        style={{
-          width: 8,
-          height: 8,
-          borderRadius: '50%',
-          background: `rgba(${rgb},0.9)`,
-          boxShadow: `0 0 10px rgba(${rgb},0.7)`,
-          marginTop: 40,
-        }}
-      />
+      <div className="npc-dialogue-orb" style={{ marginTop: 40 }}><NpcOrb npc="merchant" /></div>
       <div
         className="font-cinzel"
         style={{
@@ -221,9 +213,6 @@ const MerchantOverlay = ({
         LEAVE
       </button>
 
-      <style>{`
-        @keyframes merchantSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 };
@@ -233,39 +222,8 @@ export default MerchantOverlay;
 export const MerchantCharacter = ({
   x,
   y,
-  palette,
 }: { x: number; y: number; palette: MerchantPalette }) => {
-  const { rgb } = PALETTE[palette];
   return (
-    <>
-      <div
-        style={{
-          position: 'absolute',
-          left: x - 8,
-          top: y - 8,
-          width: 16,
-          height: 16,
-          borderRadius: '50%',
-          border: `1px solid rgba(${rgb},0.4)`,
-          animation: 'merchantSpin 4s linear infinite',
-          pointerEvents: 'none',
-          zIndex: 4,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          left: x - 5,
-          top: y - 5,
-          width: 10,
-          height: 10,
-          borderRadius: '50%',
-          background: `rgba(${rgb},0.9)`,
-          boxShadow: `0 0 10px rgba(${rgb},0.7)`,
-          pointerEvents: 'none',
-          zIndex: 4,
-        }}
-      />
-    </>
+    <div style={{ position: 'absolute', left: x, top: y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" /></div>
   );
 };

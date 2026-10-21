@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Replace NPC drawings with identity-coloured pixel orbs while retaining movement and interaction handlers; 171 tests and preview compilation pass, with all eleven identities and reduced-motion art checked at 375px.
+- [ ] Verify NPC placement and interactions on real game screens — the game's separate external sign-in session is unavailable; the isolated orb preview does not verify live gameplay.
+
 - [x] Fix Shadow transfer counters to use only the current snapshot and query the saved Library total; seven focused tests and preview compilation pass, with saving and level gates unchanged.
 - [ ] Verify Shadow transfer totals against a real player's Library — the game's separate external sign-in session is unavailable.
 

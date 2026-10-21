@@ -1,3 +1,4 @@
+import NpcOrb from '@/components/theme/objects/NpcOrb';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
 import { useReducedMotion } from '@/components/theme/useReducedMotion';
@@ -9,7 +10,7 @@ import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailyStep
 import { useAuth } from '@/context/AuthContext';
 import Thumbstick from '@/components/Thumbstick';
 import { restUpdate } from '@/lib/supabaseRest';
-import MerchantOverlay, { MerchantCharacter, type MerchantItem } from '@/components/MerchantOverlay';
+import MerchantOverlay, { type MerchantItem } from '@/components/MerchantOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import NpcDialogue from '@/components/NpcDialogue';
@@ -45,7 +46,7 @@ const MERCHANT_LINES = [
 ];
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
-type VillageCell = { col: number; row: number; type: string; npc_name?: string };
+type VillageCell = { col: number; row: number; type: string; npc_name?: string; npc_key?: string; name?: string };
 type GroundTile = { x: number; y: number; kind: 'PATH' | 'ROAD' | 'SQUARE' | 'LANDMARK' };
 type RugTrim = { top: boolean; bottom: boolean; left: boolean; right: boolean };
 type RugTile = { id: string; x: number; y: number; trim: RugTrim };
@@ -1367,7 +1368,7 @@ const Village = () => {
               forest.push({ x, y, w: 18, h: 15 });
               break;
             case 'NPC':
-              npcs.push({ x, y, name: cell.npc_name || '' });
+              npcs.push({ x, y, name: cell.npc_key || cell.npc_name || cell.name || '' });
               break;
             case 'EYE':
               eyeCenter = { x, y };
@@ -2188,72 +2189,17 @@ const Village = () => {
               position: 'absolute',
               left: v.x,
               top: v.y,
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.8)',
-              boxShadow: '0 0 8px rgba(255,255,255,0.5)',
               transition: 'left 1500ms ease-in-out, top 1500ms ease-in-out',
               pointerEvents: 'none',
               zIndex: 4,
             }}
-          />
+          ><NpcOrb npc="" /></div>
         ))}
 
-        {/* Dynamic NPCs — static markers from the loaded village layout */}
-        {visible?.npcs.map((n) => (
-          <div
-            key={`dnpc-${n.x}-${n.y}`}
-            title={n.name || undefined}
-            style={{
-              position: 'absolute',
-              left: n.x,
-              top: n.y,
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.8)',
-              boxShadow: '0 0 8px rgba(255,255,255,0.5)',
-              pointerEvents: 'none',
-              zIndex: 4,
-            }}
-          />
-        ))}
-
-        {/* Merchant character */}
-        {merchantPos && <MerchantCharacter x={merchantPos.x} y={merchantPos.y} palette="green" />}
-
-        {/* Bernard marker */}
-        {bernardPos && (<>
-        <img
-          src={bernardMarkerUrl}
-          width={24}
-          height={24}
-          style={{
-            position: 'absolute',
-            left: bernardPos.x - 12,
-            top: bernardPos.y - 12,
-            pointerEvents: 'none',
-            zIndex: 4,
-          }}
-        />
-        <span
-          className="font-mono"
-          style={{
-            position: 'absolute',
-            left: bernardPos.x - 4,
-            top: bernardPos.y - 24,
-            fontSize: 14,
-            color: 'rgba(200,150,58,0.6)',
-            pointerEvents: 'none',
-            zIndex: 4,
-          }}
-        >
-          B
-        </span>
-        </>)}
-
-
+        {/* NPC halo centres retain the existing world positions. */}
+        {visible?.npcs.map(n => <div key={`dnpc-${n.x}-${n.y}`} title={n.name || undefined} style={{ position: 'absolute', left: n.x, top: n.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc={n.name} /></div>)}
+        {merchantPos && <div style={{ position: 'absolute', left: merchantPos.x, top: merchantPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" /></div>}
+        {bernardPos && <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" /></div>}
 
         {/* Ghost players */}
         {ghostDots.map((ghost) => (

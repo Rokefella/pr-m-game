@@ -1,3 +1,4 @@
+import NpcOrb from '@/components/theme/objects/NpcOrb';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
@@ -22,7 +23,7 @@ import StepExchangeSheet from '@/components/StepExchangeSheet';
 import WallTile from '@/components/theme/WallTile';
 import FloorLayer from '@/components/theme/FloorLayer';
 import PrimeGlowLayer from '@/components/theme/PrimeGlowLayer';
-import { Gate, PrimeShard, Veil, RoomDoorTile, ConsoleDoorTile, DropCrate, NpcPad, StartPad, Pylon } from '@/components/theme/objects';
+import { Gate, PrimeShard, Veil, RoomDoorTile, ConsoleDoorTile, DropCrate, StartPad, Pylon } from '@/components/theme/objects';
 import { getThemeForLevel } from '@/lib/theme/themes';
 import { DIMENSION_GLOW, mazeGlowForLevel } from '@/lib/theme/tokens';
 import { pylonCells, visibleBounds } from '@/lib/theme/mazeRendering';
@@ -1254,7 +1255,7 @@ const Maze = () => {
             {cell.type === 'ROOM_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><RoomDoorTile dimension={glow} color={cell.color} size={CELL} /></div></>}
             {cell.type === 'CONSOLE_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><ConsoleDoorTile dimension={glow} size={CELL} /></div></>}
             {(cell.type === 'DROP_SPAWN' || cell.type === 'DROP') && <DropCrate dimension={glow} size={CELL} lit={runDrops.has(`${cell.col},${cell.row}`)} tone={runDrops.get(`${cell.col},${cell.row}`)?.kind} />}
-            {cell.type === 'NPC' && <NpcPad dimension={glow} size={CELL} />}
+            {cell.type === 'NPC' && <div className="npc-orb-cell"><NpcOrb npc={cell.npc_key || cell.npc_name || cell.name || ''} size={40} /></div>}
           </div>
         ))}
 
@@ -1293,50 +1294,11 @@ const Maze = () => {
             <div className="absolute inset-0"><RoomDoorTile dimension={glow} color={config.visualCells?.find(cell => cell.type === 'ROOM_DOOR' && cell.col === d.col && cell.row === d.row)?.color ?? (d as DoorToRoom & { color?: string }).color} size={CELL} /></div>
           </div>
         ))}
-        {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL, top: config.alexandra.row * CELL, zIndex: 9 }}><NpcPad dimension={glow} size={CELL} /></div>}
-        {config.claire && claireVisible && inView(clairePos) && <div style={{ position: 'absolute', left: clairePos.col * CELL, top: clairePos.row * CELL, zIndex: 9 }}><NpcPad dimension={glow} size={CELL} /></div>}
-
-        {/* Alexandra — gold dot */}
-        {config.alexandra && alexandraVisible && (
-          <div
-            style={{
-              position: 'absolute',
-              left: config.alexandra.col * CELL + CELL / 2 - 4,
-              top: config.alexandra.row * CELL + CELL / 2 - 4,
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: '#c8963a',
-              boxShadow: '0 0 8px rgba(200,150,58,0.8)',
-              animation: 'mazeDotPulse 1.5s ease-in-out infinite',
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}
-          />
-        )}
-
-        {/* Claire — orange dot at her own position */}
-        {config.claire && claireVisible && (
-          <div
-            style={{
-              position: 'absolute',
-              left: clairePos.col * CELL + CELL / 2 - 4,
-              top: clairePos.row * CELL + CELL / 2 - 4,
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background: '#f97316',
-              boxShadow: '0 0 8px rgba(249,115,22,0.8)',
-              animation: 'mazeDotPulse 1.5s ease-in-out infinite',
-              zIndex: 10,
-              pointerEvents: 'none',
-            }}
-          />
-        )}
+        {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL + CELL / 2, top: config.alexandra.row * CELL + CELL / 2, zIndex: 10, pointerEvents: 'none' }}><NpcOrb npc="alexandra" size={40} /></div>}
+        {config.claire && claireVisible && inView(clairePos) && <div style={{ position: 'absolute', left: clairePos.col * CELL + CELL / 2, top: clairePos.row * CELL + CELL / 2, zIndex: 10, pointerEvents: 'none' }}><NpcOrb npc="claire" size={40} /></div>}
       </div>
 
       <style>{`
-        @keyframes mazeDotPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
         @keyframes mazePurplePulse {
           0%, 100% { box-shadow: 0 0 8px rgba(91,79,212,0.6); }
           50% { box-shadow: 0 0 20px rgba(91,79,212,0.9); }

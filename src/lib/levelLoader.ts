@@ -5,7 +5,7 @@ export type FragmentDef = Cell & { prime: number };
 export type DoorToRoom = Cell & { roomId: string; reentry: Cell };
 
 export type EggDef = Cell & { line: string };
-export type VisualCell = Cell & { type: string; color?: string };
+export type VisualCell = Cell & { type: string; color?: string; npc_key?: string; npc_name?: string; name?: string };
 
 export type LoadedLevelConfig = {
   cols: number;

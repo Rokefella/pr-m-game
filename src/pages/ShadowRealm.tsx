@@ -750,6 +750,7 @@ const ShadowRealm = () => {
         {ATMOSPHERE[atmoIndex]}
       </div>
 
+      {ghostMessage && <p className="ghost-proximity-whisper font-fell italic">{ghostMessage}</p>}
       {gateMsg && (
         <div className="font-fell italic" style={{ position: 'fixed', left: 0, right: 0, top: '38%', textAlign: 'center', fontSize: 16, color: 'rgba(111,211,154,0.8)', pointerEvents: 'none', animation: 'shadowFadeIn 400ms ease-out', zIndex: 50 }}>
           {gateMsg}

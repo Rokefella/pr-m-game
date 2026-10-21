@@ -719,6 +719,10 @@ const Village = () => {
   const [eyePupil, setEyePupil] = useState({ x: 0, y: 0 });
   const [feedback, setFeedback] = useState<{ id: 23 | 47 | null }>({ id: null });
   const [whisper, setWhisper] = useState<string | null>(null);
+  const [ghostMessage, setGhostMessage] = useState<string | null>(null);
+  const ghostCooldowns = useRef(new Map<string, number>());
+  const ghostTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (ghostTimer.current) clearTimeout(ghostTimer.current); }, []);
   const whisperTimer = useRef<number | null>(null);
   const lastWhisperIdxRef = useRef<number | null>(null);
 
@@ -1987,6 +1991,7 @@ const Village = () => {
       lightTiles: (dynamicBuildings.lightTiles ?? []).filter((l) => inBox(l.x, l.y)),
       rugTiles: (dynamicBuildings.rugTiles ?? []).filter((r) => inBox(r.x, r.y)),
       npcs: dynamicBuildings.npcs.filter((n) => inBox(n.x, n.y, 6, 6)),
+      ghosts: dynamicBuildings.ghosts.filter(g => inBox(g.col * 20 - 80, g.row * 20 - 40, 160, 80)),
       doors: activeDoors.filter(d => inBox(d.x, d.y)),
       typeA: dynamicBuildings.typeA.filter((b) => inBox(b.x, b.y, b.w, b.h)),
     };
@@ -2372,6 +2377,7 @@ const Village = () => {
           {dailyStepsMessage}
         </p>
       )}
+      {ghostMessage && <p className="ghost-proximity-whisper font-fell italic">{ghostMessage}</p>}
       {whisper && (
         <p
           key={whisper}

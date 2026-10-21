@@ -933,6 +933,7 @@ const DynamicRoom = () => {
         {title}
       </div>
 
+      {ghostMessage && <p className="ghost-proximity-whisper font-fell italic">{ghostMessage}</p>}
       {message && (
         <div
           className="font-fell italic"
@@ -1095,7 +1096,6 @@ const DynamicRoom = () => {
         </div>
       )}
       <Thumbstick
-        
         onDirectionChange={(dc, dr) => { stickDirRef.current = { dc, dr }; }}
         disabled={openNpcKey !== null || consoleOpen}
       />

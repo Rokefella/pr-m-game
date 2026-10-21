@@ -1,5 +1,5 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
-import GhostOrb from '@/components/theme/objects/GhostOrb';
+import GhostLayer from '@/components/theme/objects/GhostLayer';
 import { placedGhosts, randomSpawnCell, nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
@@ -2037,6 +2037,14 @@ const Village = () => {
     const squares = new Set((dynamicBuildings?.groundTiles ?? []).filter(g => g.kind === 'SQUARE').map(g => `${g.x / 20},${g.y / 20}`));
     return { roads, trees, squares, emblems: plazaEmblems(squares) };
   }, [dynamicBuildings]);
+  const ghostFree = useCallback((col: number, row: number) => {
+    if (!dynamicBuildings || col < 0 || row < 0 || col >= dynamicBuildings.gridSize || row >= dynamicBuildings.gridSize) return false;
+    const x = col * 20 + 10, y = row * 20 + 10;
+    return !dynamicBuildings.forestCells?.has(`${col},${row}`) &&
+      !activeObstacles.some(o => x >= o.x - 2 && x <= o.x + o.w + 2 && y >= o.y - 2 && y <= o.y + o.h + 2);
+  }, [dynamicBuildings, activeObstacles]);
+  const ghostPaths = useMemo(() => new Set((dynamicBuildings?.groundTiles ?? []).filter(g => g.kind === 'ROAD' || g.kind === 'PATH').map(g => `${g.x / 20},${g.y / 20}`)), [dynamicBuildings]);
+  const ghostPath = useCallback((col: number, row: number) => ghostPaths.has(`${col},${row}`), [ghostPaths]);
 
   const showLoading = useMinLoading(villageLoading);
 
@@ -2249,7 +2257,7 @@ const Village = () => {
 
         {/* NPC halo centres retain the existing world positions. */}
         {visible?.npcs.map(n => <div key={`dnpc-${n.x}-${n.y}`} title={n.name || undefined} style={{ position: 'absolute', left: n.x, top: n.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc={n.name} /></div>)}
-        {visible?.ghosts.map(g => <div key={`ghost-${g.col}-${g.row}`} style={{ position: 'absolute', left: g.col * 20 + 10, top: g.row * 20 + 10, zIndex: 4, pointerEvents: 'none' }}><GhostOrb title={g.title} tone={g.tone} /></div>)}
+        {dynamicBuildings && <GhostLayer ghosts={dynamicBuildings.ghosts} size={VILLAGE_AVATAR_SIZE} cellSize={20} free={ghostFree} path={ghostPath} player={() => ({ col: playerTargetRef.current.x / 20 - .5, row: playerTargetRef.current.y / 20 - .5 })} />}
         {merchantPos && <div style={{ position: 'absolute', left: merchantPos.x, top: merchantPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" /></div>}
         {bernardPos && <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" /></div>}
 

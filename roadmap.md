@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Match ghost/player orb sizes and add ref-driven radius-five wander, straight-path patrol and current-position whispers; verify movement and reduced motion.
+
 - [x] Add authored fresh-arrival SPAWN positions and pass-through titled ghosts with proximity whispers in Village, Maze, Shadow Realm and all room screens; radius/cooldown regression tests and compilation pass; isolated 375px/desktop art and static reduced motion verified.
 - [ ] Verify authored arrivals, ghost proximity and fog placement on real signed-in game screens — the game's separate external authentication session is unavailable; isolated artwork checks do not verify live gameplay.
 

@@ -160,7 +160,7 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
   };
 
   return (
-    <div className={`fragment-backdrop ${fadingOut ? 'fragment-fading' : ''}`} role="dialog" aria-modal="true" aria-label="Fragment reveal">
+    <div className={`fragment-backdrop ${fadingOut ? 'fragment-fading' : ''}`} data-game-ui="open" role="dialog" aria-modal="true" aria-label="Fragment reveal">
       <PlateFrame className="fragment-frame">
         <div className="fragment-stack">
           <PixelEye animate={!reduced} />

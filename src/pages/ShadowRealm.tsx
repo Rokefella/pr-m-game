@@ -1,3 +1,4 @@
+import { Z } from '@/lib/zIndex';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import OrbLabels from '@/components/OrbLabels';
@@ -694,7 +695,7 @@ const ShadowRealm = () => {
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#0a0f0d', overflow: 'hidden' }}>
       {/* World container — eased camera written through a ref */}
-      <div ref={worldRef} style={{ position: 'absolute', inset: 0, zIndex: 1 }}>
+      <div data-game-world ref={worldRef} style={{ position: 'absolute', inset: 0, zIndex: Z.WORLD }}>
         {mapRect && (
           <div style={{
             position: 'absolute', left: '50%', top: '50%',
@@ -737,35 +738,35 @@ const ShadowRealm = () => {
       </div>
 
       {/* Player — fixed at screen centre; the world moves instead */}
-      <div style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 30, pointerEvents: 'none' }}>
+      <div style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: Z.OBJECTS, pointerEvents: 'none' }}>
         <PlayerAvatar palette={palette} walking={walking} size={SHADOW_AVATAR_SIZE} />
         <OrbLabels title={orbIdentity.title} name={orbIdentity.name} size={SHADOW_AVATAR_SIZE} />
       </div>
 
       {/* Lantern fog: above world, below beacon/HUD/overlays */}
       <div ref={fogRef} aria-hidden="true" style={{
-        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 40, background: SHADOW_FOG_BG,
+        position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: Z.OBJECTS, background: SHADOW_FOG_BG,
         '--lx': '50vw', '--ly': '50vh', '--r1': `${SHADOW_R1}px`, '--r2': `${SHADOW_R2}px`, '--fog': SHADOW_FOG_OPACITY,
       } as CSSProperties} />
 
       {/* Garden door beacon — above the fog, positioned per frame through refs */}
-      <div ref={beaconRef} aria-hidden="true" style={{ position: 'fixed', left: 0, top: 0, zIndex: 45, pointerEvents: 'none', display: 'none', willChange: 'transform' }}>
+      <div ref={beaconRef} aria-hidden="true" style={{ position: 'fixed', left: 0, top: 0, zIndex: Z.OBJECTS, pointerEvents: 'none', display: 'none', willChange: 'transform' }}>
         <div style={{ position: 'absolute', left: -3 * STEP, top: -3 * STEP, width: 6 * STEP, height: 6 * STEP, borderRadius: '50%', background: `radial-gradient(circle, rgba(92,255,154,.22) 0, rgba(92,255,154,0) 70%)` }} />
         <div style={{ position: 'absolute', left: -STEP * 1.25, top: STEP / 2, width: STEP * 2.5, height: STEP * 2.5, clipPath: 'polygon(35% 0, 65% 0, 100% 100%, 0 100%)', background: `linear-gradient(rgba(92,255,154,1), rgba(92,255,154,0))`, opacity: 0.14, animation: 'shadowConePulse 2.2s ease-in-out infinite' }} />
         {[-8, 2, 10].map((x, i) => (
           <div key={x} style={{ position: 'absolute', left: x, top: 0, width: 2, height: 2, background: '#eafff2', animation: `shadowMote 2.6s linear ${i * 0.8}s infinite` }} />
         ))}
       </div>
-      <div ref={edgeGlowRef} aria-hidden="true" style={{ position: 'fixed', left: -60, top: -60, width: 120, height: 120, borderRadius: '50%', zIndex: 45, pointerEvents: 'none', display: 'none', background: 'radial-gradient(circle, rgba(92,255,154,.35) 0, rgba(92,255,154,0) 70%)' }} />
+      <div ref={edgeGlowRef} aria-hidden="true" style={{ position: 'fixed', left: -60, top: -60, width: 120, height: 120, borderRadius: '50%', zIndex: Z.OBJECTS, pointerEvents: 'none', display: 'none', background: 'radial-gradient(circle, rgba(92,255,154,.35) 0, rgba(92,255,154,0) 70%)' }} />
 
       {/* Atmosphere */}
-      <div className="font-fell italic" style={{ position: 'fixed', top: 24, left: 0, right: 0, textAlign: 'center', fontSize: 13, color: 'rgba(111,211,154,0.55)', pointerEvents: 'none', zIndex: 50 }}>
+      <div className="font-fell italic" style={{ position: 'fixed', top: 24, left: 0, right: 0, textAlign: 'center', fontSize: 13, color: 'rgba(111,211,154,0.55)', pointerEvents: 'none', zIndex: Z.HUD }}>
         {ATMOSPHERE[atmoIndex]}
       </div>
 
       {ghostMessage && <p className="ghost-proximity-whisper font-fell italic">{ghostMessage}</p>}
       {gateMsg && (
-        <div className="font-fell italic" style={{ position: 'fixed', left: 0, right: 0, top: '38%', textAlign: 'center', fontSize: 16, color: 'rgba(111,211,154,0.8)', pointerEvents: 'none', animation: 'shadowFadeIn 400ms ease-out', zIndex: 50 }}>
+        <div className="font-fell italic" style={{ position: 'fixed', left: 0, right: 0, top: '38%', textAlign: 'center', fontSize: 16, color: 'rgba(111,211,154,0.8)', pointerEvents: 'none', animation: 'shadowFadeIn 400ms ease-out', zIndex: Z.HUD }}>
           {gateMsg}
         </div>
       )}
@@ -775,7 +776,7 @@ const ShadowRealm = () => {
       {/* HUD */}
       <div className="font-mono" style={{
         position: 'fixed', left: 0, right: 0, bottom: 0, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 20px', borderTop: '1px solid rgba(111,211,154,0.15)', background: 'rgba(6,10,8,0.92)', fontSize: 11, letterSpacing: '0.18em', zIndex: 60,
+        padding: '0 20px', borderTop: '1px solid rgba(111,211,154,0.15)', background: 'rgba(6,10,8,0.92)', fontSize: 11, letterSpacing: '0.18em', zIndex: Z.HUD,
       }}>
         <div style={{ color: SHADOW.glow }}>FRAGMENTS&nbsp;&nbsp;{runCount}</div>
         <div style={{ color: 'rgba(111,211,154,0.6)' }}>LEVEL&nbsp;&nbsp;{String(currentLevel).padStart(2, '0')}</div>
@@ -784,7 +785,7 @@ const ShadowRealm = () => {
       {transferring && (() => {
         const transferCount = runFragsRef.current.length;
         return (
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(6,10,8,.96)', opacity: overlayIn ? 1 : 0, transition: 'opacity 600ms ease-in', zIndex: 100, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', overflowY: 'auto' }}>
+          <div data-game-ui="open" style={{ position: 'fixed', inset: 0, background: 'rgba(6,10,8,.96)', opacity: overlayIn ? 1 : 0, transition: 'opacity 600ms ease-in', zIndex: Z.WORLD00, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', overflowY: 'auto' }}>
             <PlateFrame tone="shadow" glow={SHADOW.glow} width="min(92vw, 340px)">
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, textAlign: 'center' }}>
                 {error ? (

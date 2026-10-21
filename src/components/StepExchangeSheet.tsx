@@ -1,3 +1,4 @@
+import { Z } from '@/lib/zIndex';
 import { memo, useEffect, useState, type CSSProperties } from 'react';
 import { PlateCorners } from '@/components/theme/PlateFrame';
 
@@ -23,11 +24,11 @@ export default memo(function StepExchangeSheet({ open, credits, steps, onConfirm
 
   return (
     <>
-      <div onClick={onClose} aria-hidden="true" style={{ position: 'fixed', inset: 0, background: 'rgba(14,18,40,.72)', zIndex: 90 }} />
-      <div role="dialog" aria-label="Exchange credits for steps" style={{
+      <div onClick={onClose} aria-hidden="true" style={{ position: 'fixed', inset: 0, background: 'rgba(14,18,40,.72)', zIndex: Z.SHEET }} />
+      <div data-game-ui="open" role="dialog" aria-label="Exchange credits for steps" style={{
         position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: 'min(100vw, 480px)', maxHeight: 'min(72vh, 420px)',
         overflowY: 'auto', boxSizing: 'border-box', padding: 16, paddingBottom: 'calc(16px + env(safe-area-inset-bottom))',
-        background: '#1c2140', border: '2px solid #9aa4d8', borderBottom: 'none', zIndex: 91, animation: 'mazePanelSlide 280ms ease-out',
+        background: '#1c2140', border: '2px solid #9aa4d8', borderBottom: 'none', zIndex: Z.SHEET, animation: 'mazePanelSlide 280ms ease-out',
         '--plate-edge': '#2f3560', '--plate-gold': '#c8963a',
       } as CSSProperties}>
         <span className="plate-inner" aria-hidden="true" style={{ inset: 5 }}>{/* outline + brackets */}</span>

@@ -1,3 +1,4 @@
+import { Z } from '@/lib/zIndex';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import OrbLabels from '@/components/OrbLabels';
@@ -2077,7 +2078,7 @@ const Village = () => {
       {parityRows.length > 0 && (
         <div
           style={{
-            position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+            position: 'fixed', top: 0, left: 0, right: 0, zIndex: Z.OVERLAY,
             background: 'rgba(6,6,12,0.96)', color: '#fff',
             font: '12px/1.5 monospace', padding: '10px 12px',
             maxHeight: '55vh', overflowY: 'auto',
@@ -2328,7 +2329,7 @@ const Village = () => {
             borderRadius: 4,
             padding: '4px 8px',
             pointerEvents: 'none',
-            zIndex: 60,
+            zIndex: Z.HUD,
           }}
         >
           {`· Level ${tooltipState.level}`}
@@ -2352,7 +2353,7 @@ const Village = () => {
             color: 'rgba(255,255,255,0.8)',
             textShadow: '0 0 12px rgba(255,255,255,0.3)',
             margin: 0,
-            zIndex: 50,
+            zIndex: Z.HUD,
             pointerEvents: 'none',
             animation: 'villageNotYet 2.5s ease-out forwards',
           }}
@@ -2363,7 +2364,7 @@ const Village = () => {
 
       {/* Easter egg whisper */}
       {dailyStepsMessage && !villageLoading && (
-        <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[18%] z-[60] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">
+        <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[18%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">
           {dailyStepsMessage}
         </p>
       )}
@@ -2381,7 +2382,7 @@ const Village = () => {
             fontSize: 20,
             textShadow: '0 0 12px rgba(91,79,212,0.6)',
             margin: 0,
-            zIndex: 50,
+            zIndex: Z.HUD,
             pointerEvents: 'none',
             animation: 'villageNotYet 2.5s ease-out forwards',
           }}
@@ -2410,7 +2411,7 @@ const Village = () => {
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: 8,
-          zIndex: 12,
+          zIndex: Z.HUD,
         }}
       >
         <span className="font-mono" style={{ fontSize: 13, letterSpacing: '0.06em', color: '#e0ddd5', whiteSpace: 'nowrap' }}>
@@ -2438,7 +2439,7 @@ const Village = () => {
             fontSize: 10,
             letterSpacing: '0.18em',
             color: 'rgba(160,140,200,0.4)',
-            zIndex: 12,
+            zIndex: Z.HUD,
             pointerEvents: 'none',
           }}
         >
@@ -2457,7 +2458,7 @@ const Village = () => {
           fontSize: 15,
           letterSpacing: '0.22em',
           color: 'rgba(160,140,200,0.7)',
-          zIndex: 15,
+          zIndex: Z.HUD,
           padding: 4,
           userSelect: 'none',
         }}
@@ -2483,7 +2484,7 @@ const Village = () => {
             color: '#c8963a',
             fontSize: 14,
             letterSpacing: '0.12em',
-            zIndex: 15,
+            zIndex: Z.HUD,
             pointerEvents: 'none',
             userSelect: 'none',
           }}
@@ -2497,9 +2498,9 @@ const Village = () => {
 
       {devOverlay && (
         <div
-          className="font-mono"
+          className="font-mono" data-game-ui="open"
           style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 500,
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: Z.OVERLAY,
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
           }}
           onClick={() => setDevOverlay(false)}
@@ -2634,8 +2635,8 @@ const Village = () => {
         const titleUnlocked = parseInt(getFlag('bernard_stage') || '0', 10) >= 5 && !!lvTitle;
         return (
           <div
-            className="fragment-backdrop"
-            style={{ zIndex: 200, background: 'rgba(14,18,40,.94)', overflowY: 'auto', animation: rm ? undefined : 'villageLevelUpFade 600ms ease-out' }}
+            className="fragment-backdrop" data-game-ui="open"
+            style={{ zIndex: Z.OVERLAY, background: 'rgba(14,18,40,.94)', overflowY: 'auto', animation: rm ? undefined : 'villageLevelUpFade 600ms ease-out' }}
           >
             <style>{`
               @keyframes villageLevelUpFade { from { opacity: 0 } to { opacity: 1 } }
@@ -2718,7 +2719,7 @@ const Village = () => {
             left: 0,
             width: '100vw',
             textAlign: 'center',
-            zIndex: 50,
+            zIndex: Z.HUD,
             pointerEvents: 'none',
             fontFamily: 'IM Fell English, serif',
             fontStyle: 'italic',

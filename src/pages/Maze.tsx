@@ -368,7 +368,7 @@ const SECONDARY_BTN: CSSProperties = { ...BTN_BASE, background: 'transparent', c
 const DANGER_BTN: CSSProperties = { ...BTN_BASE, background: '#a83a3a', color: '#fff', border: 'none', borderTop: '3px solid #c85a5a', borderBottom: '3px solid #6e1a1a' };
 
 const MazeDialog = ({ glow, zIndex, children }: { glow: string; zIndex: number; children: ReactNode }) => (
-  <div style={{ position: 'fixed', inset: 0, background: 'rgba(14,18,40,0.94)', zIndex, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', animation: 'mazeDoorFade 400ms ease-in' }}>
+  <div data-game-ui="open" style={{ position: 'fixed', inset: 0, background: 'rgba(14,18,40,0.94)', zIndex, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom))', animation: 'mazeDoorFade 400ms ease-in' }}>
     <PlateFrame glow={glow} style={{ maxHeight: '100%', overflowY: 'auto' }}>{children}</PlateFrame>
   </div>
 );
@@ -1270,7 +1270,7 @@ const Maze = () => {
   return (
     <div className="maze-theme" style={{ position: 'fixed', inset: 0, background: 'hsl(var(--background))', overflow: 'hidden', '--maze-light-core': `${DIMENSION_GLOW[glow]}14` } as CSSProperties}>
       <div
-        ref={worldRef}
+        data-game-world ref={worldRef}
         data-maze-world="true"
         style={{ position: 'absolute', width: MAP_W, height: MAP_H, transform: `translate(${camRef.current.x}px, ${camRef.current.y}px)`, willChange: 'transform' }}
       >
@@ -1311,28 +1311,28 @@ const Maze = () => {
         ))}
 
         {config.fragments.filter((f) => !collected.has(f.prime) && inView(f)).map((f) => (
-          <div key={`frag-${f.prime}`} data-object="fragment" style={{ position: 'absolute', left: f.col * CELL, top: f.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
+          <div key={`frag-${f.prime}`} data-object="fragment" style={{ position: 'absolute', left: f.col * CELL, top: f.row * CELL, width: CELL, height: CELL, zIndex: Z.OBJECTS, pointerEvents: 'none' }}>
             <PrimeShard dimension={glow} size={CELL} />
           </div>
         ))}
-        {inView(config.door) && <div data-object="golden-gate" style={{ position: 'absolute', left: config.door.col * CELL, top: config.door.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
+        {inView(config.door) && <div data-object="golden-gate" style={{ position: 'absolute', left: config.door.col * CELL, top: config.door.row * CELL, width: CELL, height: CELL, zIndex: Z.OBJECTS, pointerEvents: 'none' }}>
           <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />
           <div className="absolute inset-0"><Gate variant="golden" dimension={glow} size={CELL} /></div>
         </div>}
         {config.creditDoors.filter(inView).map((d, i) => (
-          <div key={`cd-${i}`} data-object="blue-gate" style={{ position: 'absolute', left: d.col * CELL, top: d.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
+          <div key={`cd-${i}`} data-object="blue-gate" style={{ position: 'absolute', left: d.col * CELL, top: d.row * CELL, width: CELL, height: CELL, zIndex: Z.OBJECTS, pointerEvents: 'none' }}>
             <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />
             <div className="absolute inset-0"><Gate variant="blue" dimension={glow} size={CELL} /></div>
           </div>
         ))}
         {config.doorsToRoom?.filter(inView).map((d, i) => (
-          <div key={`room-${i}`} data-object="room-door" style={{ position: 'absolute', left: d.col * CELL, top: d.row * CELL, width: CELL, height: CELL, zIndex: 10, pointerEvents: 'none' }}>
+          <div key={`room-${i}`} data-object="room-door" style={{ position: 'absolute', left: d.col * CELL, top: d.row * CELL, width: CELL, height: CELL, zIndex: Z.OBJECTS, pointerEvents: 'none' }}>
             <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />
             <div className="absolute inset-0"><RoomDoorTile dimension={glow} color={config.visualCells?.find(cell => cell.type === 'ROOM_DOOR' && cell.col === d.col && cell.row === d.row)?.color ?? (d as DoorToRoom & { color?: string }).color} size={CELL} /></div>
           </div>
         ))}
-        {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL + CELL / 2, top: config.alexandra.row * CELL + CELL / 2, zIndex: 10, pointerEvents: 'none' }}><NpcOrb npc="alexandra" size={Math.round(MAZE_AVATAR_SIZE * 1.15)} quest={questState('alexandra')} /></div>}
-        {config.claire && claireVisible && inView(clairePos) && <div style={{ position: 'absolute', left: clairePos.col * CELL + CELL / 2, top: clairePos.row * CELL + CELL / 2, zIndex: 10, pointerEvents: 'none' }}><NpcOrb npc="claire" size={Math.round(MAZE_AVATAR_SIZE * 1.15)} quest={questState('claire')} /></div>}
+        {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL + CELL / 2, top: config.alexandra.row * CELL + CELL / 2, zIndex: Z.OBJECTS, pointerEvents: 'none' }}><NpcOrb npc="alexandra" size={Math.round(MAZE_AVATAR_SIZE * 1.15)} quest={questState('alexandra')} /></div>}
+        {config.claire && claireVisible && inView(clairePos) && <div style={{ position: 'absolute', left: clairePos.col * CELL + CELL / 2, top: clairePos.row * CELL + CELL / 2, zIndex: Z.OBJECTS, pointerEvents: 'none' }}><NpcOrb npc="claire" size={Math.round(MAZE_AVATAR_SIZE * 1.15)} quest={questState('claire')} /></div>}
       </div>
 
       <style>{`
@@ -1355,12 +1355,13 @@ const Maze = () => {
       <div
         style={{
           position: 'fixed',
+          zIndex: Z.OBJECTS,
           left: playerScreenX - 15,
           top: playerScreenY - 15,
           pointerEvents: 'none',
         }}
       >
-        <div style={{ position: 'relative', zIndex: 60 }}><PlayerAvatar
+        <div data-game-world style={{ position: 'relative', zIndex: Z.OBJECTS }}><PlayerAvatar
           palette={orbLook(auraColor, orbDye, registrationNumber)}
           walking={Math.abs(posRef.current.col - displayPos.col) >= 0.01 || Math.abs(posRef.current.row - displayPos.row) >= 0.01}
           size={MAZE_AVATAR_SIZE}
@@ -1381,7 +1382,7 @@ const Maze = () => {
           '--fog': FOG_OPACITY,
           background: LANTERN_BG,
           pointerEvents: 'none',
-          zIndex: 50,
+          zIndex: Z.OBJECTS,
         } as CSSProperties}
       />
 
@@ -1389,7 +1390,7 @@ const Maze = () => {
         className="font-fell italic"
         style={{
           position: 'fixed', top: 24, left: 0, right: 0, textAlign: 'center',
-          fontSize: 18, color: 'rgba(160,140,200,0.5)', margin: 0, zIndex: 20, pointerEvents: 'none',
+          fontSize: 18, color: 'rgba(160,140,200,0.5)', margin: 0, zIndex: Z.HUD, pointerEvents: 'none',
         }}
       >
         {QUOTES[quoteIdx]}
@@ -1401,7 +1402,7 @@ const Maze = () => {
           style={{
             position: 'fixed', top: '20%', left: 0, right: 0, textAlign: 'center',
             fontSize: 20, color: whisperColor, textShadow: '0 0 12px rgba(91,79,212,0.6)',
-            margin: 0, zIndex: 30, pointerEvents: 'none',
+            margin: 0, zIndex: Z.HUD, pointerEvents: 'none',
           }}
         >
           {whisper}
@@ -1413,7 +1414,7 @@ const Maze = () => {
           className="font-fell italic"
           style={{
             position: 'fixed', top: '20%', left: 0, right: 0, textAlign: 'center',
-            fontSize: 18, color: 'rgba(160,140,200,0.6)', margin: 0, zIndex: 30, pointerEvents: 'none',
+            fontSize: 18, color: 'rgba(160,140,200,0.6)', margin: 0, zIndex: Z.HUD, pointerEvents: 'none',
           }}
         >
           You have no steps remaining. Walk to continue.
@@ -1426,14 +1427,14 @@ const Maze = () => {
         style={{
           position: 'fixed', bottom: HUD_HEIGHT + HUD_BUTTON_GAP, left: 16, background: 'transparent', border: 'none',
           color: 'rgba(160,140,200,0.4)', fontSize: 16, letterSpacing: '0.3em', cursor: 'pointer',
-          padding: 4, zIndex: 65,
+          padding: 4, zIndex: Z.HUD,
         }}
       >
         EXIT MAZE
       </button>
 
       {exitConfirmOpen && (
-        <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={200}>
+        <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={Z.OVERLAY}>
           <p className="font-fell italic" style={{ margin: 0, fontSize: 20, color: '#e0ddd5', textAlign: 'center' }}>Leave the maze?</p>
           <p className="font-fell italic" style={{ margin: '10px 0 0', fontSize: 14, color: '#b79bff', textAlign: 'center' }}>Everything you carry will be lost.</p>
           <DialogButtons>
@@ -1444,7 +1445,7 @@ const Maze = () => {
       )}
 
       {doorConfirmOpen && (
-        <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={100}>
+        <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={Z.OVERLAY}>
           <div style={{ display: 'flex', justifyContent: 'center' }}><PixelEye glow={DIMENSION_GLOW[glow]} size={128} animate /></div>
           <p className="font-fell italic" style={{ margin: '14px 0 0', fontSize: 22, color: '#f5c060', textAlign: 'center' }}>The way opens.</p>
           <p className="font-fell italic" style={{ margin: '8px 0 0', fontSize: 15, color: '#b79bff', textAlign: 'center' }}>Are you ready to leave the maze? Unfinished paths will remain.</p>
@@ -1468,7 +1469,7 @@ const Maze = () => {
         const filled = requiredPrimes.map((p) => collectedRef.current.has(p)).sort((x, y) => Number(y) - Number(x));
         const have = filled.filter(Boolean).length;
         return (
-          <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={100}>
+          <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={Z.OVERLAY}>
             <div style={{ display: 'flex', justifyContent: 'center' }}><PixelEye glow={DIMENSION_GLOW[glow]} size={128} closed /></div>
             <p className="font-fell italic" style={{ margin: '14px 0 0', fontSize: 22, color: '#f5c060', textAlign: 'center' }}>The Instrument does not answer.</p>
             <p className="font-fell italic" style={{ margin: '8px 0 0', fontSize: 15, color: '#b79bff', textAlign: 'center' }}>You carry {have} of {requiredPrimes.length} fragments the Instrument requires.</p>
@@ -1494,7 +1495,7 @@ const Maze = () => {
           position: 'fixed', bottom: 0, left: 0, right: 0,
           background: 'rgba(4,4,10,0.92)', borderTop: '0.5px solid rgba(169,140,255,0.3)',
           minHeight: HUD_HEIGHT, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          fontSize: 15, letterSpacing: '0.18em', zIndex: 60,
+          fontSize: 15, letterSpacing: '0.18em', zIndex: Z.HUD,
         }}
       >
         <span

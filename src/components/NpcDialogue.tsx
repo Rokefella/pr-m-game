@@ -1,3 +1,4 @@
+import { Z } from '@/lib/zIndex';
 import { ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
@@ -35,14 +36,14 @@ const NpcDialogue = ({ text, npcName, children, onShow }: Props) => {
           to { transform: translateY(0); opacity: 1; }
         }
       `}</style>
-      <div
+      <div data-game-ui="open"
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0,
           maxWidth: 640,
           margin: '0 auto',
           background: 'linear-gradient(to top, rgba(4,4,10,0.97) 0%, rgba(4,4,10,0.85) 100%)',
           borderTop: '0.5px solid rgba(91,79,212,0.3)',
-          zIndex: 110,
+          zIndex: Z.SHEET,
           minHeight: 220,
           display: 'flex',
           padding: '20px 24px 28px',

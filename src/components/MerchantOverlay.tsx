@@ -1,3 +1,4 @@
+import { Z } from '@/lib/zIndex';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '@/lib/userData';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
@@ -94,14 +95,14 @@ const MerchantOverlay = ({
   };
 
   return (
-    <div
+    <div data-game-ui="open"
       style={{
         position: 'fixed',
         inset: 0,
         background: 'rgba(4,4,10,0.96)',
         opacity: shown ? 1 : 0,
         transition: 'opacity 400ms ease-out',
-        zIndex: 150,
+        zIndex: Z.OVERLAY,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

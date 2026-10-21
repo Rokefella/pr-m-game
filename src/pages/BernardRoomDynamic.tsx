@@ -4,6 +4,7 @@ import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/Room
 import OrbLabels from '@/components/OrbLabels';
 import { placedGhosts, randomSpawnCell, type GhostCell } from '@/lib/placedGhosts';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import { roomNpcBodySize } from '@/components/theme/rooms/roomConfig';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -716,7 +717,7 @@ const BernardRoomDynamic = () => {
           ))}
 
           <RoomGhosts ghosts={room.ghosts} size={8 * 92 / 52} solids={obstacles} gridSize={room.gridSize} player={() => ({ col: playerTargetRef.current.x / CELL - .5, row: playerTargetRef.current.y / CELL - .5 })} />
-          <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" size={Math.round(8 * 1.15)} quest={questState('bernard')} /></div>
+          <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" size={roomNpcBodySize(8, 'dot')} quest={questState('bernard')} /></div>
 
           <div
             style={{

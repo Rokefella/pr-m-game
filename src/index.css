@@ -102,6 +102,9 @@
     --loading-glow: radial-gradient(rgba(245,192,96,.10), transparent 70%);
     --loading-centre: #fff3c4;
     --npc-specular: #fff;
+    --npc-quest-gold-outline: #6a4a10;
+    --npc-quest-green-outline: #0f3a28;
+    --npc-quest-glow-filter: blur(9px);
     --ghost-pale: #dfe8ff;
     --ghost-mist: #cfeedd;
     --ghost-gold: #fff0c0;
@@ -478,9 +481,18 @@
 .npc-dialogue-orb .npc-orb { transform: none; }
 .npc-orb-halo { animation: npcHalo 3s ease-in-out infinite; }
 .npc-orb-symbol { animation: npcSymbol 2.4s ease-in-out infinite; }
+.npc-quest-available { --npc-quest-light: var(--instrument-beacon); --npc-quest-plate: var(--plate-gold); --npc-quest-outline: var(--npc-quest-gold-outline); --npc-quest-ink: var(--npc-quest-gold-outline); }
+.npc-quest-ready { --npc-quest-light: var(--console-ready); --npc-quest-plate: var(--console-ready); --npc-quest-outline: var(--npc-quest-green-outline); --npc-quest-ink: var(--npc-quest-green-outline); }
+.npc-quest-halo { animation: npcQuestHalo 1.6s ease-in-out infinite; }
+.npc-quest-glow { filter: var(--npc-quest-glow-filter); animation: npcQuestGlow 1.6s ease-in-out infinite; }
+.npc-quest-marker { animation: npcQuestBob 1.6s ease-in-out infinite; }
+@keyframes npcQuestHalo { 0%,100% { fill-opacity: .20; } 50% { fill-opacity: .45; } }
+@keyframes npcQuestGlow { 0%,100% { opacity: .12; } 50% { opacity: .30; } }
+@keyframes npcQuestBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5.45px); } }
 @keyframes npcHalo { 0%,100% { fill-opacity: .10; } 50% { fill-opacity: .22; } }
 @keyframes npcSymbol { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
 @media (prefers-reduced-motion: reduce) { .npc-orb-halo, .npc-orb-symbol { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .npc-quest-halo, .npc-quest-glow, .npc-quest-marker { animation: none; } }
 
 /* Orb wardrobe and drop detail */
 .orb-wardrobe { margin-top: 24px; }

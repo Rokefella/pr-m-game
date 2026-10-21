@@ -1,4 +1,5 @@
 import { Z } from '@/lib/zIndex';
+import { VILLAGE_AVATAR_SIZE, ghostBodyPx, npcBodyPx } from '@/lib/orbSizes';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import OrbLabels from '@/components/OrbLabels';
@@ -267,7 +268,6 @@ const EXCHANGE_MIN_LEVEL = 1;
 const VILLAGE_GLIDE = 0.11;
 // Rendering-only camera zoom and avatar size; world coordinates are unchanged.
 const VILLAGE_ZOOM = 1.5;
-const VILLAGE_AVATAR_SIZE = 25;
 
 // Ring radii
 const OUTERMOST_RX = 900, OUTERMOST_RY = 500;
@@ -2250,14 +2250,14 @@ const Village = () => {
               pointerEvents: 'none',
               zIndex: 4,
             }}
-          ><NpcOrb npc="" size={Math.round(VILLAGE_AVATAR_SIZE * 1.15)} /></div>
+          ><NpcOrb npc="" size={npcBodyPx('village')} /></div>
         ))}
 
         {/* NPC halo centres retain the existing world positions. */}
-        {visible?.npcs.map(n => <div key={`dnpc-${n.x}-${n.y}`} title={n.name || undefined} style={{ position: 'absolute', left: n.x, top: n.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc={n.name} size={Math.round(VILLAGE_AVATAR_SIZE * 1.15)} quest={questState(n.name)} /></div>)}
-        {dynamicBuildings && <GhostLayer ghosts={dynamicBuildings.ghosts} size={VILLAGE_AVATAR_SIZE} cellSize={20} free={ghostFree} path={ghostPath} player={() => ({ col: playerTargetRef.current.x / 20 - .5, row: playerTargetRef.current.y / 20 - .5 })} />}
-        {merchantPos && <div style={{ position: 'absolute', left: merchantPos.x, top: merchantPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" size={Math.round(VILLAGE_AVATAR_SIZE * 1.15)} quest={questState('merchant')} /></div>}
-        {bernardPos && <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" size={Math.round(VILLAGE_AVATAR_SIZE * 1.15)} quest={questState('bernard')} /></div>}
+        {visible?.npcs.map(n => <div key={`dnpc-${n.x}-${n.y}`} title={n.name || undefined} style={{ position: 'absolute', left: n.x, top: n.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc={n.name} size={npcBodyPx('village')} quest={questState(n.name)} /></div>)}
+        {dynamicBuildings && <GhostLayer ghosts={dynamicBuildings.ghosts} size={ghostBodyPx('village')} cellSize={20} free={ghostFree} path={ghostPath} player={() => ({ col: playerTargetRef.current.x / 20 - .5, row: playerTargetRef.current.y / 20 - .5 })} />}
+        {merchantPos && <div style={{ position: 'absolute', left: merchantPos.x, top: merchantPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" size={npcBodyPx('village')} quest={questState('merchant')} /></div>}
+        {bernardPos && <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" size={npcBodyPx('village')} quest={questState('bernard')} /></div>}
 
         {/* Ghost players */}
         {ghostDots.map((ghost) => (

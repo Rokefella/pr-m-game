@@ -1,3 +1,4 @@
+import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -692,34 +693,7 @@ const BernardRoomDynamic = () => {
             </div>
           ))}
 
-          {/* Bernard marker — same asset & placement parsing as the village */}
-          <img
-            src={bernardMarkerUrl}
-            alt="Bernard"
-            width={24}
-            height={24}
-            style={{
-              position: 'absolute',
-              left: bernardPos.x - 12,
-              top: bernardPos.y - 12,
-              pointerEvents: 'none',
-              zIndex: 4,
-            }}
-          />
-          <span
-            className="font-mono"
-            style={{
-              position: 'absolute',
-              left: bernardPos.x - 4,
-              top: bernardPos.y - 24,
-              fontSize: 14,
-              color: 'rgba(200,150,58,0.6)',
-              pointerEvents: 'none',
-              zIndex: 4,
-            }}
-          >
-            1
-          </span>
+          <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" /></div>
 
           <div
             style={{

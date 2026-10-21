@@ -1,3 +1,4 @@
+import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
@@ -53,8 +54,8 @@ type RunFragment = {
 };
 
 // ----- published shadow realm level data -----
-type RealmCell = { col: number; row: number; type?: string; color?: string; name?: string };
-type PlacedCell = { x: number; y: number; color?: string; name?: string };
+type RealmCell = { col: number; row: number; type?: string; color?: string; name?: string; npc_key?: string; npc_name?: string };
+type PlacedCell = { x: number; y: number; color?: string; name?: string; npc_key?: string; npc_name?: string };
 
 const wallKey = (x: number, y: number): string => `${Math.round(x)},${Math.round(y)}`;
 
@@ -260,6 +261,8 @@ const ShadowRealm = () => {
         y: (c.row - origin.row) * STEP,
         color: c.color,
         name: c.name,
+        npc_key: c.npc_key,
+        npc_name: c.npc_name,
       });
 
       const nextWalls: PlacedCell[] = [];
@@ -690,7 +693,7 @@ const ShadowRealm = () => {
 
         {eyes.map((e, i) => <div key={`e${i}`} style={cellAt(e)}><ShadowEye /></div>)}
 
-        {npcs.map((n, i) => <div key={`n${i}`} style={{ ...cellAt(n, 8, 8), background: 'rgba(200,150,58,0.8)' }} />)}
+        {npcs.map((n, i) => <div key={`n${i}`} style={cellAt(n, 0, 0)}><NpcOrb npc={n.npc_key || n.npc_name || n.name || ''} /></div>)}
         {drops.map((d, i) => <div key={`d${i}`} style={{ ...cellAt(d, 6, 6), background: SHADOW.glow, opacity: 0.7 }} />)}
 
         {roomDoors.map((d, i) => <div key={`rd${i}`} style={cellAt(d)}><GardenDoorTile open={gardenOpen} /></div>)}

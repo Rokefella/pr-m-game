@@ -1,3 +1,4 @@
+import NpcOrb from '@/components/theme/objects/NpcOrb';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -287,20 +288,7 @@ const NpcActor = ({
 
   return (
     <>
-      <img
-        src={markerSrc}
-        alt={displayName}
-        width={24}
-        height={24}
-        style={{
-          position: 'absolute',
-          left: mx - 12,
-          top: my - 12,
-          pointerEvents: 'none',
-          zIndex: 4,
-          transition: 'left 2.4s ease-in-out, top 2.4s ease-in-out',
-        }}
-      />
+      <div style={{ position: 'absolute', left: mx, top: my, pointerEvents: 'none', zIndex: 4, transition: 'left 2.4s ease-in-out, top 2.4s ease-in-out' }}><NpcOrb npc={`${npcKey} ${displayName}`} /></div>
 
       {isOpen && resolvedDialogue && (
         <NpcDialogue

@@ -1,3 +1,4 @@
+import PraemSnake from '@/components/PraemSnake';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 const SIGIL_PATTERN: ('filled' | 'dim' | 'empty')[][] = [
   ['empty', 'filled', 'empty', 'filled', 'empty'],
@@ -109,14 +110,7 @@ const Index = () => {
 
           {/* Center Content */}
           <div className="relative z-10 flex flex-col items-center">
-            <img
-              src="/assets/sigils/PRAEM-logo-instrument-icon.svg"
-              alt="PRÆM"
-              width="80"
-              height="48"
-              className="object-contain"
-              style={{ animation: 'introPulse 4.5s ease-in-out infinite' }}
-            />
+            <PraemSnake size={96} animate />
             <style>{`
               @keyframes introPulse {
                 0%, 100% { transform: scale(1); opacity: 0.72; }

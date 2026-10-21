@@ -1,7 +1,7 @@
 import { memo, useEffect, useRef, useState } from 'react';
+import PraemSnake from './PraemSnake';
 
 const APPEAR_MS = 150;
-const SEGMENTS = [[6, 6, 3, 1], [8, 4, 1, 3], [4, 4, 5, 1], [4, 4, 1, 5], [4, 8, 7, 1], [10, 2, 1, 7], [2, 2, 9, 1], [2, 2, 1, 9], [2, 10, 11, 1], [12, 0, 1, 11]];
 
 /** Hold only loads that survived the screen's initial appearance delay. */
 export function useMinLoading(isLoading: boolean, minVisibleMs = 500): boolean {
@@ -43,12 +43,7 @@ const LoadingScreen = memo(({ label }: { label?: string }) => {
       <div className="loading-stack">
         <div className="loading-sigil">
           <div className="loading-glow" aria-hidden="true" />
-          <svg viewBox="2 0 11 11" width="132" height="132" shapeRendering="crispEdges" aria-hidden="true">
-            {SEGMENTS.map(([x, y, width, height], index) => (
-              <rect key={index} x={x} y={y} width={width} height={height} className="loading-segment" style={{ animationDelay: `${index * 0.18}s` }} />
-            ))}
-            <rect x="6" y="6" width="1" height="1" className="loading-centre" />
-          </svg>
+          <PraemSnake size={132} animate loop />
         </div>
         <span className="font-cinzel loading-wordmark">PRÆM</span>
         {label && <span className="font-mono loading-label">{label}</span>}

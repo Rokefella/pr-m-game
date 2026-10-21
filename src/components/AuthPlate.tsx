@@ -1,3 +1,4 @@
+import PraemSnake from './PraemSnake';
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import PlateFrame from '@/components/theme/PlateFrame';
@@ -14,7 +15,7 @@ export function AuthPlate({ heading, children, linkTo, linkText }: { heading: st
   return <main className="auth-screen">
     <div className="auth-stack">
       <PlateFrame width="min(92vw, 360px)" className="auth-plate">
-        <img src="/assets/sigils/PRAEM-logo-instrument-icon.svg" alt="PRÆM" width="64" height="64" className="auth-logo" />
+        <div className="auth-logo"><PraemSnake size={64} /></div>
         <h1 className="auth-heading font-cinzel">{heading}</h1>
         {children}
       </PlateFrame>

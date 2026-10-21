@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Repair Bernard stage 3 → 4 using persisted Shadow/Library state after banking and on Village load; audit remaining progression gates and test reset-to-stage-6 rules.
+
 - [x] Resize NPC body widths to rounded screen avatar × 1.15, add dialogue names and portal all orb labels into a fixed-size screen-space overlay; 216 tests and preview compilation pass. Isolated desktop/375px checks verify Lucretius stays 23.75px wide at zoom 1/1.5/2, ghost movement tracking, fixed gaps and reduced motion.
 - [ ] Verify NPC sizes and table-backed names in real signed-in screens — the game's external authentication session is unavailable; isolated art does not verify live player data.
 

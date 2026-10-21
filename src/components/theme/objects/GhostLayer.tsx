@@ -29,5 +29,5 @@ export default memo(function GhostLayer({ ghosts, size, cellSize, free, path, pl
     frame = requestAnimationFrame(draw);
     return () => { cancelAnimationFrame(frame); motions.forEach(({ ghost }) => ghostPositions.delete(ghost)); };
   }, [motions, cellSize, reduced]);
-  return <>{ghosts.map(g => <div key={`${g.col},${g.row}`} ref={node => { if (node) nodes.current.set(g, node); else nodes.current.delete(g); }} className="ghost-position" style={{ left: (g.col + offset) * cellSize, top: (g.row + offset) * cellSize }}><GhostOrb title={g.title} tone={g.tone} size={size} cellSize={cellSize} /></div>)}</>;
+  return <>{ghosts.map(g => <div key={`${g.col},${g.row}`} ref={node => { if (node) nodes.current.set(g, node); else nodes.current.delete(g); }} className="ghost-position" style={{ left: (g.col + offset) * cellSize, top: (g.row + offset) * cellSize }}><GhostOrb title={g.title} name={g.name} tone={g.tone} size={size} cellSize={cellSize} /></div>)}</>;
 });

@@ -1,4 +1,4 @@
-export type PlacedCell = { col: number; row: number; type: string; title?: string; line?: string; tone?: string };
+export type PlacedCell = { col: number; row: number; type: string; title?: string; name?: string; line?: string; tone?: string };
 export type GhostCell = PlacedCell & { type: 'GHOST' };
 export const SPAWN_RADIUS = 4;
 export const GHOST_COOLDOWN = 30_000;

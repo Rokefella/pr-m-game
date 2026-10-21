@@ -62,7 +62,7 @@ const NpcDialogue = ({ text, npcName, children, onShow }: Props) => {
             animation: 'bernardImgIn 600ms ease-out',
           }}
         >
-          <div className="npc-dialogue-orb"><NpcOrb npc={npcName} name={npcName} size={Math.round(25 * 1.15)} quest={questState(npcName)} /></div>
+          <div className="npc-dialogue-orb"><NpcOrb npc={npcName} name={npcName} size={npcBodyPx('village')} quest={questState(npcName)} /></div>
         </div>
 
         {/* Right: dialogue */}

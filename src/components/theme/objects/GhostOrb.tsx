@@ -1,10 +1,10 @@
 import { memo } from 'react';
 import OrbLabels from '@/components/OrbLabels';
 
-export default memo(function GhostOrb({ title, name, tone = 'pale', size = 25 }: { title?: string; name?: string; tone?: string; size?: number; cellSize?: number }) {
+export default memo(function GhostOrb({ title, name, tone = 'pale', size = 25, labelOpacity }: { title?: string; name?: string; tone?: string; size?: number; cellSize?: number; labelOpacity?: () => number }) {
   const safeTone = ['pale', 'mist', 'gold', 'rose'].includes(tone) ? tone : 'pale';
   return <div className={`ghost-orb ghost-tone-${safeTone}`} data-object="GHOST" style={{ width: size }}>
-    <OrbLabels title={title} name={name} size={size} />
+    <OrbLabels title={title} name={name} size={size} opacity={labelOpacity} />
     <svg aria-hidden="true" className="ghost-body" width={size} height={size * 100 / 92} viewBox="-46 -46 92 100" shapeRendering="crispEdges">
       <g transform="translate(-26 -26) scale(1.4444)">
         <path d="M12,0H24V3H30V6H33V9H36V27H33V30H30V33H24V36H12V33H6V30H3V27H0V9H3V6H6V3H12Z" fill="currentColor" stroke="var(--ghost-outline)" strokeWidth="3" />

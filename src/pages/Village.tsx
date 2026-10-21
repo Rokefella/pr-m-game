@@ -15,7 +15,8 @@ import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import NpcDialogue from '@/components/NpcDialogue';
 import CharacterEye from '@/components/CharacterEye';
-import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
+import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
+import { useOrbSync } from '@/lib/orb';
 import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { BETA_MODE } from '@/lib/config';
 import { supabase } from '@/lib/supabase';
@@ -758,6 +759,8 @@ const Village = () => {
   const [levelUpHandled, setLevelUpHandled] = useState(false);
   const levelUpReducedMotion = useReducedMotion();
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
+  const [orbDye, setOrbDye] = useState<string | null>(null);
+  useOrbSync(setAuraColor, setOrbDye);
   const [username, setUsername] = useState<string>('');
   const usernameRef = useRef<string>('');
   const [unlockedTitles, setUnlockedTitles] = useState<string[]>([]);
@@ -1192,6 +1195,7 @@ const Village = () => {
     setOverlaySelectedTitle(row.title);
     setRegistrationNumber(row.registration_number);
     setAuraColor(row.aura_color || '#5b4fd4');
+    setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
     setUsername(row.username || '');
     usernameRef.current = row.username || '';
     setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : []);
@@ -2238,7 +2242,7 @@ const Village = () => {
           }}
         >
           <PlayerAvatar
-            palette={paletteFromColor(auraColor, registrationNumber)}
+            palette={orbLook(auraColor, orbDye, registrationNumber)}
             walking={Math.hypot(playerTargetRef.current.x - player.x, playerTargetRef.current.y - player.y) >= 0.5}
             size={VILLAGE_AVATAR_SIZE}
           />
@@ -2609,7 +2613,7 @@ const Village = () => {
                 </div>
                 <div style={{ position: 'relative', width: 128, height: 128, margin: '20px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: anim(450) }}>
                   <div aria-hidden="true" style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,213,138,.22) 0%, rgba(245,213,138,0) 70%)' }} />
-                  <PlayerAvatar palette={paletteFromColor(auraColor, registrationNumber)} size={64} walking={false} />
+                  <PlayerAvatar palette={orbLook(auraColor, orbDye, registrationNumber)} size={64} walking={false} />
                 </div>
                 {titleUnlocked && (
                   <div style={{ position: 'relative', width: '100%', background: '#0f1329', border: '1px solid #2f3560', padding: '12px 10px', animation: anim(600) }}>

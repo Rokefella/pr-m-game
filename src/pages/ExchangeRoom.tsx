@@ -14,7 +14,8 @@ import { useNpcDialogue } from '@/hooks/useNpcDialogue';
 import { RoomScene, RoomAvatar, avatarTransform } from '@/components/theme/rooms/RoomScene';
 import { ROOM_BG, ROOM_ZOOM, roomCamAxis } from '@/components/theme/rooms/roomConfig';
 import { exitDir, roomGeometry, type Run } from '@/components/theme/rooms/roomGeometry';
-import { paletteFromColor } from '@/components/PlayerAvatar';
+import { orbLook } from '@/components/PlayerAvatar';
+import { useOrbSync } from '@/lib/orb';
 import type { ExitDir } from '@/components/theme/objects';
 import bankerMarkerUrl from '@/assets/banker_marker.svg';
 
@@ -72,6 +73,8 @@ const ExchangeRoom = () => {
   const [room, setRoom] = useState<RoomLayout | null>(null);
   const [roomLoading, setRoomLoading] = useState(true);
   const [auraColor, setAuraColor] = useState('#a98cff');
+  const [orbDye, setOrbDye] = useState<string | null>(null);
+  useOrbSync(setAuraColor, setOrbDye);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const [walking, setWalking] = useState(false);
   const walkingRef = useRef(false);
@@ -300,6 +303,7 @@ const ExchangeRoom = () => {
       if (cancelled || !row) return;
       setCurrentLevel(row.level);
       if (row.aura_color) setAuraColor(row.aura_color);
+      setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
       const r = row as unknown as Record<string, number | null>;
       setRegistrationNumber(r.registration_number ?? null);
       setSocialStat(Number(r.social ?? 0));
@@ -964,7 +968,7 @@ const ExchangeRoom = () => {
 
           <div style={{ position: 'absolute', left: bankerPos.x, top: bankerPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="banker" /></div>
 
-          <RoomAvatar ref={avatarRef} palette={registrationNumber === 1 ? 'red' : paletteFromColor(auraColor)} walking={walking} />
+          <RoomAvatar ref={avatarRef} palette={orbLook(auraColor, orbDye, registrationNumber)} walking={walking} />
         </div>
       )}
 

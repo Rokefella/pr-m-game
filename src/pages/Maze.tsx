@@ -1,7 +1,8 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
+import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
+import { useOrbSync } from '@/lib/orb';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
@@ -396,6 +397,8 @@ const Maze = () => {
   const [levelLoaded, setLevelLoaded] = useState(false);
   const [credits, setCredits] = useState(50);
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
+  const [orbDye, setOrbDye] = useState<string | null>(null);
+  useOrbSync(setAuraColor, setOrbDye);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationNumberRef = useRef(0);
   const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
@@ -686,6 +689,7 @@ const Maze = () => {
       currentLevelRef.current = row.level;
       setCredits(row.credits);
       if (row.aura_color) setAuraColor(row.aura_color);
+      setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
       setRegistrationNumber(row.registration_number);
       setPerception(Number((row as unknown as { perception?: number | null }).perception ?? 0));
       registrationNumberRef.current = row.registration_number;
@@ -1325,7 +1329,7 @@ const Maze = () => {
         }}
       >
         <PlayerAvatar
-          palette={paletteFromColor(auraColor, registrationNumber)}
+          palette={orbLook(auraColor, orbDye, registrationNumber)}
           walking={Math.abs(posRef.current.col - displayPos.col) >= 0.01 || Math.abs(posRef.current.row - displayPos.row) >= 0.01}
           size={30}
         />

@@ -31,11 +31,10 @@ export const FLOWER_STYLES: Record<string, string> = {
   bloom: `<path d="M4 0h4v4H4zM0 4h4v4H0zM8 4h4v4H8zM4 8h4v4H4z" fill="$F"/><path d="M4 4h4v4H4z" fill="#fff3c4"/>`,
 };
 
-const STREET_H =  `<rect width="48" height="48" fill="#4a5483"/><path d="M0 0h48v6H0zM0 42h48v6H0z" fill="#2a3060"/><path d="M0 6H48M0 42H48" stroke="#8e99d0" opacity=".7" fill="none"/><path d="M24 6V42" stroke="#3a4272" fill="none"/><path d="M6 2h3v3H6zM30 43h3v3h-3z" fill="$G"/><path d="M30 2h3v3h-3zM6 43h3v3H6z" fill="#62e6f0"/><path d="M4 24H16M22 24H34M40 24H48" stroke="$G" stroke-width="6" opacity=".2" fill="none"/><path d="M4 24H16M22 24H34M40 24H48" stroke="$G" stroke-width="3" fill="none"/>`;
 export const STREET_STYLES: Record<string, string> = {
-  h: STREET_H,
-  v: `<g transform="rotate(90 24 24)">${STREET_H}</g>`,
-  x: `<rect width="48" height="48" fill="#4a5483"/><path d="M0 0h6v6H0zM42 0h6v6h-6zM0 42h6v6H0zM42 42h6v6h-6z" fill="#2a3060"/><path d="M4 24H16M32 24H44M24 4V16M24 32V44" stroke="$G" stroke-width="3" fill="none"/><path d="M24 17L31 24L24 31L17 24Z" fill="none" stroke="$G" stroke-width="2"/><path d="M22 22h4v4h-4z" fill="$G"/>`,
+  cobble: `<rect width="24" height="24" fill="#5e5a52"/><rect x="1" y="1" width="10" height="7" fill="#9a9488"/><rect x="13" y="1" width="10" height="7" fill="#8e8a7e"/><rect x="1" y="9" width="7" height="6" fill="#8e8a7e"/><rect x="10" y="9" width="13" height="6" fill="#9a9488"/><rect x="1" y="17" width="12" height="6" fill="#9a9488"/><rect x="15" y="17" width="8" height="6" fill="#8e8a7e"/><path d="M1 1h10M13 1h10M1 9h7M10 9h13M1 17h12M15 17h8" stroke="#b8b2a4" stroke-width="1" fill="none"/>`,
+  plates: `<rect width="24" height="24" fill="#62e6f0" opacity=".14"/><rect x="2" y="2" width="20" height="20" fill="#5a6a96" stroke="#3e4a70"/><rect x="2" y="2" width="20" height="2" fill="#8e9acb"/><path d="M4 6h2v2H4zM18 6h2v2h-2zM4 16h2v2H4zM18 16h2v2h-2z" fill="#aab4e8"/>`,
+  brick: `<rect width="24" height="24" fill="#3a2a28"/><path d="M1 1h10v5H1zM13 1h10v5H13zM7 7h10v5H7zM19 7h5v5h-5zM0 7h5v5H0zM1 13h10v5H1zM13 13h10v5H13zM7 19h10v5H7zM19 19h5v5h-5zM0 19h5v5H0z" fill="#9a5e4a"/><path d="M1 1h10M13 1h10M7 7h10M1 13h10M13 13h10M7 19h10" stroke="#b8785e" fill="none"/><path d="M3 4h2v1H3zM15 16h2v1h-2zM9 10h2v1H9z" fill="#5a8a5a"/>`,
 };
 const TREE = `<ellipse cx="24" cy="44" rx="16" ry="4" fill="#000" opacity=".35"/><rect x="22" y="34" width="4" height="10" fill="#4a3f5a"/><path d="M12 6H36V10H44V28H36V32H12V28H4V10H12Z" fill="$T" stroke="#0f3d35"/><path d="M10 10h14v5H10zM6 15h6v10H6z" fill="#fff" opacity=".22"/><path d="M28 18h2v2h-2zM16 26h2v2h-2zM36 24h2v2h-2z" fill="#aef6e0"/>`;
 export const TREE_STYLES: Record<string, string> = {

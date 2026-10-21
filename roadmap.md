@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Replace all NPC markers with identity-coloured pixel orbs while preserving positions and behaviour; verify art and existing tests.
+
 - [x] Fix Shadow transfer counters to use only the current snapshot and query the saved Library total; seven focused tests and preview compilation pass, with saving and level gates unchanged.
 - [ ] Verify Shadow transfer totals against a real player's Library — the game's separate external sign-in session is unavailable.
 

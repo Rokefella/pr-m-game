@@ -2,6 +2,7 @@ import { forwardRef, memo } from 'react';
 import { patternUri } from '@/lib/theme/patterns';
 import { DIMENSION_GLOW } from '@/lib/theme/tokens';
 import PlayerAvatar, { type OrbLook } from '@/components/PlayerAvatar';
+import OrbLabels from '@/components/OrbLabels';
 import { ConsoleDesk, ConsoleTile, DataShelf, FloorLamp, RoomExit, type ExitDir } from '../objects';
 import { ROOM_AVATAR_SIZE, ROOM_CELL as CELL, ROOM_WALL_STYLE } from './roomConfig';
 import type { Run } from './roomGeometry';
@@ -61,9 +62,10 @@ export const RoomScene = memo(function RoomScene({ floorRuns, wallRuns, furnitur
 });
 
 /** Avatar positioned by the caller writing style.transform each frame. */
-export const RoomAvatar = memo(forwardRef<HTMLDivElement, { palette: OrbLook; walking: boolean }>(function RoomAvatar({ palette, walking }, ref) {
+export const RoomAvatar = memo(forwardRef<HTMLDivElement, { palette: OrbLook; walking: boolean; title?: string | null; name?: string | null }>(function RoomAvatar({ palette, walking, title, name }, ref) {
   return <div ref={ref} style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none', zIndex: 5, willChange: 'transform' }}>
     <PlayerAvatar palette={palette} walking={walking} size={ROOM_AVATAR_SIZE} />
+    <OrbLabels title={title} name={name} size={ROOM_AVATAR_SIZE} />
   </div>;
 }));
 

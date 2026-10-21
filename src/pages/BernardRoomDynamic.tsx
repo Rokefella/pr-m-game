@@ -1,4 +1,5 @@
 import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
+import OrbLabels from '@/components/OrbLabels';
 import { placedGhosts, randomSpawnCell, type GhostCell } from '@/lib/placedGhosts';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
@@ -20,6 +21,7 @@ type Rect = { id: string; x: number; y: number; w: number; h: number };
 type RugTrim = { top: boolean; bottom: boolean; left: boolean; right: boolean };
 type RugTile = { id: string; x: number; y: number; trim: RugTrim };
 type RoomCell = {
+  name?: string;
   title?: string;
   line?: string;
   tone?: string;
@@ -139,6 +141,7 @@ const BernardRoomDynamic = () => {
   const ghostFeedback = useRoomGhostWhisper(room?.ghosts ?? []);
   const [roomLoading, setRoomLoading] = useState(true);
   const [auraColor, setAuraColor] = useState('#a98cff');
+  const [orbIdentity, setOrbIdentity] = useState({ title: '', name: '' });
 
   // Player stats — feed the shared Bernard hook exactly as the village does.
   const [socialStat, setSocialStat] = useState(0);
@@ -217,6 +220,7 @@ const BernardRoomDynamic = () => {
       if (cancelled || !row) return;
       setCurrentLevel(row.level);
       if (row.aura_color) setAuraColor(row.aura_color);
+      setOrbIdentity(previous => previous.title === (row.title ?? '') && previous.name === (row.username ?? '') ? previous : { title: row.title ?? '', name: row.username ?? '' });
       const r = row as unknown as Record<string, number | null>;
       setSocialStat(Number(r.social ?? 0));
       setPerceptionStat(Number(r.perception ?? 0));
@@ -721,11 +725,13 @@ const BernardRoomDynamic = () => {
               borderRadius: '50%',
               background: auraColor,
               boxShadow: `0 0 8px ${auraColor}`,
-              animation: 'playerPulse 1.6s ease-in-out infinite',
               pointerEvents: 'none',
               zIndex: 5,
             }}
-          />
+          >
+            <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: auraColor, animation: 'playerPulse 1.6s ease-in-out infinite' }} />
+            <OrbLabels title={orbIdentity.title} name={orbIdentity.name} size={8} />
+          </div>
         </div>
       )}
 

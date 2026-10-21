@@ -454,7 +454,9 @@
 .ghost-tone-mist { color: var(--ghost-mist); }
 .ghost-tone-gold { color: var(--ghost-gold); }
 .ghost-tone-rose { color: var(--ghost-rose); }
-.ghost-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 11px; line-height: 16px; color: var(--ghost-title); text-shadow: var(--ghost-title-shadow); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.orb-label { position: absolute; display: block; width: max-content; max-width: 160px; pointer-events: none; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: var(--ghost-title-shadow); line-height: 16px; z-index: 4; }
+.orb-label-title { transform: translate(-50%, -100%); font-size: 11px; color: var(--ghost-title); }
+.orb-label-name { transform: translateX(-50%); font-size: 10px; letter-spacing: .15em; color: var(--auth-text); opacity: .9; }
 .ghost-body { display: block; overflow: visible; filter: var(--ghost-glow); opacity: .55; animation: ghostFlicker 3s ease-in-out infinite, ghostDrift 4s ease-in-out infinite; }
 .ghost-whisper { color: var(--ghost-title) !important; }
 .ghost-proximity-whisper { position: fixed; left: 0; right: 0; top: 18%; margin: 0; padding: 0 16px; text-align: center; font-size: 16px; color: var(--ghost-title); text-shadow: var(--ghost-title-shadow); pointer-events: none; z-index: 50; }

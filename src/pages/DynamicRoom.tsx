@@ -85,6 +85,7 @@ type RoomCell = {
   title?: string;
   line?: string;
   tone?: string;
+  name?: string;
 };
 type ExitTile = Rect & { destination: string; dir: ExitDir };
 type ColorTile = { id: string; x: number; y: number; col: number; row: number; color: string };
@@ -382,6 +383,7 @@ const DynamicRoom = () => {
   const [room, setRoom] = useState<RoomLayout | null>(null);
   const [roomLoading, setRoomLoading] = useState(true);
   const [auraColor, setAuraColor] = useState('#a98cff');
+  const [orbIdentity, setOrbIdentity] = useState({ title: '', name: '' });
   const [orbDye, setOrbDye] = useState<string | null>(null);
   useOrbSync(setAuraColor, setOrbDye);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
@@ -438,6 +440,7 @@ const DynamicRoom = () => {
       const row = await fetchOrCreateUser(user.id);
       if (cancelled || !row) return;
       if (row.aura_color) setAuraColor(row.aura_color);
+      setOrbIdentity(previous => previous.title === (row.title ?? '') && previous.name === (row.username ?? '') ? previous : { title: row.title ?? '', name: row.username ?? '' });
       setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
       const r = row as unknown as Record<string, number | null>;
       setRegistrationNumber(r.registration_number ?? null);
@@ -1098,7 +1101,7 @@ const DynamicRoom = () => {
             />
           ))}
 
-          <RoomAvatar ref={avatarRef} palette={orbLook(auraColor, orbDye, registrationNumber)} walking={walking} />
+          <RoomAvatar ref={avatarRef} palette={orbLook(auraColor, orbDye, registrationNumber)} walking={walking} title={orbIdentity.title} name={orbIdentity.name} />
         </div>
       )}
       <Thumbstick

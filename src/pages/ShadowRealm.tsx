@@ -1,4 +1,5 @@
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import OrbLabels from '@/components/OrbLabels';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
 import { corridorCell } from '@/lib/ghostMotion';
 import { nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
@@ -172,6 +173,7 @@ const ShadowRealm = () => {
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationRef = useRef<number | null>(null);
   const [auraColor, setAuraColor] = useState<string | null>(null);
+  const [orbIdentity, setOrbIdentity] = useState({ title: '', name: '' });
   const [orbDye, setOrbDye] = useState<string | null>(null);
   useOrbSync(setAuraColor, setOrbDye);
   const [walking, setWalking] = useState(false);
@@ -391,6 +393,7 @@ const ShadowRealm = () => {
       setRegistrationNumber(row.registration_number);
       registrationRef.current = row.registration_number;
       setAuraColor(row.aura_color ?? null);
+      setOrbIdentity(previous => previous.title === (row.title ?? '') && previous.name === (row.username ?? '') ? previous : { title: row.title ?? '', name: row.username ?? '' });
       setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
       setFlag(user.id, 'shadow_visited', 'true');
 
@@ -733,6 +736,7 @@ const ShadowRealm = () => {
       {/* Player — fixed at screen centre; the world moves instead */}
       <div style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 30, pointerEvents: 'none' }}>
         <PlayerAvatar palette={palette} walking={walking} size={SHADOW_AVATAR_SIZE} />
+        <OrbLabels title={orbIdentity.title} name={orbIdentity.name} size={SHADOW_AVATAR_SIZE} />
       </div>
 
       {/* Lantern fog: above world, below beacon/HUD/overlays */}

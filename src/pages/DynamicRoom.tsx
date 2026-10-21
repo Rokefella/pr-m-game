@@ -2,7 +2,7 @@ import { Z } from '@/lib/zIndex';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
-import { ROOM_AVATAR_SIZE, ROOM_NPC_BODY_SIZE } from '@/components/theme/rooms/roomConfig';
+import { ROOM_NPC_BODY_SIZE } from '@/components/theme/rooms/roomConfig';
 import { ghostBodyPx } from '@/lib/orbSizes';
 import { placedGhosts, randomSpawnCell, nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';

@@ -4,6 +4,8 @@ import OrbLabels from '@/components/OrbLabels';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
 import EchoLayer, { type EchoLayerHandle } from '@/components/theme/objects/EchoLayer';
 import { echoCount, spawnEchoes } from '@/lib/echoGhosts';
+import { lanternRadii } from '@/lib/mazeLight';
+import { Z } from '@/lib/zIndex';
 import { corridorCell } from '@/lib/ghostMotion';
 import { placedGhosts, nearbyGhostLine } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
@@ -43,15 +45,8 @@ const INITIAL_STEPS = 1000;
 const CELL = 40;
 const MAZE_AVATAR_SIZE = 30;
 // Lantern: clear radius around the player, widened by Perception; beyond it a dim (not black) fog.
-const LANTERN_BASE_RADIUS_CELLS = 5;
-const LANTERN_PERCEPTION_BONUS = 0.5;
-const LANTERN_SOFT_CELLS = 2;
 const FOG_OPACITY = 0.9;
 const FOG_RGB = '8,10,24';
-const lanternRadii = (perception: number) => {
-  const r1 = (LANTERN_BASE_RADIUS_CELLS + Math.min(3, Math.max(0, perception) * LANTERN_PERCEPTION_BONUS)) * CELL;
-  return { r1, r2: r1 + LANTERN_SOFT_CELLS * CELL };
-};
 const LANTERN_BG = `radial-gradient(circle at var(--lx) var(--ly), rgba(245,213,138,.08) 0, rgba(245,213,138,0) ${1.4 * CELL}px), radial-gradient(circle at var(--lx) var(--ly), rgba(${FOG_RGB},0) 0, rgba(${FOG_RGB},0) var(--r1), rgba(${FOG_RGB},calc(var(--fog) * .35)) calc(var(--r1) + (var(--r2) - var(--r1)) * .5), rgba(${FOG_RGB},var(--fog)) var(--r2))`;
 
 // HUD bar reserves enough height for the two-line state ("tap to exchange"

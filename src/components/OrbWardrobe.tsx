@@ -97,7 +97,7 @@ export function DropDetail({ drop, onClose, onUsed }: { drop: DetailDrop; onClos
     {drop.rarity && <span className="drop-rarity-chip font-mono">{drop.rarity.toUpperCase()}</span>}
     <p className="font-fell italic drop-detail-desc">{drop.description ?? 'Its purpose is not yet clear.'}</p>
     {isDye
-      ? <Button type="button" className="console-primary font-cinzel drop-detail-use" disabled={busy} onClick={use}>USE</Button>
+      ? <Button type="button" className="font-cinzel drop-detail-use" disabled={busy} onClick={use}>USE</Button>
       : <p className="font-fell italic drop-detail-msg">Not usable yet.</p>}
     {msg && <p className="font-fell italic drop-detail-msg">{msg}</p>}
   </div>;

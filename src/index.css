@@ -448,3 +448,23 @@
 @keyframes npcHalo { 0%,100% { fill-opacity: .10; } 50% { fill-opacity: .22; } }
 @keyframes npcSymbol { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-2px); } }
 @media (prefers-reduced-motion: reduce) { .npc-orb-halo, .npc-orb-symbol { animation: none; } }
+
+/* Orb wardrobe and drop detail */
+.orb-wardrobe { margin-top: 24px; }
+.orb-swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, 44px); gap: 10px; justify-content: center; margin-top: 10px; }
+.orb-swatch { position: relative; width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: var(--plate-inset); border: 1px solid var(--plate-edge); cursor: pointer; padding: 0; }
+.orb-swatch-active { box-shadow: 0 0 0 2px #f5c060; border-color: #f5c060; }
+.orb-swatch-locked { background: #1a1d2c; filter: grayscale(1); opacity: .7; }
+.orb-swatch-unknown { font-size: 16px; color: #8e99d0; }
+.orb-swatch-label { position: absolute; bottom: -14px; font-size: 8px; letter-spacing: .1em; color: #8e99d0; }
+.orb-wardrobe-note { text-align: center; font-size: 13px; color: var(--plate-label); margin-top: 18px; }
+.drop-detail { position: relative; margin-top: 16px; padding: 16px; background: #0f1329; border: 1px solid #2f3560; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+.drop-detail-close { position: absolute; top: 0; right: 0; width: 44px; height: 44px; background: none; border: 0; color: #8e99d0; font-size: 20px; cursor: pointer; }
+.drop-detail-name { font-size: 16px; color: #f5c060; letter-spacing: .1em; }
+.drop-rarity-chip { font-size: 10px; letter-spacing: .15em; color: #b79bff; border: 1px solid #4a5385; padding: 1px 6px; }
+.drop-detail-desc { font-size: 14px; color: #e8e4ff; margin: 0; }
+.drop-detail-msg { font-size: 14px; color: #b79bff; margin: 0; }
+.drop-detail-use { width: 100%; min-height: 48px; border-radius: 0; background: #c8963a; border-top: 3px solid #f5c060; border-bottom: 3px solid #8a6420; color: #1a1448; letter-spacing: .3em; }
+.drop-detail-use:hover { background: #c8963a; }
+.drop-detail-use:disabled { background: #2f3560; color: #6a74b0; }
+.dye-whisper { text-align: center; font-size: 14px; color: #c8963a; margin-top: 12px; }

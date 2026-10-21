@@ -8,7 +8,8 @@ import { supabase } from '@/lib/supabase';
 import { formatPrime } from '@/lib/format';
 import { endRun } from '@/lib/runState';
 import Thumbstick from '@/components/Thumbstick';
-import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
+import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
+import { useOrbSync } from '@/lib/orb';
 import { patternUri } from '@/lib/theme/patterns';
 import { SHADOW } from '@/lib/theme/shadow';
 import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
@@ -168,6 +169,8 @@ const ShadowRealm = () => {
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationRef = useRef<number | null>(null);
   const [auraColor, setAuraColor] = useState<string | null>(null);
+  const [orbDye, setOrbDye] = useState<string | null>(null);
+  useOrbSync(setAuraColor, setOrbDye);
   const [walking, setWalking] = useState(false);
   const walkingRef = useRef(false);
   const displayRef = useRef({ x: 0, y: 0 });
@@ -375,6 +378,7 @@ const ShadowRealm = () => {
       setRegistrationNumber(row.registration_number);
       registrationRef.current = row.registration_number;
       setAuraColor(row.aura_color ?? null);
+      setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
       setFlag(user.id, 'shadow_visited', 'true');
 
       const { data } = await supabase
@@ -647,7 +651,7 @@ const ShadowRealm = () => {
   }, []);
 
   const ghostDelays = useMemo(() => ghostZones.map(() => `${(Math.random() * 1.3).toFixed(2)}s`), [ghostZones]);
-  const palette = registrationNumber === 1 ? 'red' as const : paletteFromColor(auraColor, registrationNumber);
+  const palette = orbLook(auraColor, orbDye, registrationNumber);
   const floorUri = useMemo(() => patternUri('floor', 'shadow', SHADOW.seam), []);
   const wallUri = useMemo(() => patternUri('wall', 'shadow', SHADOW.seam), []);
   const cellAt = (p: { x: number; y: number }, w = STEP, h = STEP): CSSProperties => ({

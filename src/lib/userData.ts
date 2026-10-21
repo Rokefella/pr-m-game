@@ -20,6 +20,7 @@ export type UserRow = {
   subscription_status: string
   subscription_tier: string | null
   trial_end: string
+  orb_dye?: string | null
 }
 
 const DEFAULTS: Omit<UserRow, 'id'> = {

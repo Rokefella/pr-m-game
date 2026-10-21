@@ -63,3 +63,7 @@
 
 - [x] Add Console Door maze round trips, shared Console Room, server-validated keypad and temporary rift card; 135 tests and preview compilation pass; isolated 375px/desktop walkthrough verifies wrong codes, countdown, silent answer, rift and exact-cell fragment-preserving return.
 - [ ] Verify console codes, keys and unlock persistence against a real player's published maze — the game uses a separate external auth session unavailable to the checker; isolated tests are not live server verification.
+
+- [x] Dyes: any-colour orb, USE dye sheet, ORB COLOUR wardrobe, live orb updates; 174 tests pass.
+- [ ] Ghost players show the dye colour — the positions table has no colour column (needs a database change on the game server).
+- [ ] Verify dye USE/wardrobe on a real account — the game sign-in is unavailable to the checker.

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
+import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import { Button } from '@/components/ui/button';
 import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
 import PixelEye from '@/components/theme/PixelEye';
@@ -35,6 +35,7 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
   const [reducedReady, setReducedReady] = useState(false);
   const [filled, setFilled] = useState<number | null>(null);
   const [auraColor, setAuraColor] = useState<string | null>(null);
+  const [orbDye, setOrbDye] = useState<string | null>(null);
   const [fadingOut, setFadingOut] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   const savedTimerRef = useRef<number | null>(null);
@@ -71,8 +72,8 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
     })();
     void (async () => {
       try {
-        const { data } = await supabase.from('users').select('aura_color').eq('id', user.id).maybeSingle();
-        if (!cancelled) setAuraColor(data?.aura_color ?? null);
+        const { data } = await supabase.from('users').select('aura_color, orb_dye').eq('id', user.id).maybeSingle();
+        if (!cancelled) { setAuraColor(data?.aura_color ?? null); setOrbDye((data as { orb_dye?: string | null } | null)?.orb_dye ?? null); }
       } catch { /* Use the existing default purple palette. */ }
     })();
     return () => { cancelled = true; };
@@ -173,7 +174,7 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
             <FolderSlots filled={filled} revealed={revealed} />
           </>}
           <div className="fragment-avatar">
-            <PlayerAvatar size={36} palette={paletteFromColor(auraColor, registrationNumber)} walking={false} />
+            <PlayerAvatar size={36} palette={orbLook(auraColor, orbDye, registrationNumber)} walking={false} />
             <div className={`fragment-registration font-mono ${registrationNumber === 1 ? 'fragment-registration-first' : ''}`}>{regLabel}</div>
           </div>
           <Button className="fragment-save font-cinzel" disabled={!canSave || savedMsg} onClick={handleCapture}>SAVE TO FOLDER</Button>

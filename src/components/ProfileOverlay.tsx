@@ -11,7 +11,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { sendBetaFeedback } from '@/lib/betaFeedback';
 import { formatPrime } from '@/lib/format';
 import PlateFrame from '@/components/theme/PlateFrame';
-import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
+import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
+import { OrbWardrobe, DropDetail } from '@/components/OrbWardrobe';
+import { publishOrb, type OrbChange } from '@/lib/orb';
 import { X } from 'lucide-react';
 import { fragmentInventory, type FolderFragment } from '@/lib/carriedFragments';
 import DropIcon from '@/components/DropIcon';
@@ -45,6 +47,7 @@ type AccountUserRow = {
   title: string | null;
   unlocked_titles: string[] | null;
   aura_color: string | null;
+  orb_dye?: string | null;
   level: number;
   avatar_hat: string | null;
   avatar_body: string | null;
@@ -63,6 +66,7 @@ type OwnedDrop = {
   description: string | null;
   category: string | null;
   icon_svg: string | null;
+  rarity?: string | null;
 };
 
 const ProfileOverlay = ({
@@ -99,6 +103,12 @@ const ProfileOverlay = ({
   const [folderTooltip, setFolderTooltip] = useState<string | null>(null);
   const [ownedDrops, setOwnedDrops] = useState<OwnedDrop[]>([]);
   const [dropTooltip, setDropTooltip] = useState<string | null>(null);
+  const [dropsNonce, setDropsNonce] = useState(0);
+  const [dyeWhisper, setDyeWhisper] = useState('');
+  const applyOrb = (c: OrbChange) => {
+    setAccountRow(prev => prev ? { ...prev, aura_color: c.aura_color ?? prev.aura_color, orb_dye: c.orb_dye } : prev);
+    publishOrb(c);
+  };
   const [extraDropCapacity, setExtraDropCapacity] = useState(0);
   const [dropSlotMsg, setDropSlotMsg] = useState('');
   const [buyingSlot, setBuyingSlot] = useState(false);
@@ -173,7 +183,7 @@ const ProfileOverlay = ({
     let cancelled = false;
     supabase
       .from('users')
-      .select('username, credits, steps_remaining, registration_number, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, level, avatar_hat, avatar_body, avatar_head, trade, extra_drop_capacity, growth_points, social, perception')
+      .select('username, credits, steps_remaining, registration_number, subscription_status, subscription_tier, trial_end, title, unlocked_titles, aura_color, orb_dye, level, avatar_hat, avatar_body, avatar_head, trade, extra_drop_capacity, growth_points, social, perception')
       .eq('id', user.id)
       .maybeSingle()
       .then(({ data }) => {
@@ -195,12 +205,12 @@ const ProfileOverlay = ({
     (supabase.from('drops' as never) as never as {
       select: (q: string) => { eq: (c: string, v: string) => Promise<{ data: unknown; error: unknown }> };
     })
-      .select('id, drop_types(drop_key, name, description, category, icon_svg)')
+      .select('id, drop_types(drop_key, name, description, category, icon_svg, rarity)')
       .eq('user_id', user.id)
       .then(({ data, error }) => {
         if (cancelled) return;
         if (error) { console.error('[Folder] drops fetch failed', error); return; }
-        type DT = { drop_key?: string; name?: string; description?: string | null; category?: string | null; icon_svg?: string | null };
+        type DT = { drop_key?: string; name?: string; description?: string | null; category?: string | null; icon_svg?: string | null; rarity?: string | null };
         const rows = (data || []) as Array<{ id: string; drop_types?: DT | DT[] }>;
         const mapped: OwnedDrop[] = rows.map((r) => {
           const dt = Array.isArray(r.drop_types) ? r.drop_types[0] : r.drop_types;
@@ -211,12 +221,13 @@ const ProfileOverlay = ({
             description: dt?.description ?? null,
             category: dt?.category ?? null,
             icon_svg: dt?.icon_svg ?? null,
+            rarity: dt?.rarity ?? null,
           };
         });
         setOwnedDrops(mapped);
       });
     return () => { cancelled = true; };
-  }, [isOpen, user]);
+  }, [isOpen, user, dropsNonce]);
 
   useEffect(() => {
     if (!isOpen || !user) return;
@@ -457,7 +468,7 @@ const ProfileOverlay = ({
       <PlateFrame width="min(100vw, 440px)" className="profile-frame">
         <div className="profile-content">
           <header className="profile-header">
-            <PlayerAvatar size={56} palette={paletteFromColor(accountRow?.aura_color, accountRow?.registration_number)} walking={false} />
+            <PlayerAvatar size={56} palette={orbLook(accountRow?.aura_color, accountRow?.orb_dye, accountRow?.registration_number)} walking={false} />
             <div className="profile-identity">
               <h2 className="font-cinzel">{accountRow?.username?.trim() || `#${regNum}`}</h2>
               <div className="profile-header-plates font-mono"><span className="fragment-registration">#{regNum}</span><span className="profile-level">LEVEL {level.padStart(2, '0')}</span></div>
@@ -471,6 +482,7 @@ const ProfileOverlay = ({
         {/* PROFILE content */}
         {mainTab === 'profile' && (
           <div style={{ marginTop: 8 }}>
+            <OrbWardrobe auraColor={accountRow?.aura_color ?? null} orbDye={accountRow?.orb_dye ?? null} registrationNumber={accountRow?.registration_number ?? null} reloadKey={dropsNonce} onChange={applyOrb} />
             <div
               style={{
                 display: 'flex', justifyContent: 'space-around',
@@ -840,15 +852,8 @@ const ProfileOverlay = ({
                       {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? 'profile-drop-filled' : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="profile-drop-body"><DropIcon svg={drop.icon_svg} category={drop.category} size={40} />{drop.category === 'key' && <span className="profile-key-badge font-mono">KEY</span>}<span className="font-fell italic">{drop.name}</span></span>}</Button>)}
                     </div>
 
-                    {/* Tooltip / flavour text */}
-                    {selectedDrop && (
-                      <p
-                        className="font-fell italic"
-                        style={{ textAlign: 'center', fontSize: 13, color: 'var(--plate-label)', marginTop: 16 }}
-                      >
-                        {selectedDrop.name}. {selectedDrop.description ?? 'Its purpose is not yet clear.'}
-                      </p>
-                    )}
+                    {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
+                    {dyeWhisper && <p className="font-fell italic dye-whisper">{dyeWhisper}</p>}
 
                     {/* Status text */}
                     {owned === 0 && (

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser, upsertUser } from '@/lib/userData';
 import PlateFrame from '@/components/theme/PlateFrame';
-import PlayerAvatar, { paletteFromColor } from '@/components/PlayerAvatar';
+import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
+import { useOrbSync } from '@/lib/orb';
 
 const NAME_RE = /^[A-Za-z0-9 _-]+$/;
 export function nameError(raw: string): string | null {
@@ -19,6 +20,8 @@ const ProfileSetup = () => {
   const [saving, setSaving] = useState(false);
   const [focused, setFocused] = useState(false);
   const [auraColor, setAuraColor] = useState('#5b4fd4');
+  const [orbDye, setOrbDye] = useState<string | null>(null);
+  useOrbSync(setAuraColor, setOrbDye);
   const [registration, setRegistration] = useState<number | null>(null);
   const [avatarSize] = useState(() => (window.innerHeight < 700 ? 80 : 96));
   const navigate = useNavigate();
@@ -32,6 +35,7 @@ const ProfileSetup = () => {
         const row = await fetchOrCreateUser(user.id);
         if (cancelled) return;
         if (row.aura_color) setAuraColor(row.aura_color);
+        setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
         if (row.registration_number) setRegistration(row.registration_number);
       } catch (e) {
         console.error('[ProfileSetup] fetchOrCreateUser failed', e);
@@ -58,7 +62,7 @@ const ProfileSetup = () => {
   };
 
   const isFirst = registration === 1;
-  const palette = isFirst ? 'red' : paletteFromColor(auraColor, registration);
+  const palette = orbLook(auraColor, orbDye, isFirst ? 1 : registration);
   const plate = registration ? `#${String(registration).padStart(4, '0')}` : '#----';
 
   return (

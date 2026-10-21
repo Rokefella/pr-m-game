@@ -474,9 +474,9 @@
 body:has([data-game-ui="open"]) .orb-label-overlay { display: none; }
 body:has([data-profile-open="true"]) :is([data-game-world], .ghost-position, .echo-position) { visibility: hidden !important; }
 .profile-perception-note { font-size: 11px; color: var(--plate-label); margin: 4px 0 8px; }
-.orb-label { position: absolute; left: 0; top: 0; visibility: hidden; display: block; width: max-content; max-width: 160px; pointer-events: none; text-align: center; white-space: nowrap; text-shadow: var(--ghost-title-shadow); line-height: 1.2; will-change: transform; }
-.orb-label-title { color: var(--ghost-title); }
-.orb-label-name { font-style: normal; text-transform: none; letter-spacing: .02em; color: var(--auth-text); opacity: .85; }
+.orb-label { position: absolute; left: 0; top: 0; visibility: hidden; display: block; width: max-content; max-width: 160px; pointer-events: none; text-align: center; white-space: nowrap; line-height: 1.2; will-change: transform; -webkit-text-stroke: 1px rgba(4, 4, 12, .85); paint-order: stroke fill; text-shadow: var(--ghost-title-shadow); }
+.orb-label-title { color: var(--ghost-title); font-style: italic; }
+.orb-label-name { font-style: normal; text-transform: none; letter-spacing: .02em; color: var(--auth-text); opacity: .9; }
 .ghost-body { display: block; overflow: visible; filter: var(--ghost-glow); opacity: .55; animation: ghostFlicker 3s ease-in-out infinite, ghostDrift 4s ease-in-out infinite; }
 .echo-position { position: absolute; left: 0; top: 0; z-index: var(--z-objects); pointer-events: none; visibility: hidden; opacity: 0; will-change: transform; }
 .echo-position .ghost-body { animation: echoFlicker 3s ease-in-out infinite; }

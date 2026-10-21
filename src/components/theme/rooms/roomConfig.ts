@@ -1,13 +1,14 @@
 import type { StyleKey } from '@/lib/theme/svgSources';
+import { NPC_BODY_SCALE, avatarPx, npcBodyPx } from '@/lib/orbSizes';
 
 export const ROOM_ZOOM = 1.5;
-export const ROOM_AVATAR_SIZE = 25;
-// PlayerAvatar's 92-unit canvas contains a 52-unit orb; NpcOrb size is
-// body width, not canvas width. World zoom applies to both exactly once.
-export function roomNpcBodySize(avatarSize = ROOM_AVATAR_SIZE, kind: 'avatar' | 'dot' = 'avatar') {
-  return Math.round(avatarSize * (kind === 'dot' ? 1 : 52 / 92) * 1.15);
+export const ROOM_AVATAR_SIZE = avatarPx('room');
+// The player orb body fills its avatar canvas and NpcOrb size is body width,
+// so an NPC body is simply the avatar size times the shared NPC scale.
+export function roomNpcBodySize(avatarSize = ROOM_AVATAR_SIZE) {
+  return Math.round(avatarSize * NPC_BODY_SCALE);
 }
-export const ROOM_NPC_BODY_SIZE = roomNpcBodySize();
+export const ROOM_NPC_BODY_SIZE = npcBodyPx('room');
 export const ROOM_WALL_STYLE: StyleKey = 'gold';
 export const ROOM_BG = '#0b0e1f';
 export const ROOM_CELL = 20;

@@ -105,7 +105,7 @@ function PlayerAvatar({ palette, walking, size = 30 }: Props) {
           <stop offset="1" stopColor={p.aura} stopOpacity="0" />
         </radialGradient>
       </defs>
-      <g transform="translate(-26 -26) scale(1.4444)" shapeRendering="crispEdges">
+      <g transform="translate(-46 -46) scale(2.5556)" shapeRendering="crispEdges">
         <circle cx="18" cy="18" r="26" fill={`url(#${glowId})`} className="pa-glow" shapeRendering="geometricPrecision" />
         <ellipse cx="18" cy="45" rx="14" ry="3" fill="var(--instrument-shadow)" opacity=".4" />
         <ellipse className="pa-fshadow pa-l" cx="10" cy="42" rx="3" ry="1" fill="var(--instrument-shadow)" opacity=".45" />

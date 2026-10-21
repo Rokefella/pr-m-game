@@ -2,6 +2,7 @@ import { Z } from '@/lib/zIndex';
 import { ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import { npcBodyPx } from '@/lib/orbSizes';
 import { NPC_DIALOGUE_CLOSED, useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import { useAuth } from '@/context/AuthContext';
 
@@ -62,7 +63,7 @@ const NpcDialogue = ({ text, npcName, children, onShow }: Props) => {
             animation: 'bernardImgIn 600ms ease-out',
           }}
         >
-          <div className="npc-dialogue-orb"><NpcOrb npc={npcName} name={npcName} size={Math.round(25 * 1.15)} quest={questState(npcName)} /></div>
+          <div className="npc-dialogue-orb"><NpcOrb npc={npcName} name={npcName} size={npcBodyPx('village')} quest={questState(npcName)} /></div>
         </div>
 
         {/* Right: dialogue */}

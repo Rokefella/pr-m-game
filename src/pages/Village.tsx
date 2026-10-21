@@ -23,6 +23,7 @@ import { supabase } from '@/lib/supabase';
 import { getAllFlags, getFlag, setFlag, _resetQuestFlagCache } from '@/lib/questFlags';
 import FloorLayer from '@/components/theme/FloorLayer';
 import BuildingBlock from '@/components/theme/BuildingBlock';
+import { buildingLook, type BuildingLook } from '@/lib/theme/villageRendering';
 import VillageTerrain from '@/components/theme/VillageTerrain';
 import { plazaEmblems } from '@/lib/theme/villageRendering';
 import { VillageDoor } from '@/components/theme/objects';
@@ -62,6 +63,7 @@ type BuildingCluster = {
   cols: number;
   rows: number;
   cells: number;
+  look?: BuildingLook;
 };
 type DynamicVillage = {
   typeA: typeof TYPE_A;
@@ -88,7 +90,9 @@ type DynamicVillage = {
 };
 
 // Flood-fill orthogonally-contiguous same-type cells into bounding-box clusters
-function clusterCells(kind: ClusterKind, cells: { col: number; row: number }[]): BuildingCluster[] {
+function clusterCells(kind: ClusterKind, cells: { col: number; row: number; tone?: unknown; age?: unknown }[]): BuildingCluster[] {
+  const lookByKey = new Map<string, BuildingLook>();
+  cells.forEach((c) => { const l = buildingLook(c.tone, c.age); if (l) lookByKey.set(`${c.col},${c.row}`, l); });
   const remaining = new Set(cells.map((c) => `${c.col},${c.row}`));
   const out: BuildingCluster[] = [];
   let n = 0;
@@ -98,8 +102,10 @@ function clusterCells(kind: ClusterKind, cells: { col: number; row: number }[]):
     remaining.delete(key);
     let minCol = Infinity, minRow = Infinity, maxCol = -Infinity, maxRow = -Infinity;
     let count = 0;
+    let look: BuildingLook | undefined;
     while (stack.length) {
       const cur = stack.pop() as string;
+      look ??= lookByKey.get(cur);
       const [c, r] = cur.split(',').map(Number);
       count++;
       if (c < minCol) minCol = c;
@@ -126,6 +132,7 @@ function clusterCells(kind: ClusterKind, cells: { col: number; row: number }[]):
       cols,
       rows,
       cells: count,
+      look,
     });
   }
   return out;
@@ -1318,9 +1325,9 @@ const Village = () => {
         const doors: VillageDoorDef[] = [];
         const typeB: Rect[] = [];
         const typeC: Rect[] = [];
-        const sCells: { col: number; row: number }[] = [];
-        const mCells: { col: number; row: number }[] = [];
-        const lCells: { col: number; row: number }[] = [];
+        const sCells: { col: number; row: number; tone?: unknown; age?: unknown }[] = [];
+        const mCells: { col: number; row: number; tone?: unknown; age?: unknown }[] = [];
+        const lCells: { col: number; row: number; tone?: unknown; age?: unknown }[] = [];
         const forest: ForestBlock[] = [];
         const groundTiles: GroundTile[] = [];
         const wallTiles: Rect[] = [];
@@ -1341,13 +1348,13 @@ const Village = () => {
           const y = cell.row * CELL;
           switch (cell.type) {
             case 'BUILDING_S':
-              sCells.push({ col: cell.col, row: cell.row });
+              sCells.push({ col: cell.col, row: cell.row, tone: (cell as { tone?: unknown }).tone, age: (cell as { age?: unknown }).age });
               break;
             case 'BUILDING_M':
-              mCells.push({ col: cell.col, row: cell.row });
+              mCells.push({ col: cell.col, row: cell.row, tone: (cell as { tone?: unknown }).tone, age: (cell as { age?: unknown }).age });
               break;
             case 'BUILDING_L':
-              lCells.push({ col: cell.col, row: cell.row });
+              lCells.push({ col: cell.col, row: cell.row, tone: (cell as { tone?: unknown }).tone, age: (cell as { age?: unknown }).age });
               break;
 
             case 'DOOR_MAZE':
@@ -2170,7 +2177,7 @@ const Village = () => {
         {/* One module SVG per existing building footprint. */}
         {visible?.clusters.map((c) => (
           <div key={c.id} style={{ position: 'absolute', left: c.x, top: c.y, width: c.w, height: c.h, zIndex: 3, pointerEvents: 'none' }}>
-            <BuildingBlock cols={c.cols} rows={c.rows} size={20} doorway={!footprintHasDoor(c, activeDoors)} glow={VILLAGE_GLOW} />
+            <BuildingBlock cols={c.cols} rows={c.rows} size={20} look={c.look} doorway={!footprintHasDoor(c, activeDoors)} glow={VILLAGE_GLOW} />
           </div>
         ))}
         {!dynamicBuildings && [...TYPE_RIM, ...TYPE_C, ...TYPE_B].map((b) => (

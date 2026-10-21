@@ -34,3 +34,9 @@ describe('Village polish rules', () => {
     expect(plazaEmblems(new Set(['0,0', '1,0', '2,0']))).toEqual([]);
   });
 });
+import { buildingLook, buildingPalette } from './villageRendering';
+describe('Building tone and age', () => {
+  it('ignores missing or invalid fields', () => { expect(buildingLook(undefined, 2)).toBeUndefined(); expect(buildingLook('sand', 5)).toBeUndefined(); });
+  it('age 4 is the pure base, roof 35% darker', () => { const p = buildingPalette({ tone: 'terracotta', age: 4 }); expect(p.wall).toBe('#c8603a'); expect(p.roof).toBe('#823e26'); expect(p.litRatio).toBe(1); });
+  it('age 1 is darker with half the windows lit and cached', () => { const a = buildingPalette({ tone: 'terracotta', age: 1 }); expect(parseInt(a.wall.slice(1, 3), 16)).toBeLessThan(0x70); expect(a.litRatio).toBe(0.5); expect(buildingPalette({ tone: 'terracotta', age: 1 })).toBe(a); });
+});

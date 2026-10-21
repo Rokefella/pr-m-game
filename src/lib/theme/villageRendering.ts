@@ -37,3 +37,35 @@ export function plazaEmblems(squares: ReadonlySet<string>): { col: number; row: 
   }
   return out;
 }
+
+export const BUILDING_TONES = { terracotta: '#c8603a', sand: '#d4b078', slate: '#6a86a8', sage: '#7a9a6a', plum: '#8a5a8a', stone: '#8a8a96' } as const;
+export type BuildingTone = keyof typeof BUILDING_TONES;
+export type BuildingLook = { tone: BuildingTone; age: 1 | 2 | 3 | 4 };
+export type BuildingPalette = { wall: string; roof: string; litRatio: number };
+const AGE_SHADE = [0.45, 0.62, 0.8, 1];
+const AGE_GREY = [0.12, 0.08, 0.04, 0];
+const paletteCache = new Map<string, BuildingPalette>();
+const hex = (n: number[]) => '#' + n.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+
+/** Valid tone+age pair from raw cell data, else undefined (keeps the legacy look). */
+export function buildingLook(tone: unknown, age: unknown): BuildingLook | undefined {
+  if (typeof tone !== 'string' || !(tone in BUILDING_TONES)) return undefined;
+  const a = Number(age);
+  if (!Number.isInteger(a) || a < 1 || a > 4) return undefined;
+  return { tone: tone as BuildingTone, age: a as BuildingLook['age'] };
+}
+
+/** Cached per tone+age (at most 24 entries). */
+export function buildingPalette({ tone, age }: BuildingLook): BuildingPalette {
+  const key = `${tone}-${age}`;
+  const hit = paletteCache.get(key);
+  if (hit) return hit;
+  const b = BUILDING_TONES[tone].slice(1).match(/../g)!.map(h => parseInt(h, 16));
+  const k = AGE_SHADE[age - 1], g = AGE_GREY[age - 1];
+  const shaded = b.map(v => v * k);
+  const grey = (shaded[0] + shaded[1] + shaded[2]) / 3;
+  const wall = shaded.map(v => v * (1 - g) + grey * g);
+  const p = { wall: hex(wall), roof: hex(wall.map(v => v * 0.65)), litRatio: age <= 2 ? 0.5 : 1 };
+  paletteCache.set(key, p);
+  return p;
+}

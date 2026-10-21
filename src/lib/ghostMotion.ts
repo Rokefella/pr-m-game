@@ -28,7 +28,7 @@ export function corridorCell(col: number, row: number, free: GhostWalkable) {
   const v = free(col, row - 1) || free(col, row + 1);
   return (h && !free(col, row - 1) && !free(col, row + 1)) ||
     (v && !free(col - 1, row) && !free(col + 1, row)) ||
-    (h && v && !(free(col - 1, row) && free(col + 1, row) && free(col, row - 1) && free(col, row + 1)) &&
+    (h && v &&
       !free(col - 1, row - 1) && !free(col + 1, row - 1) && !free(col - 1, row + 1) && !free(col + 1, row + 1));
 }
 

@@ -108,6 +108,10 @@
     --ghost-rose: #ffd6e4;
     --ghost-title: #b8c4ff;
     --ghost-title-shadow: 0 1px 4px var(--instrument-shadow);
+    --village-path-cyan: #62e6f0;
+    --village-path-lamp-post: #2a2038;
+    --village-path-lamp-bulb: #fff0c0;
+    --village-path-lamp-glow: radial-gradient(circle, #ffb347 0%, transparent 70%);
     --npc-bernard-0: #6a4a10;
     --npc-bernard-1: #c8963a;
     --npc-bernard-2: #e0b055;
@@ -449,6 +453,14 @@
 .npc-orb { display: block; overflow: visible; pointer-events: none; image-rendering: pixelated; transform: translate(-50%, -87.5%); }
 .npc-orb-cell { position: absolute; left: 50%; top: 50%; }
 .ghost-position { position: absolute; z-index: 4; pointer-events: none; will-change: transform; }
+.village-path-edge { position: absolute; pointer-events: none; z-index: 3; image-rendering: pixelated; background-repeat: repeat; }
+.village-path-edge-glow { background: var(--village-path-cyan); filter: blur(10px); opacity: .12; }
+.village-path-lamp { position: absolute; width: 0; height: 0; z-index: 3; pointer-events: none; }
+.village-path-lamp-post { position: absolute; left: -2px; top: -26px; width: 4px; height: 26px; background: var(--village-path-lamp-post); }
+.village-path-lamp-bulb { position: absolute; left: -3px; top: -29px; width: 6px; height: 6px; background: var(--village-path-lamp-bulb); }
+.village-path-lamp-glow { position: absolute; left: -44px; top: -70px; width: 88px; height: 88px; background: var(--village-path-lamp-glow); opacity: .17; animation: villagePathLamp 2.4s ease-in-out infinite; }
+@keyframes villagePathLamp { 0%,100% { opacity: .14; } 50% { opacity: .20; } }
+@media (prefers-reduced-motion: reduce) { .village-path-lamp-glow { animation: none; } }
 .ghost-orb { position: relative; transform: translate(-50%, -46%); pointer-events: none; --ghost-outline: color-mix(in srgb, currentColor 65%, var(--instrument-shadow)); --ghost-mid: color-mix(in srgb, currentColor 90%, var(--npc-specular)); --ghost-light: color-mix(in srgb, currentColor 65%, var(--npc-specular)); --ghost-highlight: color-mix(in srgb, currentColor 40%, var(--npc-specular)); --ghost-glow: drop-shadow(0 0 4px currentColor); }
 .ghost-tone-pale { color: var(--ghost-pale); }
 .ghost-tone-mist { color: var(--ghost-mist); }

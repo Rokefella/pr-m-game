@@ -1,21 +1,22 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import VillagePatternTile from './VillagePatternTile';
 import { Pylon } from './objects';
-import { lampSide, streetStyle, treeStyle, treeTint } from '@/lib/theme/villageRendering';
+import { treeStyle, treeTint } from '@/lib/theme/villageRendering';
+import { fringeUri, pathEdges, pathLamps } from '@/lib/theme/villagePaths';
 import { TREE_TINTS } from '@/lib/theme/svgSources';
-import { VILLAGE_GLOW } from '@/lib/theme/tokens';
+import { VILLAGE_GLOW, VILLAGE_STREET_STYLE, type VillageStreetStyle } from '@/lib/theme/tokens';
 
 type Ground = { x: number; y: number; kind: 'PATH' | 'ROAD' | 'SQUARE' | 'LANDMARK' };
 type Forest = { x: number; y: number; w: number; h: number };
-type Props = { ground: Ground[]; forest: Forest[]; roads: ReadonlySet<string>; trees: ReadonlySet<string>; squares?: ReadonlySet<string>; emblems?: { col: number; row: number }[] };
+type Props = { ground: Ground[]; forest: Forest[]; roads: ReadonlySet<string>; paths?: ReadonlySet<string>; trees: ReadonlySet<string>; squares?: ReadonlySet<string>; emblems?: { col: number; row: number }[]; streetStyle?: VillageStreetStyle };
 const C = 20;
 const EMPTY = new Set<string>();
 
 const Lamp = memo(function Lamp({ x, y }: { x: number; y: number }) {
-  return <div aria-hidden="true" style={{ position: 'absolute', left: x, top: y, width: 0, height: 0, zIndex: 3, pointerEvents: 'none' }}>
-    <div style={{ position: 'absolute', left: -9, top: -23, width: 18, height: 18, borderRadius: '50%', background: VILLAGE_GLOW, opacity: 0.22 }} />
-    <div style={{ position: 'absolute', left: -2, top: -14, width: 4, height: 14, background: '#2f3560' }} />
-    <div style={{ position: 'absolute', left: -3, top: -17, width: 6, height: 6, borderRadius: '50%', background: '#fff3c4' }} />
+  return <div aria-hidden="true" className="village-path-lamp" style={{ left: x, top: y }}>
+    <div className="village-path-lamp-glow" />
+    <div className="village-path-lamp-post" />
+    <div className="village-path-lamp-bulb" />
   </div>;
 });
 
@@ -27,28 +28,33 @@ const Emblem = memo(function Emblem({ x, y }: { x: number; y: number }) {
   </svg>;
 });
 
-export default memo(function VillageTerrain({ ground, forest, roads, trees, squares = EMPTY, emblems = [] }: Props) {
+export default memo(function VillageTerrain({ ground, forest, roads, paths = roads, trees, squares = EMPTY, emblems = [], streetStyle = VILLAGE_STREET_STYLE }: Props) {
+  const edges = useMemo(() => pathEdges(paths), [paths]);
+  const lamps = useMemo(() => pathLamps(paths, streetStyle), [paths, streetStyle]);
   let railCount = 0;
   return <>
     {ground.map(g => {
       const col = g.x / C, row = g.y / C;
-      const lamp = g.kind === 'ROAD' ? lampSide(col, row, roads) : null;
       const railN = g.kind === 'SQUARE' && !squares.has(`${col},${row - 1}`);
       const railW = g.kind === 'SQUARE' && !squares.has(`${col - 1},${row}`);
       const bulb = (railN || railW) && railCount++ % 2 === 1;
       return <div key={`gt-${g.x}-${g.y}`}>
-        <VillagePatternTile x={g.x} y={g.y} w={C} h={C} kind={g.kind === 'ROAD' || g.kind === 'PATH' ? 'street' : 'floor'} styleKey={g.kind === 'ROAD' ? streetStyle(col, row, roads) : g.kind === 'PATH' ? 'h' : 'plaza'} />
+        <VillagePatternTile x={g.x} y={g.y} w={C} h={C} kind={g.kind === 'ROAD' || g.kind === 'PATH' ? 'street' : 'floor'} styleKey={g.kind === 'ROAD' || g.kind === 'PATH' ? streetStyle : 'plaza'} />
         {railN && <div aria-hidden="true" style={{ position: 'absolute', left: g.x, top: g.y, width: C, height: 3, background: '#2f3560', zIndex: 2, pointerEvents: 'none' }} />}
         {railW && <div aria-hidden="true" style={{ position: 'absolute', left: g.x, top: g.y, width: 3, height: C, background: '#2f3560', zIndex: 2, pointerEvents: 'none' }} />}
         {bulb && <div aria-hidden="true" style={{ position: 'absolute', left: g.x, top: g.y, width: 4, height: 4, background: VILLAGE_GLOW, zIndex: 2, pointerEvents: 'none' }} />}
-        {lamp === 'n' && <Lamp x={g.x + C / 2} y={g.y + 4} />}
-        {lamp === 'w' && <Lamp x={g.x + 3} y={g.y + C / 2} />}
         {g.kind === 'LANDMARK' && <div style={{ position: 'absolute', left: g.x, top: g.y, zIndex: 3, pointerEvents: 'none' }}>
           <Pylon dimension="amber" size={20} />
           <div className="instrument-beacon-ring" style={{ position: 'absolute', inset: 0, border: '1px solid var(--instrument-beacon)', pointerEvents: 'none' }} />
         </div>}
       </div>;
     })}
+    {edges.map(e => {
+      const horizontal = e.side === 'n' || e.side === 's';
+      const span = horizontal ? 40 : 4;
+      return <div key={`${e.side}-${e.x}-${e.y}`} aria-hidden="true" className={`village-path-edge ${streetStyle === 'plates' ? 'village-path-edge-glow' : ''}`} style={{ left: e.x, top: e.y, width: e.w, height: e.h, backgroundImage: streetStyle === 'plates' ? undefined : fringeUri(e.side), backgroundSize: horizontal ? '40px 4px' : '4px 40px', backgroundPosition: horizontal ? `${-((e.x % span + span) % span)}px 0` : `0 ${-((e.y % 40 + 40) % 40)}px` }} />;
+    })}
+    {lamps.map(l => <Lamp key={`path-lamp-${l.x}-${l.y}`} x={l.x} y={l.y} />)}
     {emblems.map(e => <Emblem key={`em-${e.col}-${e.row}`} x={e.col * C} y={e.row * C} />)}
     {forest.map(f => {
       const col = Math.floor(f.x / C), row = Math.floor(f.y / C), s = C * 1.2;

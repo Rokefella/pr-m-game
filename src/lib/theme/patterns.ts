@@ -5,7 +5,8 @@ const cache = new Map<string, string>();
 type Kind = 'wall' | 'floor' | 'street' | 'tree' | 'flower';
 
 /** 96 for large sources (use background-size = cell size * 2), otherwise 48. */
-export function patternViewBox(kind: Kind, key: string): 48 | 96 {
+export function patternViewBox(kind: Kind, key: string): 24 | 48 | 96 {
+  if (kind === 'street') return 24;
   return LARGE_PATTERNS.has(`${kind}:${key}`) ? 96 : 48;
 }
 

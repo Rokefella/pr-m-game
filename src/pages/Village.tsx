@@ -2034,9 +2034,10 @@ const Village = () => {
   // Neighbour indexes are presentation-only and built once per loaded layout.
   const themedTiles = useMemo(() => {
     const roads = new Set((dynamicBuildings?.groundTiles ?? []).filter(g => g.kind === 'ROAD').map(g => `${g.x / 20},${g.y / 20}`));
+    const paths = new Set((dynamicBuildings?.groundTiles ?? []).filter(g => g.kind === 'ROAD' || g.kind === 'PATH').map(g => `${g.x / 20},${g.y / 20}`));
     const trees = new Set((dynamicBuildings?.forest ?? FOREST).map(f => `${Math.floor(f.x / 20)},${Math.floor(f.y / 20)}`));
     const squares = new Set((dynamicBuildings?.groundTiles ?? []).filter(g => g.kind === 'SQUARE').map(g => `${g.x / 20},${g.y / 20}`));
-    return { roads, trees, squares, emblems: plazaEmblems(squares) };
+    return { roads, paths, trees, squares, emblems: plazaEmblems(squares) };
   }, [dynamicBuildings]);
   const ghostFree = useCallback((col: number, row: number) => {
     if (!dynamicBuildings || col < 0 || row < 0 || col >= dynamicBuildings.gridSize || row >= dynamicBuildings.gridSize) return false;
@@ -2142,7 +2143,7 @@ const Village = () => {
         <FloorLayer cols={mapW / 20} rows={mapH / 20} size={20} styleKey="ground" glow={VILLAGE_GLOW} />
 
         {/* Decorative streets and plaza plates use cached CSS images. */}
-        <VillageTerrain ground={visible?.groundTiles ?? EMPTY_GROUND} forest={visible?.forest ?? FOREST} roads={themedTiles.roads} trees={themedTiles.trees} squares={themedTiles.squares} emblems={themedTiles.emblems} />
+        <VillageTerrain ground={visible?.groundTiles ?? EMPTY_GROUND} forest={visible?.forest ?? FOREST} roads={themedTiles.roads} paths={themedTiles.paths} trees={themedTiles.trees} squares={themedTiles.squares} emblems={themedTiles.emblems} />
 
         {/* Rugs — decorative floor overlay, above base ground, below solids */}
         {visible?.rugTiles.map((r) => (

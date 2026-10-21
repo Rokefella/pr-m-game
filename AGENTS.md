@@ -9,7 +9,7 @@
 
 - Keep tile-theme rendering isolated in theme modules: cache SVG background URIs for memoized walls and a single repeating floor layer, with one optional prime overlay; this preserves gameplay camera performance when themes are integrated later.
 - Maze camera transforms are written through a DOM ref; memoize visible themed cells by logical player cell and viewport size, retaining the existing culling margin to avoid per-frame grid scans.
-- Village themes use one repeating floor, cached background images for streets/trees, and one SVG per building footprint; neighbour indexes are memoized by loaded layout and existing DOM-ref camera/culling remain unchanged to keep large villages smooth.
+- Village uses cached street/tree backgrounds and building SVGs; memoize full-layout path indexes and merged exposed-edge runs, keeping camera/culling intact for smooth maps.
 - Keep village entrance geometry, legacy precedence and safe-return search in villageDoors; Village owns flags, gates and navigation, using the same memoized door collection for movement, spawning and culling to prevent divergent entrance zones.
 - Published theme/object metadata stays presentation-only except explicitly authored CONSOLE_DOOR interaction geometry, which the loader marks walkable; do not infer collision or pickups from decorative cells.
 

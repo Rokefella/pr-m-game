@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Replace village streets with switchable cobble/plates/brick patterns, merged exposed edges and brick-only lamps; preserve layout/collision/camera and verify all styles.
+
 - [x] Add attached title/name labels to player and authored ghost orbs, retaining sizes, movement and fog layering; 190 tests and preview compilation pass. Isolated desktop/375px checks verify Glorious/Marcel, optional labels, stable moving offsets and pointer pass-through.
 - [ ] Verify orb labels on real signed-in game screens — the game's external authentication session is unavailable; isolated checks do not verify real profile data or fog placement.
 

@@ -2,6 +2,7 @@ import { memo, type ReactNode } from 'react';
 import { DIMENSION_GLOW, type Dimension } from '@/lib/theme/tokens';
 export { default as VillageDoor } from './VillageDoor';
 export { ConsoleDoorTile, ConsoleTile } from './ConsoleTiles';
+export { default as NpcOrb } from './NpcOrb';
 
 type Props = { dimension: Dimension; size: number };
 function Art({ size, children }: { size: number; children: ReactNode }) {

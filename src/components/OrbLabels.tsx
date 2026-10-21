@@ -18,12 +18,14 @@ export function orbName(name?: string | null) {
   return truncateOrbText(name, 12);
 }
 
-export default memo(function OrbLabels({ title, name, size, kind = 'avatar', target }: { title?: string | null; name?: string | null; size: number; kind?: 'avatar' | 'npc' | 'dot'; target?: () => Element | null }) {
+export default memo(function OrbLabels({ title, name, size, kind = 'avatar', target, opacity }: { title?: string | null; name?: string | null; size: number; kind?: 'avatar' | 'npc' | 'dot'; target?: () => Element | null; opacity?: () => number }) {
   const anchor = useRef<HTMLSpanElement>(null);
   const titleRef = useRef<HTMLSpanElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
   const targetRef = useRef(target);
   targetRef.current = target;
+  const opacityRef = useRef(opacity);
+  opacityRef.current = opacity;
   const shownTitle = truncateOrbText(title, 18);
   const shownName = orbName(name);
   useEffect(() => {
@@ -37,6 +39,11 @@ export default memo(function OrbLabels({ title, name, size, kind = 'avatar', tar
       const visible = bounds.width > 0 && bounds.height > 0 && p.x >= -100 && p.x <= window.innerWidth + 100 && p.nameY >= -100 && p.titleY <= window.innerHeight + 100;
       if (titleRef.current) { titleRef.current.style.transform = `translate(${p.x}px, ${p.titleY}px) translate(-50%, -100%)`; titleRef.current.style.visibility = visible ? 'visible' : 'hidden'; }
       if (nameRef.current) { nameRef.current.style.transform = `translate(${p.x}px, ${p.nameY}px) translateX(-50%)`; nameRef.current.style.visibility = visible ? 'visible' : 'hidden'; }
+      if (opacityRef.current) {
+        const alpha = String(opacityRef.current());
+        if (titleRef.current) titleRef.current.style.opacity = alpha;
+        if (nameRef.current) nameRef.current.style.opacity = alpha;
+      }
     });
   }, [shownTitle, shownName, size, kind]);
   if (!shownTitle && !shownName) return null;

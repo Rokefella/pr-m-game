@@ -2,6 +2,8 @@ import { useNpcQuestStates, NPC_INVENTORY_CHANGED } from '@/hooks/useNpcQuestSta
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import OrbLabels from '@/components/OrbLabels';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
+import EchoLayer, { type EchoLayerHandle } from '@/components/theme/objects/EchoLayer';
+import { echoCount, spawnEchoes } from '@/lib/echoGhosts';
 import { corridorCell } from '@/lib/ghostMotion';
 import { placedGhosts, nearbyGhostLine } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
@@ -64,6 +66,7 @@ type EggDef = Cell & { line: string };
 type UserFragmentRow = { prime_number: number; banked: boolean | null; level: number | null };
 
 type LevelConfig = {
+  echoGhosts?: number;
   cols: number;
   rows: number;
   spawn: Cell;
@@ -551,6 +554,8 @@ const Maze = () => {
   const worldRef = useRef<HTMLDivElement>(null);
   const fogRef = useRef<HTMLDivElement>(null);
   const [perception, setPerception] = useState(0);
+  const perceptionRef = useRef(perception);
+  perceptionRef.current = perception;
   const camRef = useRef({ x: 0, y: 0 });
   const heldKeysRef = useRef<Set<string>>(new Set());
   const lastMoveTimeRef = useRef(0);
@@ -852,6 +857,15 @@ const Maze = () => {
   type RunDrop = { name: string; kind: 'key' | 'drop' };
   const [runDrops, setRunDrops] = useState<Map<string, RunDrop>>(new Map());
   const runDropsRef = useRef<Map<string, RunDrop>>(new Map());
+  const echoLayerRef = useRef<EchoLayerHandle>(null);
+  const [echoSpawns, setEchoSpawns] = useState<Cell[]>([]);
+  useEffect(() => {
+    if (!config || !levelLoaded) { setEchoSpawns([]); return; }
+    const excluded = new Set(config.specialSet);
+    [config.door, ...config.creditDoors, ...(config.doorsToRoom ?? []), ...config.fragments].forEach(p => excluded.add(`${p.col},${p.row}`));
+    (config.visualCells ?? []).filter(c => /DOOR|DROP|FRAGMENT/.test(c.type)).forEach(c => excluded.add(`${c.col},${c.row}`));
+    setEchoSpawns(spawnEchoes(config.openSet, posRef.current, excluded, echoCount(config.cols, config.echoGhosts)));
+  }, [config, levelLoaded]);
   const pendingDropClaimsRef = useRef(new Set<string>());
   const dropGenerationRef = useRef(0);
   useEffect(() => {
@@ -1164,7 +1178,11 @@ const Maze = () => {
   useEffect(() => {
     let raf = 0;
     let pulseT = 0;
-    const tick = () => {
+    let previousTime = 0;
+    const tick = (time: number) => {
+      const seconds = previousTime ? Math.min((time - previousTime) / 1000, .1) : 0;
+      previousTime = time;
+      echoLayerRef.current?.tick(seconds, displayPosRef.current, lanternRadii(perceptionRef.current).r2 / CELL);
       const k = heldKeysRef.current;
       let dc = 0, dr = 0;
       if (k.has('ArrowLeft')) dc -= 1;
@@ -1282,6 +1300,7 @@ const Maze = () => {
         ))}
 
         <GhostLayer ghosts={ghosts} size={MAZE_AVATAR_SIZE} cellSize={CELL} free={ghostFree} path={ghostPath} player={() => posRef.current} />
+        <EchoLayer ref={echoLayerRef} spawns={echoSpawns} open={config.openSet} size={MAZE_AVATAR_SIZE} cellSize={CELL} />
         {currentLevel === 1 && LEVEL1_HINTS.map((h, i) => (
           <div
             key={`hint-${i}`}

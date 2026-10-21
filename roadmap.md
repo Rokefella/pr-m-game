@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Add maze-only Echo ghosts with size-based/override counts, BFS-safe spawns, smooth non-reversing corridor movement and fog-aware title opacity driven by Maze's frame loop. 246 tests and preview compilation pass; isolated browser checks using published Level 1 geometry show 3 Echoes, moving transforms and hidden bodies/titles outside light, with no page errors.
+- [ ] Verify Echoes during real signed-in gameplay — external game authentication is unavailable; published geometry and isolated rendering do not establish the live player flow.
+
 - [x] Repair Bernard stage 3 → 4 after banking/on every Village load from shadow_visited or Library; preserve existing title until its reward unlocks. Published quest/stage/book records audited; 231 tests pass, including cleared-progress action spine through stage 6 and Village 2 hand-in; preview compilation passes.
 - [ ] Verify Bernard FULL RESET → stage 6 with a real player — external game authentication is unavailable; published records and simulated action tests do not establish live persistence.
 

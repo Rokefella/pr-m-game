@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Add authored fresh-arrival SPAWN positions and pass-through titled ghosts with proximity whispers in Village, Maze, Shadow Realm and rooms; test placement/cooldown rules and rendering.
+- [x] Add authored fresh-arrival SPAWN positions and pass-through titled ghosts with proximity whispers in Village, Maze, Shadow Realm and all room screens; radius/cooldown regression tests and compilation pass; isolated 375px/desktop art and static reduced motion verified.
+- [ ] Verify authored arrivals, ghost proximity and fog placement on real signed-in game screens — the game's separate external authentication session is unavailable; isolated artwork checks do not verify live gameplay.
 
 - [x] Replace NPC drawings with identity-coloured pixel orbs while retaining movement and interaction handlers; 171 tests and preview compilation pass, with all eleven identities and reduced-motion art checked at 375px.
 - [ ] Verify NPC placement and interactions on real game screens — the game's separate external sign-in session is unavailable; the isolated orb preview does not verify live gameplay.

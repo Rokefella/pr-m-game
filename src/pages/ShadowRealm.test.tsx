@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ShadowRealm from './ShadowRealm';
-vi.mock('@/hooks/useNpcQuestStates', () => ({ useNpcQuestStates: () => () => 'none' }));
+vi.mock('@/hooks/useNpcQuestStates', () => ({ useNpcQuestStates: () => () => 'none', useNpcDisplayName: (key: string) => key }));
 
 const state = vi.hoisted(() => ({
   size: 5, library: 12,

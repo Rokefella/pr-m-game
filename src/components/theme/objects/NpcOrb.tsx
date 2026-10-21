@@ -1,5 +1,7 @@
-import { memo } from 'react';
+import { memo, useRef } from 'react';
 import type { NpcQuestState } from '@/lib/npcQuestState';
+import OrbLabels from '@/components/OrbLabels';
+import { useNpcDisplayName } from '@/hooks/useNpcQuestStates';
 
 const SYMBOLS = {
   bernard: 'M1 0h3v1h-3zM0 1h5v3h-5zM2 4h1v1h-1z',
@@ -20,11 +22,16 @@ export function npcOrbIdentity(npc: string): keyof typeof SYMBOLS | 'unknown' {
 }
 
 /** The SVG's halo centre, not its body, is anchored at the caller's position. */
-export default memo(function NpcOrb({ npc, size = 44, quest = 'none' }: { npc: string; size?: number; quest?: NpcQuestState }) {
+export function npcBodySize(avatarSize: number) { return Math.round(avatarSize * 1.15); }
+export function npcSvgWidth(bodySize: number) { return bodySize * 60 / 36; }
+export default memo(function NpcOrb({ npc, name, size = 29, quest = 'none' }: { npc: string; name?: string; size?: number; quest?: NpcQuestState }) {
+  const svg = useRef<SVGSVGElement>(null);
+  const displayName = useNpcDisplayName(npc);
+  const width = npcSvgWidth(size);
   const identity = npcOrbIdentity(npc);
   const c = (i: number) => `var(--npc-${identity}-${i})`;
   const lit = quest === 'available' || quest === 'ready';
-  return <svg className={`npc-orb npc-quest-${quest}`} data-npc={identity} data-quest={quest} aria-hidden="true" width={size} height={size * 80 / 60} viewBox="0 0 60 80" shapeRendering="crispEdges">
+  return <><svg ref={svg} className={`npc-orb npc-quest-${quest}`} data-npc={identity} data-quest={quest} aria-hidden="true" width={width} height={width * 80 / 60} viewBox="0 0 60 80" shapeRendering="crispEdges">
     {lit && <circle className="npc-quest-glow" cx="30" cy="44" r="25" fill="var(--npc-quest-light)" opacity=".2" />}
     <ellipse className={`npc-orb-halo${lit ? ' npc-quest-halo' : ''}`} cx="30" cy="70" rx="26" ry="7" fill={lit ? 'var(--npc-quest-light)' : c(1)} fillOpacity={lit ? '.3' : '.14'} stroke={lit ? 'var(--npc-quest-light)' : c(1)} strokeOpacity={lit ? '.95' : '.6'} strokeWidth={lit ? 2 : 1} />
     <g transform="translate(12,26)">
@@ -42,5 +49,5 @@ export default memo(function NpcOrb({ npc, size = 44, quest = 'none' }: { npc: s
       <path d={quest === 'ready' ? 'M8 6H14V8H16V12H12V14H10V11H13V8H10V10H8ZM10 16H12V18H10Z' : 'M10 5H12V13H10ZM10 15H12V17H10Z'} fill="var(--npc-quest-ink)" />
     </g></g>}
     {quest === 'active' && <g fill="var(--plate-label)"><rect x="22" y="-9" width="3" height="3" /><rect x="29" y="-9" width="3" height="3" /><rect x="36" y="-9" width="3" height="3" /></g>}
-  </svg>;
+  </svg><OrbLabels name={name ?? displayName} size={size} kind="npc" target={() => svg.current} /></>;
 });

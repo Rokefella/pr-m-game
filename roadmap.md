@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Resize NPC body widths to rounded screen avatar × 1.15, add dialogue names and portal all orb labels into a fixed-size screen-space overlay; 216 tests and preview compilation pass. Isolated desktop/375px checks verify Lucretius stays 23.75px wide at zoom 1/1.5/2, ghost movement tracking, fixed gaps and reduced motion.
+- [ ] Verify NPC sizes and table-backed names in real signed-in screens — the game's external authentication session is unavailable; isolated art does not verify live player data.
+
 - [x] Add shared dialogue-aligned NPC quest states, event-driven refresh, and gold/grey/green orb markers across game screens; 212 tests and preview compilation pass; isolated desktop/375px and static reduced-motion checks pass.
 - [ ] Verify quest acceptance and hand-in markers in real signed-in gameplay — the game's external authentication session is unavailable; isolated checks do not verify published gameplay.
 

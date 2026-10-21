@@ -5,7 +5,7 @@ import { getNpcQuestState, type QuestContext, type QuestEntry, type QuestStage }
 
 export const NPC_DIALOGUE_CLOSED = 'praem:npc-dialogue-closed';
 export const NPC_INVENTORY_CHANGED = 'praem:npc-inventory-changed';
-type Data = { npcs: Record<string, { stages: QuestStage[]; entries: QuestEntry[] }>; drops: Set<string>; level: number; social: number; perception: number; trade: number };
+type Data = { npcs: Record<string, { displayName?: string; stages: QuestStage[]; entries: QuestEntry[] }>; drops: Set<string>; level: number; social: number; perception: number; trade: number };
 const empty: Data = { npcs: {}, drops: new Set(), level: 1, social: 0, perception: 0, trade: 0 };
 let snapshot = empty;
 let owner: string | null = null;
@@ -22,7 +22,7 @@ function refresh(userId: string): Promise<void> {
   const request = (async () => {
     try {
       const [npcRows, stages, entries, drops, player] = await Promise.all([
-        supabase.from('npcs').select('id, npc_key'),
+        supabase.from('npcs').select('id, npc_key, display_name'),
         supabase.from('npc_dialogue_stages').select('*').order('order_index'),
         supabase.from('npc_book_entries').select('*'),
         supabase.from('drops').select('drop_types(drop_key)').eq('user_id', userId),
@@ -32,6 +32,7 @@ function refresh(userId: string): Promise<void> {
       if ([npcRows, stages, entries, drops, player].some(r => r.error)) return;
       const npcs: Data['npcs'] = {};
       for (const npc of npcRows.data ?? []) npcs[npc.npc_key] = {
+        displayName: npc.display_name,
         stages: (stages.data ?? []).filter(r => r.npc_id === npc.id) as unknown as QuestStage[],
         entries: (entries.data ?? []).filter(r => r.npc_id === npc.id) as unknown as QuestEntry[],
       };
@@ -51,6 +52,12 @@ function refresh(userId: string): Promise<void> {
   });
   pending = request;
   return pending;
+}
+
+export function useNpcDisplayName(npc: string) {
+  const data = useSyncExternalStore(subscribe, () => snapshot);
+  const key = npc.toLowerCase().replace(/^the\s+/, '').split(' ')[0];
+  return data.npcs[key]?.displayName || (npc ? npc.charAt(0).toUpperCase() + npc.slice(1) : '');
 }
 
 /** One session snapshot shared by every orb; no queries or rule evaluation in animation loops. */

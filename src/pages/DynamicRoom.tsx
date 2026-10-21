@@ -299,7 +299,7 @@ const NpcActor = ({
 
   return (
     <>
-      <div style={{ position: 'absolute', left: mx, top: my, pointerEvents: 'none', zIndex: 4, transition: 'left 2.4s ease-in-out, top 2.4s ease-in-out' }}><NpcOrb npc={`${npcKey} ${displayName}`} quest={questState(npcKey)} /></div>
+      <div style={{ position: 'absolute', left: mx, top: my, pointerEvents: 'none', zIndex: 4, transition: 'left 2.4s ease-in-out, top 2.4s ease-in-out' }}><NpcOrb npc={npcKey} name={displayName} size={Math.round(ROOM_AVATAR_SIZE * 1.15)} quest={questState(npcKey)} /></div>
 
       {isOpen && resolvedDialogue && (
         <NpcDialogue

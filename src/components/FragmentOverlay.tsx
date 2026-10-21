@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { useOrbSync } from '@/lib/orb';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import { Button } from '@/components/ui/button';
 import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
@@ -36,6 +37,7 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
   const [filled, setFilled] = useState<number | null>(null);
   const [auraColor, setAuraColor] = useState<string | null>(null);
   const [orbDye, setOrbDye] = useState<string | null>(null);
+  useOrbSync(setAuraColor, setOrbDye);
   const [fadingOut, setFadingOut] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   const savedTimerRef = useRef<number | null>(null);

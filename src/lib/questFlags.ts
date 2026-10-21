@@ -37,6 +37,36 @@ export function getFlag(key: string): string | null {
   return cache[key] ?? null;
 }
 
+/** Recover Bernard from persisted progress, never a level or a run/session marker. */
+export async function reconcileBernardAfterShadow(userId: string, transferSaved = false): Promise<boolean> {
+  try {
+    const flags = await getAllFlags(userId);
+    // Only this exact transition is automatic; earlier quests and later rewards stay intact.
+    if (loadedForUser !== userId || flags.bernard_stage !== '3') return false;
+    let completed = transferSaved || flags.shadow_visited === 'true';
+    if (!completed) {
+      const { data, error } = await supabase.from('library').select('id').eq('user_id', userId).limit(1);
+      if (error) throw error;
+      completed = (data ?? []).length > 0;
+    }
+    if (!completed) return false;
+    const { error } = await supabase.from('quest_flags').upsert(
+      { user_id: userId, flag_key: 'bernard_stage', flag_value: '4', updated_at: new Date().toISOString() },
+      { onConflict: 'user_id,flag_key' },
+    );
+    if (error) throw error;
+    if (loadedForUser === userId) {
+      cache = { ...cache, bernard_stage: '4' };
+      publishFlags();
+    }
+    return true;
+  } catch (error) {
+    // Quest repair is retryable on the next village visit and cannot fail a saved transfer.
+    console.error('[questFlags] Bernard Shadow recovery failed:', error);
+    return false;
+  }
+}
+
 export async function setFlag(userId: string, key: string, value: string): Promise<void> {
   cache = { ...cache, [key]: value };
   loadedForUser = userId;

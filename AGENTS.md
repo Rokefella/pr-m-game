@@ -25,4 +25,4 @@
 - Intro/ProfileSetup share PlateFrame/PixelSigil; exported nameError keeps username validation testable.
 - Login and Signup share presentation-only AuthPlate and AuthField controls; pages retain auth calls and own navigation/confirmation state so visual changes cannot alter authentication behavior.
 - ConsolePanel owns server validation, carried-drop selection and lockout display; pass the selected drop UUID to the server and keep key compatibility server-authoritative. DynamicRoom owns console bump blocking and placeholder rifts, and Maze reuses the existing exact-cell room-return marker to preserve runs.
-- npcQuestState shares dialogue condition/bucket predicates; useNpcQuestStates caches per-NPC results with session-shared flag/inventory events. NpcOrb only draws state, keeping quest rules and frame loops unchanged.
+- npcQuestState shares dialogue predicates; useNpcQuestStates caches event-driven results; NpcOrb only draws. questFlags reconciles Bernard after banking/on Village load from persisted progress, never level/session markers.

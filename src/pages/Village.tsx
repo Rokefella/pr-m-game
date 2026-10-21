@@ -24,7 +24,7 @@ import { useOrbSync } from '@/lib/orb';
 import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { BETA_MODE } from '@/lib/config';
 import { supabase } from '@/lib/supabase';
-import { getAllFlags, getFlag, setFlag, _resetQuestFlagCache } from '@/lib/questFlags';
+import { getFlag, setFlag, reconcileBernardAfterShadow, _resetQuestFlagCache } from '@/lib/questFlags';
 import FloorLayer from '@/components/theme/FloorLayer';
 import BuildingBlock from '@/components/theme/BuildingBlock';
 import { buildingLook, type BuildingLook } from '@/lib/theme/villageRendering';
@@ -1229,17 +1229,8 @@ const Village = () => {
     setTotalMazeSteps(row.total_maze_steps);
     setTotalMazeTime(row.total_maze_time);
 
-    // Load quest flags from Supabase into module cache.
-    await getAllFlags(user.id);
-
-    // Bridge from legacy shadow-realm completion signal (set by ShadowRealm.tsx)
-    // into the new quest_flags system: if SR is done and we're still on stage 3,
-    // advance to stage 4 so Bernard offers the Wanderer dialogue.
-    const srDone = getFlag('bernard_03_complete') === 'true';
-    const currentStage = parseInt(getFlag('bernard_stage') || '0', 10);
-    if (srDone && currentStage < 4) {
-      await setFlag(user.id, 'bernard_stage', '4');
-    }
+    // Reload authoritative flags and repair already-stuck accounts at any village level.
+    await reconcileBernardAfterShadow(user.id);
     bumpFlags();
 
     // Trial check (display only — paywall is gated by Bernard quest, not trial)
@@ -1260,7 +1251,7 @@ const Village = () => {
       }
       const stageNow = parseInt(getFlag('bernard_stage') || '0', 10);
       const titlesUnlocked = stageNow >= 5;
-      const newTitle = titlesUnlocked ? (TITLES_BY_LEVEL[newLv] || '') : '';
+      const newTitle = titlesUnlocked ? (TITLES_BY_LEVEL[newLv] || row.title) : row.title;
       window.setTimeout(() => {
         setLevelUpOverlay({ newLevel: newLv });
         setOverlaySelectedTitle(newTitle);

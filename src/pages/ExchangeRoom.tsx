@@ -1,3 +1,4 @@
+import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
 import { ROOM_AVATAR_SIZE } from '@/components/theme/rooms/roomConfig';
 import { placedGhosts, randomSpawnCell, type GhostCell } from '@/lib/placedGhosts';
@@ -258,6 +259,7 @@ const ExchangeRoom = () => {
   useEffect(() => { loadingRef.current = roomLoading; }, [roomLoading]);
 
 
+  const questState = useNpcQuestStates(user?.id, { level: currentLevel, social: socialStat, perception: perceptionStat, trade: tradeStat });
   const {
     resolvedDialogue,
     resetBernardBucket,
@@ -986,7 +988,7 @@ const ExchangeRoom = () => {
           <RoomScene floorRuns={room.floorRuns} wallRuns={room.wallRuns} furniture={room.furnitureTiles} bookcases={room.bookcaseTiles} lights={room.lightTiles} rugs={room.rugTiles} exits={room.exitTiles} />
 
           <RoomGhosts ghosts={room.ghosts} size={ROOM_AVATAR_SIZE} solids={obstacles} gridSize={room.gridSize} player={() => ({ col: playerTargetRef.current.x / CELL - .5, row: playerTargetRef.current.y / CELL - .5 })} />
-          <div style={{ position: 'absolute', left: bankerPos.x, top: bankerPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="banker" /></div>
+          <div style={{ position: 'absolute', left: bankerPos.x, top: bankerPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="banker" quest={questState('banker')} /></div>
 
           <RoomAvatar ref={avatarRef} palette={orbLook(auraColor, orbDye, registrationNumber)} walking={walking} title={orbIdentity.title} name={orbIdentity.name} />
         </div>

@@ -1,3 +1,4 @@
+import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import OrbLabels from '@/components/OrbLabels';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
@@ -168,6 +169,7 @@ const ShadowRealm = () => {
 
   // ----- existing user row / flags wiring (kept) -----
   const [currentLevel, setCurrentLevel] = useState(1);
+  const questState = useNpcQuestStates(user?.id, { level: currentLevel });
   const currentLevelRef = useRef(1);
   const [entryOk] = useState(hasValidEntry);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
@@ -724,7 +726,7 @@ const ShadowRealm = () => {
 
         {eyes.map((e, i) => <div key={`e${i}`} style={cellAt(e)}><ShadowEye /></div>)}
 
-        {npcs.map((n, i) => <div key={`n${i}`} style={cellAt(n, 0, 0)}><NpcOrb npc={n.npc_key || n.npc_name || n.name || ''} /></div>)}
+        {npcs.map((n, i) => <div key={`n${i}`} style={cellAt(n, 0, 0)}><NpcOrb npc={n.npc_key || n.npc_name || n.name || ''} quest={questState(n.npc_key || n.npc_name || n.name || '')} /></div>)}
         <div style={cellAt({ x: 0, y: 0 }, 0, 0)}><GhostLayer ghosts={authoredGhosts} size={SHADOW_AVATAR_SIZE} cellSize={STEP} offset={0} free={ghostFree} path={ghostPath} player={() => ({ col: posRef.current.x / STEP, row: posRef.current.y / STEP })} /></div>
         {drops.map((d, i) => <div key={`d${i}`} style={{ ...cellAt(d, 6, 6), background: SHADOW.glow, opacity: 0.7 }} />)}
 

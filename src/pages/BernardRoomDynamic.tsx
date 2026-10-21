@@ -1,3 +1,4 @@
+import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
 import OrbLabels from '@/components/OrbLabels';
 import { placedGhosts, randomSpawnCell, type GhostCell } from '@/lib/placedGhosts';
@@ -165,6 +166,7 @@ const BernardRoomDynamic = () => {
   useEffect(() => { roomRef.current = room; }, [room]);
   useEffect(() => { loadingRef.current = roomLoading; }, [roomLoading]);
 
+  const questState = useNpcQuestStates(user?.id, { level: currentLevel, social: socialStat, perception: perceptionStat, trade: tradeStat });
   const {
     resolvedDialogue,
     resetBernardBucket,
@@ -713,7 +715,7 @@ const BernardRoomDynamic = () => {
           ))}
 
           <RoomGhosts ghosts={room.ghosts} size={8 * 92 / 52} solids={obstacles} gridSize={room.gridSize} player={() => ({ col: playerTargetRef.current.x / CELL - .5, row: playerTargetRef.current.y / CELL - .5 })} />
-          <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" /></div>
+          <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" quest={questState('bernard')} /></div>
 
           <div
             style={{

@@ -1,3 +1,4 @@
+import { useNpcQuestStates, NPC_INVENTORY_CHANGED } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import OrbLabels from '@/components/OrbLabels';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
@@ -570,6 +571,7 @@ const Maze = () => {
   const [clairePos, setClairePos] = useState<Cell>({ col: 0, row: 0 });
   const clairePosRef = useRef<Cell>({ col: 0, row: 0 });
   const reunionDoneRef = useRef(false);
+  const questState = useNpcQuestStates(user?.id, { level: currentLevel, perception, rescue: { alexandraFound, claireFound, following: claireFollowing } });
 
   // Init position when config arrives
   useEffect(() => {
@@ -1272,7 +1274,7 @@ const Maze = () => {
             {cell.type === 'ROOM_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><RoomDoorTile dimension={glow} color={cell.color} size={CELL} /></div></>}
             {cell.type === 'CONSOLE_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><ConsoleDoorTile dimension={glow} size={CELL} /></div></>}
             {(cell.type === 'DROP_SPAWN' || cell.type === 'DROP') && <DropCrate dimension={glow} size={CELL} lit={runDrops.has(`${cell.col},${cell.row}`)} tone={runDrops.get(`${cell.col},${cell.row}`)?.kind} />}
-            {cell.type === 'NPC' && <div className="npc-orb-cell"><NpcOrb npc={cell.npc_key || cell.npc_name || cell.name || ''} size={40} /></div>}
+            {cell.type === 'NPC' && <div className="npc-orb-cell"><NpcOrb npc={cell.npc_key || cell.npc_name || cell.name || ''} size={40} quest={questState(cell.npc_key || cell.npc_name || cell.name || '')} /></div>}
           </div>
         ))}
 
@@ -1312,8 +1314,8 @@ const Maze = () => {
             <div className="absolute inset-0"><RoomDoorTile dimension={glow} color={config.visualCells?.find(cell => cell.type === 'ROOM_DOOR' && cell.col === d.col && cell.row === d.row)?.color ?? (d as DoorToRoom & { color?: string }).color} size={CELL} /></div>
           </div>
         ))}
-        {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL + CELL / 2, top: config.alexandra.row * CELL + CELL / 2, zIndex: 10, pointerEvents: 'none' }}><NpcOrb npc="alexandra" size={40} /></div>}
-        {config.claire && claireVisible && inView(clairePos) && <div style={{ position: 'absolute', left: clairePos.col * CELL + CELL / 2, top: clairePos.row * CELL + CELL / 2, zIndex: 10, pointerEvents: 'none' }}><NpcOrb npc="claire" size={40} /></div>}
+        {config.alexandra && alexandraVisible && inView(config.alexandra) && <div style={{ position: 'absolute', left: config.alexandra.col * CELL + CELL / 2, top: config.alexandra.row * CELL + CELL / 2, zIndex: 10, pointerEvents: 'none' }}><NpcOrb npc="alexandra" size={40} quest={questState('alexandra')} /></div>}
+        {config.claire && claireVisible && inView(clairePos) && <div style={{ position: 'absolute', left: clairePos.col * CELL + CELL / 2, top: clairePos.row * CELL + CELL / 2, zIndex: 10, pointerEvents: 'none' }}><NpcOrb npc="claire" size={40} quest={questState('claire')} /></div>}
       </div>
 
       <style>{`

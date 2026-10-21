@@ -1,3 +1,4 @@
+import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import OrbLabels from '@/components/OrbLabels';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
@@ -869,6 +870,7 @@ const Village = () => {
 
 
 
+  const questState = useNpcQuestStates(user?.id, { level: currentLevel, social: socialStat, perception: perceptionStat, trade: tradeStat });
   // Bernard quest state
   const [bernardOpen, setBernardOpen] = useState(false);
   const bernardLockRef = useRef(false);
@@ -2260,10 +2262,10 @@ const Village = () => {
         ))}
 
         {/* NPC halo centres retain the existing world positions. */}
-        {visible?.npcs.map(n => <div key={`dnpc-${n.x}-${n.y}`} title={n.name || undefined} style={{ position: 'absolute', left: n.x, top: n.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc={n.name} /></div>)}
+        {visible?.npcs.map(n => <div key={`dnpc-${n.x}-${n.y}`} title={n.name || undefined} style={{ position: 'absolute', left: n.x, top: n.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc={n.name} quest={questState(n.name)} /></div>)}
         {dynamicBuildings && <GhostLayer ghosts={dynamicBuildings.ghosts} size={VILLAGE_AVATAR_SIZE} cellSize={20} free={ghostFree} path={ghostPath} player={() => ({ col: playerTargetRef.current.x / 20 - .5, row: playerTargetRef.current.y / 20 - .5 })} />}
-        {merchantPos && <div style={{ position: 'absolute', left: merchantPos.x, top: merchantPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" /></div>}
-        {bernardPos && <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" /></div>}
+        {merchantPos && <div style={{ position: 'absolute', left: merchantPos.x, top: merchantPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="merchant" quest={questState('merchant')} /></div>}
+        {bernardPos && <div style={{ position: 'absolute', left: bernardPos.x, top: bernardPos.y, pointerEvents: 'none', zIndex: 4 }}><NpcOrb npc="bernard" quest={questState('bernard')} /></div>}
 
         {/* Ghost players */}
         {ghostDots.map((ghost) => (

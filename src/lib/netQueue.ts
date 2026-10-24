@@ -50,6 +50,7 @@ export function setSessionRefresher(fn: () => Promise<unknown>) { refresher = fn
 
 const latest = new Map<string, Job>();
 const running = new Set<string>();
+const idleWaiters = new Map<string, Array<() => void>>();
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 const statusOf = (r: SaveResult, e?: unknown): number | string => {
   if (e) return e instanceof Error && e.name === 'AbortError' ? 'timeout' : 'network';
@@ -77,7 +78,8 @@ async function drain(kind: string) {
   running.add(kind);
   try {
     while (latest.has(kind)) {
-      const job = latest.get(kind)!;
+      const job = latest.get(kind);
+      if (!job) continue;
       latest.delete(kind);
       let refreshed = false;
       for (let i = 0; i <= MAX_RETRIES; i++) {
@@ -98,6 +100,8 @@ async function drain(kind: string) {
   } finally {
     running.delete(kind);
     netDebug.pending[kind] = latest.has(kind) || parked.has(kind) ? 1 : 0;
+    for (const resolve of idleWaiters.get(kind) ?? []) resolve();
+    idleWaiters.delete(kind);
   }
 }
 
@@ -109,6 +113,15 @@ export function enqueueSave(kind: string, job: Job) {
   latest.set(kind, job);
   netDebug.pending[kind] = 1;
   void drain(kind);
+}
+
+/** A user action may wait for previous movement saves; movement itself never waits. */
+export async function settleSaves(kind: string): Promise<void> {
+  if (running.has(kind)) await new Promise<void>(resolve => {
+    const waiters = idleWaiters.get(kind) ?? [];
+    waiters.push(resolve); idleWaiters.set(kind, waiters);
+  });
+  if (parked.has(kind)) throw new Error('Pending save failed');
 }
 
 if (typeof window !== 'undefined') {

@@ -19,6 +19,7 @@ import { publishOrb, type OrbChange } from '@/lib/orb';
 import { X } from 'lucide-react';
 import { fragmentInventory, type FolderFragment } from '@/lib/carriedFragments';
 import DropIcon from '@/components/DropIcon';
+import { USER_STEPS_REFRESHED, type MazeUseContext } from '@/lib/mechanics';
 
 
 
@@ -30,6 +31,7 @@ type Props = {
   onClose: () => void;
   context?: 'village' | 'maze';
   runProgress?: { collected: number; required: number };
+  mazeUse?: MazeUseContext;
   growthPoints?: number;
   socialStat?: number;
   perceptionStat?: number;
@@ -76,6 +78,7 @@ const ProfileOverlay = ({
   onClose,
   context = 'village',
   runProgress,
+  mazeUse,
   growthPoints: growthPointsProp = 0,
   socialStat: socialStatProp = 0,
   perceptionStat: perceptionStatProp = 0,
@@ -195,10 +198,11 @@ const ProfileOverlay = ({
           setExtraDropCapacity(row.extra_drop_capacity ?? 0);
           setGrowthPoints(row.growth_points ?? 0);
           setStats({ social: row.social ?? 0, perception: row.perception ?? 0, trade: row.trade ?? 0 });
+          window.dispatchEvent(new CustomEvent(USER_STEPS_REFRESHED, { detail: { userId: user.id, steps: row.steps_remaining } }));
         }
       });
     return () => { cancelled = true; };
-  }, [isOpen, user]);
+  }, [isOpen, user, dropsNonce]);
 
   // Fetch the player's owned drops when the overlay opens
   useEffect(() => {
@@ -853,7 +857,7 @@ const ProfileOverlay = ({
                       {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? 'profile-drop-filled' : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="profile-drop-body"><DropIcon svg={drop.icon_svg} category={drop.category} size={40} />{drop.category === 'key' && <span className="profile-key-badge font-mono">KEY</span>}<span className="font-fell italic">{drop.name}</span></span>}</Button>)}
                     </div>
 
-                    {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); setOwnedDrops(drops => drops.filter(d => d.id !== selectedDrop.id)); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
+                    {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} maze={context === 'maze' ? mazeUse : undefined} steps={accountRow?.steps_remaining} onRefresh={() => setDropsNonce(n => n + 1)} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); setOwnedDrops(drops => drops.filter(d => d.id !== selectedDrop.id)); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
                     {dyeWhisper && <p className="font-fell italic dye-whisper">{dyeWhisper}</p>}
 
                     {/* Status text */}

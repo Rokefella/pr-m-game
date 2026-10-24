@@ -1,9 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
-import { enqueueSave, netDebug, setSessionRefresher } from './netQueue';
+import { enqueueSave, netDebug, setSessionRefresher, settleSaves } from './netQueue';
 
 const flush = () => new Promise(r => setTimeout(r, 0));
 
 describe('save queue', () => {
+  it('settles earlier movement balances before a consumable grants steps', async () => {
+    const writes: number[] = [];
+    let release: (() => void) | undefined;
+    enqueueSave('mechanic-order', () => new Promise(resolve => { release = () => { writes.push(99); resolve(); }; }));
+    enqueueSave('mechanic-order', async () => { writes.push(98); });
+    const grant = settleSaves('mechanic-order').then(() => writes.push(198));
+    expect(writes).toEqual([]);
+    release?.(); await grant;
+    expect(writes).toEqual([99, 98, 198]);
+  });
   it('keeps only the latest payload per kind while one is in flight', async () => {
     const seen: number[] = [];
     let release!: () => void;

@@ -5,6 +5,8 @@ import GhostLayer from '@/components/theme/objects/GhostLayer';
 import EchoLayer, { type EchoLayerHandle } from '@/components/theme/objects/EchoLayer';
 import { echoCount, spawnEchoes } from '@/lib/echoGhosts';
 import { lanternRadii } from '@/lib/mazeLight';
+import { emptyRunEffects, readRunEffects, restoreChalk, MECHANIC_USED, USER_STEPS_REFRESHED, type RunEffects } from '@/lib/mechanics';
+import { MazeMechanicEffects, MechanicChips, MechanicCompass, type MechanicEffectsHandle } from '@/components/MazeMechanicEffects';
 import { MAZE_AVATAR_SIZE, echoBodyPx, ghostBodyPx, npcBodyPx } from '@/lib/orbSizes';
 import { Z } from '@/lib/zIndex';
 import { corridorCell } from '@/lib/ghostMotion';
@@ -30,7 +32,7 @@ import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/levelLoader';
 import Thumbstick from '@/components/Thumbstick';
-import { enqueueSave, movementDebug } from '@/lib/netQueue';
+import { enqueueSave, settleSaves, movementDebug } from '@/lib/netQueue';
 import { startResilientLoop } from '@/lib/resilientLoop';
 import StepExchangeSheet from '@/components/StepExchangeSheet';
 import WallTile from '@/components/theme/WallTile';
@@ -553,6 +555,22 @@ const Maze = () => {
   const [perception, setPerception] = useState(0);
   const perceptionRef = useRef(perception);
   perceptionRef.current = perception;
+  const [runEffects, setRunEffects] = useState<RunEffects>(emptyRunEffects);
+  const runEffectsRef = useRef(runEffects);
+  const mechanicEffectsRef = useRef<MechanicEffectsHandle>(null);
+  const chalkCellsRef = useRef(new Set<string>());
+  const [, setChalkVersion] = useState(0);
+  const effectsReadVersion = useRef(0);
+  const refreshRunEffects = async () => {
+    const uid = userIdRef.current;
+    if (!uid) return;
+    const version = ++effectsReadVersion.current;
+    try {
+      const effects = await readRunEffects(uid, currentLevelRef.current);
+      if (!effects || version !== effectsReadVersion.current || leavingRef.current) return;
+      runEffectsRef.current = effects; setRunEffects(effects);
+    } catch { /* Rendering never holds movement for a failed read. */ }
+  };
   const camRef = useRef({ x: 0, y: 0 });
   const heldKeysRef = useRef<Set<string>>(new Set());
   const lastMoveTimeRef = useRef(0);
@@ -761,6 +779,26 @@ const Maze = () => {
     return () => { cancelled = true; };
   }, [user, authLoading]);
 
+  useEffect(() => {
+    const used = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail?.userId !== userIdRef.current) return;
+      if (detail.effect === 'steps' && Number.isFinite(detail.steps_remaining)) {
+        stepsRemainingRef.current = detail.steps_remaining; setStepsRemaining(detail.steps_remaining);
+      }
+      if (detail.effect === 'pulse') mechanicEffectsRef.current?.pulse();
+      void refreshRunEffects();
+    };
+    const refreshed = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail?.userId !== userIdRef.current || !profileOpenRef.current || !Number.isFinite(detail.steps)) return;
+      stepsRemainingRef.current = detail.steps; setStepsRemaining(detail.steps);
+    };
+    window.addEventListener(MECHANIC_USED, used);
+    window.addEventListener(USER_STEPS_REFRESHED, refreshed);
+    return () => { effectsReadVersion.current++; window.removeEventListener(MECHANIC_USED, used); window.removeEventListener(USER_STEPS_REFRESHED, refreshed); };
+  }, []);
+
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
   const [exchangeOpen, setExchangeOpen] = useState(false);
   const [selectedCredits, setSelectedCredits] = useState(1);
@@ -871,6 +909,9 @@ const Maze = () => {
     setRunDrops(runDropsRef.current);
     pendingDropClaimsRef.current.clear();
     if (!config || !levelLoaded || !user) return;
+    chalkCellsRef.current = restoreChalk(currentLevelRef.current, runResumeRef.current);
+    setChalkVersion(v => v + 1);
+    runEffectsRef.current = emptyRunEffects(); setRunEffects(runEffectsRef.current);
     let cancelled = false;
     void (async () => {
       try {
@@ -878,7 +919,10 @@ const Maze = () => {
           p_level: currentLevelRef.current,
           p_resume: runResumeRef.current,
         } as never);
-        if (cancelled || leavingRef.current || generation !== dropGenerationRef.current || error || !Array.isArray(data)) return;
+        if (cancelled || leavingRef.current || generation !== dropGenerationRef.current) return;
+        // start_run_drops owns fresh-run reset; read only after that RPC has settled.
+        await refreshRunEffects();
+        if (cancelled || error || !Array.isArray(data)) return;
         const points = new Set((config.visualCells ?? []).filter(c => c.type === 'DROP_SPAWN' || c.type === 'DROP').map(c => `${c.col},${c.row}`));
         const placements = new Map<string, RunDrop>();
         for (const item of data as Array<RunDrop & Cell>) {
@@ -909,6 +953,7 @@ const Maze = () => {
         const result = data as { granted?: boolean; drop_name?: string; kind?: 'key' | 'drop' } | null;
         if (result?.granted === true) {
           window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
+          void refreshRunEffects();
           showWhisper(`You found: ${result.drop_name ?? 'something'}.`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
         }
       } catch { /* silent — a failed claim must not interrupt movement */ }
@@ -966,7 +1011,7 @@ const Maze = () => {
 
   const tryMove = (dc: number, dr: number) => {
     movementDebug.locks = { stepsReady: stepsReadyRef.current, exchangeOpen: exchangeOpenRef.current, noSteps: stepsRemainingRef.current <= 0, leaving: leavingRef.current };
-    if (!stepsReadyRef.current) return;
+    if (!stepsReadyRef.current || profileOpenRef.current) return;
     const cfg = configRef.current;
     if (!cfg) return;
     const now = Date.now();
@@ -992,6 +1037,11 @@ const Maze = () => {
     const newPos = { col: nc, row: nr };
     posRef.current = newPos;
     setPos(newPos);
+    if (runEffectsRef.current.chalk) {
+      chalkCellsRef.current.add(`${nc},${nr}`);
+      try { sessionStorage.setItem(`praem_chalk_${currentLevelRef.current}`, JSON.stringify([...chalkCellsRef.current])); } catch { /* quota */ }
+      setChalkVersion(v => v + 1);
+    }
     stepsRemainingRef.current -= 1;
     setStepsRemaining(stepsRemainingRef.current);
     const uidStep = userIdRef.current;
@@ -1183,7 +1233,7 @@ const Maze = () => {
     const tick = (time: number) => {
       const seconds = previousTime ? Math.min((time - previousTime) / 1000, .1) : 0;
       previousTime = time;
-      echoLayerRef.current?.tick(seconds, displayPosRef.current, lanternRadii(perceptionRef.current).r2 / CELL);
+      echoLayerRef.current?.tick(seconds, displayPosRef.current, lanternRadii(perceptionRef.current, CELL, runEffectsRef.current.lantern_bonus).r2 / CELL);
       const k = heldKeysRef.current;
       let dc = 0, dr = 0;
       if (k.has('ArrowLeft')) dc -= 1;
@@ -1221,6 +1271,8 @@ const Maze = () => {
         fogRef.current.style.setProperty('--ly', `${camRef.current.y + displayPosRef.current.row * CELL + CELL / 2}px`);
       }
 
+      const radii = lanternRadii(perceptionRef.current, CELL, runEffectsRef.current.lantern_bonus);
+      mechanicEffectsRef.current?.tick(displayPosRef.current, camRef.current, radii.r1, radii.r2);
       pulseT += 1 / 60;
       const p = 1 + Math.sin((pulseT / 1.5) * Math.PI * 2) * 0.075 + 0.075;
       setPulse(p);
@@ -1279,6 +1331,7 @@ const Maze = () => {
         style={{ position: 'absolute', width: MAP_W, height: MAP_H, transform: `translate(${camRef.current.x}px, ${camRef.current.y}px)`, willChange: 'transform' }}
       >
         <FloorLayer cols={config.cols} rows={config.rows} size={CELL} styleKey={theme.floor} dimension={glow} />
+        {[...chalkCellsRef.current].map(key => { const [col, row] = key.split(',').map(Number); return inView({ col, row }) ? <i key={key} data-chalk-cell={key} className="mechanic-chalk" style={{ left: col * CELL + CELL / 2, top: row * CELL + CELL / 2 }} /> : null; })}
         {theme.primeGlow && <PrimeGlowLayer cols={config.cols} rows={config.rows} size={CELL} dimension={glow} isFloor={isFloor} />}
         {visibleWalls.map(({ col, row }) => (
           <div key={`w-${col},${row}`} data-wall-cell={`${col},${row}`} style={{ position: 'absolute', left: col * CELL, top: row * CELL, width: CELL, height: CELL, zIndex: 2, pointerEvents: 'none' }}>
@@ -1381,15 +1434,16 @@ const Maze = () => {
           inset: 0,
           '--lx': `${playerScreenX}px`,
           '--ly': `${playerScreenY}px`,
-          '--r1': `${lanternRadii(perception).r1}px`,
-          '--r2': `${lanternRadii(perception).r2}px`,
+          '--r1': `${lanternRadii(perception, CELL, runEffects.lantern_bonus).r1}px`,
+          '--r2': `${lanternRadii(perception, CELL, runEffects.lantern_bonus).r2}px`,
           '--fog': FOG_OPACITY,
-          background: LANTERN_BG,
+          background: runEffects.reveals.length ? 'none' : LANTERN_BG,
           pointerEvents: 'none',
           zIndex: Z.OBJECTS,
         } as CSSProperties}
       />
 
+      <MazeMechanicEffects ref={mechanicEffectsRef} effects={runEffects} fragments={config.fragments} collected={collected} door={config.door} dimension={glow} cellSize={CELL} viewport={viewport} />
       <p
         className="font-fell italic"
         style={{
@@ -1510,6 +1564,7 @@ const Maze = () => {
           }}
         >
           <span>STEPS {stepsRemaining}</span>
+          <MechanicChips effects={runEffects} />
           <span
             style={{
               color: 'rgba(160,140,200,0.4)', fontSize: 14, letterSpacing: '0.15em',
@@ -1519,6 +1574,7 @@ const Maze = () => {
             tap to exchange
           </span>
         </span>
+        <MechanicCompass />
         <span
           data-fragment-hud={collected.size >= config.fragmentsRequired ? 'full' : undefined}
           style={{ color: collected.size >= config.fragmentsRequired ? '#f5c060' : '#c8963a', animation: collected.size >= config.fragmentsRequired ? 'fragment-hud-pulse 1.6s ease-in-out infinite' : undefined }}
@@ -1566,7 +1622,7 @@ const Maze = () => {
         />
       )}
 
-      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} context="maze" runProgress={{ collected: collected.size, required: config.fragmentsRequired }} />
+      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} context="maze" mazeUse={{ level: currentLevel, position: () => posRef.current, beforeUse: () => settleSaves('steps') }} runProgress={{ collected: collected.size, required: config.fragmentsRequired }} />
 
       {!BETA_MODE && paywallOpen && (
         <PaywallOverlay

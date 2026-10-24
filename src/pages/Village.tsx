@@ -1,3 +1,4 @@
+import { USER_STEPS_REFRESHED } from '@/lib/mechanics';
 import { Z } from '@/lib/zIndex';
 import { VILLAGE_AVATAR_SIZE, ghostBodyPx, npcBodyPx } from '@/lib/orbSizes';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
@@ -786,6 +787,14 @@ const Village = () => {
   const [unlockedTitles, setUnlockedTitles] = useState<string[]>([]);
   const [stepsRemaining, setStepsRemaining] = useState<number>(0);
   const stepsReadyRef = useRef(false);
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail?.userId === user?.id && Number.isFinite(detail.steps)) setStepsRemaining(detail.steps);
+    };
+    window.addEventListener(USER_STEPS_REFRESHED, refresh);
+    return () => window.removeEventListener(USER_STEPS_REFRESHED, refresh);
+  }, [user?.id]);
   const userLoadVersionRef = useRef(0);
   const activeUserIdRef = useRef(user?.id);
   activeUserIdRef.current = user?.id;

@@ -7,7 +7,7 @@ import './theme/mechanics.css';
 export type MechanicEffectsHandle = { tick: (player: Cell, camera: { x: number; y: number }, clear: number, soft: number) => void; pulse: () => void };
 type Props = { effects: RunEffects; fragments: Array<Cell & { prime: number }>; collected: Set<number>; door: Cell; dimension: Dimension; cellSize: number; viewport: { width: number; height: number } };
 export const MechanicCompass = forwardRef<HTMLDivElement>(function MechanicCompass(_, ref) {
-  return <div ref={ref} className="mechanic-compass" hidden aria-label="Golden door direction"><svg width="20" height="20" viewBox="0 0 20 20" shapeRendering="crispEdges"><path d="M9 1h2v3h2v3h2v3h-4v9H9v-9H5V7h2V4h2Z" fill="currentColor" /></svg><span className="font-mono" /></div>;
+  return <div ref={ref} data-mechanic-compass className="mechanic-compass" hidden aria-label="Golden door direction"><svg width="20" height="20" viewBox="0 0 20 20" shapeRendering="crispEdges"><path d="M9 1h2v3h2v3h2v3h-4v9H9v-9H5V7h2V4h2Z" fill="currentColor" /></svg><span className="font-mono" /></div>;
 });
 export const MechanicChips = ({ effects }: { effects: RunEffects }) => {
   const labels = [effects.lantern_bonus > 0 ? `LIGHT +${effects.lantern_bonus}` : '', effects.chalk ? 'CHALK' : '', effects.compass ? 'COMPASS' : '', effects.magnet ? 'MAGNET' : '', effects.lucky ? 'LUCKY' : ''].filter(Boolean);

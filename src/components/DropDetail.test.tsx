@@ -49,3 +49,48 @@ describe('consumable dyes', () => {
     expect(f.read).not.toHaveBeenCalled();
   });
 });
+
+describe('mechanic consumption', () => {
+  const maze = { level: 2, position: () => ({ col: 11, row: 12 }) };
+  const mechanic = (name: string) => ({ ...dye, name, category: 'mechanic' });
+  it.each([
+    ['Step Pouch', 'steps'], ['Spare Lace', 'steps'], ['Second Wind', 'steps'],
+    ['Lantern Oil', 'lantern'], ['Trail Chalk', 'chalk'], ['Echo Pebble', 'pulse'],
+    ['Lucky Coin', 'lucky'], ['Map Scrap', 'reveal'], ['Compass Shard', 'compass'], ['Magnet Charm', 'magnet'],
+  ])('consumes %s with the server effect', async (name, effect) => {
+    f.rpc.mockResolvedValue({ data: { ok: true, effect, amount: 100, steps_remaining: 200 }, error: null });
+    const onUsed = vi.fn(), onRefresh = vi.fn();
+    render(<DropDetail drop={mechanic(name)} maze={maze} steps={100} onClose={() => {}} onUsed={onUsed} onRefresh={onRefresh} />);
+    fireEvent.click(screen.getByRole('button', { name: 'USE' }));
+    await waitFor(() => expect(onUsed).toHaveBeenCalledTimes(1));
+    expect(f.rpc).toHaveBeenCalledWith('use_mechanic', { p_drop_id: 'first', p_level: effect === 'steps' ? null : 2, p_col: effect === 'steps' ? null : 11, p_row: effect === 'steps' ? null : 12 });
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+  it('does not call for a run-only mechanic outside the maze', () => {
+    render(<DropDetail drop={mechanic('Map Scrap')} onClose={() => {}} onUsed={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'USE' }));
+    expect(f.rpc).not.toHaveBeenCalled();
+  });
+  it('does not call at the 5000 step cap', () => {
+    render(<DropDetail drop={mechanic('Step Pouch')} steps={5000} onClose={() => {}} onUsed={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'USE' }));
+    expect(f.rpc).not.toHaveBeenCalled();
+  });
+  it('keeps an already-active drop and refreshes after the attempt', async () => {
+    f.rpc.mockResolvedValue({ data: { ok: false, reason: 'already_active' }, error: null });
+    const onUsed = vi.fn(), onRefresh = vi.fn();
+    render(<DropDetail drop={mechanic('Lucky Coin')} maze={maze} onClose={() => {}} onUsed={onUsed} onRefresh={onRefresh} />);
+    fireEvent.click(screen.getByRole('button', { name: 'USE' }));
+    await waitFor(() => expect(onRefresh).toHaveBeenCalledTimes(1));
+    expect(onUsed).not.toHaveBeenCalled();
+  });
+  it('waits for earlier movement saves before the server grant', async () => {
+    let release: (() => void) | undefined;
+    const beforeUse = () => new Promise<void>(resolve => { release = resolve; });
+    render(<DropDetail drop={mechanic('Step Pouch')} maze={{ ...maze, beforeUse }} onClose={() => {}} onUsed={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: 'USE' }));
+    expect(f.rpc).not.toHaveBeenCalled();
+    release?.();
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledTimes(1));
+  });
+});

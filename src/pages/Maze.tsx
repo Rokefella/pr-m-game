@@ -1574,7 +1574,7 @@ const Maze = () => {
             tap to exchange
           </span>
         </span>
-        <div data-mechanic-compass><MechanicCompass /></div>
+        <MechanicCompass />
         <span
           data-fragment-hud={collected.size >= config.fragmentsRequired ? 'full' : undefined}
           style={{ color: collected.size >= config.fragmentsRequired ? '#f5c060' : '#c8963a', animation: collected.size >= config.fragmentsRequired ? 'fragment-hud-pulse 1.6s ease-in-out infinite' : undefined }}

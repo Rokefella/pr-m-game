@@ -97,3 +97,6 @@
 - [x] Dyes: any-colour orb, consume-only USE dye sheet and live orb updates; wardrobe removed.
 - [ ] Ghost players show the dye colour — the positions table has no colour column (needs a database change on the game server).
 - [ ] Verify consume-only dye USE on a real account — the game sign-in is unavailable to the checker.
+
+- [ ] Make all ten mechanic drops usable; refresh steps/run state and draw run effects with reduced-motion support.
+- [ ] Verify mechanic consumption and effects against a real player; external game authentication may block this check.

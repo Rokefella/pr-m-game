@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Add shared world/maze tile drawing, deterministic era skins and accent loading presentation; test rules and browser-render published skins 1, 4 and 7 without changing gameplay.
+- [x] Add shared world/maze tile drawing, deterministic era skins and accent loading presentation. 335 tests pass, preview compilation passes; published skins 1, 4 and 7 render at desktop/375px, with shared drawer identity and Cinder Hollow · Fire loader verified without page errors.
+- [ ] Verify era skins during a real signed-in maze run — the game's separate external authentication is unavailable; published-data rendering and gameplay regression tests do not verify the live account flow.
 
 - [x] Correct DynamicRoom/Exchange room NPC body sizing using visible player width rather than glow canvas; preserve legacy dot sizing and village/maze. 39 focused tests pass, preview compilation passes, and isolated rendering measures Bernard/Banker/Keeper at 1.132 times the player body with no page errors; real signed-in room checks remain unavailable as noted below.
 

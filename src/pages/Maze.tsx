@@ -1375,7 +1375,7 @@ const Maze = () => {
         {!eraSkin && <FloorLayer cols={config.cols} rows={config.rows} size={CELL} styleKey={theme.floor} dimension={glow} />}
         {[...chalkCellsRef.current].map(key => { const [col, row] = key.split(',').map(Number); return inView({ col, row }) ? <i key={key} data-chalk-cell={key} className="mechanic-chalk" style={{ left: col * CELL + CELL / 2, top: row * CELL + CELL / 2 }} /> : null; })}
         {!eraSkin && theme.primeGlow && <PrimeGlowLayer cols={config.cols} rows={config.rows} size={CELL} dimension={glow} isFloor={isFloor} />}
-        {visibleWalls.map(({ col, row }) => (
+        {visibleWalls.filter(({ col, row }) => !eraSkin || pylons.has(`${col},${row}`) || config.veilSet?.has(`${col},${row}`)).map(({ col, row }) => (
           <div key={`w-${col},${row}`} data-wall-cell={`${col},${row}`} style={{ position: 'absolute', left: col * CELL, top: row * CELL, width: CELL, height: CELL, zIndex: 2, pointerEvents: 'none' }}>
             {!eraSkin && <><div className="maze-wall-shadow" /><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /></>}
             {pylons.has(`${col},${row}`) && <div className="absolute inset-0"><Pylon dimension={glow} size={CELL} /></div>}

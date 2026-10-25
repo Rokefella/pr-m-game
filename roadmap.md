@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Add shared terrain variants, world-only 2×2 boulders and ground height shading; verify renderer tests and browser artwork.
+- [x] Add shared terrain variants, world-only 2×2 boulders and ground height shading; 366 tests and preview compilation pass. Existing forest data checked at desktop/phone sizes without page errors; actual signed-in gameplay remains unavailable as documented below.
 
 - [x] Add fogged world map with cached overview, zoom/pan, discovered places and nonblocking per-user discovery persistence; 360 tests and preview typecheck pass. Desktop/phone public-data map, zoom/reveal/close checked without page errors.
 - [ ] Verify discovery saves against a real signed-in game account — external game authentication is unavailable; persistence is regression-tested but not live-account verified.

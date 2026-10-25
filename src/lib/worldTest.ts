@@ -30,6 +30,29 @@ export function eraAt(point: WorldPoint, eras: Era[]) {
   return eras.find(era => ring >= era.ring_from && ring <= era.ring_to);
 }
 export const tileCost = (terrain: Terrain, era?: Era) => (terrain.steps ?? 1) * (era?.step_cost ?? 1);
+/** Movement uses terrain steps only; era multipliers still belong to session accounting. */
+export const worldMoveDuration = (terrain: Pick<Terrain, 'steps'>) => WORLD_MOVE_MS * Math.max(1, terrain.steps ?? 1);
+export const isWading = (terrain: Terrain | undefined) => terrain?.walkable === true && terrain.enabled !== false && terrain.grp === 'water';
+export const isWorldConversation = (place: Place) => place.kind === 'npc_home' || place.action === 'merchant';
+export const adjacentConversation = (places: Place[], point: WorldPoint) => places.find(p => isWorldConversation(p) && Math.abs(p.x - point.x) + Math.abs(p.y - point.y) <= 1);
+
+/** Arrival recovery searches in walking-distance order without triggering place actions. */
+export async function nearestWorldWalkable(cache: WorldChunkCache, types: Map<string, Terrain>, point: WorldPoint): Promise<WorldPoint | null> {
+  const queue = [point], seen = new Set([`${point.x},${point.y}`]);
+  for (let i = 0; i < queue.length; i++) {
+    const p = queue[i];
+    if (!cache.terrainKey(p.x, p.y)) await cache.load(p.x, p.y);
+    const key = cache.terrainKey(p.x, p.y);
+    if (!key) continue; // Unavailable chunks are not evidence of a blocked cell.
+    const terrain = types.get(key);
+    if (terrain?.walkable === true && terrain.enabled !== false) return p;
+    for (const [dx, dy] of [[-1, 0], [0, -1], [1, 0], [0, 1]]) {
+      const next = { x: p.x + dx, y: p.y + dy }, id = `${next.x},${next.y}`;
+      if (next.x >= 0 && next.y >= 0 && next.x < cache.size && next.y < cache.size && !seen.has(id)) { seen.add(id); queue.push(next); }
+    }
+  }
+  return null;
+}
 export function worldPhase(now: number, settings = DEFAULT_CYCLE) {
   const minute = ((now / 60000) % settings.cycle_minutes + settings.cycle_minutes) % settings.cycle_minutes;
   let start = 0;

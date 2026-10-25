@@ -1,5 +1,5 @@
 import { chunkOrigin, eraAt, eraPointFor, WORLD_CHUNK, WORLD_TILE, type WorldLayer, type Era, type Place, type Terrain, type WorldChunk, type WorldPoint, type WorldChunkCache } from './worldTest';
-import { drawTerrainBase, drawTerrainMotion, spriteVersion, type TerrainInk } from './terrainTile';
+import { drawTerrainBase, drawTerrainMotion, isObjectLayer, spriteVersion, type TerrainInk } from './terrainTile';
 import { buildingBlockCanvas, buildingVersion } from './theme/buildingCanvas';
 export { drawTerrain, eraColor } from './terrainTile';
 export type WorldInk = TerrainInk & { dusk: string; night: string; dawn: string };
@@ -29,6 +29,14 @@ const CHUNK_PX = 16;
 type ChunkArt = { canvas: HTMLCanvasElement; sig: string };
 const chunkArt = new WeakMap<WorldChunk, ChunkArt>();
 const neighbourSig = (cache: WorldChunkCache, c: WorldChunk) => [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dy]) => cache.chunks.has(cache.key(c.x0 + dx * WORLD_CHUNK, c.y0 + dy * WORLD_CHUNK)) ? 1 : 0).join('');
+/** Objects borrow authored ground, with deterministic left/up/right/down precedence. */
+export function worldObjectGround(cache: WorldChunkCache, types: Map<string, Terrain>, x: number, y: number, fallback?: Terrain): Terrain | undefined {
+  for (const [dx, dy] of [[-1, 0], [0, -1], [1, 0], [0, 1]]) {
+    const neighbour = types.get(cache.terrainKey(x + dx, y + dy) ?? '');
+    if (neighbour && (neighbour.render_layer === 'ground' || (!neighbour.icon_svg?.trim() && !isObjectLayer(neighbour)))) return neighbour;
+  }
+  return fallback;
+}
 /** Static chunk art at 16 px per cell; redrawn only when sprites, building art or neighbouring chunks change. */
 function chunkCanvas(cache: WorldChunkCache, chunk: WorldChunk, types: Map<string, Terrain>, eras: Era[], ink: WorldInk, layer: WorldLayer) {
   const sig = `${spriteVersion}:${buildingVersion}:${neighbourSig(cache, chunk)}`;
@@ -41,7 +49,8 @@ function chunkCanvas(cache: WorldChunkCache, chunk: WorldChunk, types: Map<strin
   const seen = new Set<string>();
   for (let y = chunk.y0; y < chunk.y0 + chunk.h; y++) for (let x = chunk.x0; x < chunk.x0 + chunk.w; x++) {
     const terrain = types.get(cache.terrainKey(x, y) ?? ''); if (!terrain) continue;
-    const era = eraAt(eraPointFor({ x, y }, layer), eras), ground = era?.ground_key ? types.get(era.ground_key) : undefined;
+    const era = eraAt(eraPointFor({ x, y }, layer), eras), fallback = era?.ground_key ? types.get(era.ground_key) : undefined;
+    const ground = isObjectLayer(terrain) ? worldObjectGround(cache, types, x, y, fallback) : fallback;
     const px = (x - chunk.x0) * CHUNK_PX, py = (y - chunk.y0) * CHUNK_PX;
     if (terrain.key === 'building') {
       if (seen.has(`${x},${y}`)) continue;

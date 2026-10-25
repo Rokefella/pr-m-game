@@ -153,17 +153,12 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
       display.current = { x: display.current.x + (point.x - display.current.x) * .2, y: display.current.y + (point.y - display.current.y) * .2 };
       camera.current = { x: (display.current.x + .5) * WORLD_TILE - width / 2, y: (display.current.y + .5) * WORLD_TILE - height / 2 };
       drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l);
-      const era = eraAt(eraPointFor(point, l), data.eras), terrain = types.get(cache.terrainKey(point.x, point.y) ?? '');
       const phase = worldPhase(Date.now(), data.cycle);
+      // /world is fully visible: day/night colour tint only, no sight radius or vignette (underground darkens via drawWorld's flat tint).
       if (l === 0) {
         const tint = phase.phase === 'dusk' ? ink.dusk : phase.phase === 'night' ? ink.night : phase.phase === 'dawn' ? ink.dawn : null;
         if (tint) { ctx.globalAlpha = phase.phase === 'dawn' ? 1 - phase.progress : 1; ctx.fillStyle = tint; ctx.fillRect(0, 0, width, height); ctx.globalAlpha = 1; }
       }
-      const radiusCells = l === 1 ? UNDER_RADIUS : Math.max(2, (terrain?.light_radius ?? 8) + (phase.phase === 'night' ? data.cycle.night_view_delta : 0));
-      const radius = radiusCells * WORLD_TILE;
-      const vignette = ctx.createRadialGradient(width / 2, height / 2, radius * .6, width / 2, height / 2, radius);
-      vignette.addColorStop(0, 'transparent'); vignette.addColorStop(1, ink.shadow); ctx.fillStyle = vignette;
-      ctx.globalAlpha = l === 1 ? .95 : Math.max(phase.phase === 'night' ? .85 : .25, Math.min(.95, Number(era?.darkness) || 0)); ctx.fillRect(0, 0, width, height); ctx.globalAlpha = 1;
       if (avatar.current) avatar.current.style.transform = `translate(${width / 2 - 15 + (time < bumpUntil.current ? Math.sin(time * .1) * 3 : 0)}px, ${height / 2 - 15}px)`;
       frame = requestAnimationFrame(tick);
     };

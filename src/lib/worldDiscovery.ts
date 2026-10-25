@@ -26,6 +26,7 @@ export class WorldDiscovery {
   bits: string;
   private dirty = false;
   private loading = true;
+  private disposed = false;
   private inFlight: Promise<void> | null = null;
   private lastAttempt = Date.now();
   private timer: ReturnType<typeof setInterval>;
@@ -46,7 +47,7 @@ export class WorldDiscovery {
       if (error) return;
       const server = (data as unknown as { bits?: string } | null)?.bits;
       this.bits = mergeDiscovery(this.bits, server); this.dirty = this.bits !== mergeDiscovery(server); this.publish();
-    } catch { /* retain local */ } finally { this.loading = false; }
+    } catch { /* retain local */ } finally { this.loading = false; if (this.disposed) void this.flush(true); }
   }
   walk(x: number, y: number, layer: number) {
     const next = discoverAround(this.bits, x, y, layer);
@@ -65,5 +66,5 @@ export class WorldDiscovery {
     })();
     return this.inFlight;
   }
-  dispose() { clearInterval(this.timer); void this.flush(true); }
+  dispose() { this.disposed = true; clearInterval(this.timer); void this.flush(true); }
 }

@@ -12,7 +12,7 @@ vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc, from: (table: string)
   return chain;
 } } }));
 beforeEach(() => {
-  localStorage.clear(); localStorage.setItem('praem.worldLayoutVersion', '2'); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.places = []; f.mutation.mockReset();
+  localStorage.clear(); localStorage.setItem('praem.worldLayoutVersion', '2'); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.places = []; f.mutation.mockReset().mockResolvedValue({ error: null });
   f.rpc.mockReset().mockImplementation(async (_name, args) => ({ error: null, data: { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
@@ -42,7 +42,7 @@ describe('world sandbox access and read-only movement', () => {
     fireEvent.click(screen.getByRole('button', { name: /^JUMP$/ }));
     fireEvent.click(screen.getByRole('button', { name: 'RESTART AT START' }));
     await screen.findByText('25,25 · A 0,0 · Fire');
-    expect(f.mutation).not.toHaveBeenCalled();
+    expect(f.mutation.mock.calls.every(([payload]) => payload.user_id === 'player' && typeof payload.bits === 'string')).toBe(true);
   });
   it('starts at 25,25, spends session-only tile cost and jumps without writes', async () => {
     open(); await screen.findByText('25,25 · A 0,0 · Fire');

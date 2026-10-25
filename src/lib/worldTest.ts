@@ -1,11 +1,12 @@
 import { supabase } from '@/lib/supabase';
+import { loadTerrainSprites } from './terrainTile';
 export const WORLD_SIZE = 1000;
 export const WORLD_TILE = 40;
 export const WORLD_CHUNK = 64;
 export const WORLD_MOVE_MS = 150;
 export type WorldPoint = { x: number; y: number };
-export type Terrain = { key: string; name: string; grp: string; walkable: boolean; steps: number | null; sight: number | null; sight_delta: number | null; light_radius: number | null; moves: string | null; color: string | null; enabled: boolean };
-export type Era = { order_index: number; name: string; ring_from: number; ring_to: number; palette: unknown; step_cost: number; darkness: number };
+export type Terrain = { key: string; name: string; grp: string; walkable: boolean; steps: number | null; sight: number | null; sight_delta: number | null; light_radius: number | null; moves: string | null; color: string | null; enabled: boolean; icon_svg?: string | null; render_layer?: string | null };
+export type Era = { order_index: number; name: string; ring_from: number; ring_to: number; palette: unknown; step_cost: number; darkness: number; ground_key?: string | null };
 export type Place = WorldPoint & { kind: string; name: string; maze_level: number | null; notes: string | null; layer?: number | null; action?: string | null; target_layer?: number | null; target_x?: number | null; target_y?: number | null };
 export type WorldLayer = 0 | 1;
 export const UNDER_SIZE = 250;
@@ -93,5 +94,6 @@ export async function readWorldData() {
     supabase.from('world_settings' as never).select('day_night').eq('id', 1).maybeSingle(),
   ]);
   if (terrain.error || eras.error || places.error || settings.error) throw new Error('World data unavailable');
+  await loadTerrainSprites((terrain.data ?? []) as unknown as Terrain[]);
   return { terrain: (terrain.data ?? []) as unknown as Terrain[], eras: (eras.data ?? []) as unknown as Era[], places: (places.data ?? []) as unknown as Place[], cycle: { ...DEFAULT_CYCLE, ...(settings.data as unknown as { day_night?: Partial<DayNight> } | null)?.day_night } };
 }

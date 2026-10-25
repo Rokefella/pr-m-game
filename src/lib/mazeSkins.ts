@@ -1,13 +1,10 @@
 import { supabase } from '@/lib/supabase';
 import type { Terrain } from './worldTest';
+import { worldHash } from './worldHash';
+import { loadTerrainSprites } from './terrainTile';
 export type MazeSkin = { era_order: number; name: string; wall_keys: string[]; floor_keys: string[]; edge: { key: string; p: number }[]; junction_key: string | null; straight_key: string | null; darkness: number; accent: string; enabled: boolean };
 export type LevelSkin = { place_name: string; era_name: string; skin: MazeSkin; terrain: Map<string, Terrain> };
-export function skinHash(x: number, y: number, s: number) {
-  let a = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + Math.imul(s, 1442695041)) >>> 0;
-  a = Math.imul(a ^ (a >>> 13), 1274126177) >>> 0;
-  a = (a ^ (a >>> 16)) >>> 0;
-  return a / 4294967296;
-}
+export const skinHash = worldHash;
 export const skinDarkness = (darkness: number) => Math.min(.35, Math.max(0, .05 * (darkness - 1)));
 export function skinTile(x: number, y: number, skin: MazeSkin, open: ReadonlySet<string>, walls: ReadonlySet<string>) {
   const wall = walls.has(`${x},${y}`);
@@ -37,6 +34,7 @@ export async function readMazeSkin(level: number, override?: number, onMetadata?
     if (error || !Array.isArray(data)) return null;
     const terrain = new Map((data as unknown as Terrain[]).map(t => [t.key, t]));
     if ([...skin.wall_keys, ...skin.floor_keys, ...(skin.edge ?? []).map(e => e.key), skin.straight_key, skin.junction_key].some(key => key && !terrain.has(key))) return null;
+    await loadTerrainSprites(terrain.values());
     return { place_name: row?.place_name ?? '', era_name: override !== undefined ? skin.name : row?.era_name ?? skin.name, skin: { ...skin, edge: skin.edge ?? [] }, terrain };
   } catch { return null; }
 }

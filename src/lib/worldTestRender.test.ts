@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { chunkCanvas, drawWorldHeight, worldFootprintAnchor, type WorldInk } from './worldTestRender';
 import { WorldChunkCache, type Terrain, type WorldChunk } from './worldTest';
-const art = vi.hoisted(() => ({ base: vi.fn(), large: vi.fn(() => true) }));
+const art = vi.hoisted(() => ({ base: vi.fn(), large: vi.fn((..._args: unknown[]) => true) }));
 vi.mock('./terrainTile', () => ({ drawTerrainBase: art.base, drawTerrainSprite: art.large, drawTerrainMotion: vi.fn(), isObjectLayer: (t?: Terrain) => t?.render_layer === 'object', spriteVersion: 0 }));
 const ink = { gold: 'warm', text: 'light', shadow: 'dark', background: 'background' } as WorldInk;
 const terrain = (key: string, extra = {}) => ({ key, grp: 'rock', ...extra } as Terrain);

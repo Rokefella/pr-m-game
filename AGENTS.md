@@ -7,7 +7,7 @@
 - Format primes only at presentation boundaries via format.ts; decode the padded string; persist and compare numbers.
 - Derive carried counts via `fragmentInventory`, excluding the current prime for reveal pre-counts. Shadow progress uses only its transfer snapshot; query Library rows after persistence independently of level-gate timing to keep presentation from altering saving.
 
-- Tile themes cache wall SVG URIs and one repeating floor layer plus optional primes; memoized cells preserve camera performance.
+- Legacy tile themes cache SVGs; maze era skins use terrainTile shared with worldTestRender, deterministic mazeSkins rules and a viewport canvas ticked by Maze's camera loop. Skin metadata never changes geometry or lighting; missing skins retain legacy art.
 - Maze camera transforms are written through a DOM ref; memoize visible themed cells by logical player cell and viewport size, retaining the existing culling margin to avoid per-frame grid scans.
 - Village reads streetStyle from published layout data through the theme resolver and passes it to presentation-only terrain; cache street/tree backgrounds and building SVGs and memoize full-layout path indexes/merged exposed-edge runs to retain culling.
 - Keep village entrance geometry, legacy precedence and safe-return search in villageDoors; Village owns flags, gates and navigation, using the same memoized door collection for movement, spawning and culling to prevent divergent entrance zones.

@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState, type CSSProperties } from 'react';
 import PraemSnake from './PraemSnake';
 
 const APPEAR_MS = 150;
@@ -31,7 +31,7 @@ export function useMinLoading(isLoading: boolean, minVisibleMs = 500): boolean {
   return isLoading || held;
 }
 
-const LoadingScreen = memo(({ label }: { label?: string }) => {
+const LoadingScreen = memo(({ label, accent }: { label?: string; accent?: string }) => {
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const timer = window.setTimeout(() => setVisible(true), APPEAR_MS);
@@ -39,7 +39,7 @@ const LoadingScreen = memo(({ label }: { label?: string }) => {
   }, []);
   if (!visible) return null;
   return (
-    <div className="loading-screen" data-game-ui="open" role="status" aria-label={label ?? 'Loading PRÆM'}>
+    <div className={`loading-screen${accent ? ' loading-era' : ''}`} style={accent ? { '--skin-accent': accent } as CSSProperties : undefined} data-game-ui="open" role="status" aria-label={label ?? 'Loading PRÆM'}>
       <div className="loading-stack">
         <div className="loading-sigil">
           <div className="loading-glow" aria-hidden="true" />

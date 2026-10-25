@@ -8,6 +8,7 @@ export type EggDef = Cell & { line: string };
 export type VisualCell = Cell & { type: string; color?: string; npc_key?: string; npc_name?: string; name?: string; title?: string; line?: string; tone?: string };
 
 export type LoadedLevelConfig = {
+  skin?: number;
   echoGhosts?: number;
   cols: number;
   rows: number;
@@ -150,6 +151,7 @@ export async function loadLevelFromSupabase(
   const veilSet = new Set(veils.map((v) => `${v.col},${v.row}`));
 
   return {
+    skin: typeof d.skin === 'number' && Number.isFinite(d.skin) ? d.skin : undefined,
     echoGhosts: typeof d.echoGhosts === 'number' && Number.isFinite(d.echoGhosts) && d.echoGhosts >= 0 ? d.echoGhosts : undefined,
     cols: N,
     rows: N,

@@ -3,14 +3,15 @@ import { skinTile, type LevelSkin } from './mazeSkins';
 type Grid = { cols: number; rows: number; openSet: ReadonlySet<string> };
 /** Viewport-sized canvas; never allocate a whole 200×200-cell image. */
 export function drawMazeSkin(ctx: CanvasRenderingContext2D, level: LevelSkin, grid: Grid, walls: ReadonlySet<string>, camera: { x: number; y: number }, width: number, height: number, time: number, ink: TerrainInk, reduced: boolean, size = 40) {
-  ctx.clearRect(0, 0, width, height);
+  ctx.clearRect(0, 0, width, height); ctx.imageSmoothingEnabled = false;
+  const floor0 = level.terrain.get(level.skin.floor_keys[0]);
   const x0 = Math.max(0, Math.floor(-camera.x / size) - 2), y0 = Math.max(0, Math.floor(-camera.y / size) - 2);
   const x1 = Math.min(grid.cols - 1, Math.ceil((width - camera.x) / size) + 2), y1 = Math.min(grid.rows - 1, Math.ceil((height - camera.y) / size) + 2);
   const lamps: { x: number; y: number }[] = [];
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     const tile = skinTile(x, y, level.skin, grid.openSet, walls), terrain = level.terrain.get(tile.key);
     const px = x * size + camera.x, py = y * size + camera.y;
-    if (terrain) drawTerrain(ctx, terrain, undefined, x, y, px, py, time, ink, reduced);
+    if (terrain) drawTerrain(ctx, terrain, undefined, x, y, px, py, time, ink, reduced, false, tile.wall ? floor0 : undefined);
     if (tile.wall) {
       ctx.fillStyle = ink.shadow; ctx.globalAlpha = .3;
       if (grid.openSet.has(`${x},${y + 1}`)) ctx.fillRect(px, py + size - 4, size, 4);

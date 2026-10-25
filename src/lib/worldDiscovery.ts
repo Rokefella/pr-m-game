@@ -26,6 +26,7 @@ export class WorldDiscovery {
   bits: string;
   private dirty = false;
   private loading = true;
+  private loaded = false;
   private disposed = false;
   private inFlight: Promise<void> | null = null;
   private lastAttempt = Date.now();
@@ -36,17 +37,18 @@ export class WorldDiscovery {
     this.key = `praem.worldDiscovery.${userId}`;
     let local = ''; try { local = localStorage.getItem(this.key) ?? ''; } catch { /* unavailable */ }
     this.bits = mergeDiscovery(local);
-    this.timer = setInterval(() => { void this.flush(); }, 1000);
+    this.timer = setInterval(() => { if (!this.loaded && !this.loading && Date.now() - this.lastAttempt >= DISCOVERY_SAVE_MS) void this.load(); else void this.flush(); }, 1000);
     void this.load();
   }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private publish() { try { localStorage.setItem(this.key, this.bits); } catch { /* unavailable */ } this.listeners.forEach(f => f()); }
   private async load() {
+    this.loading = true; this.lastAttempt = Date.now();
     try {
       const { data, error } = await supabase.from('world_discovery' as never).select('bits').eq('user_id', this.userId).maybeSingle();
       if (error) return;
       const server = (data as unknown as { bits?: string } | null)?.bits;
-      this.bits = mergeDiscovery(this.bits, server); this.dirty = this.bits !== mergeDiscovery(server); this.publish();
+      this.bits = mergeDiscovery(this.bits, server); this.dirty = this.bits !== mergeDiscovery(server); this.loaded = true; this.publish();
     } catch { /* retain local */ } finally { this.loading = false; if (this.disposed) void this.flush(true); }
   }
   walk(x: number, y: number, layer: number) {
@@ -56,7 +58,7 @@ export class WorldDiscovery {
   }
   flush(force = false): Promise<void> {
     if (this.inFlight) return force ? this.inFlight.then(() => this.flush(true)) : this.inFlight;
-    if (this.loading || !this.dirty || (!force && Date.now() - this.lastAttempt < DISCOVERY_SAVE_MS)) return Promise.resolve();
+    if (this.loading || !this.loaded || !this.dirty || (!force && Date.now() - this.lastAttempt < DISCOVERY_SAVE_MS)) return Promise.resolve();
     this.lastAttempt = Date.now(); const snapshot = this.bits;
     this.inFlight = (async () => {
       try {

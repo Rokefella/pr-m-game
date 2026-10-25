@@ -29,4 +29,4 @@
 - ConsolePanel owns server validation, carried-drop selection and lockout display; pass the selected drop UUID to the server and keep key compatibility server-authoritative. DynamicRoom owns console bump blocking and placeholder rifts, and Maze reuses the existing exact-cell room-return marker to preserve runs.
 - npcQuestState shares dialogue predicates; useNpcQuestStates caches event-driven results; NpcOrb only draws. questFlags reconciles Bernard after banking/on Village load from persisted progress, never level/session markers.
 
-- WorldTest at /world requires sign-in only; /world-test redirects. Each opening starts fresh; bounded chunks and local maze previews keep all movement read-only.
+- WorldTest at /world requires sign-in; draws one layer (surface/underground chunk caches); place actions fire only on a move. Exits that normally go to /village use worldReturn.exitDestination so trips from /world return there; walking stays session-only.

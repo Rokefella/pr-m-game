@@ -29,7 +29,7 @@ describe('world sandbox access and read-only movement', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
     await screen.findByText('26,25 · A 0,0 · Fire');
     expect(screen.getByText(/SPENT 1.5/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'JUMP', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: /^JUMP$/ }));
     fireEvent.click(screen.getByRole('button', { name: /Cinder Hollow/ }));
     await screen.findByRole('dialog', { name: 'Cinder Hollow' });
     expect(screen.getByText('300,31 · A 6,0 · Fire')).toBeInTheDocument();

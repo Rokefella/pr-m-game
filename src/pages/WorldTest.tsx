@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Navigation, X } from 'lucide-react';
+import { ArrowLeft, Map, Navigation, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import { DOOR_FLAGS, doorRefusal, EXCHANGE_MIN_LEVEL, LIBRARY_MIN_LEVEL, type Vi
 import { saveWorldPos, saveWorldReturn, takeWorldOpening } from '@/lib/worldReturn';
 import { adjacentConversation, clampWorld, eraAt, eraPointFor, fetchWorldChunk, isWading, isWorldConversation, layerSize, mazeOutcome, nearestWorldWalkable, placeAction, placesOn, readWorldData, tileCost, worldArea, worldMoveDuration, worldPhase, WORLD_MOVE_MS, WORLD_TILE, WorldChunkCache, type Place, type WorldLayer, type WorldPoint } from '@/lib/worldTest';
 import { drawWorld, type WorldInk } from '@/lib/worldTestRender';
+import WorldMap from '@/components/WorldMap';
+import { WorldDiscovery } from '@/lib/worldDiscovery';
 import './world-test.css';
 
 type WorldData = Awaited<ReturnType<typeof readWorldData>>;
@@ -70,11 +72,22 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
   const bumpUntil = useRef(0);
   const [walking, setWalking] = useState(false);
   const [jumpOpen, setJumpOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(false);
+  const [discoveryBits, setDiscoveryBits] = useState('');
+  const discovery = useRef<WorldDiscovery | null>(null);
+  useEffect(() => {
+    if (!userId) return;
+    const session = new WorldDiscovery(userId); discovery.current = session; setDiscoveryBits(session.bits);
+    const unsubscribe = session.subscribe(() => setDiscoveryBits(session.bits));
+    const hidden = () => { if (document.visibilityState === 'hidden') void session.flush(true); };
+    document.addEventListener('visibilitychange', hidden);
+    return () => { document.removeEventListener('visibilitychange', hidden); unsubscribe(); session.dispose(); discovery.current = null; };
+  }, [userId]);
   const [jumpX, setJumpX] = useState('25');
   const [jumpY, setJumpY] = useState('25');
   const [placeCard, setPlaceCard] = useState<Place | null>(null);
   const blocked = useRef(false);
-  blocked.current = jumpOpen || Boolean(placeCard);
+  blocked.current = jumpOpen || mapOpen || Boolean(placeCard);
   const [busy, setBusy] = useState(false);
   const [entryMessage, setEntryMessage] = useState('');
   const [chunkTick, setChunkTick] = useState(0);
@@ -134,6 +147,7 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
     moveDuration.current = WORLD_MOVE_MS;
     if (next.x < 0 || next.y < 0 || next.x >= size || next.y >= size || !walkable(next) || (stepX && stepY && !walkable({ x: next.x, y: from.y }) && !walkable({ x: from.x, y: next.y }))) { bumpUntil.current = performance.now() + 150; return; }
     posRef.current = next; setPos(next); setWalking(true);
+    discovery.current?.walk(next.x, next.y, l);
     saveWorldPos({ layer: l, ...next });
     const terrain = world.terrain.find(t => t.key === cache.terrainKey(next.x, next.y));
     moveDuration.current = terrain ? worldMoveDuration(terrain) : WORLD_MOVE_MS;
@@ -145,7 +159,7 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
     if (spot) { setEntryMessage(''); setPlaceCard(spot); }
   }, []);
   useEffect(() => {
-    const down = (e: KeyboardEvent) => { if (e.target instanceof HTMLInputElement || blocked.current) return; if (/^(Arrow|[wasd]$)/i.test(e.key)) { e.preventDefault(); keys.current.add(e.key.toLowerCase()); } };
+    const down = (e: KeyboardEvent) => { if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return; if (e.key.toLowerCase() === 'm' && !e.repeat) { e.preventDefault(); keys.current.clear(); setMapOpen(open => !open); return; } if (blocked.current) return; if (/^(Arrow|[wasd]$)/i.test(e.key)) { e.preventDefault(); keys.current.add(e.key.toLowerCase()); } };
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
     const clear = () => keys.current.clear();
     window.addEventListener('keydown', down); window.addEventListener('keyup', up); window.addEventListener('blur', clear);
@@ -239,8 +253,9 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
       if (spot) { setEntryMessage(''); setPlaceCard(spot); }
     }} />
     <div ref={avatar} className="world-avatar"><PlayerAvatar size={30} palette={orbLook(identity.aura_color, identity.orb_dye, identity.registration_number)} walking={walking} /></div>
-    <header className="world-hud font-mono"><Button variant="ghost" size="icon" onClick={back} aria-label="Return to village" title="Return"><ArrowLeft size={18} /></Button><div className="world-status"><span>{pos.x},{pos.y} · A {area.x},{area.y} · {era?.name ?? '—'}</span><span>{layer === 1 ? `UNDERGROUND · ABOVE ${surfacePoint.x},${surfacePoint.y}` : 'SURFACE'}</span><span>{terrain?.name ?? (cache.errors.size ? 'Window unavailable' : 'Loading…')} · COST {terrain ? tileCost(terrain, era) : '—'} · SPENT {Number(spent.toFixed(2))}</span>{layer === 0 && <span>{phase.phase.toUpperCase()} · {Math.ceil(phase.minutesLeft)} MIN</span>}</div><Button variant="outline" className="world-jump" onClick={() => { setJumpX(String(pos.x)); setJumpY(String(pos.y)); setJumpOpen(true); }}><Navigation size={14} />JUMP</Button></header>
-    <Thumbstick onMove={move} disabled={jumpOpen || Boolean(placeCard)} />
+    <header className="world-hud font-mono"><Button variant="ghost" size="icon" onClick={back} aria-label="Return to village" title="Return"><ArrowLeft size={18} /></Button><div className="world-status"><span>{pos.x},{pos.y} · A {area.x},{area.y} · {era?.name ?? '—'}</span><span>{layer === 1 ? `UNDERGROUND · ABOVE ${surfacePoint.x},${surfacePoint.y}` : 'SURFACE'}</span><span>{terrain?.name ?? (cache.errors.size ? 'Window unavailable' : 'Loading…')} · COST {terrain ? tileCost(terrain, era) : '—'} · SPENT {Number(spent.toFixed(2))}</span>{layer === 0 && <span>{phase.phase.toUpperCase()} · {Math.ceil(phase.minutesLeft)} MIN</span>}</div><Button variant="ghost" size="icon" title="MAP" aria-label="MAP" onClick={() => { keys.current.clear(); setMapOpen(true); }}><Map size={18} /></Button><Button variant="outline" className="world-jump" onClick={() => { setJumpX(String(pos.x)); setJumpY(String(pos.y)); setJumpOpen(true); }}><Navigation size={14} />JUMP</Button></header>
+    <Thumbstick onMove={move} disabled={jumpOpen || mapOpen || Boolean(placeCard)} />
+    {mapOpen && <WorldMap bits={discoveryBits} player={pos} layer={layer} aura={identity.aura_color} dev={identity.registration_number === 1} types={data.terrain} places={data.places} onClose={() => setMapOpen(false)} />}
     {jumpOpen && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog" role="dialog" aria-label="Jump to a place"><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close jump menu" onClick={() => setJumpOpen(false)}><X size={18} /></Button><h2 className="font-cinzel">JUMP</h2><form onSubmit={e => { e.preventDefault(); const x = Number(jumpX), y = Number(jumpY); if (Number.isFinite(x) && Number.isFinite(y)) place({ x, y }, layer); }}><label className="font-mono">X<Input aria-label="Jump X" type="number" min={0} max={layerSize(layer) - 1} value={jumpX} onChange={e => setJumpX(e.target.value)} required /></label><label className="font-mono">Y<Input aria-label="Jump Y" type="number" min={0} max={layerSize(layer) - 1} value={jumpY} onChange={e => setJumpY(e.target.value)} required /></label><Button type="submit" className="world-jump">GO</Button></form><Button variant="outline" className="world-jump" onClick={() => place(startPoint(data), 0)}>RESTART AT START</Button>{jumpGroups.map(({ l, kind, items }) => <div key={`${l}-${kind}`} className="world-place-group"><h3 className="font-mono">{l === 1 ? 'UNDERGROUND · ' : 'SURFACE · '}{kind.replace(/_/g, ' ').toUpperCase()}</h3>{items.map((p, i) => <Button key={`${p.name}-${i}`} variant="ghost" onClick={() => place(p, l)}>{p.name}{p.maze_level ? ` · L${p.maze_level}` : ''}<span className="font-mono">{p.x},{p.y}</span></Button>)}</div>)}</section></div>}
     {placeCard && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog world-place-card" role="dialog" aria-label={placeCard.name}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close place" onClick={() => setPlaceCard(null)}><X size={18} /></Button><h2 className="font-cinzel">{placeCard.name}{placeCard.maze_level ? `, Level ${placeCard.maze_level}` : ''}</h2>{placeCard.notes && <p className="font-fell">{placeCard.notes}</p>}
       {outcome === 'completed' && <p className="font-mono">Completed</p>}

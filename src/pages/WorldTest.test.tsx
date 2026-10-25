@@ -2,17 +2,17 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import WorldTest from './WorldTest';
-const f = vi.hoisted(() => ({ registration: 1, level: 1, signedIn: true, reads: [] as string[], rpc: vi.fn(), mutation: vi.fn() }));
+const f = vi.hoisted(() => ({ registration: 1, level: 1, signedIn: true, reads: [] as string[], rpc: vi.fn(), mutation: vi.fn(), places: [] as Record<string, unknown>[] }));
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: f.signedIn ? { id: 'player' } : null, loading: false }) }));
 vi.mock('@/components/Thumbstick', () => ({ default: ({ onMove }: { onMove: (x: number, y: number) => void }) => <button onClick={() => onMove(1, 0)}>Walk east</button> }));
 vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc, from: (table: string) => {
   f.reads.push(table);
-  const result = () => ({ error: null, data: table === 'users' ? { registration_number: f.registration, aura_color: null, level: f.level } : table === 'world_terrain_types' ? [{ key: 'path', name: 'Path', grp: 'ground', walkable: true, enabled: true, steps: null }] : table === 'world_eras' ? [{ order_index: 1, name: 'Fire', ring_from: 0, ring_to: 500, step_cost: 1.5 }] : table === 'world_places' ? [{ name: 'Start', kind: 'start', x: 25, y: 25 }, { name: 'Cinder Hollow', kind: 'maze_entrance', maze_level: 1, x: 300, y: 31, notes: 'Ash' }] : { day_night: {} } });
+  const result = () => ({ error: null, data: table === 'users' ? { registration_number: f.registration, aura_color: null, level: f.level } : table === 'world_terrain_types' ? [{ key: 'path', name: 'Path', grp: 'ground', walkable: true, enabled: true, steps: null }, { key: 'wall', walkable: false, enabled: true }] : table === 'world_eras' ? [{ order_index: 1, name: 'Fire', ring_from: 0, ring_to: 500, step_cost: 1.5 }] : table === 'world_places' ? [{ name: 'Start', kind: 'start', x: 25, y: 25 }, { name: 'Cinder Hollow', kind: 'maze_entrance', maze_level: 1, x: 300, y: 31, notes: 'Ash' }, ...f.places] : { day_night: {} } });
   const chain = { select: () => chain, eq: () => chain, order: () => chain, maybeSingle: async () => result(), then: (r: (v: ReturnType<typeof result>) => unknown) => Promise.resolve(result()).then(r), insert: f.mutation, update: f.mutation, delete: f.mutation, upsert: f.mutation };
   return chain;
 } } }));
 beforeEach(() => {
-  localStorage.clear(); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.mutation.mockReset();
+  localStorage.clear(); localStorage.setItem('praem.worldLayoutVersion', '2'); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.places = []; f.mutation.mockReset();
   f.rpc.mockReset().mockImplementation(async (_name, args) => ({ error: null, data: { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
@@ -59,6 +59,35 @@ describe('world sandbox access and read-only movement', () => {
   });
 });
 describe('world return', () => {
+  it('discards obsolete saved coordinates and saves layout version 2 at Start', async () => {
+    localStorage.removeItem('praem.worldLayoutVersion');
+    localStorage.setItem('praem.worldPos', JSON.stringify({ layer: 0, x: 299, y: 31 }));
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    expect(localStorage.getItem('praem.worldLayoutVersion')).toBe('2');
+    expect(JSON.parse(localStorage.getItem('praem.worldPos') ?? '{}')).toEqual({ layer: 0, x: 25, y: 25 });
+  });
+  it('recovers a blocked saved position to the nearest walkable cell after loading', async () => {
+    localStorage.setItem('praem.worldPos', JSON.stringify({ layer: 0, x: 30, y: 30 }));
+    f.rpc.mockImplementation(async (_name, args) => {
+      const rows = Array.from({ length: 64 }, () => Array(64).fill(0)); rows[30][30] = 1;
+      return { error: null, data: { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path', 'wall'], rows } };
+    });
+    open(); await screen.findByText('29,30 · A 0,0 · Fire', {}, { timeout: 2500 });
+    expect(f.mutation).not.toHaveBeenCalled();
+  });
+  it.each([
+    { kind: 'npc_home', name: 'Bernard', notes: 'Clearing notes' },
+    { kind: 'town', action: 'merchant', name: 'Emberfold: merchant', notes: 'Market notes' },
+  ])('opens adjacent conversation cards without Home or door places: $name', async spot => {
+    f.places = [{ ...spot, x: 27, y: 25 }];
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalled());
+    await new Promise(r => setTimeout(r, 160));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    await screen.findByRole('dialog', { name: spot.name });
+    fireEvent.click(screen.getByRole('button', { name: /^Close$/ }));
+    expect(screen.queryByRole('dialog')).toBeNull(); expect(f.mutation).not.toHaveBeenCalled();
+  });
   it('opens at a pending world return once, then clears it', async () => {
     localStorage.setItem('praem.worldReturn', JSON.stringify({ layer: 0, x: 40, y: 30 }));
     open(); await screen.findByText('40,30 · A 0,0 · Fire');

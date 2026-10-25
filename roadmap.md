@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Update /world neighbour ground, terrain-paced wading/ripples, Bernard/merchant cards and versioned safe arrivals; 350 tests pass and preview compilation passes. Existing public forest data and Bernard tap/Close card verified at 375px without page errors.
+- [ ] Verify forest changes in a real signed-in session — the game uses separate external authentication; managed auth has no users to mint, so isolated public-data checks do not verify signed-in gameplay.
+
 - [x] Add shared world/maze tile drawing, deterministic era skins and accent loading presentation. 335 tests pass, preview compilation passes; published skins 1, 4 and 7 render at desktop/375px, with shared drawer identity and Cinder Hollow · Fire loader verified without page errors.
 - [ ] Verify era skins during a real signed-in maze run — the game's separate external authentication is unavailable; published-data rendering and gameplay regression tests do not verify the live account flow.
 

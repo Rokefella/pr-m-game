@@ -14,14 +14,13 @@ import { getAllFlags, setFlag } from '@/lib/questFlags';
 import { canAccessMaze, checkSubscriptionStatus, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { DOOR_FLAGS, doorRefusal, EXCHANGE_MIN_LEVEL, LIBRARY_MIN_LEVEL, type VillageDoorKind } from '@/lib/villageDoors';
 import { saveWorldPos, saveWorldReturn, takeWorldOpening } from '@/lib/worldReturn';
-import { clampWorld, eraAt, eraPointFor, fetchWorldChunk, layerSize, mazeOutcome, placeAction, placesOn, readWorldData, tileCost, worldArea, worldPhase, WORLD_MOVE_MS, WORLD_TILE, WorldChunkCache, type Place, type WorldLayer, type WorldPoint } from '@/lib/worldTest';
+import { adjacentConversation, clampWorld, eraAt, eraPointFor, fetchWorldChunk, isWading, isWorldConversation, layerSize, mazeOutcome, nearestWorldWalkable, placeAction, placesOn, readWorldData, tileCost, worldArea, worldMoveDuration, worldPhase, WORLD_MOVE_MS, WORLD_TILE, WorldChunkCache, type Place, type WorldLayer, type WorldPoint } from '@/lib/worldTest';
 import { drawWorld, type WorldInk } from '@/lib/worldTestRender';
 import './world-test.css';
 
 type WorldData = Awaited<ReturnType<typeof readWorldData>>;
 type Identity = { registration_number: number | null; aura_color: string | null; orb_dye?: string | null; level?: number | null };
 const DEFAULT_IDENTITY: Identity = { registration_number: null, aura_color: null };
-const UNDER_RADIUS = 6;
 export default function WorldTest() {
   const { user, loading } = useAuth();
   const [identity, setIdentity] = useState<Identity | null>(null);
@@ -66,6 +65,8 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
   const camera = useRef({ x: 0, y: 0 });
   const keys = useRef(new Set<string>());
   const lastMove = useRef(0);
+  const moveDuration = useRef(WORLD_MOVE_MS);
+  const journey = useRef({ from: pos, started: 0, duration: WORLD_MOVE_MS });
   const bumpUntil = useRef(0);
   const [walking, setWalking] = useState(false);
   const [jumpOpen, setJumpOpen] = useState(false);
@@ -76,7 +77,8 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
   blocked.current = jumpOpen || Boolean(placeCard);
   const [busy, setBusy] = useState(false);
   const [entryMessage, setEntryMessage] = useState('');
-  const [, setChunkTick] = useState(0);
+  const [chunkTick, setChunkTick] = useState(0);
+  const pendingArrival = useRef<WorldPoint | null>(null);
 
   /** Places the player without firing any place action (jumps, stairs, page load). */
   const place = useCallback((point: WorldPoint, nextLayer: WorldLayer) => {
@@ -84,6 +86,7 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
     const next = { x: clampWorld(point.x, size), y: clampWorld(point.y, size) };
     layerRef.current = nextLayer; setLayer(nextLayer);
     posRef.current = next; display.current = next; setPos(next); caches.current[nextLayer].maintain(next);
+    pendingArrival.current = null; setWalking(false);
     saveWorldPos({ layer: nextLayer, ...next });
     setJumpOpen(false); setPlaceCard(null); keys.current.clear();
   }, []);
@@ -95,7 +98,7 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
       if (cancelled) return;
       dataRef.current = world; setData(world);
       const opening = takeWorldOpening();
-      if (opening) place(opening, opening.layer); else place(startPoint(world), 0);
+      if (opening) { place(opening, opening.layer); pendingArrival.current = posRef.current; } else place(startPoint(world), 0);
     }).catch(() => { if (!cancelled) setError('The world could not be loaded.'); });
     return () => { cancelled = true; };
   }, [retry, place]);
@@ -103,8 +106,19 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
     const timer = setInterval(() => { setClock(Date.now()); setChunkTick(t => t + 1); }, 1000);
     return () => clearInterval(timer);
   }, []);
+  useEffect(() => {
+    const arrival = pendingArrival.current;
+    if (!data || !arrival) return;
+    const l = layerRef.current, cache = caches.current[l];
+    const key = cache.terrainKey(arrival.x, arrival.y);
+    if (!key) return;
+    pendingArrival.current = null;
+    void nearestWorldWalkable(cache, new Map(data.terrain.map(t => [t.key, t])), arrival).then(safe => {
+      if (safe && posRef.current === arrival && layerRef.current === l) place(safe, l);
+    });
+  }, [data, chunkTick, place]);
   const move = useCallback((dx: number, dy: number) => {
-    if (blocked.current || !dataRef.current || performance.now() - lastMove.current < WORLD_MOVE_MS) return;
+    if (blocked.current || !dataRef.current || performance.now() - lastMove.current < moveDuration.current) return;
     if (dx === 0 && dy === 0) return;
     const l = layerRef.current, cache = caches.current[l], size = layerSize(l);
     const from = posRef.current, stepX = Math.sign(dx), stepY = Math.sign(dy);
@@ -117,13 +131,17 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
       return terrain?.walkable === true && terrain.enabled !== false;
     };
     lastMove.current = performance.now();
+    moveDuration.current = WORLD_MOVE_MS;
     if (next.x < 0 || next.y < 0 || next.x >= size || next.y >= size || !walkable(next) || (stepX && stepY && !walkable({ x: next.x, y: from.y }) && !walkable({ x: from.x, y: next.y }))) { bumpUntil.current = performance.now() + 150; return; }
     posRef.current = next; setPos(next); setWalking(true);
     saveWorldPos({ layer: l, ...next });
     const terrain = world.terrain.find(t => t.key === cache.terrainKey(next.x, next.y));
+    moveDuration.current = terrain ? worldMoveDuration(terrain) : WORLD_MOVE_MS;
+    journey.current = { from: display.current, started: lastMove.current, duration: moveDuration.current };
     if (terrain) { spentRef.current += tileCost(terrain, eraAt(eraPointFor(next, l), world.eras)); setSpent(spentRef.current); }
     cache.maintain(next);
-    const spot = placesOn(world.places, l).find(p => p.x === next.x && p.y === next.y);
+    const layerPlaces = placesOn(world.places, l);
+    const spot = layerPlaces.find(p => p.x === next.x && p.y === next.y) ?? adjacentConversation(layerPlaces, next);
     if (spot) { setEntryMessage(''); setPlaceCard(spot); }
   }, []);
   useEffect(() => {
@@ -150,7 +168,9 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
       move((k.has('arrowright') || k.has('d') ? 1 : 0) - (k.has('arrowleft') || k.has('a') ? 1 : 0), (k.has('arrowdown') || k.has('s') ? 1 : 0) - (k.has('arrowup') || k.has('w') ? 1 : 0));
       const l = layerRef.current, cache = caches.current[l];
       const point = posRef.current;
-      display.current = { x: display.current.x + (point.x - display.current.x) * .2, y: display.current.y + (point.y - display.current.y) * .2 };
+      const progress = Math.min(1, Math.max(0, (time - journey.current.started) / journey.current.duration));
+      display.current = walking || display.current.x !== point.x || display.current.y !== point.y
+        ? { x: journey.current.from.x + (point.x - journey.current.from.x) * progress, y: journey.current.from.y + (point.y - journey.current.from.y) * progress } : point;
       camera.current = { x: (display.current.x + .5) * WORLD_TILE - width / 2, y: (display.current.y + .5) * WORLD_TILE - height / 2 };
       drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l);
       const phase = worldPhase(Date.now(), data.cycle);
@@ -159,13 +179,18 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
         const tint = phase.phase === 'dusk' ? ink.dusk : phase.phase === 'night' ? ink.night : phase.phase === 'dawn' ? ink.dawn : null;
         if (tint) { ctx.globalAlpha = phase.phase === 'dawn' ? 1 - phase.progress : 1; ctx.fillStyle = tint; ctx.fillRect(0, 0, width, height); ctx.globalAlpha = 1; }
       }
+      if (isWading(types.get(cache.terrainKey(point.x, point.y) ?? ''))) {
+        const pulse = reduced ? 0 : (Math.sin(time / 240) + 1) / 2;
+        ctx.save(); ctx.strokeStyle = ink.text; ctx.globalAlpha = .35 + pulse * .2; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.ellipse(width / 2, height / 2 + 5, 10 + pulse * 4, 4 + pulse * 2, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      }
       if (avatar.current) avatar.current.style.transform = `translate(${width / 2 - 15 + (time < bumpUntil.current ? Math.sin(time * .1) * 3 : 0)}px, ${height / 2 - 15}px)`;
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => { cancelAnimationFrame(frame); window.removeEventListener('resize', resize); };
   }, [data, reduced, move]);
-  useEffect(() => { if (!walking) return; const timer = setTimeout(() => setWalking(false), 180); return () => clearTimeout(timer); }, [walking, pos]);
+  useEffect(() => { if (!walking) return; const timer = setTimeout(() => setWalking(false), moveDuration.current); return () => clearTimeout(timer); }, [walking, pos]);
 
   /** Leave the world through a place: remember the place cell so the trip returns here. */
   const leave = (path: string) => { saveWorldReturn({ layer: layerRef.current, ...posRef.current }); navigate(path); };
@@ -206,7 +231,13 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
     return [...new Set(list.map(p => p.kind))].map(kind => ({ l, kind, items: list.filter(p => p.kind === kind).sort((a, b) => kind === 'maze_entrance' ? (a.maze_level ?? 0) - (b.maze_level ?? 0) : a.name.localeCompare(b.name)) }));
   });
   return <div className="world-test">
-    <canvas ref={canvas} aria-label="Open world terrain" />
+    <canvas ref={canvas} aria-label="Open world terrain" onClick={e => {
+      if (blocked.current) return;
+      const bounds = e.currentTarget.getBoundingClientRect();
+      const x = Math.floor((e.clientX - bounds.left + camera.current.x) / WORLD_TILE), y = Math.floor((e.clientY - bounds.top + camera.current.y) / WORLD_TILE);
+      const spot = placesOn(data.places, layer).find(p => isWorldConversation(p) && p.x === x && p.y === y);
+      if (spot) { setEntryMessage(''); setPlaceCard(spot); }
+    }} />
     <div ref={avatar} className="world-avatar"><PlayerAvatar size={30} palette={orbLook(identity.aura_color, identity.orb_dye, identity.registration_number)} walking={walking} /></div>
     <header className="world-hud font-mono"><Button variant="ghost" size="icon" onClick={back} aria-label="Return to village" title="Return"><ArrowLeft size={18} /></Button><div className="world-status"><span>{pos.x},{pos.y} · A {area.x},{area.y} · {era?.name ?? '—'}</span><span>{layer === 1 ? `UNDERGROUND · ABOVE ${surfacePoint.x},${surfacePoint.y}` : 'SURFACE'}</span><span>{terrain?.name ?? (cache.errors.size ? 'Window unavailable' : 'Loading…')} · COST {terrain ? tileCost(terrain, era) : '—'} · SPENT {Number(spent.toFixed(2))}</span>{layer === 0 && <span>{phase.phase.toUpperCase()} · {Math.ceil(phase.minutesLeft)} MIN</span>}</div><Button variant="outline" className="world-jump" onClick={() => { setJumpX(String(pos.x)); setJumpY(String(pos.y)); setJumpOpen(true); }}><Navigation size={14} />JUMP</Button></header>
     <Thumbstick onMove={move} disabled={jumpOpen || Boolean(placeCard)} />
@@ -220,6 +251,7 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
       {cardAction === 'door_exchange' && button('OPEN', () => void openDoor('exchange'))}
       {(cardAction === 'descend' || cardAction === 'ascend') && button('GO', () => { const target = placeCard; place({ x: Number(target.target_x), y: Number(target.target_y) }, Number(target.target_layer) === 1 ? 1 : 0); })}
       {cardAction === 'shadow' && button('ENTER', openShadow)}
+      {isWorldConversation(placeCard) && <><p className="font-fell">{cardAction === 'merchant' ? "The merchant isn't trading yet." : 'Talking to Bernard arrives in the next build.'}</p><Button variant="outline" className="world-jump" onClick={() => setPlaceCard(null)}>Close</Button></>}
     </section></div>}
   </div>;
 }

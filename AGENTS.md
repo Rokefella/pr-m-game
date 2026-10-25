@@ -1,6 +1,6 @@
 # Architecture rules
 
-- Maze loads server-owned drops after config/lifecycle readiness using its fresh/resume decision; ref placements and in-flight claims isolate failures from movement. DropCrate only draws.
+- Maze loads drops after fresh/resume readiness. Real exits settle claims then runState abandons drops and refreshes inventory; Shadow snapshots carried counts before server banking. DropCrate only draws.
 
 - LoadingScreen owns timing; pages own data/navigation.
 

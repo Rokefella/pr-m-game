@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { refreshDrops } from '@/lib/carriedDrops';
 
 export const RUN_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 export const STRICT_FORFEIT = false;
@@ -35,6 +36,19 @@ export function markRunComplete(userId: string, level: number): void {
 
 export function endRun(): void {
   localStorage.removeItem(RUN_KEY);
+}
+
+/** Real exits only; room returns preserve drops and fresh runs reset server-side. */
+export async function abandonRunDrops(userId: string, level: number): Promise<boolean> {
+  try {
+    const { error } = await supabase.rpc('abandon_run_drops' as never, { p_level: level } as never);
+    if (error) throw error;
+    await refreshDrops(userId);
+    return true;
+  } catch (error) {
+    console.error('[Maze] drop forfeiture failed', error);
+    return false;
+  }
 }
 
 export async function forfeitUnbanked(userId: string): Promise<boolean> {

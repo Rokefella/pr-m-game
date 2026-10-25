@@ -14,6 +14,7 @@ import { getAllFlags, setFlag, reconcileBernardAfterShadow } from '@/lib/questFl
 import { supabase } from '@/lib/supabase';
 import { formatPrime } from '@/lib/format';
 import { endRun } from '@/lib/runState';
+import { carriedDropCount, readOwnedDrops, refreshDrops } from '@/lib/carriedDrops';
 import Thumbstick from '@/components/Thumbstick';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import { useOrbSync } from '@/lib/orb';
@@ -216,6 +217,8 @@ const ShadowRealm = () => {
   const [saving, setSaving] = useState(false);
   const runFragsRef = useRef<RunFragment[]>([]);
   const [libraryCount, setLibraryCount] = useState<number | null>(null);
+  const carriedDropsSnapshotRef = useRef<number | null>(null);
+  const [bankedDrops, setBankedDrops] = useState(0);
   const [shownCount, setShownCount] = useState(0);
   const [nextLevel, setNextLevel] = useState<number | null>(null);
   const [levelFlash, setLevelFlash] = useState(false);
@@ -496,6 +499,11 @@ const ShadowRealm = () => {
     if (fetchErr) return false;
     const frags = (data ?? []) as RunFragment[];
     if (frags.length > 0 || runFragsRef.current.length === 0) runFragsRef.current = frags;
+    if (runFragsRef.current.length > 0 && carriedDropsSnapshotRef.current === null) {
+      try {
+        carriedDropsSnapshotRef.current = carriedDropCount(await readOwnedDrops(user.id), currentLevelRef.current);
+      } catch { /* An unknown presentation count must not prevent fragment banking. */ }
+    }
     return persistTransfer();
   }, [user, persistTransfer]);
 
@@ -548,6 +556,8 @@ const ShadowRealm = () => {
     const ok = await bankFirst();
     setSaving(false);
     if (!ok) { setError(true); return; }
+    if (user) void refreshDrops(user.id);
+    if (runFragsRef.current.length > 0) setBankedDrops(carriedDropsSnapshotRef.current ?? 0);
     // Presentation-only read after saving; count failures cannot fail the transfer.
     if (user && runFragsRef.current.length > 0) {
       void (async () => {
@@ -812,6 +822,7 @@ const ShadowRealm = () => {
                       </>
                     )}
                     {doneMsg && libraryCount !== null && <p className="font-mono" style={{ margin: 0, fontSize: 11, color: SHADOW.glow }}>Library {libraryCount}</p>}
+                    {bankedDrops > 0 && <p className="shadow-banked-drops font-fell italic">{bankedDrops} drops banked.</p>}
                     {doneMsg && <p className="font-fell italic" style={{ margin: 0, fontSize: 16, color: SHADOW.eye, animation: 'shadowFadeIn 500ms ease-out' }}>The record is permanent now.</p>}
                   </>
                 )}

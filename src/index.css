@@ -260,6 +260,9 @@
 .profile-inventory-tile span { overflow-wrap: anywhere; }
 .profile-fragment-carried { border: 1px dashed var(--instrument-beacon); font-size: 15px; }
 .profile-drop-filled { border: 1px solid var(--plate-filled); font-size: 13px; }
+.profile-drop-carried { border: 1px dashed var(--instrument-beacon); }
+.profile-carried-label { font-size: 9px; color: var(--instrument-beacon); }
+.shadow-banked-drops { margin: 0; font-size: 13px; color: var(--plate-label); }
 .profile-tile-empty { border: 1px dashed var(--plate-edge); opacity: 1 !important; }
 .profile-library { margin: 12px 0; font-size: 11px; color: var(--plate-label); }
 .profile-carry-note { margin: 12px 0; font-size: 13px; line-height: 1.5; color: var(--plate-label); }

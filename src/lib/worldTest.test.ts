@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { chunkOrigin, devWorldAllowed, eraAt, nearbyChunks, tileCost, worldArea, worldPhase, WorldChunkCache, type Terrain, type Era } from './worldTest';
+import { chunkOrigin, eraAt, nearbyChunks, tileCost, worldArea, worldPhase, WorldChunkCache, type Terrain, type Era } from './worldTest';
 describe('read-only world rules', () => {
-  it('matches registration one dev access only', () => { expect(devWorldAllowed(1)).toBe(true); expect(devWorldAllowed(2)).toBe(false); expect(devWorldAllowed(null)).toBe(false); expect(devWorldAllowed('1')).toBe(false); });
   it('aligns chunks to 64-cell boundaries', () => { expect(chunkOrigin(25)).toBe(0); expect(chunkOrigin(300)).toBe(256); expect(chunkOrigin(999)).toBe(960); });
   it('prefetches within sixteen cells of an edge', () => { expect(nearbyChunks({ x: 48, y: 32 })).toContainEqual({ x: 64, y: 0 }); expect(nearbyChunks({ x: 47, y: 32 })).toEqual([{ x: 0, y: 0 }]); });
   it('does not request chunks beyond world bounds', () => expect(nearbyChunks({ x: 999, y: 999 })).toEqual([{ x: 960, y: 960 }]));

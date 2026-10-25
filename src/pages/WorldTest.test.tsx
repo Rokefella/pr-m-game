@@ -1,9 +1,9 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import WorldTest from './WorldTest';
-const f = vi.hoisted(() => ({ registration: 1, reads: [] as string[], rpc: vi.fn(), mutation: vi.fn() }));
-vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: { id: 'player' }, loading: false }) }));
+const f = vi.hoisted(() => ({ registration: 1, signedIn: true, reads: [] as string[], rpc: vi.fn(), mutation: vi.fn() }));
+vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: f.signedIn ? { id: 'player' } : null, loading: false }) }));
 vi.mock('@/components/Thumbstick', () => ({ default: ({ onMove }: { onMove: (x: number, y: number) => void }) => <button onClick={() => onMove(1, 0)}>Walk east</button> }));
 vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc, from: (table: string) => {
   f.reads.push(table);
@@ -12,16 +12,34 @@ vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc, from: (table: string)
   return chain;
 } } }));
 beforeEach(() => {
-  f.registration = 1; f.reads = []; f.mutation.mockReset();
+  f.registration = 1; f.signedIn = true; f.reads = []; f.mutation.mockReset();
   f.rpc.mockReset().mockImplementation(async (_name, args) => ({ error: null, data: { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
-const open = () => render(<MemoryRouter initialEntries={['/world-test']}><Routes><Route path="/world-test" element={<WorldTest />} /><Route path="/village" element={<p>Village</p>} /></Routes></MemoryRouter>);
+const Location = () => <output aria-label="Current URL">{useLocation().pathname}</output>;
+const open = (path = '/world') => render(<MemoryRouter initialEntries={[path]}><Location /><Routes><Route path="/world" element={<WorldTest />} /><Route path="/world-test" element={<Navigate to="/world" replace />} /><Route path="/login" element={<p>Login</p>} /><Route path="/village" element={<p>Village</p>} /></Routes></MemoryRouter>);
 describe('world sandbox access and read-only movement', () => {
-  it('rejects non-dev direct navigation before loading any world data', async () => {
-    f.registration = 2; open(); await screen.findByText('Village');
-    expect(f.reads).toEqual(['users']); expect(f.rpc).not.toHaveBeenCalled();
+  it('allows any signed-in player regardless of registration number', async () => {
+    f.registration = 2; open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    expect(f.reads).toContain('world_places'); expect(f.mutation).not.toHaveBeenCalled();
+  });
+  it('redirects signed-out players to login without reading world data', async () => {
+    f.signedIn = false; open(); await screen.findByText('Login');
+    expect(f.reads).toEqual([]); expect(f.rpc).not.toHaveBeenCalled();
+  });
+  it('redirects the old URL to /world', async () => {
+    open('/world-test'); await screen.findByText('25,25 · A 0,0 · Fire');
+    expect(screen.getByLabelText('Current URL').textContent).toBe('/world');
+  });
+  it('starts again at the start place with a fresh session counter when reopened', async () => {
+    const view = open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalled());
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    await screen.findByText('26,25 · A 0,0 · Fire'); view.unmount();
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    expect(screen.getByText(/SPENT 0/)).toBeInTheDocument();
+    expect(f.mutation).not.toHaveBeenCalled();
   });
   it('starts at 25,25, spends session-only tile cost and jumps without writes', async () => {
     open(); await screen.findByText('25,25 · A 0,0 · Fire');

@@ -62,7 +62,8 @@ const App = () => (
             <Route path="/tiles" element={<TilePreview />} />
             <Route path="/room/:levelNumber/:locationKey" element={<DynamicRoom />} />
             <Route path="/garden-preview" element={<GardenPreview />} />
-            <Route path="/world-test" element={<WorldTest />} />
+            <Route path="/world" element={<WorldTest />} />
+            <Route path="/world-test" element={<Navigate to="/world" replace />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

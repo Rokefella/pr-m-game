@@ -10,34 +10,32 @@ import Thumbstick from '@/components/Thumbstick';
 import LoadingScreen from '@/components/LoadingScreen';
 import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { loadLevelFromSupabase, type LoadedLevelConfig } from '@/lib/levelLoader';
-import { clampWorld, devWorldAllowed, eraAt, fetchWorldChunk, readWorldData, tileCost, worldArea, worldPhase, WORLD_MOVE_MS, WORLD_TILE, WorldChunkCache, type Place, type WorldPoint } from '@/lib/worldTest';
+import { clampWorld, eraAt, fetchWorldChunk, readWorldData, tileCost, worldArea, worldPhase, WORLD_MOVE_MS, WORLD_TILE, WorldChunkCache, type Place, type WorldPoint } from '@/lib/worldTest';
 import { drawWorld, type WorldInk } from '@/lib/worldTestRender';
 import './world-test.css';
 
 type WorldData = Awaited<ReturnType<typeof readWorldData>>;
-type Identity = { registration_number: number; aura_color: string | null; orb_dye?: string | null };
+type Identity = { registration_number: number | null; aura_color: string | null; orb_dye?: string | null };
+const DEFAULT_IDENTITY: Identity = { registration_number: null, aura_color: null };
 export default function WorldTest() {
   const { user, loading } = useAuth();
   const [identity, setIdentity] = useState<Identity | null>(null);
   const [checkedUser, setCheckedUser] = useState<string | null>(null);
-  const [accessError, setAccessError] = useState(false);
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    setAccessError(false);
     void (async () => {
       try {
         const { data, error } = await supabase.from('users').select('registration_number, aura_color, orb_dye').eq('id', user.id).maybeSingle();
         if (cancelled) return;
-        setIdentity(!error && data ? data as Identity : null); setCheckedUser(user.id); setAccessError(Boolean(error));
-      } catch { if (!cancelled) { setAccessError(true); setCheckedUser(user.id); } }
+        setIdentity(!error && data ? data as Identity : DEFAULT_IDENTITY); setCheckedUser(user.id);
+      } catch { if (!cancelled) { setIdentity(DEFAULT_IDENTITY); setCheckedUser(user.id); } }
     })();
     return () => { cancelled = true; };
   }, [user?.id]);
   if (loading || (user && checkedUser !== user.id)) return <LoadingScreen />;
   if (!user) return <Navigate to="/login" replace />;
-  if (accessError || !identity || !devWorldAllowed(identity.registration_number)) return <Navigate to="/village" replace />;
-  return <WorldSandbox identity={identity} />;
+  return <WorldSandbox key={user.id} identity={identity ?? DEFAULT_IDENTITY} />;
 }
 
 export function WorldSandbox({ identity }: { identity: Identity }) {

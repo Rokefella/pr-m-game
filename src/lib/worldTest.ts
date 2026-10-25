@@ -10,7 +10,6 @@ export type Place = WorldPoint & { kind: string; name: string; maze_level: numbe
 export type DayNight = { cycle_minutes: number; day: number; dusk: number; night: number; dawn: number; night_view_delta: number };
 export type WorldChunk = { x0: number; y0: number; w: number; h: number; keys: string[]; rows: number[][] };
 export const DEFAULT_CYCLE: DayNight = { cycle_minutes: 17, day: 10, dusk: 1, night: 5, dawn: 1, night_view_delta: -2 };
-export const devWorldAllowed = (registration: unknown) => registration === 1;
 export const clampWorld = (value: number) => Math.max(0, Math.min(WORLD_SIZE - 1, Math.round(value)));
 export const chunkOrigin = (value: number) => Math.floor(value / WORLD_CHUNK) * WORLD_CHUNK;
 export const worldArea = (point: WorldPoint) => ({ x: Math.floor(point.x / 50), y: Math.floor(point.y / 50) });

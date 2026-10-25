@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Add fogged world map with cached overview, zoom/pan, discovered places and nonblocking per-user discovery persistence; 360 tests and preview typecheck pass. Desktop/phone public-data map, zoom/reveal/close checked without page errors.
+- [ ] Verify discovery saves against a real signed-in game account — external game authentication is unavailable; persistence is regression-tested but not live-account verified.
+
 - [x] Update /world neighbour ground, terrain-paced wading/ripples, Bernard/merchant cards and versioned safe arrivals; 350 tests pass and preview compilation passes. Existing public forest data and Bernard tap/Close card verified at 375px without page errors.
 - [ ] Verify forest changes in a real signed-in session — the game uses separate external authentication; managed auth has no users to mint, so isolated public-data checks do not verify signed-in gameplay.
 

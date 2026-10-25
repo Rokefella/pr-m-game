@@ -5,6 +5,8 @@
 @layer base {
   :root {
     --background: 240 43% 3%;
+    --world-map-fog: #16120e;
+    --world-map-fallback: #555;
     --foreground: 43 14% 85%;
 
     --card: 240 43% 3%;

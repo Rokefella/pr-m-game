@@ -6,11 +6,22 @@ export const WORLD_MOVE_MS = 150;
 export type WorldPoint = { x: number; y: number };
 export type Terrain = { key: string; name: string; grp: string; walkable: boolean; steps: number | null; sight: number | null; sight_delta: number | null; light_radius: number | null; moves: string | null; color: string | null; enabled: boolean };
 export type Era = { order_index: number; name: string; ring_from: number; ring_to: number; palette: unknown; step_cost: number; darkness: number };
-export type Place = WorldPoint & { kind: string; name: string; maze_level: number | null; notes: string | null };
+export type Place = WorldPoint & { kind: string; name: string; maze_level: number | null; notes: string | null; layer?: number | null; action?: string | null; target_layer?: number | null; target_x?: number | null; target_y?: number | null };
+export type WorldLayer = 0 | 1;
+export const UNDER_SIZE = 250;
+export const layerSize = (layer: WorldLayer) => layer === 1 ? UNDER_SIZE : WORLD_SIZE;
+/** Underground cells take the era of the centre of the 4 x 4 surface plot above them. */
+export const eraPointFor = (point: WorldPoint, layer: WorldLayer): WorldPoint => layer === 1 ? { x: point.x * 4 + 2, y: point.y * 4 + 2 } : point;
+export const placesOn = (places: Place[], layer: WorldLayer) => places.filter(p => (Number(p.layer) || 0) === layer);
+export const placeAction = (place: Place): string | null => place.action ?? (place.kind === 'maze_entrance' ? 'maze' : null);
+export function mazeOutcome(mazeLevel: number | null, playerLevel: number): 'enter' | 'completed' | 'locked' {
+  const level = Number(mazeLevel);
+  return level === playerLevel ? 'enter' : level < playerLevel ? 'completed' : 'locked';
+}
 export type DayNight = { cycle_minutes: number; day: number; dusk: number; night: number; dawn: number; night_view_delta: number };
 export type WorldChunk = { x0: number; y0: number; w: number; h: number; keys: string[]; rows: number[][] };
 export const DEFAULT_CYCLE: DayNight = { cycle_minutes: 17, day: 10, dusk: 1, night: 5, dawn: 1, night_view_delta: -2 };
-export const clampWorld = (value: number) => Math.max(0, Math.min(WORLD_SIZE - 1, Math.round(value)));
+export const clampWorld = (value: number, size = WORLD_SIZE) => Math.max(0, Math.min(size - 1, Math.round(value)));
 export const chunkOrigin = (value: number) => Math.floor(value / WORLD_CHUNK) * WORLD_CHUNK;
 export const worldArea = (point: WorldPoint) => ({ x: Math.floor(point.x / 50), y: Math.floor(point.y / 50) });
 export function eraAt(point: WorldPoint, eras: Era[]) {
@@ -28,28 +39,28 @@ export function worldPhase(now: number, settings = DEFAULT_CYCLE) {
   }
   return { phase: 'day' as const, minutesLeft: settings.cycle_minutes - minute, progress: 0 };
 }
-export function nearbyChunks(point: WorldPoint): WorldPoint[] {
+export function nearbyChunks(point: WorldPoint, size = WORLD_SIZE): WorldPoint[] {
   const x0 = chunkOrigin(point.x), y0 = chunkOrigin(point.y);
   const xs = [x0], ys = [y0];
   if (point.x - x0 < 16) xs.push(x0 - WORLD_CHUNK);
   if (x0 + WORLD_CHUNK - point.x <= 16) xs.push(x0 + WORLD_CHUNK);
   if (point.y - y0 < 16) ys.push(y0 - WORLD_CHUNK);
   if (y0 + WORLD_CHUNK - point.y <= 16) ys.push(y0 + WORLD_CHUNK);
-  return xs.flatMap(x => ys.map(y => ({ x, y }))).filter(p => p.x >= 0 && p.y >= 0 && p.x < WORLD_SIZE && p.y < WORLD_SIZE);
+  return xs.flatMap(x => ys.map(y => ({ x, y }))).filter(p => p.x >= 0 && p.y >= 0 && p.x < size && p.y < size);
 }
 export class WorldChunkCache {
   chunks = new Map<string, WorldChunk>();
   pending = new Map<string, Promise<void>>();
   errors = new Map<string, number>();
   center: WorldPoint = { x: 25, y: 25 };
-  constructor(private fetchChunk: (x: number, y: number) => Promise<WorldChunk>) {}
+  constructor(private fetchChunk: (x: number, y: number) => Promise<WorldChunk>, public size = WORLD_SIZE) {}
   key(x: number, y: number) { return `${chunkOrigin(x)},${chunkOrigin(y)}`; }
   terrainKey(x: number, y: number): string | undefined {
     const chunk = this.chunks.get(this.key(x, y));
     return chunk?.keys[chunk.rows[y - chunk.y0]?.[x - chunk.x0]];
   }
   async load(x: number, y: number) {
-    if (x < 0 || y < 0 || x >= WORLD_SIZE || y >= WORLD_SIZE) return;
+    if (x < 0 || y < 0 || x >= this.size || y >= this.size) return;
     const x0 = chunkOrigin(x), y0 = chunkOrigin(y), key = this.key(x, y);
     if (this.chunks.has(key)) return;
     const pending = this.pending.get(key); if (pending) return pending;
@@ -64,11 +75,11 @@ export class WorldChunkCache {
     this.center = point;
     for (const [key, chunk] of this.chunks) if (Math.abs(chunk.x0 - chunkOrigin(point.x)) > 3 * WORLD_CHUNK || Math.abs(chunk.y0 - chunkOrigin(point.y)) > 3 * WORLD_CHUNK) this.chunks.delete(key);
     for (const key of this.errors.keys()) { const [x, y] = key.split(',').map(Number); if (Math.abs(x - point.x) > 4 * WORLD_CHUNK || Math.abs(y - point.y) > 4 * WORLD_CHUNK) this.errors.delete(key); }
-    for (const p of nearbyChunks(point)) void this.load(p.x, p.y);
+    for (const p of nearbyChunks(point, this.size)) void this.load(p.x, p.y);
   }
 }
-export async function fetchWorldChunk(x: number, y: number): Promise<WorldChunk> {
-  const { data, error } = await supabase.rpc('world_window' as never, { p_x0: x, p_y0: y, p_w: WORLD_CHUNK, p_h: WORLD_CHUNK } as never);
+export async function fetchWorldChunk(x: number, y: number, layer: WorldLayer = 0): Promise<WorldChunk> {
+  const { data, error } = await supabase.rpc((layer === 1 ? 'world_under_window' : 'world_window') as never, { p_x0: x, p_y0: y, p_w: WORLD_CHUNK, p_h: WORLD_CHUNK } as never);
   if (error || !data) throw new Error('World window unavailable');
   const chunk = data as unknown as WorldChunk;
   if (!Array.isArray(chunk.keys) || !Array.isArray(chunk.rows)) throw new Error('Invalid world window');

@@ -1,3 +1,4 @@
+import { exitDestination } from '@/lib/worldReturn';
 import { memo, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PlateFrame from '@/components/theme/PlateFrame';
@@ -43,7 +44,7 @@ export default memo(function DoorTransition({ kind, lines, destination, onStay }
     timers.current.push(window.setTimeout(() => setFlash(true), DOOR_OPEN_MS));
     timers.current.push(window.setTimeout(() => navigate(destination), DOOR_NAVIGATE_MS));
   };
-  const onStayClick = () => (onStay ? onStay() : navigate('/village'));
+  const onStayClick = () => (onStay ? onStay() : navigate(exitDestination()));
 
   return (
     <div className="transition-backdrop" data-game-ui="open">

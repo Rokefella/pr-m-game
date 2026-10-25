@@ -3,6 +3,8 @@ export type VillageDoorDef = { kind: VillageDoorKind; x: number; y: number };
 type Point = { x: number; y: number };
 type Footprint = Point & { w: number; h: number };
 
+export const LIBRARY_MIN_LEVEL = 3;
+export const EXCHANGE_MIN_LEVEL = 1;
 export const DOOR_CELL = 20;
 export const DOOR_MARGIN = 8;
 export const DOOR_FLAGS: Record<VillageDoorKind, string> = { maze: 'touched_89', library: 'touched_23', exchange: 'touched_47' };

@@ -1,11 +1,12 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import WorldMap from './WorldMap';
 import { discoverAround } from '@/lib/worldDiscovery';
 vi.mock('@/lib/worldOverview', () => ({ readWorldOverview: () => new Promise(() => {}) }));
 vi.mock('react-zoom-pan-pinch', () => ({ TransformWrapper: ({ children }: { children: (v: unknown) => React.ReactNode }) => children({ setTransform: vi.fn(), instance: { state: { scale: 1, positionX: 0, positionY: 0 } } }), TransformComponent: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
 vi.mock('./theme/useReducedMotion', () => ({ useReducedMotion: () => true }));
-afterEach(cleanup);
+beforeEach(() => vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null));
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const places = [{ x: 25, y: 25, name: 'Bernard', kind: 'npc_home' }, { x: 300, y: 300, name: 'Far town', kind: 'town' }, { x: 25, y: 25, name: 'Under town', kind: 'town', layer: 1 }] as never[];
 const props = { bits: discoverAround('', 25, 25, 0), player: { x: 25, y: 25 }, layer: 0 as const, aura: null, dev: false, types: [], places, onClose: vi.fn() };
 describe('world map visibility', () => {

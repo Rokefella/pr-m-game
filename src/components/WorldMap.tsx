@@ -28,7 +28,7 @@ export default function WorldMap({ bits, player, layer, aura, dev, types, places
       const known = discoveredBlock(bits, x, y);
       const edge = known && [[-1, 0], [1, 0], [0, -1], [0, 1]].some(([dx, dy]) => x + dx >= 0 && x + dx < 100 && y + dy >= 0 && y + dy < 100 && !discoveredBlock(bits, x + dx, y + dy));
       if (known && !edge) continue;
-      ctx.globalAlpha = known ? .5 : 1; ctx.fillStyle = fog; ctx.fillRect(x * 2.5, y * 2.5, 2.5, 2.5);
+      ctx.globalAlpha = known ? .5 : 1; ctx.fillStyle = fog; ctx.fillRect(Math.floor(x * 2.5), Math.floor(y * 2.5), Math.ceil((x + 1) * 2.5) - Math.floor(x * 2.5), Math.ceil((y + 1) * 2.5) - Math.floor(y * 2.5));
       ctx.globalAlpha = known ? .02 : .04; ctx.fillStyle = noise; ctx.fillRect(x * 2.5 + ((x * 7 + y * 3) % 2), y * 2.5 + ((x + y * 5) % 2), .5, .5);
     }
     ctx.globalAlpha = 1;

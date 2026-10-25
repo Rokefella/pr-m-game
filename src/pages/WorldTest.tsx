@@ -74,7 +74,7 @@ export function WorldSandbox({ identity }: { identity: Identity }) {
   const [entering, setEntering] = useState(false);
   const [entryMessage, setEntryMessage] = useState('');
   const worldReturn = useRef<WorldPoint>({ x: 25, y: 25 });
-  const [chunkTick, setChunkTick] = useState(0);
+  const [, setChunkTick] = useState(0);
   useEffect(() => {
     let cancelled = false;
     setError('');

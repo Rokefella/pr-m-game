@@ -43,10 +43,10 @@ function chunkCanvas(cache: WorldChunkCache, chunk: WorldChunk, types: Map<strin
     const terrain = types.get(cache.terrainKey(x, y) ?? ''); if (!terrain) continue;
     const era = eraAt(eraPointFor({ x, y }, layer), eras), ground = era?.ground_key ? types.get(era.ground_key) : undefined;
     const px = (x - chunk.x0) * CHUNK_PX, py = (y - chunk.y0) * CHUNK_PX;
-    if (terrain.key === 'building' && !seen.has(`${x},${y}`) && isBuilding(cache, x + 1, y) || terrain.key === 'building' && !seen.has(`${x},${y}`) && (isBuilding(cache, x - 1, y) || isBuilding(cache, x, y + 1) || isBuilding(cache, x, y - 1))) {
-      if (drawBuildingGroup(ctx, cache, types, eras, ink, layer, chunk, x, y, seen)) continue;
+    if (terrain.key === 'building') {
+      if (seen.has(`${x},${y}`)) continue;
+      if (isBuilding(cache, x + 1, y) || isBuilding(cache, x - 1, y) || isBuilding(cache, x, y + 1) || isBuilding(cache, x, y - 1)) { drawBuildingGroup(ctx, cache, types, eras, ink, layer, chunk, x, y, seen); continue; }
     }
-    if (terrain.key === 'building' && seen.has(`${x},${y}`)) continue;
     drawTerrainBase(ctx, terrain, era, x, y, px, py, CHUNK_PX, ink, false, ground);
   }
   chunkArt.set(chunk, { canvas, sig });

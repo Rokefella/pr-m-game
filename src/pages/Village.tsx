@@ -1,4 +1,5 @@
 import { USER_STEPS_REFRESHED } from '@/lib/mechanics';
+import { Button } from '@/components/ui/button';
 import { Z } from '@/lib/zIndex';
 import { VILLAGE_AVATAR_SIZE, ghostBodyPx, npcBodyPx } from '@/lib/orbSizes';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';

@@ -16,6 +16,8 @@ export const MechanicChips = ({ effects }: { effects: RunEffects }) => {
 export const MazeMechanicEffects = forwardRef<MechanicEffectsHandle, Props>(function MazeMechanicEffects({ effects, fragments, collected, door, dimension, cellSize, viewport }, ref) {
   const world = useRef<HTMLDivElement>(null);
   const lantern = useRef<SVGCircleElement>(null);
+  const clearStop = useRef<SVGStopElement>(null);
+  const midStop = useRef<SVGStopElement>(null);
   const revealGroup = useRef<SVGGElement>(null);
   const pulseGroup = useRef<HTMLDivElement>(null);
   const pulseRing = useRef<HTMLDivElement>(null);
@@ -31,6 +33,8 @@ export const MazeMechanicEffects = forwardRef<MechanicEffectsHandle, Props>(func
       const x = camera.x + (player.col + .5) * cellSize, y = camera.y + (player.row + .5) * cellSize;
       if (world.current) world.current.style.transform = `translate(${camera.x}px, ${camera.y}px)`;
       if (lantern.current) { lantern.current.setAttribute('cx', String(x)); lantern.current.setAttribute('cy', String(y)); lantern.current.setAttribute('r', String(soft)); }
+      clearStop.current?.setAttribute('offset', `${clear / soft * 100}%`);
+      midStop.current?.setAttribute('offset', `${(clear + soft) / (2 * soft) * 100}%`);
       if (revealGroup.current) revealGroup.current.setAttribute('transform', `translate(${camera.x} ${camera.y})`);
       for (const f of fragments) {
         const el = magnetic.current.get(f.prime);
@@ -64,10 +68,10 @@ export const MazeMechanicEffects = forwardRef<MechanicEffectsHandle, Props>(func
   }));
   return <>
     {effects.reveals.length > 0 && <svg className="mechanic-reveal-fog" width={viewport.width} height={viewport.height} aria-hidden="true"><defs>
-      <radialGradient id="mechanic-lantern-gradient"><stop offset="0%" stopColor="var(--instrument-shadow)" /><stop offset="62.5%" stopColor="var(--instrument-shadow)" /><stop offset="81.25%" stopColor="var(--auth-text)" stopOpacity=".35" /><stop offset="100%" stopColor="var(--auth-text)" /></radialGradient>
+      <radialGradient id="mechanic-lantern-gradient"><stop offset="0%" stopColor="var(--instrument-shadow)" /><stop ref={clearStop} offset="62.5%" stopColor="var(--instrument-shadow)" /><stop ref={midStop} offset="81.25%" stopColor="var(--mechanic-mask-white)" stopOpacity=".35" /><stop offset="100%" stopColor="var(--mechanic-mask-white)" /></radialGradient>
       <filter id="mechanic-soft-edge" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12" /></filter>
       <mask id="mechanic-reveal-mask" maskUnits="userSpaceOnUse" x="0" y="0" width={viewport.width} height={viewport.height} style={{ maskType: 'luminance' } as CSSProperties}>
-        <rect width="100%" height="100%" fill="var(--auth-text)" /><circle ref={lantern} fill="url(#mechanic-lantern-gradient)" />
+        <rect width="100%" height="100%" fill="var(--mechanic-mask-white)" /><circle ref={lantern} fill="url(#mechanic-lantern-gradient)" />
         <g ref={revealGroup}>{effects.reveals.map((p, i) => <g key={i}><rect x={(p.col - p.r) * cellSize} y={(p.row - p.r) * cellSize} width={(2 * p.r + 1) * cellSize} height={(2 * p.r + 1) * cellSize} fill="var(--instrument-shadow)" filter="url(#mechanic-soft-edge)" /><rect x={(p.col - p.r) * cellSize} y={(p.row - p.r) * cellSize} width={(2 * p.r + 1) * cellSize} height={(2 * p.r + 1) * cellSize} fill="var(--instrument-shadow)" /></g>)}</g>
       </mask></defs><rect width="100%" height="100%" fill="var(--mechanic-fog)" mask="url(#mechanic-reveal-mask)" /></svg>}
     <div ref={world} className="mechanic-map-overlay" data-game-world>

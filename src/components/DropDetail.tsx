@@ -37,7 +37,7 @@ export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh }: { 
       window.dispatchEvent(new CustomEvent(MECHANIC_USED, { detail: { ...result, userId: user?.id, level: maze?.level } }));
       onUsed(mechanicWhisper(result));
     } catch { setMsg('No signal. Try again.'); }
-    finally { if (called) onRefresh?.(); setBusy(false); }
+    finally { if (called) { onRefresh?.(); window.dispatchEvent(new CustomEvent(MECHANIC_USED, { detail: { userId: user?.id, level: maze?.level } })); } setBusy(false); }
   };
   const use = async () => {
     if (busy) return;

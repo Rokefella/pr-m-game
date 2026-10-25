@@ -100,3 +100,5 @@
 
 - [ ] Make all ten mechanic drops usable; refresh steps/run state and draw run effects with reduced-motion support.
 - [ ] Verify mechanic consumption and effects against a real player; external game authentication may block this check.
+
+- [ ] Add dev-only read-only /world-test canvas sandbox, cached world chunks, movement, places, jump menu and clock phases.

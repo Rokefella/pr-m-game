@@ -98,7 +98,8 @@
 - [ ] Ghost players show the dye colour — the positions table has no colour column (needs a database change on the game server).
 - [ ] Verify consume-only dye USE on a real account — the game sign-in is unavailable to the checker.
 
-- [ ] Make all ten mechanic drops usable; refresh steps/run state and draw run effects with reduced-motion support.
-- [ ] Verify mechanic consumption and effects against a real player; external game authentication may block this check.
+- [x] Make all ten mechanic drops usable; refresh steps/run state and draw run effects with reduced-motion support. Consumption tests and controlled browser cue checks pass.
+- [ ] Verify mechanic consumption and effects against a real player — separate game authentication is unavailable; mocked consumption and controlled cue checks cannot establish live persistence.
 
-- [ ] Add dev-only read-only /world-test canvas sandbox, cached world chunks, movement, places, jump menu and clock phases.
+- [x] Add dev-only read-only /world-test canvas sandbox, cached world chunks, movement, places, jump menu and clock phases. Real public world data renders at 25,25 and The Prime Node; Cinder Hollow ENTER loads a local Level 1 preview without writes.
+- [ ] Verify /world-test through the real dev account menu — separate game authentication is unavailable; fetched-registration gating and read-only behavior are tested, not signed-in end-to-end.

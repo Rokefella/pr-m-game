@@ -70,7 +70,7 @@ describe('world return', () => {
     await waitFor(() => expect(f.rpc).toHaveBeenCalled());
     await new Promise(r => setTimeout(r, 200));
     fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
-    await screen.findByRole('dialog', { name: 'Cinder Hollow, Level 1' });
+    await screen.findByRole('dialog', { name: 'Cinder Hollow' });
     expect(screen.getByText('Completed')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'ENTER' })).toBeNull();
   });

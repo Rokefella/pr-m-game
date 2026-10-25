@@ -30,3 +30,4 @@
 - npcQuestState shares dialogue predicates; useNpcQuestStates caches event-driven results; NpcOrb only draws. questFlags reconciles Bernard after banking/on Village load from persisted progress, never level/session markers.
 
 - WorldTest at /world requires sign-in; draws one layer (surface/underground chunk caches); place actions fire only on a move. Exits that normally go to /village use worldReturn.exitDestination so trips from /world return there; walking stays session-only.
+- terrainTile owns the sprite cache (icon_svg rasterised to 16×16, smoothing off) and the one cell drawer for /world and maze skins; /world caches static art per chunk canvas (WeakMap on chunk data, redrawn on sprite/building/neighbour changes) and draws moves overlays per frame on top.

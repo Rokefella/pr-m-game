@@ -24,7 +24,8 @@ import { getAllFlags, getFlag } from '@/lib/questFlags';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { waitForDailySteps } from '@/lib/dailySteps';
-import { endRun, forfeitUnbanked, getActiveRun, markRunComplete, startRun, STRICT_FORFEIT } from '@/lib/runState';
+import { abandonRunDrops, endRun, forfeitUnbanked, getActiveRun, markRunComplete, startRun, STRICT_FORFEIT } from '@/lib/runState';
+import { carriedDropCount, refreshDrops, exitCarryWarning, DROPS_REFRESHED, type DropsRefresh } from '@/lib/carriedDrops';
 import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
 import PixelEye from '@/components/theme/PixelEye';
 import { useAuth } from '@/context/AuthContext';
@@ -425,6 +426,8 @@ const Maze = () => {
   useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
   const leavingRef = useRef(false);
   const fragmentWritesRef = useRef(new Set<Promise<void>>());
+  const dropClaimWritesRef = useRef(new Set<Promise<void>>());
+  const [exitError, setExitError] = useState(false);
   const leaveMaze = useCallback(async () => {
     if (leavingRef.current) return;
     leavingRef.current = true;
@@ -444,6 +447,15 @@ const Maze = () => {
           }, 1500);
         }),
       ]);
+      // A pending claim can still insert a carried drop. Settle claims before deletion,
+      // and await drop abandonment outside the fragment-save timeout before navigating.
+      await Promise.allSettled([...dropClaimWritesRef.current]);
+      if (!await abandonRunDrops(uid, currentLevelRef.current)) {
+        leavingRef.current = false;
+        stepsReadyRef.current = true;
+        setExitError(true);
+        return;
+      }
     }
     if (timeout !== undefined) clearTimeout(timeout);
     endRun();
@@ -800,6 +812,18 @@ const Maze = () => {
   }, []);
 
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
+  const [carriedDrops, setCarriedDrops] = useState(0);
+  useEffect(() => {
+    if (exitConfirmOpen && user) void refreshDrops(user.id);
+  }, [exitConfirmOpen, user?.id]);
+  useEffect(() => {
+    const refreshed = (event: Event) => {
+      const detail = (event as CustomEvent<DropsRefresh>).detail;
+      if (detail.userId === userIdRef.current) setCarriedDrops(carriedDropCount(detail.drops, currentLevelRef.current));
+    };
+    window.addEventListener(DROPS_REFRESHED, refreshed);
+    return () => window.removeEventListener(DROPS_REFRESHED, refreshed);
+  }, []);
   const [exchangeOpen, setExchangeOpen] = useState(false);
   const [selectedCredits, setSelectedCredits] = useState(1);
   const [exchangeError, setExchangeError] = useState(false);
@@ -921,6 +945,7 @@ const Maze = () => {
         } as never);
         if (cancelled || leavingRef.current || generation !== dropGenerationRef.current) return;
         // start_run_drops owns fresh-run reset; read only after that RPC has settled.
+        void refreshDrops(user.id);
         await refreshRunEffects();
         if (cancelled || error || !Array.isArray(data)) return;
         const points = new Set((config.visualCells ?? []).filter(c => c.type === 'DROP_SPAWN' || c.type === 'DROP').map(c => `${c.col},${c.row}`));
@@ -942,7 +967,7 @@ const Maze = () => {
     if (!userIdRef.current || !runDropsRef.current.has(key) || pendingDropClaimsRef.current.has(key)) return;
     pendingDropClaimsRef.current.add(key);
     const generation = dropGenerationRef.current;
-    void (async () => {
+    const claim = (async () => {
       try {
         const { data, error } = await supabase.rpc('claim_run_drop' as never, {
           p_level: currentLevelRef.current,
@@ -953,8 +978,10 @@ const Maze = () => {
         const result = data as { granted?: boolean; drop_name?: string; kind?: 'key' | 'drop' } | null;
         if (result?.granted === true) {
           window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
+          const uid = userIdRef.current;
+          if (uid) void refreshDrops(uid);
           void refreshRunEffects();
-          showWhisper(`You found: ${result.drop_name ?? 'something'}.`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
+          showWhisper(`You found: ${result.drop_name ?? 'something'}. (carried)`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
         }
       } catch { /* silent — a failed claim must not interrupt movement */ }
       finally {
@@ -967,6 +994,8 @@ const Maze = () => {
         }
       }
     })();
+    dropClaimWritesRef.current.add(claim);
+    void claim.finally(() => dropClaimWritesRef.current.delete(claim));
   };
 
 
@@ -1481,7 +1510,7 @@ const Maze = () => {
 
       <button
         className="font-cinzel"
-        onClick={() => setExitConfirmOpen(true)}
+        onClick={() => { setExitError(false); setExitConfirmOpen(true); }}
         style={{
           position: 'fixed', bottom: HUD_HEIGHT + HUD_BUTTON_GAP, left: 16, background: 'transparent', border: 'none',
           color: 'rgba(160,140,200,0.4)', fontSize: 16, letterSpacing: '0.3em', cursor: 'pointer',
@@ -1494,7 +1523,8 @@ const Maze = () => {
       {exitConfirmOpen && (
         <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={Z.OVERLAY}>
           <p className="font-fell italic" style={{ margin: 0, fontSize: 20, color: '#e0ddd5', textAlign: 'center' }}>Leave the maze?</p>
-          <p className="font-fell italic" style={{ margin: '10px 0 0', fontSize: 14, color: '#b79bff', textAlign: 'center' }}>Everything you carry will be lost.</p>
+          <p className="profile-carry-note font-fell italic">{exitCarryWarning(collected.size, carriedDrops)}</p>
+          {exitError && <p className="profile-carry-note font-fell italic">Could not discard your carried drops. Try leaving again.</p>}
           <DialogButtons>
             <button className="font-cinzel" style={DANGER_BTN} onClick={leaveMaze}>LEAVE</button>
             <button className="font-cinzel" style={SECONDARY_BTN} onClick={() => setExitConfirmOpen(false)}>STAY</button>

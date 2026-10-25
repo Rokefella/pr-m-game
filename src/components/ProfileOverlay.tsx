@@ -20,6 +20,7 @@ import { X } from 'lucide-react';
 import { fragmentInventory, type FolderFragment } from '@/lib/carriedFragments';
 import DropIcon from '@/components/DropIcon';
 import { USER_STEPS_REFRESHED, type MazeUseContext } from '@/lib/mechanics';
+import { readOwnedDrops, DROPS_REFRESHED, type DropsRefresh, type OwnedDrop } from '@/lib/carriedDrops';
 
 
 
@@ -61,16 +62,6 @@ type AccountUserRow = {
   social: number | null;
   perception: number | null;
   extra_drop_capacity: number | null;
-};
-
-type OwnedDrop = {
-  id: string;
-  drop_key: string;
-  name: string;
-  description: string | null;
-  category: string | null;
-  icon_svg: string | null;
-  rarity?: string | null;
 };
 
 const ProfileOverlay = ({
@@ -208,32 +199,24 @@ const ProfileOverlay = ({
   useEffect(() => {
     if (!isOpen || !user) return;
     let cancelled = false;
-    (supabase.from('drops' as never) as never as {
-      select: (q: string) => { eq: (c: string, v: string) => Promise<{ data: unknown; error: unknown }> };
-    })
-      .select('id, drop_types(drop_key, name, description, category, icon_svg, rarity)')
-      .eq('user_id', user.id)
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error) { console.error('[Folder] drops fetch failed', error); return; }
-        type DT = { drop_key?: string; name?: string; description?: string | null; category?: string | null; icon_svg?: string | null; rarity?: string | null };
-        const rows = (data || []) as Array<{ id: string; drop_types?: DT | DT[] }>;
-        const mapped: OwnedDrop[] = rows.map((r) => {
-          const dt = Array.isArray(r.drop_types) ? r.drop_types[0] : r.drop_types;
-          return {
-            id: r.id,
-            drop_key: dt?.drop_key ?? '',
-            name: dt?.name ?? 'Unknown',
-            description: dt?.description ?? null,
-            category: dt?.category ?? null,
-            icon_svg: dt?.icon_svg ?? null,
-            rarity: dt?.rarity ?? null,
-          };
-        });
-        setOwnedDrops(mapped);
-      });
+    readOwnedDrops(user.id).then(drops => {
+      if (!cancelled) setOwnedDrops(drops);
+    }).catch(error => { if (!cancelled) console.error('[Folder] drops fetch failed', error); });
     return () => { cancelled = true; };
   }, [isOpen, user, dropsNonce]);
+
+  useEffect(() => {
+    const refresh = (event: Event) => {
+      const detail = (event as CustomEvent<DropsRefresh>).detail;
+      if (detail.userId !== user?.id) return;
+      setOwnedDrops(detail.drops);
+      setDropTooltip(id => detail.drops.some(drop => drop.id === id) ? id : null);
+      // Cancel any older open-profile read so it cannot restore pre-mutation rows.
+      setDropsNonce(n => n + 1);
+    };
+    window.addEventListener(DROPS_REFRESHED, refresh);
+    return () => window.removeEventListener(DROPS_REFRESHED, refresh);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!isOpen || !user) return;
@@ -854,8 +837,9 @@ const ProfileOverlay = ({
                   <div style={{ marginTop: 40 }}>
                     <div className="profile-section-label font-mono"><span>DROPS</span><span>{owned} / {dropCapacity}</span></div>
                     <div className="profile-inventory-grid">
-                      {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? 'profile-drop-filled' : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="profile-drop-body"><DropIcon svg={drop.icon_svg} category={drop.category} size={40} />{drop.category === 'key' && <span className="profile-key-badge font-mono">KEY</span>}<span className="font-fell italic">{drop.name}</span></span>}</Button>)}
+                      {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? `profile-drop-filled${drop.carried ? ' profile-drop-carried' : ''}` : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="profile-drop-body"><DropIcon svg={drop.icon_svg} category={drop.category} size={40} />{drop.category === 'key' && <span className="profile-key-badge font-mono">KEY</span>}<span className="font-fell italic">{drop.name}</span>{drop.carried && <span className="profile-carried-label font-mono">CARRIED</span>}</span>}</Button>)}
                     </div>
+                    {ownedDrops.some(drop => drop.carried) && <p className="profile-carry-note font-fell italic">Dashed drops are carried. Bank them in the Shadow Realm or lose them if you leave the maze.</p>}
 
                     {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} maze={context === 'maze' ? mazeUse : undefined} steps={accountRow?.steps_remaining} onRefresh={() => setDropsNonce(n => n + 1)} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); setOwnedDrops(drops => drops.filter(d => d.id !== selectedDrop.id)); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
                     {dyeWhisper && <p className="font-fell italic dye-whisper">{dyeWhisper}</p>}

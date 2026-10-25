@@ -13,6 +13,13 @@ beforeEach(() => {
 const dye = { id: 'first', name: 'Blue', description: 'A blue dye.', category: 'dye', icon_svg: null };
 
 describe('consumable dyes', () => {
+  it('allows using a carried dye by its existing drop ID', async () => {
+    const onUsed = vi.fn();
+    render(<DropDetail drop={{ ...dye, carried: true, run_level: 2 } as typeof dye} onClose={() => {}} onUsed={onUsed} />);
+    fireEvent.click(screen.getByRole('button', { name: 'USE' }));
+    await waitFor(() => expect(onUsed).toHaveBeenCalledTimes(1));
+    expect(f.rpc).toHaveBeenCalledWith('use_dye', { p_drop_id: 'first' });
+  });
   it('consumes each instance even when the same colour is already applied', async () => {
     const onUsed = vi.fn();
     const view = render(<DropDetail drop={dye} onClose={() => {}} onUsed={onUsed} />);

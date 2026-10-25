@@ -103,3 +103,6 @@
 
 - [x] Add dev-only read-only /world-test canvas sandbox, cached world chunks, movement, places, jump menu and clock phases. Real public world data renders at 25,25 and The Prime Node; Cinder Hollow ENTER loads a local Level 1 preview without writes.
 - [ ] Verify /world-test through the real dev account menu — separate game authentication is unavailable; fetched-registration gating and read-only behavior are tested, not signed-in end-to-end.
+
+- [x] Mark run drops carried, abandon them on real exits after pending claims, refresh inventory and snapshot Shadow banked-drop counts. Tests and controlled phone inventory checks pass.
+- [ ] Verify pickup → exit/re-entry and Shadow banking on a real game account — external game authentication is unavailable; controlled inventory checks cannot verify server persistence.

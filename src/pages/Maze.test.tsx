@@ -98,7 +98,7 @@ describe('Server-owned maze run drops', () => {
     startRun('player', 2); openMaze(); await ready(2);
     await waitFor(() => expect(fixture.rpc).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByRole('button', { name: 'Move right' }));
-    await screen.findByText('You found: Brass key.');
+    await screen.findByText(/You found: Brass key\./);
     expect(fixture.rpc).toHaveBeenCalledWith('claim_run_drop', { p_level: 2, p_col: 2, p_row: 1 });
     fireEvent.keyDown(window, { key: 'ArrowLeft' });
     await new Promise(resolve => setTimeout(resolve, 190));

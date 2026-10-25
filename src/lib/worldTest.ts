@@ -5,7 +5,7 @@ export const WORLD_TILE = 40;
 export const WORLD_CHUNK = 64;
 export const WORLD_MOVE_MS = 150;
 export type WorldPoint = { x: number; y: number };
-export type Terrain = { key: string; name: string; grp: string; walkable: boolean; steps: number | null; sight: number | null; sight_delta: number | null; light_radius: number | null; moves: string | null; color: string | null; enabled: boolean; icon_svg?: string | null; render_layer?: string | null };
+export type Terrain = { key: string; name: string; grp: string; walkable: boolean; steps: number | null; sight: number | null; sight_delta: number | null; light_radius: number | null; moves: string | null; color: string | null; enabled: boolean; icon_svg?: string | null; icon_variants?: unknown; footprint?: number | null; render_layer?: string | null };
 export type Era = { order_index: number; name: string; ring_from: number; ring_to: number; palette: unknown; step_cost: number; darkness: number; ground_key?: string | null };
 export type Place = WorldPoint & { kind: string; name: string; maze_level: number | null; notes: string | null; layer?: number | null; action?: string | null; target_layer?: number | null; target_x?: number | null; target_y?: number | null };
 export type WorldLayer = 0 | 1;
@@ -20,7 +20,7 @@ export function mazeOutcome(mazeLevel: number | null, playerLevel: number): 'ent
   return level === playerLevel ? 'enter' : level < playerLevel ? 'completed' : 'locked';
 }
 export type DayNight = { cycle_minutes: number; day: number; dusk: number; night: number; dawn: number; night_view_delta: number };
-export type WorldChunk = { x0: number; y0: number; w: number; h: number; keys: string[]; rows: number[][] };
+export type WorldChunk = { x0: number; y0: number; w: number; h: number; keys: string[]; rows: number[][]; height?: string[] };
 export const DEFAULT_CYCLE: DayNight = { cycle_minutes: 17, day: 10, dusk: 1, night: 5, dawn: 1, night_view_delta: -2 };
 export const clampWorld = (value: number, size = WORLD_SIZE) => Math.max(0, Math.min(size - 1, Math.round(value)));
 export const chunkOrigin = (value: number) => Math.floor(value / WORLD_CHUNK) * WORLD_CHUNK;
@@ -82,6 +82,12 @@ export class WorldChunkCache {
   terrainKey(x: number, y: number): string | undefined {
     const chunk = this.chunks.get(this.key(x, y));
     return chunk?.keys[chunk.rows[y - chunk.y0]?.[x - chunk.x0]];
+  }
+  heightAt(x: number, y: number): number | undefined {
+    const chunk = this.chunks.get(this.key(x, y));
+    if (!chunk || x < chunk.x0 || y < chunk.y0 || x >= chunk.x0 + chunk.w || y >= chunk.y0 + chunk.h) return undefined;
+    const digit = Number(chunk.height?.[y - chunk.y0]?.[x - chunk.x0] ?? 0);
+    return Number.isFinite(digit) ? Math.max(0, Math.min(3, digit)) : 0;
   }
   async load(x: number, y: number) {
     if (x < 0 || y < 0 || x >= this.size || y >= this.size) return;

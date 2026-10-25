@@ -1,3 +1,4 @@
+import { exitDestination } from '@/lib/worldReturn';
 import { useNpcQuestStates, NPC_INVENTORY_CHANGED } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import OrbLabels from '@/components/OrbLabels';
@@ -462,7 +463,7 @@ const Maze = () => {
     sessionStorage.removeItem('praem_maze_return_col');
     sessionStorage.removeItem('praem_maze_return_row');
     window.dispatchEvent(new Event('praem:exit-maze-to-village'));
-    navigate('/village');
+    navigate(exitDestination());
   }, [navigate]);
 
   // Subscription status from the users row + quest flags gate the paywall moment.

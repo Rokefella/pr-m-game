@@ -1,3 +1,4 @@
+import { exitDestination } from '@/lib/worldReturn';
 import { Z } from '@/lib/zIndex';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
@@ -544,7 +545,7 @@ const ExchangeRoom = () => {
     for (const ex of roomRef.current.exitTiles) {
       if (nx >= ex.x - 2 && nx <= ex.x + ex.w + 2 && ny >= ex.y - 2 && ny <= ex.y + ex.h + 2) {
         if (!navigatedRef.current) {
-          const target = EXIT_ROUTES[ex.destination] ?? '/village';
+          const target = ex.destination === 'village' || !EXIT_ROUTES[ex.destination] ? exitDestination() : EXIT_ROUTES[ex.destination];
           navigatedRef.current = true;
           window.setTimeout(() => navigate(target), 400);
         }
@@ -956,7 +957,7 @@ const ExchangeRoom = () => {
           <span>The room is empty here.</span>
           <button
             className="font-cinzel"
-            onClick={() => navigate('/village')}
+            onClick={() => navigate(exitDestination())}
             style={{
               background: 'transparent',
               color: '#9a9890',

@@ -37,7 +37,7 @@ import { buildingLook, type BuildingLook } from '@/lib/theme/villageRendering';
 import VillageTerrain from '@/components/theme/VillageTerrain';
 import { plazaEmblems } from '@/lib/theme/villageRendering';
 import { VillageDoor } from '@/components/theme/objects';
-import { DOOR_FLAGS, doorRefusal, footprintHasDoor, inDoorZone, nearestDoorReturn, villageDoors, type VillageDoorDef, type VillageDoorKind } from '@/lib/villageDoors';
+import { DOOR_FLAGS, doorRefusal, LIBRARY_MIN_LEVEL, EXCHANGE_MIN_LEVEL, footprintHasDoor, inDoorZone, nearestDoorReturn, villageDoors, type VillageDoorDef, type VillageDoorKind } from '@/lib/villageDoors';
 import { VILLAGE_GLOW, villageStreetStyle, type VillageStreetStyle } from '@/lib/theme/tokens';
 import { VILLAGE_BG, VILLAGE_VIGNETTE } from '@/lib/theme/villageRendering';
 import { memo } from 'react';
@@ -266,8 +266,6 @@ const MAP_H = 1400;
 const CX = 1100;
 const CY = 700;
 const STEP = 12;
-const LIBRARY_MIN_LEVEL = 3;
-const EXCHANGE_MIN_LEVEL = 1;
 /** Player glide lerp factor per frame (lower = slower glide). */
 const VILLAGE_GLIDE = 0.11;
 // Rendering-only camera zoom and avatar size; world coordinates are unchanged.

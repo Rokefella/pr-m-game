@@ -1,3 +1,4 @@
+import { exitDestination } from '@/lib/worldReturn';
 import { Z } from '@/lib/zIndex';
 import { SHADOW_AVATAR_SIZE, ghostBodyPx, npcBodyPx } from '@/lib/orbSizes';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
@@ -251,7 +252,7 @@ const ShadowRealm = () => {
 
   // Entry guard: only a recent golden-door exit from the maze may open the realm.
   useEffect(() => {
-    if (!entryOk) navigate('/village', { replace: true });
+    if (!entryOk) navigate(exitDestination(), { replace: true });
   }, [entryOk, navigate]);
 
   // Load the published shadow realm layout for the player's current level.
@@ -529,7 +530,7 @@ const ShadowRealm = () => {
     const after = async () => {
       if (frags.length === 0) {
         setNothingMsg(true);
-        window.setTimeout(() => navigate('/village'), reduced ? REDUCED_NAV_MS : NOTHING_MS);
+        window.setTimeout(() => navigate(exitDestination()), reduced ? REDUCED_NAV_MS : NOTHING_MS);
         return;
       }
       setRunCount(0);
@@ -537,7 +538,7 @@ const ShadowRealm = () => {
       setDoneMsg(true);
       setNextLevel(currentLevelRef.current + 1);
       window.setTimeout(() => setLevelFlash(true), reduced ? 0 : 700);
-      window.setTimeout(() => navigate('/village'), reduced ? REDUCED_NAV_MS : LEVEL_GATE_MS);
+      window.setTimeout(() => navigate(exitDestination()), reduced ? REDUCED_NAV_MS : LEVEL_GATE_MS);
     };
     if (reduced) { setTyped(line); void after(); return; }
     let i = 0;

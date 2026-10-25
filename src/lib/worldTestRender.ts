@@ -1,5 +1,5 @@
 import { chunkOrigin, eraAt, eraPointFor, WORLD_CHUNK, WORLD_TILE, type WorldLayer, type Era, type Place, type Terrain, type WorldChunk, type WorldPoint, type WorldChunkCache } from './worldTest';
-import { drawTerrainBase, drawTerrainMotion, isObjectLayer, spriteVersion, type TerrainInk } from './terrainTile';
+import { drawTerrainBase, drawTerrainMotion, drawTerrainSprite, isObjectLayer, spriteVersion, type TerrainInk } from './terrainTile';
 import { buildingBlockCanvas, buildingVersion } from './theme/buildingCanvas';
 export { drawTerrain, eraColor } from './terrainTile';
 export type WorldInk = TerrainInk & { dusk: string; night: string; dawn: string };
@@ -37,8 +37,36 @@ export function worldObjectGround(cache: WorldChunkCache, types: Map<string, Ter
   }
   return fallback;
 }
-/** Static chunk art at 16 px per cell; redrawn only when sprites, building art or neighbouring chunks change. */
-function chunkCanvas(cache: WorldChunkCache, chunk: WorldChunk, types: Map<string, Terrain>, eras: Era[], ink: WorldInk, layer: WorldLayer) {
+/** Height belongs to ground only; unloaded neighbours match this cell until the chunk arrives. */
+export function drawWorldHeight(ctx: CanvasRenderingContext2D, cache: WorldChunkCache, terrain: Terrain, x: number, y: number, px: number, py: number, ink: WorldInk, layer: WorldLayer) {
+  if (layer === 1 || terrain.grp === 'water') return;
+  const h = cache.heightAt(x, y) ?? 0;
+  const north = cache.heightAt(x, y - 1) ?? h, south = cache.heightAt(x, y + 1) ?? h;
+  const east = cache.heightAt(x + 1, y) ?? h, west = cache.heightAt(x - 1, y) ?? h;
+  ctx.save(); ctx.translate(px, py);
+  const band = (color: string, alpha: number, bx: number, by: number, w: number, height: number) => {
+    ctx.fillStyle = color; ctx.globalAlpha = alpha; ctx.fillRect(bx, by, w, height);
+  };
+  if (h > 0) band(ink.gold, .05 * h, 0, 0, CHUNK_PX, CHUNK_PX);
+  if (south < h) band(ink.shadow, .45, 0, CHUNK_PX * .75, CHUNK_PX, CHUNK_PX / 4);
+  if (north < h) band(ink.text, .35, 0, 0, CHUNK_PX, 2);
+  if (east < h) band(ink.shadow, .3, CHUNK_PX - 3, 0, 3, CHUNK_PX);
+  if (west < h) band(ink.text, .25, 0, 0, 2, CHUNK_PX);
+  if (north > h) {
+    const shadow = ctx.createLinearGradient(0, 0, 0, CHUNK_PX / 3);
+    shadow.addColorStop(0, ink.shadow); shadow.addColorStop(1, 'transparent');
+    ctx.fillStyle = shadow; ctx.globalAlpha = .25; ctx.fillRect(0, 0, CHUNK_PX, CHUNK_PX / 3);
+  }
+  ctx.restore();
+}
+/** Complete large sprites use an even top-left anchor; overwritten blocks keep single boulders. */
+export function worldFootprintAnchor(cache: WorldChunkCache, terrain: Terrain, x: number, y: number): WorldPoint | undefined {
+  if (terrain.footprint !== 2) return undefined;
+  const ax = Math.floor(x / 2) * 2, ay = Math.floor(y / 2) * 2;
+  return [[0, 0], [1, 0], [0, 1], [1, 1]].every(([dx, dy]) => cache.terrainKey(ax + dx, ay + dy) === terrain.key) ? { x: ax, y: ay } : undefined;
+}
+/** Static chunk art: all ground, then height, then objects so grouped sprites stay above slopes. */
+export function chunkCanvas(cache: WorldChunkCache, chunk: WorldChunk, types: Map<string, Terrain>, eras: Era[], ink: WorldInk, layer: WorldLayer) {
   const sig = `${spriteVersion}:${buildingVersion}:${neighbourSig(cache, chunk)}`;
   const hit = chunkArt.get(chunk);
   if (hit && hit.sig === sig) return hit.canvas;
@@ -46,17 +74,42 @@ function chunkCanvas(cache: WorldChunkCache, chunk: WorldChunk, types: Map<strin
   canvas.width = chunk.w * CHUNK_PX; canvas.height = chunk.h * CHUNK_PX;
   const ctx = canvas.getContext('2d'); if (!ctx) return canvas;
   ctx.imageSmoothingEnabled = false; ctx.fillStyle = ink.background; ctx.fillRect(0, 0, canvas.width, canvas.height);
-  const seen = new Set<string>();
+  const cells: { x: number; y: number; px: number; py: number; terrain: Terrain; era?: Era; ground?: Terrain; object: boolean }[] = [];
   for (let y = chunk.y0; y < chunk.y0 + chunk.h; y++) for (let x = chunk.x0; x < chunk.x0 + chunk.w; x++) {
     const terrain = types.get(cache.terrainKey(x, y) ?? ''); if (!terrain) continue;
     const era = eraAt(eraPointFor({ x, y }, layer), eras), fallback = era?.ground_key ? types.get(era.ground_key) : undefined;
-    const ground = isObjectLayer(terrain) ? worldObjectGround(cache, types, x, y, fallback) : fallback;
+    const object = isObjectLayer(terrain) || terrain.footprint === 2 || terrain.key === 'building';
+    const ground = object ? worldObjectGround(cache, types, x, y, fallback) : fallback;
     const px = (x - chunk.x0) * CHUNK_PX, py = (y - chunk.y0) * CHUNK_PX;
+    cells.push({ x, y, px, py, terrain, era, ground, object });
+    if (object && ground) drawTerrainBase(ctx, ground, era, x, y, px, py, CHUNK_PX, ink);
+    else if (!object) drawTerrainBase(ctx, terrain, era, x, y, px, py, CHUNK_PX, ink);
+  }
+  for (const c of cells) drawWorldHeight(ctx, cache, c.object ? c.ground ?? c.terrain : c.terrain, c.x, c.y, c.px, c.py, ink, layer);
+  const seen = new Set<string>(), largeSeen = new Set<string>();
+  for (const { x, y, px, py, terrain, era, ground, object } of cells) {
+    if (!object) continue;
+    if (terrain.footprint === 2) {
+      const anchor = worldFootprintAnchor(cache, terrain, x, y);
+      if (anchor) {
+        const id = `${anchor.x},${anchor.y}`;
+        if (largeSeen.has(id)) continue;
+        largeSeen.add(id);
+        ctx.save(); ctx.beginPath(); ctx.rect(0, 0, canvas.width, canvas.height); ctx.clip();
+        const drawn = drawTerrainSprite(ctx, terrain, anchor.x, anchor.y, (anchor.x - chunk.x0) * CHUNK_PX, (anchor.y - chunk.y0) * CHUNK_PX, CHUNK_PX * 2);
+        ctx.restore();
+        if (drawn) continue;
+        largeSeen.delete(id); // Missing large art must not hide any remaining cell.
+      }
+      const boulder = types.get('boulder') ?? terrain;
+      drawTerrainBase(ctx, boulder, era, x, y, px, py, CHUNK_PX, ink, false, ground, true);
+      continue;
+    }
     if (terrain.key === 'building') {
       if (seen.has(`${x},${y}`)) continue;
       if (isBuilding(cache, x + 1, y) || isBuilding(cache, x - 1, y) || isBuilding(cache, x, y + 1) || isBuilding(cache, x, y - 1)) { drawBuildingGroup(ctx, cache, types, eras, ink, layer, chunk, x, y, seen); continue; }
     }
-    drawTerrainBase(ctx, terrain, era, x, y, px, py, CHUNK_PX, ink, false, ground);
+    drawTerrainBase(ctx, terrain, era, x, y, px, py, CHUNK_PX, ink, false, ground, true);
   }
   chunkArt.set(chunk, { canvas, sig });
   return canvas;
@@ -65,7 +118,7 @@ const isBuilding = (cache: WorldChunkCache, x: number, y: number) => cache.terra
 function drawBuildingGroup(ctx: CanvasRenderingContext2D, cache: WorldChunkCache, types: Map<string, Terrain>, eras: Era[], ink: WorldInk, layer: WorldLayer, chunk: WorldChunk, sx: number, sy: number, seen: Set<string>) {
   const cells: WorldPoint[] = [], stack = [{ x: sx, y: sy }], local = new Set<string>([`${sx},${sy}`]);
   while (stack.length && cells.length < 256) {
-    const p = stack.pop()!; cells.push(p);
+    const p = stack.pop(); if (!p) break; cells.push(p);
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const n = { x: p.x + dx, y: p.y + dy }, k = `${n.x},${n.y}`;
       if (!local.has(k) && isBuilding(cache, n.x, n.y)) { local.add(k); stack.push(n); }
@@ -77,9 +130,9 @@ function drawBuildingGroup(ctx: CanvasRenderingContext2D, cache: WorldChunkCache
   for (const c of cells) seen.add(`${c.x},${c.y}`);
   const inChunk = cells.filter(c => c.x >= chunk.x0 && c.x < chunk.x0 + chunk.w && c.y >= chunk.y0 && c.y < chunk.y0 + chunk.h);
   for (const c of inChunk) {
-    const era = eraAt(eraPointFor(c, layer), eras), ground = era?.ground_key ? types.get(era.ground_key) : undefined, building = types.get('building')!;
-    if (block) { if (ground) drawTerrainBase(ctx, ground, era, c.x, c.y, (c.x - chunk.x0) * CHUNK_PX, (c.y - chunk.y0) * CHUNK_PX, CHUNK_PX, ink); }
-    else drawTerrainBase(ctx, building, era, c.x, c.y, (c.x - chunk.x0) * CHUNK_PX, (c.y - chunk.y0) * CHUNK_PX, CHUNK_PX, ink, false, ground);
+    const era = eraAt(eraPointFor(c, layer), eras), fallback = era?.ground_key ? types.get(era.ground_key) : undefined;
+    const ground = worldObjectGround(cache, types, c.x, c.y, fallback), building = types.get('building');
+    if (!block && building) drawTerrainBase(ctx, building, era, c.x, c.y, (c.x - chunk.x0) * CHUNK_PX, (c.y - chunk.y0) * CHUNK_PX, CHUNK_PX, ink, false, ground, true);
   }
   if (block) {
     ctx.save(); ctx.beginPath();

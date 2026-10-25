@@ -6,9 +6,15 @@ const NO_FLIP = new Set(['road', 'square', 'town_wall', 'bridge', 'cliff_edge', 
 
 /** Pre-rendered 16×16 sprites by terrain key; `spriteVersion` bumps whenever a new sprite becomes ready. */
 const sprites = new Map<string, HTMLCanvasElement>();
+const variants = new Map<string, (HTMLCanvasElement | null)[]>();
 const loading = new Map<string, Promise<void>>();
 export let spriteVersion = 0;
-export const terrainSprite = (key: string | undefined) => key ? sprites.get(key) : undefined;
+export function terrainSprite(key: string | undefined, x?: number, y?: number): HTMLCanvasElement | undefined {
+  if (!key) return undefined;
+  const choices = variants.get(key);
+  if (choices?.length && x !== undefined && y !== undefined) return choices[Math.floor(worldHash(x, y, 13) * choices.length)] ?? sprites.get(key);
+  return sprites.get(key) ?? choices?.find(c => c !== null) ?? undefined;
+}
 export const isObjectLayer = (terrain: Terrain | undefined) => terrain?.render_layer === 'object';
 
 export function loadSvgCanvas(svg: string, w: number, h: number): Promise<HTMLCanvasElement | null> {
@@ -30,13 +36,26 @@ export function loadSvgCanvas(svg: string, w: number, h: number): Promise<HTMLCa
 export function loadTerrainSprites(types: Iterable<Terrain>): Promise<void> {
   const jobs: Promise<void>[] = [];
   for (const t of types) {
-    if (typeof t.icon_svg !== 'string' || !t.icon_svg.trim() || sprites.has(t.key)) continue;
-    let job = loading.get(t.key);
-    if (!job) {
-      job = loadSvgCanvas(t.icon_svg, 16, 16).then(c => { if (c) { sprites.set(t.key, c); spriteVersion++; } });
-      loading.set(t.key, job);
+    const size = t.footprint === 2 ? 32 : 16;
+    if (typeof t.icon_svg === 'string' && t.icon_svg.trim() && !sprites.has(t.key)) {
+      const id = `${t.key}:base`;
+      let job = loading.get(id);
+      if (!job) {
+        job = loadSvgCanvas(t.icon_svg, size, size).then(c => { if (c) { sprites.set(t.key, c); spriteVersion++; } });
+        loading.set(id, job);
+      }
+      jobs.push(job);
     }
-    jobs.push(job);
+    const svgs = Array.isArray(t.icon_variants) ? t.icon_variants.filter((svg): svg is string => typeof svg === 'string' && Boolean(svg.trim())) : [];
+    if (svgs.length && !variants.has(t.key)) {
+      const id = `${t.key}:variants`;
+      let job = loading.get(id);
+      if (!job) {
+        job = Promise.all(svgs.map(svg => loadSvgCanvas(svg, size, size))).then(canvases => { variants.set(t.key, canvases); spriteVersion++; });
+        loading.set(id, job);
+      }
+      jobs.push(job);
+    }
   }
   return Promise.all(jobs).then(() => undefined);
 }
@@ -59,6 +78,14 @@ function blit(ctx: CanvasRenderingContext2D, sprite: HTMLCanvasElement, key: str
   ctx.save(); ctx.imageSmoothingEnabled = false;
   ctx.translate(fx ? size : 0, fy ? size : 0); ctx.scale(fx ? -1 : 1, fy ? -1 : 1);
   ctx.drawImage(sprite, 0, 0, size, size); ctx.restore();
+}
+
+/** Shared variant picker and flip rules, also used for world-only large footprints. */
+export function drawTerrainSprite(ctx: CanvasRenderingContext2D, terrain: Terrain, x: number, y: number, px: number, py: number, size: number): boolean {
+  const sprite = terrainSprite(terrain.key, x, y);
+  if (!sprite) return false;
+  ctx.save(); ctx.translate(px, py); blit(ctx, sprite, terrain.key, x, y, size, isObjectLayer(terrain)); ctx.restore();
+  return true;
 }
 
 /** Static colour-fill + group mark for types without a sprite (drawn in 40-unit space). */
@@ -87,12 +114,12 @@ function drawFallback(ctx: CanvasRenderingContext2D, terrain: Terrain, era: Era 
  * Static part of a cell at `size` px: sprite (object sprites over `ground`) or the legacy colour fill.
  * `detail` draws a small overlay (maze edge/junction details) without a ground fill.
  */
-export function drawTerrainBase(ctx: CanvasRenderingContext2D, terrain: Terrain, era: Era | undefined, x: number, y: number, px: number, py: number, size: number, ink: TerrainInk, detail = false, ground?: Terrain) {
+export function drawTerrainBase(ctx: CanvasRenderingContext2D, terrain: Terrain, era: Era | undefined, x: number, y: number, px: number, py: number, size: number, ink: TerrainInk, detail = false, ground?: Terrain, groundReady = false) {
   ctx.save(); ctx.translate(px, py);
   if (detail) { ctx.translate(size * .2, size * .2); ctx.scale(.6, .6); }
-  const sprite = terrainSprite(terrain.key), object = isObjectLayer(terrain);
-  if (!detail && object && ground && ground.key !== terrain.key) {
-    const gs = terrainSprite(ground.key);
+  const sprite = terrainSprite(terrain.key, x, y), object = isObjectLayer(terrain);
+  if (!groundReady && !detail && object && ground && ground.key !== terrain.key) {
+    const gs = terrainSprite(ground.key, x, y);
     if (gs) blit(ctx, gs, ground.key, x, y, size, false);
     else { ctx.save(); ctx.scale(size / TILE, size / TILE); drawFallback(ctx, ground, era, x, y, ink, false); ctx.restore(); }
   }

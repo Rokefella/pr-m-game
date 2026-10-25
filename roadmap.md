@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Add fogged world map with cached overview, zoom/pan, discovered places and nonblocking per-user discovery persistence; test and verify.
+
 - [x] Update /world neighbour ground, terrain-paced wading/ripples, Bernard/merchant cards and versioned safe arrivals; 350 tests pass and preview compilation passes. Existing public forest data and Bernard tap/Close card verified at 375px without page errors.
 - [ ] Verify forest changes in a real signed-in session — the game uses separate external authentication; managed auth has no users to mint, so isolated public-data checks do not verify signed-in gameplay.
 

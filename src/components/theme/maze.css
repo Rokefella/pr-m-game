@@ -1,6 +1,11 @@
 .maze-theme {
   --maze-wall-shadow: 0 0% 0%;
 }
+.maze-skin-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; }
+.maze-skin-tint { position: fixed; inset: 0; pointer-events: none; background: var(--instrument-shadow); }
+.loading-era { --snake-gold: var(--skin-accent); --loading-glow: radial-gradient(var(--skin-accent), transparent 70%); }
+.loading-era .loading-glow { opacity: .12; animation: none; }
+.loading-era .loading-label { color: var(--skin-accent); max-width: calc(100vw - 32px); letter-spacing: 0; }
 .maze-wall-shadow {
   position: absolute;
   left: 0;

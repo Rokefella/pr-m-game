@@ -13,6 +13,8 @@ import { Z } from '@/lib/zIndex';
 import { corridorCell } from '@/lib/ghostMotion';
 import { placedGhosts, nearbyGhostLine } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
+import MazeSkinCanvas, { type MazeSkinHandle } from '@/components/theme/MazeSkinCanvas';
+import { readMazeSkin, skinDarkness, type LevelSkin } from '@/lib/mazeSkins';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import { useOrbSync } from '@/lib/orb';
@@ -67,6 +69,7 @@ type EggDef = Cell & { line: string };
 type UserFragmentRow = { prime_number: number; banked: boolean | null; level: number | null };
 
 type LevelConfig = {
+  skin?: number;
   echoGhosts?: number;
   cols: number;
   rows: number;
@@ -489,14 +492,21 @@ const Maze = () => {
   // Level config — loaded async from Supabase `levels` table, with buildLevel1 fallback.
   // Guarded: do NOT load until the user row (position) has resolved.
   const [config, setConfig] = useState<LevelConfig | null>(null);
+  const [eraSkin, setEraSkin] = useState<LevelSkin | null>(null);
+  const [skinLoadingLabel, setSkinLoadingLabel] = useState<{ accent: string; label: string } | null>(null);
+  const skinCanvasRef = useRef<MazeSkinHandle>(null);
   const [configLoading, setConfigLoading] = useState(true);
   useEffect(() => {
     if (!position) return;
     let cancelled = false;
     setConfigLoading(true);
+    setEraSkin(null);
+    setSkinLoadingLabel(null);
     (async () => {
       const loaded = await loadLevelFromSupabase(position.level, position.dimension);
+      const skin = await readMazeSkin(position.level, loaded?.skin, (accent, label) => { if (!cancelled) setSkinLoadingLabel({ accent, label }); });
       if (cancelled) return;
+      setEraSkin(skin);
       if (loaded) {
         setConfig(loaded as LevelConfig);
       } else if (position.level === 1) {
@@ -1297,6 +1307,7 @@ const Maze = () => {
       };
       if (worldRef.current) worldRef.current.style.transform = `translate(${camRef.current.x}px, ${camRef.current.y}px)`;
       if (fogRef.current) {
+        skinCanvasRef.current?.tick(time, camRef.current);
         fogRef.current.style.setProperty('--lx', `${camRef.current.x + displayPosRef.current.col * CELL + CELL / 2}px`);
         fogRef.current.style.setProperty('--ly', `${camRef.current.y + displayPosRef.current.row * CELL + CELL / 2}px`);
       }
@@ -1347,7 +1358,7 @@ const Maze = () => {
   }
 
   if (showLoading || !config) {
-    return <LoadingScreen />;
+    return <LoadingScreen accent={skinLoadingLabel?.accent} label={skinLoadingLabel?.label} />;
   }
 
   const MAP_W = config.cols * CELL;
@@ -1355,18 +1366,18 @@ const Maze = () => {
 
   return (
     <div className="maze-theme" style={{ position: 'fixed', inset: 0, background: 'hsl(var(--background))', overflow: 'hidden', '--maze-light-core': `${DIMENSION_GLOW[glow]}14` } as CSSProperties}>
+      {eraSkin && <MazeSkinCanvas ref={skinCanvasRef} skin={eraSkin} grid={config} walls={wallSet} />}
       <div
         data-game-world ref={worldRef}
         data-maze-world="true"
         style={{ position: 'absolute', width: MAP_W, height: MAP_H, transform: `translate(${camRef.current.x}px, ${camRef.current.y}px)`, willChange: 'transform' }}
       >
-        <FloorLayer cols={config.cols} rows={config.rows} size={CELL} styleKey={theme.floor} dimension={glow} />
+        {!eraSkin && <FloorLayer cols={config.cols} rows={config.rows} size={CELL} styleKey={theme.floor} dimension={glow} />}
         {[...chalkCellsRef.current].map(key => { const [col, row] = key.split(',').map(Number); return inView({ col, row }) ? <i key={key} data-chalk-cell={key} className="mechanic-chalk" style={{ left: col * CELL + CELL / 2, top: row * CELL + CELL / 2 }} /> : null; })}
-        {theme.primeGlow && <PrimeGlowLayer cols={config.cols} rows={config.rows} size={CELL} dimension={glow} isFloor={isFloor} />}
-        {visibleWalls.map(({ col, row }) => (
+        {!eraSkin && theme.primeGlow && <PrimeGlowLayer cols={config.cols} rows={config.rows} size={CELL} dimension={glow} isFloor={isFloor} />}
+        {visibleWalls.filter(({ col, row }) => !eraSkin || pylons.has(`${col},${row}`) || config.veilSet?.has(`${col},${row}`)).map(({ col, row }) => (
           <div key={`w-${col},${row}`} data-wall-cell={`${col},${row}`} style={{ position: 'absolute', left: col * CELL, top: row * CELL, width: CELL, height: CELL, zIndex: 2, pointerEvents: 'none' }}>
-            <div className="maze-wall-shadow" />
-            <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />
+            {!eraSkin && <><div className="maze-wall-shadow" /><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /></>}
             {pylons.has(`${col},${row}`) && <div className="absolute inset-0"><Pylon dimension={glow} size={CELL} /></div>}
             {config.veilSet?.has(`${col},${row}`) && <div className="absolute inset-0"><Veil dimension={glow} size={CELL} /></div>}
           </div>
@@ -1456,6 +1467,7 @@ const Maze = () => {
         <OrbLabels title={orbIdentity.title} name={orbIdentity.name} size={MAZE_AVATAR_SIZE} />
       </div>
 
+      {eraSkin && <div className="maze-skin-tint" aria-hidden="true" style={{ opacity: skinDarkness(eraSkin.skin.darkness), zIndex: Z.OBJECTS }} />}
       <div
         ref={fogRef}
         aria-hidden="true"

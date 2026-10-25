@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Update /world neighbour ground, terrain-paced wading/ripples, Bernard/merchant cards and versioned safe arrivals; run focused regression checks.
+
 - [x] Add shared world/maze tile drawing, deterministic era skins and accent loading presentation. 335 tests pass, preview compilation passes; published skins 1, 4 and 7 render at desktop/375px, with shared drawer identity and Cinder Hollow · Fire loader verified without page errors.
 - [ ] Verify era skins during a real signed-in maze run — the game's separate external authentication is unavailable; published-data rendering and gameplay regression tests do not verify the live account flow.
 

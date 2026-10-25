@@ -11,4 +11,5 @@
 .mechanic-pulse-ring { position: absolute; width: 120px; height: 120px; margin: -60px; border: 2px solid var(--console-teal); border-radius: 50%; }
 .mechanic-pulse-arrow { position: absolute; width: 20px; height: 20px; margin: -10px; color: var(--console-teal); font-size: 24px; line-height: 20px; }
 .mechanic-pulse-highlight { position: absolute; border: 1px solid var(--console-teal); box-shadow: var(--mechanic-glow); }
+.world-dev-entry { background: var(--plate-inset); color: var(--plate-voice); border: 1px solid var(--plate-voice); border-radius: 0; justify-content: flex-start; }
 @media (prefers-reduced-motion: reduce) { .mechanic-compass svg { transition: none; } }

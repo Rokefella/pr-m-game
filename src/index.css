@@ -90,7 +90,11 @@
     --console-ready: #5cff9a;
     --console-cyan-wash: rgb(98 230 240 / 6%);
     --mechanic-fog: rgb(8 10 24 / 90%);
+    --mechanic-mask-white: #fff;
     --mechanic-glow: 0 0 18px rgb(98 230 240 / 65%);
+    --world-dusk: rgb(87 73 121 / 22%);
+    --world-night: rgb(12 21 55 / 42%);
+    --world-dawn: rgb(130 110 93 / 16%);
     --console-digit-shadow: 0 0 8px rgb(98 230 240 / 45%);
     --console-key-glow: 0 0 6px rgb(245 192 96 / 35%);
     --console-locked-glow: 0 0 7px rgb(208 122 106 / 35%);

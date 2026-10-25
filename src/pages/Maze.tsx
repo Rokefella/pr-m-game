@@ -786,7 +786,7 @@ const Maze = () => {
       if (detail.effect === 'steps' && Number.isFinite(detail.steps_remaining)) {
         stepsRemainingRef.current = detail.steps_remaining; setStepsRemaining(detail.steps_remaining);
       }
-      if (detail.effect === 'pulse') mechanicEffectsRef.current?.pulse();
+      if (detail.effect === 'pulse') { mechanicEffectsRef.current?.pulse(); closeProfile(); showWhisper('The pebble hums.', 'var(--console-teal)', 4000); }
       void refreshRunEffects();
     };
     const refreshed = (event: Event) => {

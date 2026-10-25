@@ -16,6 +16,8 @@ export const MechanicChips = ({ effects }: { effects: RunEffects }) => {
 export const MazeMechanicEffects = forwardRef<MechanicEffectsHandle, Props>(function MazeMechanicEffects({ effects, fragments, collected, door, dimension, cellSize, viewport }, ref) {
   const world = useRef<HTMLDivElement>(null);
   const lantern = useRef<SVGCircleElement>(null);
+  const clearStop = useRef<SVGStopElement>(null);
+  const midStop = useRef<SVGStopElement>(null);
   const revealGroup = useRef<SVGGElement>(null);
   const pulseGroup = useRef<HTMLDivElement>(null);
   const pulseRing = useRef<HTMLDivElement>(null);
@@ -31,6 +33,8 @@ export const MazeMechanicEffects = forwardRef<MechanicEffectsHandle, Props>(func
       const x = camera.x + (player.col + .5) * cellSize, y = camera.y + (player.row + .5) * cellSize;
       if (world.current) world.current.style.transform = `translate(${camera.x}px, ${camera.y}px)`;
       if (lantern.current) { lantern.current.setAttribute('cx', String(x)); lantern.current.setAttribute('cy', String(y)); lantern.current.setAttribute('r', String(soft)); }
+      clearStop.current?.setAttribute('offset', `${clear / soft * 100}%`);
+      midStop.current?.setAttribute('offset', `${(clear + soft) / (2 * soft) * 100}%`);
       if (revealGroup.current) revealGroup.current.setAttribute('transform', `translate(${camera.x} ${camera.y})`);
       for (const f of fragments) {
         const el = magnetic.current.get(f.prime);
@@ -64,16 +68,16 @@ export const MazeMechanicEffects = forwardRef<MechanicEffectsHandle, Props>(func
   }));
   return <>
     {effects.reveals.length > 0 && <svg className="mechanic-reveal-fog" width={viewport.width} height={viewport.height} aria-hidden="true"><defs>
-      <radialGradient id="mechanic-lantern-gradient"><stop offset="0%" stopColor="var(--instrument-shadow)" /><stop offset="62.5%" stopColor="var(--instrument-shadow)" /><stop offset="81.25%" stopColor="var(--auth-text)" stopOpacity=".35" /><stop offset="100%" stopColor="var(--auth-text)" /></radialGradient>
+      <radialGradient id="mechanic-lantern-gradient"><stop offset="0%" stopColor="var(--instrument-shadow)" /><stop ref={clearStop} offset="62.5%" stopColor="var(--instrument-shadow)" /><stop ref={midStop} offset="81.25%" stopColor="var(--mechanic-mask-white)" stopOpacity=".35" /><stop offset="100%" stopColor="var(--mechanic-mask-white)" /></radialGradient>
       <filter id="mechanic-soft-edge" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="12" /></filter>
       <mask id="mechanic-reveal-mask" maskUnits="userSpaceOnUse" x="0" y="0" width={viewport.width} height={viewport.height} style={{ maskType: 'luminance' } as CSSProperties}>
-        <rect width="100%" height="100%" fill="var(--auth-text)" /><circle ref={lantern} fill="url(#mechanic-lantern-gradient)" />
+        <rect width="100%" height="100%" fill="var(--mechanic-mask-white)" /><circle ref={lantern} fill="url(#mechanic-lantern-gradient)" />
         <g ref={revealGroup}>{effects.reveals.map((p, i) => <g key={i}><rect x={(p.col - p.r) * cellSize} y={(p.row - p.r) * cellSize} width={(2 * p.r + 1) * cellSize} height={(2 * p.r + 1) * cellSize} fill="var(--instrument-shadow)" filter="url(#mechanic-soft-edge)" /><rect x={(p.col - p.r) * cellSize} y={(p.row - p.r) * cellSize} width={(2 * p.r + 1) * cellSize} height={(2 * p.r + 1) * cellSize} fill="var(--instrument-shadow)" /></g>)}</g>
       </mask></defs><rect width="100%" height="100%" fill="var(--mechanic-fog)" mask="url(#mechanic-reveal-mask)" /></svg>}
     <div ref={world} className="mechanic-map-overlay" data-game-world>
       {effects.reveals.map((p, i) => <div key={i} className="mechanic-reveal-tint" style={{ left: (p.col - p.r) * cellSize, top: (p.row - p.r) * cellSize, width: (2 * p.r + 1) * cellSize, height: (2 * p.r + 1) * cellSize }} />)}
       {fragments.filter(f => !collected.has(f.prime)).map(f => <div key={f.prime} hidden ref={el => { if (el) magnetic.current.set(f.prime, el); else magnetic.current.delete(f.prime); }} className="mechanic-magnet" style={{ left: f.col * cellSize, top: f.row * cellSize }}><PrimeShard dimension={dimension} size={cellSize} /></div>)}
     </div>
-    <div ref={pulseGroup} hidden className="mechanic-pulse-overlay" data-game-world><div ref={pulseRing} className="mechanic-pulse-ring" /><div ref={pulseArrow} className="mechanic-pulse-arrow">↑</div><div ref={pulseHighlight} className="mechanic-pulse-highlight" style={{ width: cellSize, height: cellSize }} /></div>
+    <div ref={pulseGroup} hidden className="mechanic-pulse-overlay" data-game-world><div ref={pulseRing} className="mechanic-pulse-ring" /><div ref={pulseArrow} className="mechanic-pulse-arrow"><svg width="20" height="20" viewBox="0 0 20 20" shapeRendering="crispEdges"><path d="M9 1h2v3h2v3h2v3h-4v9H9v-9H5V7h2V4h2Z" fill="currentColor" /></svg></div><div ref={pulseHighlight} className="mechanic-pulse-highlight" style={{ width: cellSize, height: cellSize }} /></div>
   </>;
 });

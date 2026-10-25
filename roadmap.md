@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Add shared world/maze tile drawing, deterministic era skins and accent loading presentation; test rules and browser-render published skins 1, 4 and 7 without changing gameplay.
+
 - [x] Correct DynamicRoom/Exchange room NPC body sizing using visible player width rather than glow canvas; preserve legacy dot sizing and village/maze. 39 focused tests pass, preview compilation passes, and isolated rendering measures Bernard/Banker/Keeper at 1.132 times the player body with no page errors; real signed-in room checks remain unavailable as noted below.
 
 - [x] Shrink Perception-scaled maze light, remove dye wardrobe and refresh consumed dyes, unify game layers and hide orb labels during UI. 254 tests and preview compilation pass; controlled browser checks verify Profile/sheet label hiding, world hiding behind Profile, Growth note and two repeated dye uses removing both drops and changing the header orb.

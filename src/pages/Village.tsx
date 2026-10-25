@@ -2518,6 +2518,7 @@ const Village = () => {
             }}
           >
             <div style={{ opacity: 0.7, marginBottom: 6 }}>DEV MENU</div>
+            <Button variant="outline" className="world-dev-entry font-mono" onClick={() => { setDevOverlay(false); navigate('/world-test'); }}>WORLD TEST</Button>
 
             <div style={{ opacity: 0.7, fontSize: 11 }}>PROFILE</div>
             <button type="button" onClick={handleDevReset} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Replay intro (identity only)</button>

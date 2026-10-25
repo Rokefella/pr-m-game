@@ -20,6 +20,13 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const Location = () => <output aria-label="Current URL">{useLocation().pathname}</output>;
 const open = (path = '/world') => render(<MemoryRouter initialEntries={[path]}><Location /><Routes><Route path="/world" element={<WorldTest />} /><Route path="/world-test" element={<Navigate to="/world" replace />} /><Route path="/login" element={<p>Login</p>} /><Route path="/village" element={<p>Village</p>} /></Routes></MemoryRouter>);
 describe('world sandbox access and read-only movement', () => {
+  it('M opens and closes the map and pauses walking while open', async () => {
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    fireEvent.keyDown(window, { key: 'm' }); await screen.findByRole('dialog', { name: 'World map' });
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    expect(screen.getByText('25,25 · A 0,0 · Fire')).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'm' }); expect(screen.queryByRole('dialog', { name: 'World map' })).toBeNull();
+  });
   it('allows any signed-in player regardless of registration number', async () => {
     f.registration = 2; open(); await screen.findByText('25,25 · A 0,0 · Fire');
     expect(f.reads).toContain('world_places'); expect(f.mutation).not.toHaveBeenCalled();

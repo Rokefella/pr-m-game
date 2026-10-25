@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { endRun, forfeitUnbanked, getActiveRun, RUN_MAX_AGE_MS, startRun, STRICT_FORFEIT } from './runState';
+import { abandonRunDrops, endRun, forfeitUnbanked, getActiveRun, RUN_MAX_AGE_MS, startRun, STRICT_FORFEIT } from './runState';
 
-const api = vi.hoisted(() => ({ from: vi.fn(), delete: vi.fn(), eq: vi.fn() }));
-vi.mock('@/lib/supabase', () => ({ supabase: { from: api.from } }));
+const api = vi.hoisted(() => ({ from: vi.fn(), delete: vi.fn(), eq: vi.fn(), rpc: vi.fn(), refresh: vi.fn() }));
+vi.mock('@/lib/supabase', () => ({ supabase: { from: api.from, rpc: api.rpc } }));
+vi.mock('@/lib/carriedDrops', () => ({ refreshDrops: api.refresh }));
 
 beforeEach(() => {
   localStorage.clear();
@@ -16,6 +17,19 @@ beforeEach(() => {
 afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks(); });
 
 describe('maze run lifecycle', () => {
+  it('abandons only the exited level and refetches drops after deletion', async () => {
+    api.rpc.mockResolvedValue({ data: 2, error: null });
+    expect(await abandonRunDrops('player', 3)).toBe(true);
+    expect(api.rpc).toHaveBeenCalledWith('abandon_run_drops', { p_level: 3 });
+    expect(api.refresh).toHaveBeenCalledWith('player');
+    expect(api.refresh.mock.invocationCallOrder[0]).toBeGreaterThan(api.rpc.mock.invocationCallOrder[0]);
+  });
+  it('reports abandonment failure rather than completing a real exit', async () => {
+    api.rpc.mockResolvedValue({ error: { message: 'offline' } });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(await abandonRunDrops('player', 3)).toBe(false);
+    expect(api.refresh).not.toHaveBeenCalled();
+  });
   it('stores the user, level and original entry time under praem_run', () => {
     startRun('player', 2);
     expect(JSON.parse(localStorage.getItem('praem_run') ?? '{}')).toEqual({ userId: 'player', level: 2, startedAt: Date.now() });

@@ -15,4 +15,20 @@ describe('read-only world rules', () => {
     expect(fetch).toHaveBeenCalledTimes(1); expect(cache.terrainKey(0, 0)).toBe('sand');
     cache.maintain({ x: 300, y: 300 }); expect(cache.chunks.has('0,0')).toBe(false);
   });
+});import { eraPointFor as _eraPointFor, mazeOutcome as _mazeOutcome, placesOn as _placesOn } from './worldTest';
+import { exitDestination as _exit, saveWorldReturn as _saveReturn, takeWorldOpening as _take } from './worldReturn';
+describe('world layers and returns', () => {
+  it('maze entrances: current level enters, lower is completed, higher is locked', () => {
+    expect(_mazeOutcome(3, 3)).toBe('enter'); expect(_mazeOutcome(1, 3)).toBe('completed'); expect(_mazeOutcome(4, 3)).toBe('locked');
+  });
+  it('underground era comes from surface cell (ux*4+2, uy*4+2)', () => { expect(_eraPointFor({ x: 24, y: 13 }, 1)).toEqual({ x: 98, y: 54 }); });
+  it('places filter by layer, missing layer is surface', () => {
+    const ps = [{ name: 'a', layer: 1 }, { name: 'b' }] as never[];
+    expect(_placesOn(ps, 1).length).toBe(1); expect(_placesOn(ps, 0).length).toBe(1);
+  });
+  it('exits go to /world only while a world return is stored', () => {
+    localStorage.clear(); expect(_exit()).toBe('/village');
+    _saveReturn({ layer: 0, x: 97, y: 60 }); expect(_exit()).toBe('/world');
+    expect(_take()).toEqual({ layer: 0, x: 97, y: 60 }); expect(_exit()).toBe('/village');
+  });
 });

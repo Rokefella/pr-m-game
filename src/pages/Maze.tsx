@@ -493,6 +493,7 @@ const Maze = () => {
   // Guarded: do NOT load until the user row (position) has resolved.
   const [config, setConfig] = useState<LevelConfig | null>(null);
   const [eraSkin, setEraSkin] = useState<LevelSkin | null>(null);
+  const [skinLoadingLabel, setSkinLoadingLabel] = useState<{ accent: string; label: string } | null>(null);
   const skinCanvasRef = useRef<MazeSkinHandle>(null);
   const [configLoading, setConfigLoading] = useState(true);
   useEffect(() => {
@@ -500,9 +501,10 @@ const Maze = () => {
     let cancelled = false;
     setConfigLoading(true);
     setEraSkin(null);
+    setSkinLoadingLabel(null);
     (async () => {
       const loaded = await loadLevelFromSupabase(position.level, position.dimension);
-      const skin = await readMazeSkin(position.level, loaded?.skin);
+      const skin = await readMazeSkin(position.level, loaded?.skin, (accent, label) => { if (!cancelled) setSkinLoadingLabel({ accent, label }); });
       if (cancelled) return;
       setEraSkin(skin);
       if (loaded) {
@@ -1356,7 +1358,7 @@ const Maze = () => {
   }
 
   if (showLoading || !config) {
-    return <LoadingScreen accent={eraSkin?.skin.accent} label={eraSkin ? `${eraSkin.place_name} · ${eraSkin.era_name}` : undefined} />;
+    return <LoadingScreen accent={skinLoadingLabel?.accent} label={skinLoadingLabel?.label} />;
   }
 
   const MAP_W = config.cols * CELL;

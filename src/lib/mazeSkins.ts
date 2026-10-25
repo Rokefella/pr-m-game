@@ -22,7 +22,7 @@ export function skinTile(x: number, y: number, skin: MazeSkin, open: ReadonlySet
   return { wall, key, edge, junction };
 }
 /** Read-only metadata; failure falls back to the original maze artwork. */
-export async function readMazeSkin(level: number, override?: number): Promise<LevelSkin | null> {
+export async function readMazeSkin(level: number, override?: number, onMetadata?: (accent: string, label: string) => void): Promise<LevelSkin | null> {
   try {
     const { data: view } = await supabase.from('maze_level_skins' as never).select('place_name, era_name, skin').eq('level_number', level).maybeSingle();
     const row = view as unknown as { place_name?: string; era_name?: string; skin?: MazeSkin } | null;
@@ -32,6 +32,7 @@ export async function readMazeSkin(level: number, override?: number): Promise<Le
       skin = data as unknown as MazeSkin | undefined;
     }
     if (!skin || skin.enabled === false || !Array.isArray(skin.wall_keys) || !skin.wall_keys.length || !Array.isArray(skin.floor_keys) || !skin.floor_keys.length) return null;
+    onMetadata?.(skin.accent, `${row?.place_name ?? ''} · ${override !== undefined ? skin.name : row?.era_name ?? skin.name}`);
     const { data, error } = await supabase.from('world_terrain_types' as never).select('*');
     if (error || !Array.isArray(data)) return null;
     const terrain = new Map((data as unknown as Terrain[]).map(t => [t.key, t]));

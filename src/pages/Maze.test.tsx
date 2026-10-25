@@ -3,16 +3,20 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Maze from './Maze';
 import { getActiveRun, startRun } from '@/lib/runState';
+import type { LevelSkin } from '@/lib/mazeSkins';
 vi.mock('@/hooks/useNpcQuestStates', () => ({ useNpcQuestStates: () => () => 'none', useNpcDisplayName: (key: string) => key, NPC_INVENTORY_CHANGED: 'praem:npc-inventory-changed' }));
 
 const fixture = vi.hoisted(() => ({
   level: 2, beta: true, flags: 0, consoleDoor: false,
   dropPoints: false,
+  skin: null as LevelSkin | null,
   placements: [] as { col: number; row: number; name: string; kind: 'key' | 'drop' }[],
   rpc: vi.fn(),
   rows: [] as { prime_number: number; banked: boolean; level: number }[],
   deletes: [] as unknown[][][],
 }));
+vi.mock('@/lib/mazeSkins', async (original) => ({ ...await original<typeof import('@/lib/mazeSkins')>(), readMazeSkin: async () => fixture.skin }));
+vi.mock('@/components/theme/MazeSkinCanvas', () => ({ default: () => null }));
 vi.mock('@/context/AuthContext', () => {
   const user = { id: 'player' };
   return { useAuth: () => ({ user, loading: false }) };
@@ -61,6 +65,7 @@ beforeEach(() => {
   fixture.level = 2; fixture.beta = true; fixture.flags = 0; fixture.deletes = [];
   fixture.consoleDoor = false;
   fixture.dropPoints = false;
+  fixture.skin = null;
   fixture.placements = [];
   fixture.rpc.mockReset().mockImplementation(async (name: string) => ({ data: name === 'start_run_drops' ? fixture.placements : { granted: true, drop_name: 'Brass key', kind: 'key' }, error: null }));
   fixture.rows = [
@@ -151,7 +156,9 @@ const ready = async (n: number) => {
 
 describe('Maze run entry and deliberate exits', () => {
   it('opens a console at level 2 without stage requirements and preserves the carried run and exact return cell', async () => {
-    fixture.consoleDoor = true; startRun('player', 2);
+    fixture.consoleDoor = true;
+    fixture.skin = { place_name: 'Cinder Hollow', era_name: 'Fire', skin: { darkness: 1, accent: '#e8783a' }, terrain: new Map() } as LevelSkin;
+    startRun('player', 2);
     openMaze(); await ready(2);
     fireEvent.click(screen.getByRole('button', { name: 'Move right' }));
     await screen.findByText('Console room destination');

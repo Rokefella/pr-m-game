@@ -78,6 +78,6 @@ export const MazeMechanicEffects = forwardRef<MechanicEffectsHandle, Props>(func
       {effects.reveals.map((p, i) => <div key={i} className="mechanic-reveal-tint" style={{ left: (p.col - p.r) * cellSize, top: (p.row - p.r) * cellSize, width: (2 * p.r + 1) * cellSize, height: (2 * p.r + 1) * cellSize }} />)}
       {fragments.filter(f => !collected.has(f.prime)).map(f => <div key={f.prime} hidden ref={el => { if (el) magnetic.current.set(f.prime, el); else magnetic.current.delete(f.prime); }} className="mechanic-magnet" style={{ left: f.col * cellSize, top: f.row * cellSize }}><PrimeShard dimension={dimension} size={cellSize} /></div>)}
     </div>
-    <div ref={pulseGroup} hidden className="mechanic-pulse-overlay" data-game-world><div ref={pulseRing} className="mechanic-pulse-ring" /><div ref={pulseArrow} className="mechanic-pulse-arrow">↑</div><div ref={pulseHighlight} className="mechanic-pulse-highlight" style={{ width: cellSize, height: cellSize }} /></div>
+    <div ref={pulseGroup} hidden className="mechanic-pulse-overlay" data-game-world><div ref={pulseRing} className="mechanic-pulse-ring" /><div ref={pulseArrow} className="mechanic-pulse-arrow"><svg width="20" height="20" viewBox="0 0 20 20" shapeRendering="crispEdges"><path d="M9 1h2v3h2v3h2v3h-4v9H9v-9H5V7h2V4h2Z" fill="currentColor" /></svg></div><div ref={pulseHighlight} className="mechanic-pulse-highlight" style={{ width: cellSize, height: cellSize }} /></div>
   </>;
 });

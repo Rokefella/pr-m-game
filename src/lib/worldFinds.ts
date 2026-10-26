@@ -34,7 +34,7 @@ export function drawMarker(ctx: CanvasRenderingContext2D, px: number, py: number
   const bob = reduced ? 0 : Math.floor(time / 400) % 2 ? -2 : 0, s = 2, cx = Math.round(px + WORLD_TILE / 2), top = Math.round(py - 12 + bob);
   ctx.save(); ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
   const rows = [1, 3, 5, 3, 1];
-  ctx.fillStyle = ink.text; rows.forEach((w, i) => ctx.fillRect(cx - (w / 2 + .5) * s - s / 2 + s / 2, top + i * s - s / 2, (w + 1) * s, s * 2));
+  ctx.fillStyle = ink.shadow ?? ink.muted; rows.forEach((w, i) => ctx.fillRect(cx - ((w + 2) * s) / 2, top + (i - 1) * s, (w + 2) * s, s * 3));
   ctx.fillStyle = ink.gold; rows.forEach((w, i) => ctx.fillRect(cx - (w * s) / 2, top + i * s, w * s, s));
   ctx.restore();
 }

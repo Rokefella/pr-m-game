@@ -200,7 +200,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const refreshCompleted = useCallback(async () => {
     if (!userId) return;
     const ledger = stepLedger.current;
-    await ledger?.flush().catch(() => undefined);
+    await ledger?.settled().catch(() => undefined);
     const revision = ledger?.revision;
     const { data: row, error } = await supabase.from('users').select('*').eq('id', userId).maybeSingle();
     if (!error && row) {

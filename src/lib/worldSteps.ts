@@ -12,6 +12,7 @@ export class WorldSteps {
   private flight: Promise<void> | null = null;
   constructor(public saved: number, private spend: (amount: number) => Promise<number>, private changed: () => void) {}
   get balance() { return Math.max(0, Math.floor(this.saved - this.pending)); }
+  async settled() { await this.flight; }
   refresh(saved: number) { this.saved = Math.max(0, saved); this.changed(); }
   move(cost: number) {
     const charged = this.balance > 0 ? Math.max(0, cost) : 0;

@@ -33,3 +33,4 @@
 - terrainTile caches base/variant sprites at footprint size with shared picking/flips. World chunks draw ground → height → objects, clipping even-anchored large sprites; sprite/building/neighbour changes invalidate cached art. terrainMotion owns clock/axis rules; cached motion frames draw above ground without changing movement; fire light follows tint.
 - World object underlays resolve neighbouring ground in worldTestRender only, preserving maze skin fallback; worldTest owns terrain-paced movement and safe arrivals, while worldReturn versions local positions to discard obsolete layouts without data writes.
 - worldDiscovery owns per-user OR-merged local/server bits and throttled saves; WorldMap uses cached worldOverview art and library zoom/pan, with reveal strictly presentation-only.
+- worldSam owns show_when filtering, Sam stage/topic rules and RPC calls; SamCard only presents them, so the old Village dialogue stays independent.

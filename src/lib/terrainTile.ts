@@ -1,5 +1,6 @@
 import type { Era, Terrain } from './worldTest';
 import { worldHash } from './worldHash';
+import { canSway, flameFrame, flowOffset, lavaBrightness, leanAmount, WATER_MOVES, waterDirection, type TerrainNeighbour } from './terrainMotion';
 export type TerrainInk = { background: string; grid: string; text: string; muted: string; gold: string; cyan: string; shadow: string };
 const TILE = 40;
 const NO_FLIP = new Set(['road', 'square', 'town_wall', 'bridge', 'cliff_edge', 'dune_crest', 'crater', 'building']);
@@ -9,6 +10,39 @@ const sprites = new Map<string, HTMLCanvasElement>();
 const variants = new Map<string, (HTMLCanvasElement | null)[]>();
 const loading = new Map<string, Promise<void>>();
 export let spriteVersion = 0;
+const motionArt = new WeakMap<HTMLCanvasElement, { lean: HTMLCanvasElement; leanLeft: HTMLCanvasElement; flames: HTMLCanvasElement[]; light?: string; warm?: string }>();
+function prepareMotion(sprite: HTMLCanvasElement) {
+  const w = sprite.width, h = sprite.height;
+  const frame = (shift: number) => {
+    const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    if (ctx) { ctx.imageSmoothingEnabled = false; ctx.drawImage(sprite, 0, h / 2, w, h / 2, 0, h / 2, w, h / 2); ctx.drawImage(sprite, 0, 0, w, h / 2, shift, 0, w, h / 2); }
+    return canvas;
+  };
+  let light: string | undefined, warm: string | undefined;
+  const ctx = sprite.getContext('2d');
+  if (ctx?.getImageData) {
+    const pixels = ctx.getImageData(0, 0, w, h).data;
+    let brightest = -1, hottest = -1;
+    for (let i = 0; i < pixels.length; i += 4) {
+      if (pixels[i + 3] < 128) continue;
+      const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], brightness = r + g + b;
+      if (brightness > brightest) { brightest = brightness; light = `rgb(${r}, ${g}, ${b})`; }
+      const heat = r - b + g * .25;
+      if (heat > hottest) { hottest = heat; warm = `rgb(${r}, ${g}, ${b})`; }
+    }
+  }
+  const flames = [0, 1, 2].map(n => {
+    const c = frame(0), cx = c.getContext('2d');
+    if (cx) {
+      cx.clearRect?.(0, 0, w, h / 2);
+      cx.drawImage(sprite, 0, 0, w, h / 2, 0, n === 0 ? 0 : n === 1 ? -1 : 1, w, h / 2);
+      if (light) { cx.fillStyle = light; cx.fillRect(w / 2 + (n - 1), Math.max(0, h / 4 - n), 1, 2); }
+    }
+    return c;
+  });
+  motionArt.set(sprite, { lean: frame(1), leanLeft: frame(-1), flames, light, warm });
+}
 export function terrainSprite(key: string | undefined, x?: number, y?: number): HTMLCanvasElement | undefined {
   if (!key) return undefined;
   const choices = variants.get(key);
@@ -25,7 +59,7 @@ export function loadSvgCanvas(svg: string, w: number, h: number): Promise<HTMLCa
       clearTimeout(timer);
       const c = document.createElement('canvas'); c.width = w; c.height = h;
       const cx = c.getContext('2d'); if (!cx) return resolve(null);
-      cx.imageSmoothingEnabled = false; cx.drawImage(img, 0, 0, w, h); resolve(c);
+      cx.imageSmoothingEnabled = false; cx.drawImage(img, 0, 0, w, h); prepareMotion(c); resolve(c);
     };
     img.onerror = () => { clearTimeout(timer); resolve(null); };
     img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
@@ -128,29 +162,64 @@ export function drawTerrainBase(ctx: CanvasRenderingContext2D, terrain: Terrain,
   ctx.restore();
 }
 
-/** Per-frame `moves` animation (~10 fps), drawn as a light overlay on top of the static cell. */
-export function drawTerrainMotion(ctx: CanvasRenderingContext2D, terrain: Terrain, x: number, y: number, px: number, py: number, time: number, ink: TerrainInk, reduced: boolean) {
+/** Cached ground stays static; moving objects are composited separately. */
+export const hasMovingSprite = (terrain: Terrain) => Boolean(terrainSprite(terrain.key)) && (canSway(terrain) || terrain.moves === 'flicker');
+export function spriteLight(terrain: Terrain, x: number, y: number, ink: TerrainInk, warm = false) {
+  const sprite = terrainSprite(terrain.key, x, y), art = sprite ? motionArt.get(sprite) : undefined;
+  return (warm ? art?.warm : art?.light) ?? terrain.color ?? ink.text;
+}
+/** Visible sprite animation in native pixel space, shared by world and maze. */
+export function drawTerrainMotion(ctx: CanvasRenderingContext2D, terrain: Terrain, x: number, y: number, px: number, py: number, time: number, ink: TerrainInk, reduced: boolean, neighbour?: TerrainNeighbour, clock = time, size = TILE, replaceSprite = true) {
   const move = terrain.moves ?? ''; if (!move || move === 'none') return;
-  const size = TILE, frame = reduced ? 0 : Math.floor(time / 100), light = terrainSprite(terrain.key) ? .6 : 1;
-  const animation = frame / 10 + (x * 7 + y * 3) % 13, pulse = Math.sin(animation * 3);
-  ctx.save(); ctx.translate(px, py); ctx.strokeStyle = ink.text; ctx.fillStyle = ink.text; ctx.lineWidth = 1;
-  if (move === 'heat_shimmer') { ctx.globalAlpha = (.04 + (pulse + 1) * .02) * light; ctx.fillRect(0, (frame * 2 + y * 5) % size, size, 2); }
-  if (move === 'glow' || move === 'flicker') { ctx.globalAlpha = (.06 + (pulse + 1) * .04) * light; ctx.fillStyle = terrain.color ?? ink.cyan; ctx.fillRect(0, 0, size, size); ctx.fillStyle = ink.text; }
-  if (move.startsWith('flow')) {
-    const speed = move === 'flow_fast' ? 10 : move === 'flow_slow' ? 2 : 5;
-    const a = Math.atan2(y - 500, x - 500), offset = reduced ? 0 : animation * speed % 16;
-    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, size, size); ctx.clip(); ctx.translate(20, 20); ctx.rotate(a);
-    ctx.globalAlpha = (move === 'flow_light' ? .12 : .25) * light;
-    for (let i = -40; i < 40; i += 16) { ctx.beginPath(); ctx.moveTo(i + offset, -30); ctx.lineTo(i + offset, 30); ctx.stroke(); } ctx.restore();
+  const sprite = terrainSprite(terrain.key, x, y), art = sprite ? motionArt.get(sprite) : undefined;
+  ctx.save(); ctx.translate(px, py); ctx.scale(size / 16, size / 16); ctx.imageSmoothingEnabled = false;
+  if (replaceSprite && sprite && hasMovingSprite(terrain)) {
+    if (reduced) blit(ctx, sprite, terrain.key, x, y, 16, isObjectLayer(terrain));
+    else if (move === 'sway') {
+      const lean = leanAmount(terrain, x, y, clock);
+      if (lean > 0 && art) {
+        // Full-strength gust replaces the top half; breathing crossfades subtly.
+        ctx.globalAlpha = 1 - lean; blit(ctx, sprite, terrain.key, x, y, 16, isObjectLayer(terrain));
+        const flip = NO_FLIP.has(terrain.key) ? 0 : worldHash(x, y, 7);
+        const leant = (flip >= .25 && flip < .5) || flip >= .75 ? art.leanLeft : art.lean;
+        ctx.globalAlpha = lean; blit(ctx, leant, terrain.key, x, y, 16, isObjectLayer(terrain)); ctx.globalAlpha = 1;
+      } else blit(ctx, sprite, terrain.key, x, y, 16, isObjectLayer(terrain));
+    } else blit(ctx, art?.flames[flameFrame(time, x, y)] ?? sprite, terrain.key, x, y, 16, true);
   }
-  if (['shimmer', 'waves', 'foam'].includes(move)) { ctx.globalAlpha = (.12 + (pulse + 1) * .12) * light; ctx.fillRect(8 + x % 14, 6 + y % 16, 3, 1); ctx.fillRect(27, 28, 3, 1); }
-  if (move === 'drift') { ctx.globalAlpha = .16 * light; ctx.fillRect((x * 7 + frame * .3) % 36, (y * 11 + frame * .2) % 36, 2, 2); }
-  if (move === 'pulse') { ctx.strokeStyle = ink.cyan; ctx.globalAlpha = .3 * light; ctx.beginPath(); ctx.moveTo(0, 20); ctx.lineTo(20, 20); ctx.lineTo(20, 40); ctx.stroke(); ctx.globalAlpha = .7 * light; ctx.fillStyle = ink.cyan; ctx.fillRect(reduced ? 18 : frame * 2 % 38, 18, 3, 3); }
+  if (reduced) { ctx.restore(); return; }
+  ctx.beginPath(); ctx.rect(0, 0, 16, 16); ctx.clip();
+  ctx.fillStyle = spriteLight(terrain, x, y, ink); ctx.globalAlpha = .55;
+  const phase = worldHash(x, y, 29), frame = Math.floor(time * 6 / 1000);
+  if (WATER_MOVES.has(move)) {
+    const flow = move.startsWith('flow') || move === 'foam', direction = waterDirection(x, y, neighbour), offset = flowOffset(move, time);
+    for (let i = 0; i < 3; i++) {
+      const hx = worldHash(x + i, y, 33) * 16, hy = worldHash(x, y + i, 34) * 16;
+      if (!flow && (frame + Math.floor(phase * 6) + i) % 3 === 0) continue;
+      const rx = flow ? ((hx + offset * direction.x) % 16 + 16) % 16 : hx;
+      const ry = flow ? ((hy + offset * direction.y) % 16 + 16) % 16 : hy;
+      ctx.fillRect(Math.floor(rx), Math.floor(ry), flow ? 2 : 1, 1);
+    }
+  } else if (move === 'flicker') {
+    for (let i = 0; i < 1 + Math.floor(phase * 3); i++) {
+      const life = ((time / 1000 + phase + i / 3) % 1 + 1) % 1;
+      ctx.globalAlpha = .8 * (1 - life); ctx.fillRect(6 + i * 2, Math.floor(7 - life * (4 + worldHash(x, y + i, 36) * 4)), 1, 1);
+    }
+  } else if (move === 'glow') {
+    ctx.globalAlpha = lavaBrightness(time); ctx.globalCompositeOperation = 'lighter';
+    if (sprite) ctx.drawImage(sprite, 0, 0, 16, 16); else ctx.fillRect(0, 0, 16, 16);
+  } else if (move === 'heat_shimmer') { ctx.globalAlpha = .1; ctx.fillRect(0, frame % 16, 16, 1); }
+  else if (move === 'drift') { ctx.globalAlpha = .16; ctx.fillRect((x * 7 + frame * .3) % 15, (y * 11 + frame * .2) % 15, 1, 1); }
+  else if (move === 'pulse') { ctx.fillStyle = ink.cyan; ctx.globalAlpha = .7; ctx.fillRect(frame % 15, 7, 1, 1); }
   ctx.restore();
 }
 
 /** Full 40px cell (static + motion) — used directly by the maze skins. */
-export function drawTerrain(ctx: CanvasRenderingContext2D, terrain: Terrain, era: Era | undefined, x: number, y: number, px: number, py: number, time: number, ink: TerrainInk, reduced: boolean, detail = false, ground?: Terrain) {
+export function drawTerrain(ctx: CanvasRenderingContext2D, terrain: Terrain, era: Era | undefined, x: number, y: number, px: number, py: number, time: number, ink: TerrainInk, reduced: boolean, detail = false, ground?: Terrain, neighbour?: TerrainNeighbour, clock = time) {
+  if (!detail && terrain.moves === 'flicker' && hasMovingSprite(terrain)) {
+    if (ground) drawTerrainBase(ctx, ground, era, x, y, px, py, TILE, ink);
+    drawTerrainMotion(ctx, terrain, x, y, px, py, time, ink, reduced, neighbour, clock);
+    return;
+  }
   drawTerrainBase(ctx, terrain, era, x, y, px, py, TILE, ink, detail, ground);
-  if (!detail) drawTerrainMotion(ctx, terrain, x, y, px, py, time, ink, reduced);
+  if (!detail) drawTerrainMotion(ctx, terrain, x, y, px, py, time, ink, reduced, neighbour, clock, TILE, false);
 }

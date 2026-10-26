@@ -1,9 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
-import { drawTerrainBase, loadTerrainSprites, terrainSprite } from './terrainTile';
+import { drawTerrainBase, drawTerrainMotion, loadTerrainSprites, terrainSprite } from './terrainTile';
 import { worldHash } from './worldHash';
 import type { Terrain } from './worldTest';
 
 describe('shared terrain variants', () => {
+  it('reduced motion draws no water highlights or lava pulse', () => {
+    const ctx = { save: vi.fn(), restore: vi.fn(), translate: vi.fn(), scale: vi.fn(), fillRect: vi.fn() } as unknown as CanvasRenderingContext2D;
+    for (const moves of ['flow', 'shimmer', 'glow']) drawTerrainMotion(ctx, { key: 'missing', moves } as Terrain, 0, 0, 0, 0, 1000, {} as never, true);
+    expect(ctx.fillRect).not.toHaveBeenCalled();
+  });
   it('rasterises all variants at their footprint size and selects with salt 13', async () => {
     const originalImage = globalThis.Image;
     const context = { drawImage: vi.fn(), imageSmoothingEnabled: true };

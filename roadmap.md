@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Add visible shared water/fire animation, cached wind frames and decorative night fire light; regression tests and real published-sprite desktop/phone rendering verified, including static reduced motion. Real signed-in gameplay remains unavailable under the existing external-auth limitation.
+
 - [x] Add shared terrain variants, world-only 2×2 boulders and ground height shading; 366 tests and preview compilation pass. Existing forest data checked at desktop/phone sizes without page errors; actual signed-in gameplay remains unavailable as documented below.
 
 - [x] Add fogged world map with cached overview, zoom/pan, discovered places and nonblocking per-user discovery persistence; 360 tests and preview typecheck pass. Desktop/phone public-data map, zoom/reveal/close checked without page errors.

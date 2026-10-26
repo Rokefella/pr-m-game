@@ -13,7 +13,7 @@ export type MerchantItem = {
   label: string;
   cost: number;
   /** Called after credits have been deducted. Return optional inline acquired-message override. */
-  onPurchase?: () => string | void;
+  onPurchase?: () => string | void | Promise<string | void>;
 };
 
 interface MerchantOverlayProps {
@@ -51,6 +51,8 @@ const MerchantOverlay = ({
   const [line, setLine] = useState('');
   const [feedback, setFeedback] = useState<Record<string, { text: string; ok: boolean } | undefined>>({});
   const feedbackTimers = useRef<Record<string, number>>({});
+  const buying = useRef(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -70,6 +72,7 @@ const MerchantOverlay = ({
   if (!open) return null;
 
   const buy = async (item: MerchantItem) => {
+    if (buying.current) return;
     if (credits < item.cost) {
       setFeedback((f) => ({ ...f, [item.key]: { text: 'Insufficient credits.', ok: false } }));
       if (feedbackTimers.current[item.key]) window.clearTimeout(feedbackTimers.current[item.key]);
@@ -80,12 +83,18 @@ const MerchantOverlay = ({
       return;
     }
     const next = credits - item.cost;
-    onCreditsChange(next);
-    const override = item.onPurchase?.();
+    buying.current = true; setBusy(true);
+    let override: string | void;
     try {
+      override = await item.onPurchase?.();
+      onCreditsChange(next);
       await updateUser(userId, { credits: next });
     } catch (e) {
       console.error('[Merchant] failed to update credits', e);
+      setFeedback(f => ({ ...f, [item.key]: { text: 'Not right now.', ok: false } }));
+      return;
+    } finally {
+      buying.current = false; setBusy(false);
     }
     setFeedback((f) => ({ ...f, [item.key]: { text: override || 'Acquired.', ok: true } }));
     if (feedbackTimers.current[item.key]) window.clearTimeout(feedbackTimers.current[item.key]);
@@ -172,6 +181,7 @@ const MerchantOverlay = ({
               <button
                 className="font-cinzel"
                 onClick={() => buy(item)}
+                disabled={busy}
                 style={{
                   fontSize: 9,
                   letterSpacing: '0.2em',
@@ -189,12 +199,12 @@ const MerchantOverlay = ({
                   className="font-fell italic"
                   style={{
                     fontSize: 12,
-                    color: feedback[item.key]!.ok
+                    color: feedback[item.key]?.ok
                       ? `rgba(${rgb},0.6)`
                       : 'rgba(200,80,80,0.6)',
                   }}
                 >
-                  {feedback[item.key]!.text}
+                  {feedback[item.key]?.text}
                 </span>
               )}
             </div>

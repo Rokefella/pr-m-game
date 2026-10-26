@@ -2,8 +2,8 @@ import { useRef } from 'react';
 import { ProfileButton } from '@/components/ProfileOverlay';
 import { Z } from '@/lib/zIndex';
 import './game-home.css';
-type Props = { stepsRemaining: number; credits: number; currentLevel: number; registrationNumber: number | null; growthPoints: number; subscriptionStatus: string | null; trialDaysRemaining: number; onOpenProfile: () => void; onOpenDevMenu: () => void };
-export default function GameHud({ stepsRemaining, credits, currentLevel, registrationNumber, growthPoints, subscriptionStatus, trialDaysRemaining, onOpenProfile: openProfile, onOpenDevMenu }: Props) {
+type Props = { stepsRemaining: number; stepsExhausted?: boolean; credits: number; currentLevel: number; registrationNumber: number | null; growthPoints: number; subscriptionStatus: string | null; trialDaysRemaining: number; onOpenProfile: () => void; onOpenDevMenu: () => void };
+export default function GameHud({ stepsRemaining, stepsExhausted = false, credits, currentLevel, registrationNumber, growthPoints, subscriptionStatus, trialDaysRemaining, onOpenProfile: openProfile, onOpenDevMenu }: Props) {
   const taps = useRef({ count: 0, last: 0 });
   const handleRegTap = () => {
     if (registrationNumber !== 1) return;
@@ -31,7 +31,7 @@ export default function GameHud({ stepsRemaining, credits, currentLevel, registr
           zIndex: Z.HUD,
         }}
       >
-        <span className="font-mono" style={{ fontSize: 13, letterSpacing: 0, color: 'var(--game-hud-text)', whiteSpace: 'nowrap' }}>
+        <span className="font-mono" style={{ fontSize: 13, letterSpacing: 0, color: stepsExhausted ? 'var(--game-hud-tired)' : 'var(--game-hud-text)', whiteSpace: 'nowrap' }}>
           STEPS&nbsp;{String(stepsRemaining).padStart(2, '0')}
         </span>
         <span className="font-mono" style={{ fontSize: 13, letterSpacing: 0, color: 'var(--plate-gold)', whiteSpace: 'nowrap' }}>

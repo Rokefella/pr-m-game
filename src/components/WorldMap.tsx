@@ -37,7 +37,7 @@ export default function WorldMap({ bits, player, layer, aura, dev, types, places
   const visible = places.filter(p => (Number(p.layer) || 0) === 0 && (reveal || discoveredBlock(bits, Math.floor(p.x / 10), Math.floor(p.y / 10))) && (p.kind === 'town' || p.kind === 'maze_entrance' || p.kind === 'npc_home' || p.action === 'door_library' || p.action === 'merchant'));
   const surfaceFinds = finds.filter(f => (Number(f.layer) || 0) === 0);
   const findMarks = [
-    ...surfaceFinds.filter(f => f.visibility === 'visible' && (reveal || discoveredBlock(bits, Math.floor(f.x / 10), Math.floor(f.y / 10)))).map(f => ({ f, mark: (findSprite(f, claimed.has(f.id)) ?? '').startsWith('campfire') ? '✶' : '▲', cls: 'world-map-find' })),
+    ...surfaceFinds.filter(f => f.visibility === 'visible' && (reveal || discoveredBlock(bits, Math.floor(f.x / 10), Math.floor(f.y / 10)))).map(f => ({ f, mark: (findSprite(f, claimed.has(f.id)) ?? '').startsWith('campfire') ? '✶' : '▲', cls: claimed.has(f.id) ? 'world-map-find world-map-find-claimed' : 'world-map-find' })),
     ...surfaceFinds.filter(f => claimed.has(f.id) && f.visibility !== 'visible').map(f => ({ f, mark: '•', cls: 'world-map-find world-map-find-claimed' })),
   ];
   return <section className="world-map" role="dialog" aria-modal="true" aria-label="World map" data-game-ui="open">

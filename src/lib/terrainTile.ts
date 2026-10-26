@@ -10,7 +10,7 @@ const sprites = new Map<string, HTMLCanvasElement>();
 const variants = new Map<string, (HTMLCanvasElement | null)[]>();
 const loading = new Map<string, Promise<void>>();
 export let spriteVersion = 0;
-const motionArt = new WeakMap<HTMLCanvasElement, { lean: HTMLCanvasElement; flames: HTMLCanvasElement[]; light?: string; warm?: string }>();
+const motionArt = new WeakMap<HTMLCanvasElement, { lean: HTMLCanvasElement; leanLeft: HTMLCanvasElement; flames: HTMLCanvasElement[]; light?: string; warm?: string }>();
 function prepareMotion(sprite: HTMLCanvasElement) {
   const w = sprite.width, h = sprite.height;
   const frame = (shift: number) => {
@@ -41,7 +41,7 @@ function prepareMotion(sprite: HTMLCanvasElement) {
     }
     return c;
   });
-  motionArt.set(sprite, { lean: frame(1), flames, light, warm });
+  motionArt.set(sprite, { lean: frame(1), leanLeft: frame(-1), flames, light, warm });
 }
 export function terrainSprite(key: string | undefined, x?: number, y?: number): HTMLCanvasElement | undefined {
   if (!key) return undefined;
@@ -180,7 +180,9 @@ export function drawTerrainMotion(ctx: CanvasRenderingContext2D, terrain: Terrai
       if (lean > 0 && art) {
         // Full-strength gust replaces the top half; breathing crossfades subtly.
         ctx.globalAlpha = 1 - lean; blit(ctx, sprite, terrain.key, x, y, 16, isObjectLayer(terrain));
-        ctx.globalAlpha = lean; blit(ctx, art.lean, terrain.key, x, y, 16, isObjectLayer(terrain)); ctx.globalAlpha = 1;
+        const flip = NO_FLIP.has(terrain.key) ? 0 : worldHash(x, y, 7);
+        const leant = (flip >= .25 && flip < .5) || flip >= .75 ? art.leanLeft : art.lean;
+        ctx.globalAlpha = lean; blit(ctx, leant, terrain.key, x, y, 16, isObjectLayer(terrain)); ctx.globalAlpha = 1;
       } else blit(ctx, sprite, terrain.key, x, y, 16, isObjectLayer(terrain));
     } else blit(ctx, art?.flames[flameFrame(time, x, y)] ?? sprite, terrain.key, x, y, 16, true);
   }

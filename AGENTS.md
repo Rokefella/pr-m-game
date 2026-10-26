@@ -2,7 +2,7 @@
 
 - Maze loads drops after fresh/resume readiness. Real exits settle claims then runState abandons drops and refreshes inventory; Shadow snapshots carried counts before server banking. DropCrate only draws.
 
-- LoadingScreen owns timing; pages own data/navigation.
+- LoadingScreen owns timing.
 
 - Format primes only at presentation boundaries via format.ts; decode the padded string; persist and compare numbers.
 - Derive carried counts via `fragmentInventory`, excluding the current prime for reveal pre-counts. Shadow progress uses only its transfer snapshot; query Library rows after persistence independently of level-gate timing to keep presentation from altering saving.

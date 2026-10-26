@@ -1,5 +1,5 @@
 import { chunkOrigin, eraAt, eraPointFor, WORLD_CHUNK, WORLD_TILE, type WorldLayer, type Era, type Place, type Terrain, type WorldChunk, type WorldPoint, type WorldChunkCache } from './worldTest';
-import { drawTerrainBase, drawTerrainMotion, drawTerrainSprite, isObjectLayer, spriteVersion, type TerrainInk } from './terrainTile';
+import { drawTerrainBase, drawTerrainMotion, drawTerrainSprite, hasMovingSprite, isObjectLayer, spriteLight, spriteVersion, type TerrainInk } from './terrainTile';
 import { buildingBlockCanvas, buildingVersion } from './theme/buildingCanvas';
 export { drawTerrain, eraColor } from './terrainTile';
 export type WorldInk = TerrainInk & { dusk: string; night: string; dawn: string };
@@ -88,7 +88,7 @@ export function chunkCanvas(cache: WorldChunkCache, chunk: WorldChunk, types: Ma
   for (const c of cells) drawWorldHeight(ctx, cache, c.object ? c.ground ?? c.terrain : c.terrain, c.x, c.y, c.px, c.py, ink, layer);
   const seen = new Set<string>(), largeSeen = new Set<string>();
   for (const { x, y, px, py, terrain, era, ground, object } of cells) {
-    if (!object) continue;
+    if (!object || hasMovingSprite(terrain)) continue;
     if (terrain.footprint === 2) {
       const anchor = worldFootprintAnchor(cache, terrain, x, y);
       if (anchor) {
@@ -141,7 +141,7 @@ function drawBuildingGroup(ctx: CanvasRenderingContext2D, cache: WorldChunkCache
   }
   return true;
 }
-export function drawWorld(ctx: CanvasRenderingContext2D, cache: WorldChunkCache, types: Map<string, Terrain>, eras: Era[], places: Place[], camera: WorldPoint, width: number, height: number, time: number, ink: WorldInk, reduced: boolean, layer: WorldLayer = 0) {
+export function drawWorld(ctx: CanvasRenderingContext2D, cache: WorldChunkCache, types: Map<string, Terrain>, eras: Era[], places: Place[], camera: WorldPoint, width: number, height: number, time: number, ink: WorldInk, reduced: boolean, layer: WorldLayer = 0, clock = time) {
   ctx.fillStyle = ink.background; ctx.fillRect(0, 0, width, height); ctx.imageSmoothingEnabled = false;
   const size = cache.size;
   const x0 = Math.max(0, Math.floor(camera.x / WORLD_TILE)), y0 = Math.max(0, Math.floor(camera.y / WORLD_TILE));
@@ -154,9 +154,26 @@ export function drawWorld(ctx: CanvasRenderingContext2D, cache: WorldChunkCache,
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     const px = x * WORLD_TILE - camera.x, py = y * WORLD_TILE - camera.y;
     const key = cache.terrainKey(x, y), terrain = key ? types.get(key) : undefined;
-    if (terrain) { if (terrain.moves) drawTerrainMotion(ctx, terrain, x, y, px, py, time, ink, reduced); }
+    if (terrain) { if (terrain.moves) drawTerrainMotion(ctx, terrain, x, y, px, py, time, ink, reduced, (nx, ny) => types.get(cache.terrainKey(nx, ny) ?? ''), clock); }
     else { ctx.strokeStyle = ink.grid; ctx.globalAlpha = .2; ctx.strokeRect(px, py, WORLD_TILE, WORLD_TILE); ctx.globalAlpha = 1; }
   }
   if (layer === 1) { ctx.fillStyle = ink.shadow; ctx.globalAlpha = .4; ctx.fillRect(0, 0, width, height); ctx.globalAlpha = 1; }
   for (const place of places) if (place.x >= x0 && place.x <= x1 && place.y >= y0 && place.y <= y1) drawPlace(ctx, place, place.x * WORLD_TILE - camera.x, place.y * WORLD_TILE - camera.y, ink);
+}
+
+/** Decorative fire light is applied after the world's tint, never to gameplay vision. */
+export function drawWorldFireLight(ctx: CanvasRenderingContext2D, cache: WorldChunkCache, types: Map<string, Terrain>, camera: WorldPoint, width: number, height: number, ink: WorldInk, phase: string) {
+  if (phase !== 'night' && phase !== 'dusk') return;
+  const x0 = Math.max(0, Math.floor(camera.x / WORLD_TILE)), y0 = Math.max(0, Math.floor(camera.y / WORLD_TILE));
+  const x1 = Math.min(cache.size - 1, Math.ceil((camera.x + width) / WORLD_TILE)), y1 = Math.min(cache.size - 1, Math.ceil((camera.y + height) / WORLD_TILE));
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .35;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const terrain = types.get(cache.terrainKey(x, y) ?? ''); if (terrain?.moves !== 'flicker') continue;
+    const radius = (terrain.light_radius && terrain.light_radius > 0 ? terrain.light_radius : 3) * WORLD_TILE;
+    const px = (x + .5) * WORLD_TILE - camera.x, py = (y + .5) * WORLD_TILE - camera.y;
+    const glow = ctx.createRadialGradient(px, py, 0, px, py, radius);
+    glow.addColorStop(0, spriteLight(terrain, x, y, ink, true)); glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow; ctx.fillRect(px - radius, py - radius, radius * 2, radius * 2);
+  }
+  ctx.restore();
 }

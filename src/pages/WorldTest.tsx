@@ -15,7 +15,8 @@ import { canAccessMaze, checkSubscriptionStatus, type SubscriptionStatus } from 
 import { DOOR_FLAGS, doorRefusal, EXCHANGE_MIN_LEVEL, LIBRARY_MIN_LEVEL, type VillageDoorKind } from '@/lib/villageDoors';
 import { saveWorldPos, saveWorldReturn, takeWorldOpening } from '@/lib/worldReturn';
 import { adjacentConversation, clampWorld, eraAt, eraPointFor, fetchWorldChunk, isWading, isWorldConversation, layerSize, mazeOutcome, nearestWorldWalkable, placeAction, placesOn, readWorldData, tileCost, worldArea, worldMoveDuration, worldPhase, WORLD_MOVE_MS, WORLD_TILE, WorldChunkCache, type Place, type WorldLayer, type WorldPoint } from '@/lib/worldTest';
-import { drawWorld, type WorldInk } from '@/lib/worldTestRender';
+import { drawWorld, drawWorldFireLight, type WorldInk } from '@/lib/worldTestRender';
+import { gustStrength, terrainDrawInterval } from '@/lib/terrainMotion';
 import WorldMap from '@/components/WorldMap';
 import { WorldDiscovery } from '@/lib/worldDiscovery';
 import './world-test.css';
@@ -174,7 +175,7 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
     const ink: WorldInk = { background: token('--auth-backdrop'), grid: token('--plate-edge'), text: token('--auth-text'), muted: token('--plate-label'), gold: token('--instrument-beacon'), cyan: token('--console-teal'), shadow: token('--instrument-shadow'), dusk: token('--world-dusk'), night: token('--world-night'), dawn: token('--world-dawn') };
     const types = new Map(data.terrain.map(t => [t.key, t]));
     const layerPlaces = { 0: placesOn(data.places, 0), 1: placesOn(data.places, 1) };
-    let width = innerWidth, height = innerHeight, frame = 0;
+    let width = innerWidth, height = innerHeight, frame = 0, lastDraw = -Infinity;
     const resize = () => { width = innerWidth; height = innerHeight; const dpr = Math.min(devicePixelRatio || 1, 2); el.width = Math.round(width * dpr); el.height = Math.round(height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
     resize(); window.addEventListener('resize', resize);
     const tick = (time: number) => {
@@ -186,13 +187,18 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
       display.current = walking || display.current.x !== point.x || display.current.y !== point.y
         ? { x: journey.current.from.x + (point.x - journey.current.from.x) * progress, y: journey.current.from.y + (point.y - journey.current.from.y) * progress } : point;
       camera.current = { x: (display.current.x + .5) * WORLD_TILE - width / 2, y: (display.current.y + .5) * WORLD_TILE - height / 2 };
-      drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l);
-      const phase = worldPhase(Date.now(), data.cycle);
+      const clock = Date.now(), moving = progress < 1 || time < bumpUntil.current;
+      const gust = !reduced && gustStrength(point.x, point.y, clock) > 0;
+      if (time - lastDraw < terrainDrawInterval(moving, gust)) { frame = requestAnimationFrame(tick); return; }
+      lastDraw = time;
+      drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l, clock);
+      const phase = worldPhase(clock, data.cycle);
       // /world is fully visible: day/night colour tint only, no sight radius or vignette (underground darkens via drawWorld's flat tint).
       if (l === 0) {
         const tint = phase.phase === 'dusk' ? ink.dusk : phase.phase === 'night' ? ink.night : phase.phase === 'dawn' ? ink.dawn : null;
         if (tint) { ctx.globalAlpha = phase.phase === 'dawn' ? 1 - phase.progress : 1; ctx.fillStyle = tint; ctx.fillRect(0, 0, width, height); ctx.globalAlpha = 1; }
       }
+      if (l === 0) drawWorldFireLight(ctx, cache, types, camera.current, width, height, ink, phase.phase);
       if (isWading(types.get(cache.terrainKey(point.x, point.y) ?? ''))) {
         const pulse = reduced ? 0 : (Math.sin(time / 240) + 1) / 2;
         ctx.save(); ctx.strokeStyle = ink.text; ctx.globalAlpha = .35 + pulse * .2; ctx.lineWidth = 1;

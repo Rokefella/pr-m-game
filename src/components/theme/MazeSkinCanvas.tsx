@@ -7,6 +7,7 @@ export type MazeSkinHandle = { tick: (time: number, camera: { x: number; y: numb
 type Props = { skin: LevelSkin; grid: { cols: number; rows: number; openSet: Set<string> }; walls: Set<string> };
 const MazeSkinCanvas = memo(forwardRef<MazeSkinHandle, Props>(({ skin, grid, walls }, ref) => {
   const canvas = useRef<HTMLCanvasElement>(null), ink = useRef<TerrainInk | null>(null);
+  const lastDraw = useRef(-Infinity);
   const reduced = useReducedMotion();
   useEffect(() => {
     const styles = getComputedStyle(document.documentElement), token = (name: string) => styles.getPropertyValue(name).trim();
@@ -16,6 +17,8 @@ const MazeSkinCanvas = memo(forwardRef<MazeSkinHandle, Props>(({ skin, grid, wal
     const el = canvas.current, colors = ink.current;
     if (!el || !colors) return;
     const ctx = el.getContext('2d'); if (!ctx) return;
+    if (time - lastDraw.current < 1000 / 30) return;
+    lastDraw.current = time;
     const dpr = Math.min(devicePixelRatio || 1, 2), width = innerWidth, height = innerHeight;
     if (el.width !== Math.round(width * dpr) || el.height !== Math.round(height * dpr)) { el.width = Math.round(width * dpr); el.height = Math.round(height * dpr); }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);

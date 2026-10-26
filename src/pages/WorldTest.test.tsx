@@ -15,7 +15,7 @@ vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc, from: (table: string)
 beforeEach(() => {
   localStorage.clear(); localStorage.setItem('praem.worldLayoutVersion', '3'); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.places = []; f.mutation.mockReset().mockResolvedValue({ error: null });
   f.uid += 'x'; f.granted = 0; f.completed = 0; f.steps = 100; f.credits = 50; f.pending = false; f.newLevel = 2; f.social = 2; f.flags = { sam_stage: '0', bernard_stage: '0' };
-  f.rpc.mockReset().mockImplementation(async (name, args) => ({ error: null, data: name === 'claim_daily_steps' ? f.granted : { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
+  f.rpc.mockReset().mockImplementation(async (name, args) => ({ error: null, data: name === 'spend_world_steps' ? (f.steps = Math.max(0, f.steps - args.p_amount)) : name === 'claim_daily_steps' ? f.granted : { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -54,12 +54,13 @@ describe('world sandbox access and read-only movement', () => {
     await screen.findByText('25,25 · A 0,0 · Fire');
     expect(f.mutation.mock.calls.every(([payload]) => payload.user_id === f.uid && typeof payload.bits === 'string')).toBe(true);
   });
-  it('starts at 25,25, spends session-only tile cost and jumps without writes', async () => {
+  it('starts at 25,25, spends tile cost and jumps without additional spending', async () => {
     open(); await screen.findByText('25,25 · A 0,0 · Fire');
     await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', { p_x0: 0, p_y0: 0, p_w: 64, p_h: 64 }));
     fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
     await screen.findByText('26,25 · A 0,0 · Fire');
     expect(screen.getByText(/SPENT 1.5/)).toBeInTheDocument();
+    expect(screen.getByText(/STEPS\s+98/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /^JUMP$/ }));
     fireEvent.click(screen.getByRole('button', { name: /Cinder Hollow/ }));
     await screen.findByText('300,31 · A 6,0 · Fire');
@@ -77,6 +78,27 @@ describe('World home mechanics', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open profile' }));
     fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
     expect(screen.getByText('25,25 · A 0,0 · Fire')).toBeInTheDocument();
+  });
+  it('persists pending steps when leaving through the dev shortcut', async () => {
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    await screen.findByText(/STEPS\s+98/);
+    const plate = screen.getByRole('button', { name: 'Registration number' });
+    for (let i = 0; i < 5; i++) fireEvent.pointerDown(plate);
+    fireEvent.click(await screen.findByRole('button', { name: 'OLD VILLAGE' }));
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('spend_world_steps', { p_amount: 1 }));
+  });
+  it('buys 500 steps for 5 credits and updates the world HUD', async () => {
+    f.places = [{ kind: 'town', action: 'merchant', name: 'Merchant', x: 27, y: 25 }];
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'BUY' }));
+    await waitFor(() => expect(f.mutation).toHaveBeenCalledWith({ steps_remaining: 599 }));
+    await screen.findByText(/STEPS\s+598/);
+    expect(screen.getByText(/CREDITS\s+45/)).toBeInTheDocument();
+    expect(f.mutation).toHaveBeenCalledWith({ credits: 45 });
   });
   it('claims and announces the daily gift once across World remounts', async () => {
     f.granted = 250; const view = open(); await screen.findByText('The day gives you 250 steps.');
@@ -129,8 +151,9 @@ describe('world return', () => {
     await waitFor(() => expect(f.rpc).toHaveBeenCalled());
     await new Promise(r => setTimeout(r, 160));
     fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
-    await screen.findByRole('dialog', { name: spot.name });
-    fireEvent.click(screen.getByRole('button', { name: /^Close$/ }));
+    if (spot.action === 'merchant') await screen.findByText('The Merchant.');
+    else await screen.findByRole('dialog', { name: spot.name });
+    fireEvent.click(screen.getByRole('button', { name: spot.action === 'merchant' ? 'LEAVE' : /^Close$/ }));
     expect(screen.queryByRole('dialog')).toBeNull(); expect(f.mutation).not.toHaveBeenCalled();
   });
   it('opens at a pending world return once, then clears it', async () => {

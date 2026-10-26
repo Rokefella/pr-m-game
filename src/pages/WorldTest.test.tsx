@@ -52,7 +52,7 @@ describe('world sandbox access and read-only movement', () => {
     fireEvent.click(screen.getByRole('button', { name: /^JUMP$/ }));
     fireEvent.click(screen.getByRole('button', { name: 'RESTART AT START' }));
     await screen.findByText('25,25 · A 0,0 · Fire');
-    expect(f.mutation.mock.calls.every(([payload]) => payload.user_id === 'player' && typeof payload.bits === 'string')).toBe(true);
+    expect(f.mutation.mock.calls.every(([payload]) => payload.user_id === f.uid && typeof payload.bits === 'string')).toBe(true);
   });
   it('starts at 25,25, spends session-only tile cost and jumps without writes', async () => {
     open(); await screen.findByText('25,25 · A 0,0 · Fire');

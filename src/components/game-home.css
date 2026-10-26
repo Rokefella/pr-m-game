@@ -10,5 +10,7 @@
 .game-arrival-title p { font-size: 16px; color: var(--instrument-beacon); margin-top: 6px; }
 .game-arrival-continue { width: 100%; min-height: 48px; height: auto; font-size: 14px; background: var(--plate-gold); color: var(--eye-pupil); padding: 8px 14px; border-top: 3px solid var(--instrument-beacon); border-bottom: 3px solid var(--plate-button-bottom); margin-top: 24px; border-radius: 0; }
 .game-arrival-continue:hover { background: var(--plate-gold); }
+.game-hud-bar > span { min-width: 0; }
+@media (max-width: 400px) { .game-hud-bar > span { font-size: 11px !important; } }
 @keyframes game-arrival-fade { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .game-arrival { animation: none; } }

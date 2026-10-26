@@ -15,6 +15,7 @@ export default function GameHud({ stepsRemaining, credits, currentLevel, registr
   return <>
       {/* HUD bar */}
       <div
+        className="game-hud-bar"
         style={{
           position: 'fixed',
           bottom: 0,

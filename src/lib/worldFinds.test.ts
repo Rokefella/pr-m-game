@@ -31,3 +31,31 @@ describe('world finds', () => {
     expect(findButton('tool')).toBe('Take it');
   });
 });
+import { approachedFind, bumpedFind, findMarked } from './worldFinds';
+import { signpostLines } from './worldTest';
+describe('find markers, bumps and signposts', () => {
+  it('marks unclaimed glint/hidden finds at any distance, not claimed or visible ones', () => {
+    expect(findMarked(f({}), false)).toBe(true);
+    expect(findMarked(f({ visibility: 'hidden' }), false)).toBe(true);
+    expect(findMarked(f({}), true)).toBe(false);
+    expect(findMarked(f({ visibility: 'visible' }), false)).toBe(false);
+  });
+  it('a bump into an unclaimed find cell returns that find', () => {
+    const a = f({ id: 'a' });
+    expect(bumpedFind([a], new Set(), { x: 10, y: 10 })).toBe(a);
+    expect(bumpedFind([a], new Set(['a']), { x: 10, y: 10 })).toBeNull();
+    expect(bumpedFind([a], new Set(), { x: 11, y: 10 })).toBeNull();
+  });
+  it('walk-up opens only finds on walkable cells within 1', () => {
+    const a = f({ id: 'a' });
+    expect(approachedFind([a], new Set(), new Set(), { x: 11, y: 11 }, () => true)).toBe(a);
+    expect(approachedFind([a], new Set(), new Set(), { x: 11, y: 11 }, () => false)).toBeNull();
+    expect(approachedFind([a], new Set(), new Set(), { x: 12, y: 10 }, () => true)).toBeNull();
+  });
+  it('parses signpost notes with directions', () => {
+    expect(signpostLines('Onward: Lumen, about 1,180 paces\nBack: Mossford, about 360 paces')).toEqual([
+      { dir: 'onward', text: 'Onward: Lumen, about 1,180 paces' }, { dir: 'back', text: 'Back: Mossford, about 360 paces' }]);
+    expect(signpostLines(' Old road \n\n')).toEqual([{ dir: null, text: 'Old road' }]);
+    expect(signpostLines(null)).toEqual([]);
+  });
+});

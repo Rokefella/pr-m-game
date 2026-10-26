@@ -87,7 +87,7 @@ const Paywall = () => {
     try {
       await purchaseTier(user.id, tier);
       setThanksTier(tier);
-      navigate('/village');
+      navigate('/world');
     } catch (e: any) {
       console.error('[Paywall] purchase error', e);
       setErrorMsg(e?.message || 'Purchase could not be completed.');
@@ -100,7 +100,7 @@ const Paywall = () => {
     try {
       const restored = await restoreForUser(user.id);
       if (restored) {
-        navigate('/village');
+        navigate('/world');
       } else {
         setErrorMsg('No purchases to restore.');
       }
@@ -124,7 +124,7 @@ const Paywall = () => {
       window.setTimeout(() => setBetaError(false), 2000);
       return;
     }
-    navigate('/village');
+    navigate('/world');
   };
 
 

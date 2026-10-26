@@ -1,3 +1,6 @@
+import GameHud from '@/components/GameHud';
+import DevMenu from '@/components/DevMenu';
+import LevelUpCard, { TITLES_BY_LEVEL } from '@/components/LevelUpCard';
 import { USER_STEPS_REFRESHED } from '@/lib/mechanics';
 import { Button } from '@/components/ui/button';
 import { Z } from '@/lib/zIndex';
@@ -8,7 +11,6 @@ import OrbLabels from '@/components/OrbLabels';
 import GhostLayer from '@/components/theme/objects/GhostLayer';
 import { placedGhosts, randomSpawnCell, nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
-import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
 import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -18,11 +20,10 @@ import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailyStep
 import { useAuth } from '@/context/AuthContext';
 import Thumbstick from '@/components/Thumbstick';
 import { startResilientLoop } from '@/lib/resilientLoop';
-import { MOVEMENT_DEBUG_EVENT } from '@/components/MovementDebugOverlay';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay, { type MerchantItem } from '@/components/MerchantOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
-import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
+import ProfileOverlay from '@/components/ProfileOverlay';
 import NpcDialogue from '@/components/NpcDialogue';
 import CharacterEye from '@/components/CharacterEye';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
@@ -30,7 +31,7 @@ import { useOrbSync } from '@/lib/orb';
 import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { BETA_MODE } from '@/lib/config';
 import { supabase } from '@/lib/supabase';
-import { getFlag, setFlag, reconcileBernardAfterShadow, _resetQuestFlagCache } from '@/lib/questFlags';
+import { getFlag, setFlag, reconcileBernardAfterShadow } from '@/lib/questFlags';
 import FloorLayer from '@/components/theme/FloorLayer';
 import BuildingBlock from '@/components/theme/BuildingBlock';
 import { buildingLook, type BuildingLook } from '@/lib/theme/villageRendering';
@@ -752,18 +753,6 @@ const Village = () => {
   }, []);
 
   // ---- Level / title state ----
-  const TITLES_BY_LEVEL: Record<number, string> = {
-    1: 'Wanderer',
-    2: 'Fragment Seeker',
-    3: 'The Initiated',
-    4: 'Threshold Walker',
-    5: 'One Who Returns',
-    6: 'The Remembered',
-    7: 'Junction Finder',
-    8: 'The Spiral Knows',
-    9: 'Almost There',
-    10: 'First One Through',
-  };
   const [currentLevel, setCurrentLevel] = useState(1);
   const [socialStatus, setSocialStatus] = useState(0);
   const [growthPoints, setGrowthPoints] = useState(0);
@@ -777,7 +766,6 @@ const Village = () => {
   const [levelUpOverlay, setLevelUpOverlay] = useState<{ newLevel: number } | null>(null);
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('');
   const [levelUpHandled, setLevelUpHandled] = useState(false);
-  const levelUpReducedMotion = useReducedMotion();
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [orbDye, setOrbDye] = useState<string | null>(null);
   useOrbSync(setAuraColor, setOrbDye);
@@ -835,35 +823,6 @@ const Village = () => {
   const openProfile = useCallback(() => { profileOpenRef.current = true; setProfileOpenDisplay(true); }, []);
   const closeProfile = useCallback(() => { profileOpenRef.current = false; setProfileOpenDisplay(false); }, []);
   const [devOverlay, setDevOverlay] = useState(false);
-  const [devVillageLevel, setDevVillageLevel] = useState('1');
-  const [devMazeLevel, setDevMazeLevel] = useState('1');
-  const [devStageNote, setDevStageNote] = useState<string | null>(null);
-  const [fullResetArmed, setFullResetArmed] = useState(false);
-  const fullResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const devTapCountRef = useRef(0);
-  const devLastTapRef = useRef(0);
-  const registrationNumberRef = useRef<number | null>(null);
-  useEffect(() => { registrationNumberRef.current = registrationNumber; }, [registrationNumber]);
-  const handleRegTap = useCallback(() => {
-    if (registrationNumberRef.current !== 1) return;
-    const now = Date.now();
-    if (now - devLastTapRef.current > 1500) {
-      devTapCountRef.current = 0;
-    }
-    devLastTapRef.current = now;
-    devTapCountRef.current += 1;
-    if (devTapCountRef.current >= 5) {
-      devTapCountRef.current = 0;
-      setDevOverlay(true);
-    }
-  }, []);
-  const handleDevReset = useCallback(async () => {
-    if (user) {
-      await updateUser(user.id, { entity_answer: null, username: null, aura_color: '#5b4fd4', level: 1 });
-    }
-    setDevOverlay(false);
-    navigate('/intro');
-  }, [user, navigate]);
   const [credits, setCredits] = useState<number>(0);
   const [merchantOpen, setMerchantOpen] = useState(false);
   const merchantTriggerLockRef = useRef(false);
@@ -2399,281 +2358,13 @@ const Village = () => {
         disabled={profileOpenDisplay || merchantOpen || bernardOpen || paywallOpen}
       />
 
-      {/* HUD bar */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: 'rgba(4,4,10,0.92)',
-          borderTop: '0.5px solid rgba(169,140,255,0.3)',
-          padding: '10px 14px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 8,
-          zIndex: Z.HUD,
-        }}
-      >
-        <span className="font-mono" style={{ fontSize: 13, letterSpacing: '0.06em', color: '#e0ddd5', whiteSpace: 'nowrap' }}>
-          STEPS&nbsp;{String(stepsRemaining).padStart(2, '0')}
-        </span>
-        <span className="font-mono" style={{ fontSize: 13, letterSpacing: '0.06em', color: '#c8963a', whiteSpace: 'nowrap' }}>
-          CREDITS&nbsp;{String(credits).padStart(2, '0')}
-        </span>
-        <span className="font-mono" style={{ fontSize: 13, letterSpacing: '0.06em', color: '#5b4fd4', whiteSpace: 'nowrap' }}>
-          LEVEL&nbsp;{String(currentLevel).padStart(2, '0')}
-        </span>
-        <ProfileButton onClick={openProfile} />
-      </div>
+      <GameHud stepsRemaining={stepsRemaining} credits={credits} currentLevel={currentLevel} registrationNumber={registrationNumber} growthPoints={growthPoints} subscriptionStatus={subscriptionStatus} trialDaysRemaining={trialDaysRemaining} onOpenProfile={openProfile} onOpenDevMenu={() => setDevOverlay(true)} />
 
-      {/* Trial countdown — shown above HUD while on trial */}
-      {subscriptionStatus === 'trial' && (
-        <div
-          className="font-mono"
-          style={{
-            position: 'absolute',
-            bottom: 38,
-            left: 0,
-            right: 0,
-            textAlign: 'center',
-            fontSize: 10,
-            letterSpacing: '0.18em',
-            color: 'rgba(160,140,200,0.4)',
-            zIndex: Z.HUD,
-            pointerEvents: 'none',
-          }}
-        >
-          {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} remaining in trial
-        </div>
-      )}
-
-      {/* Registration number — top-right (display only; 5 rapid taps open dev menu) */}
-      <div
-        className="font-mono"
-        onPointerDown={handleRegTap}
-        style={{
-          position: 'fixed',
-          top: 12,
-          right: 14,
-          fontSize: 15,
-          letterSpacing: '0.22em',
-          color: 'rgba(160,140,200,0.7)',
-          zIndex: Z.HUD,
-          padding: 4,
-          userSelect: 'none',
-        }}
-      >
-        #{registrationNumber !== null ? String(registrationNumber).padStart(4, '0') : '????'}
-      </div>
-
-      {/* Unspent growth points — top-right, below the registration number */}
-      {growthPoints > 0 && (
-        <div
-          className="font-mono"
-          style={{
-            position: 'fixed',
-            top: 40,
-            right: 14,
-            minWidth: 26,
-            padding: '3px 8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'rgba(200,150,58,0.16)',
-            border: '0.5px solid rgba(200,150,58,0.55)',
-            color: '#c8963a',
-            fontSize: 14,
-            letterSpacing: '0.12em',
-            zIndex: Z.HUD,
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
-        >
-          +{growthPoints}
-        </div>
-      )}
-
-
-
-
-      {devOverlay && (
-        <div
-          className="font-mono" data-game-ui="open"
-          style={{
-            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: Z.OVERLAY,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-          }}
-          onClick={() => setDevOverlay(false)}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#000', border: '1px solid #a98cff', padding: 20,
-              minWidth: 240, display: 'flex', flexDirection: 'column', gap: 10,
-              color: '#a98cff', fontSize: 13, letterSpacing: '0.1em',
-              maxHeight: 'calc(100vh - 40px)', overflowY: 'auto',
-            }}
-          >
-            <div style={{ opacity: 0.7, marginBottom: 6 }}>DEV MENU</div>
-            <Button variant="outline" className="world-dev-entry font-mono" onClick={() => { setDevOverlay(false); navigate('/world'); }}>WORLD TEST</Button>
-
-            <div style={{ opacity: 0.7, fontSize: 11 }}>PROFILE</div>
-            <button type="button" onClick={handleDevReset} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Replay intro (identity only)</button>
-            <button type="button" onClick={async () => {
-              if (!fullResetArmed) {
-                setFullResetArmed(true);
-                if (fullResetTimerRef.current) clearTimeout(fullResetTimerRef.current);
-                fullResetTimerRef.current = setTimeout(() => setFullResetArmed(false), 4000);
-                return;
-              }
-              if (fullResetTimerRef.current) clearTimeout(fullResetTimerRef.current);
-              setFullResetArmed(false);
-              const { error } = await (supabase.rpc as unknown as (fn: string) => Promise<{ error: { message: string } | null }>)('dev_reset_progress');
-              if (error) {
-                setDevStageNote(error.message);
-                return;
-              }
-              _resetQuestFlagCache();
-              Object.keys(localStorage).filter(k => k.startsWith('praem_')).forEach(k => localStorage.removeItem(k));
-              sessionStorage.clear();
-              setDevOverlay(false);
-              await supabase.auth.signOut();
-              navigate('/');
-            }} style={{ background: 'transparent', border: '1px solid #ff6b6b', color: '#ff6b6b', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>{fullResetArmed ? 'TAP AGAIN TO CONFIRM' : 'FULL RESET (everything)'}</button>
-
-            <button type="button" onClick={() => {
-              const on = localStorage.getItem('praem_movement_debug') === '1';
-              if (on) localStorage.removeItem('praem_movement_debug'); else localStorage.setItem('praem_movement_debug', '1');
-              window.dispatchEvent(new Event(MOVEMENT_DEBUG_EVENT));
-              setDevOverlay(false);
-            }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>MOVEMENT DEBUG</button>
-            <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
-            <div style={{ opacity: 0.7, fontSize: 11 }}>SUBSCRIPTION OVERRIDES</div>
-            <button type="button" onClick={() => { sessionStorage.setItem('dev_sub_override', 'active'); setDevOverlay(false); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>SET SUB: ACTIVE</button>
-            <button type="button" onClick={() => { sessionStorage.setItem('dev_sub_override', 'expired'); setDevOverlay(false); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>SET SUB: EXPIRED</button>
-            <button type="button" onClick={() => { sessionStorage.removeItem('dev_sub_override'); setDevOverlay(false); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>CLEAR OVERRIDE</button>
-
-            <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
-            <div style={{ opacity: 0.7, fontSize: 11 }}>LEVEL JUMP</div>
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <input
-                type="number" min={1} max={30} value={devVillageLevel}
-                onChange={(e) => setDevVillageLevel(e.target.value)}
-                style={{ background: '#000', border: '1px solid rgba(169,140,255,0.4)', color: '#a98cff', padding: '6px 8px', width: 64, fontFamily: 'inherit', fontSize: 13 }}
-              />
-              <button type="button" onClick={async () => {
-                const n = Math.min(30, Math.max(1, parseInt(devVillageLevel, 10) || 1));
-                setDevOverlay(false);
-                if (user) await updateUser(user.id, { level: n });
-                navigate('/village');
-              }} style={{ flex: 1, background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → VILLAGE L#</button>
-            </div>
-
-            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              <input
-                type="number" min={1} max={30} value={devMazeLevel}
-                onChange={(e) => setDevMazeLevel(e.target.value)}
-                style={{ background: '#000', border: '1px solid rgba(169,140,255,0.4)', color: '#a98cff', padding: '6px 8px', width: 64, fontFamily: 'inherit', fontSize: 13 }}
-              />
-              <button type="button" onClick={async () => {
-                const n = Math.min(30, Math.max(1, parseInt(devMazeLevel, 10) || 1));
-                setDevOverlay(false);
-                if (user) await updateUser(user.id, { level: n });
-                navigate('/maze');
-              }} style={{ flex: 1, background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L#</button>
-            </div>
-
-            <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
-            <div style={{ opacity: 0.7, fontSize: 11 }}>BERNARD STAGE</div>
-            {devStageNote && <div style={{ fontSize: 11, color: '#c8963a' }}>{devStageNote}</div>}
-            {([
-              { label: 'stage_0', stage: 0, touched: null as boolean | null },
-              { label: 'stage_1 (pending)', stage: 1, touched: false },
-              { label: 'stage_1 (ready)', stage: 1, touched: true },
-              { label: 'stage_2', stage: 2, touched: null },
-              { label: 'stage_3', stage: 3, touched: null },
-              { label: 'stage_4', stage: 4, touched: null },
-              { label: 'stage_5', stage: 5, touched: null },
-              { label: 'stage_6', stage: 6, touched: null },
-            ]).map((s) => (
-              <button
-                key={s.label}
-                type="button"
-                onClick={async () => {
-                  if (!user) return;
-                  await setFlag(user.id, 'bernard_stage', String(s.stage));
-                  if (s.touched !== null) {
-                    const v = s.touched ? 'true' : 'false';
-                    await setFlag(user.id, 'touched_23', v);
-                    await setFlag(user.id, 'touched_47', v);
-                    await setFlag(user.id, 'touched_89', v);
-                  }
-                  setDevStageNote(`SET → ${s.label}`);
-                  setDevOverlay(false);
-                }}
-                style={{ background: 'transparent', border: '1px solid rgba(169,140,255,0.5)', color: '#a98cff', padding: '6px 10px', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer', textAlign: 'left' }}
-              >
-                {s.label}
-              </button>
-            ))}
-
-            <div style={{ height: 1, background: 'rgba(160,140,200,0.15)', margin: '6px 0' }} />
-            <div style={{ opacity: 0.7, fontSize: 11 }}>NAVIGATION</div>
-            <button type="button" onClick={() => { setDevOverlay(false); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Maze</button>
-            <button type="button" onClick={() => { setDevOverlay(false); navigate('/door'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Door</button>
-            <button type="button" onClick={async () => { setDevOverlay(false); if (user) await updateUser(user.id, { level: 1 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L1</button>
-            <button type="button" onClick={async () => { setDevOverlay(false); if (user) await updateUser(user.id, { level: 2 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L2</button>
-            <button type="button" onClick={() => { setDevOverlay(false); navigate('/shadow'); }} style={{ background: 'transparent', border: '1px solid #a98cff', color: '#a98cff', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → SHADOW</button>
-
-
-
-            <button type="button" onClick={() => setDevOverlay(false)} style={{ background: 'transparent', border: '1px solid rgba(169,140,255,0.4)', color: 'rgba(169,140,255,0.7)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Close</button>
-          </div>
-        </div>
-      )}
+      <DevMenu open={devOverlay} onClose={() => setDevOverlay(false)} userId={user?.id} />
 
       {/* Profile rendered via shared ProfileOverlay below (matches ShadowRealm pattern) */}
 
-      {/* LEVEL UP OVERLAY — arrival card */}
-      {levelUpOverlay && (() => {
-        const rm = levelUpReducedMotion;
-        const anim = (ms: number) => (rm ? undefined : `villageLevelUpText 400ms ease-out ${ms}ms both`);
-        const lvTitle = TITLES_BY_LEVEL[levelUpOverlay.newLevel] || '';
-        const titleUnlocked = parseInt(getFlag('bernard_stage') || '0', 10) >= 5 && !!lvTitle;
-        return (
-          <div
-            className="fragment-backdrop" data-game-ui="open"
-            style={{ zIndex: Z.OVERLAY, background: 'rgba(14,18,40,.94)', overflowY: 'auto', animation: rm ? undefined : 'villageLevelUpFade 600ms ease-out' }}
-          >
-            <style>{`
-              @keyframes villageLevelUpFade { from { opacity: 0 } to { opacity: 1 } }
-              @keyframes villageLevelUpText { 0% { opacity: 0; transform: translateY(8px) } 100% { opacity: 1; transform: translateY(0) } }
-            `}</style>
-            <PlateFrame glow="#c8963a" width="min(92vw, 340px)">
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                <div className="font-cinzel" style={{ fontSize: 30, color: '#f5c060', letterSpacing: '.12em', marginTop: 28, animation: anim(0) }}>
-                  LEVEL {String(levelUpOverlay.newLevel).padStart(2, '0')}
-                </div>
-                <div style={{ width: '80%', height: 1, background: '#c8963a', marginTop: 14, animation: anim(150) }} />
-                <div className="font-fell italic" style={{ fontSize: 18, color: '#e8e4ff', marginTop: 16, animation: anim(300) }}>
-                  The village is different now.
-                </div>
-                <div style={{ position: 'relative', width: 128, height: 128, margin: '20px 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: anim(450) }}>
-                  <div aria-hidden="true" style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,213,138,.22) 0%, rgba(245,213,138,0) 70%)' }} />
-                  <PlayerAvatar palette={orbLook(auraColor, orbDye, registrationNumber)} size={64} walking={false} />
-                </div>
-                {titleUnlocked && (
-                  <div style={{ position: 'relative', width: '100%', background: '#0f1329', border: '1px solid #2f3560', padding: '12px 10px', animation: anim(600) }}>
-                    <PlateCorners />
-                    <div className="font-mono" style={{ fontSize: 11, color: '#8e99d0', letterSpacing: '.2em' }}>TITLE UNLOCKED</div>
-                    <div className="font-cinzel" style={{ fontSize: 16, color: '#f5c060', letterSpacing: '.08em', marginTop: 6 }}>{lvTitle}</div>
-                  </div>
-                )}
-                <button
-                  className="font-cinzel"
-                  onClick={async () => {
+      {levelUpOverlay && <LevelUpCard newLevel={levelUpOverlay.newLevel} titleUnlocked={parseInt(getFlag('bernard_stage') || '0', 10) >= 5} auraColor={auraColor} orbDye={orbDye} registrationNumber={registrationNumber} onContinue={async () => {
                     setLevelUpHandled(true);
                     const newLv = levelUpOverlay.newLevel;
                     const newSocial = socialStatus + 1; // fixed gain per level-up
@@ -2694,30 +2385,7 @@ const Village = () => {
                     }
                     setCurrentLevel(newLv);
                     setLevelUpOverlay(null);
-                  }}
-                  style={{
-                    width: '100%',
-                    minHeight: 48,
-                    fontSize: 14,
-                    letterSpacing: '.3em',
-                    background: '#c8963a',
-                    color: '#1a1448',
-                    padding: '8px 14px',
-                    border: 'none',
-                    borderTop: '3px solid #f5c060',
-                    borderBottom: '3px solid #8a6420',
-                    cursor: 'pointer',
-                    marginTop: 24,
-                    animation: anim(750),
-                  }}
-                >
-                  CONTINUE
-                </button>
-              </div>
-            </PlateFrame>
-          </div>
-        );
-      })()}
+                  }} />}
       {/* WHISPER — must remain outside map div, fixed to screen */}
       {eyeMessage && (
         <p

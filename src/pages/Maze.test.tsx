@@ -146,7 +146,7 @@ describe('Server-owned maze run drops', () => {
 afterEach(cleanup);
 const openMaze = () => render(<MemoryRouter initialEntries={['/maze']}><Routes>
   <Route path="/maze" element={<Maze />} />
-  <Route path="/village" element={<span>Village destination</span>} />
+  <Route path="/world" element={<span>World destination</span>} />
   <Route path="/room/1/console_room" element={<span>Console room destination</span>} />
 </Routes></MemoryRouter>);
 const ready = async (n: number) => {
@@ -192,7 +192,7 @@ describe('Maze run entry and deliberate exits', () => {
     openMaze(); await ready(2);
     if (exit === 'LEAVE') fireEvent.click(screen.getByRole('button', { name: 'EXIT MAZE' }));
     fireEvent.click(screen.getByRole('button', { name: exit }));
-    await screen.findByText('Village destination');
+    await screen.findByText('World destination');
     expect(localStorage.getItem('praem_run')).toBeNull();
     expect(fixture.rows).toEqual([{ prime_number: 89, banked: true, level: 1 }]);
   });
@@ -200,7 +200,7 @@ describe('Maze run entry and deliberate exits', () => {
     startRun('player', 2); fixture.beta = false; fixture.flags = 6;
     openMaze(); await ready(2);
     fireEvent.click(screen.getByRole('button', { name: exit }));
-    await screen.findByText('Village destination');
+    await screen.findByText('World destination');
     expect(getActiveRun('player', 2)).toBeNull();
     expect(fixture.rows.filter((row) => !row.banked)).toHaveLength(0);
   });
@@ -208,7 +208,7 @@ describe('Maze run entry and deliberate exits', () => {
     fixture.level = 3; startRun('player', 3);
     openMaze(); await screen.findByText('The next level is not yet open.');
     fireEvent.click(screen.getByRole('button', { name: 'RETURN' }));
-    await screen.findByText('Village destination');
+    await screen.findByText('World destination');
     expect(getActiveRun('player', 3)).toBeNull();
     expect(fixture.rows.filter((row) => !row.banked)).toHaveLength(0);
   });

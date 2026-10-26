@@ -48,7 +48,7 @@ const Index = () => {
     if (!data || (!data.entity_answer && !data.username)) {
       navigate('/intro', { replace: true });
     } else {
-      navigate('/village', { replace: true });
+      navigate('/world', { replace: true });
     }
   };
 

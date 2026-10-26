@@ -130,7 +130,7 @@ const RugCell = memo(({ trim }: { trim: RugTrim }) => (
 ));
 
 const EXIT_ROUTES: Record<string, string> = {
-  village: '/village',
+  village: '/world',
   maze: '/maze',
   shadow_realm: '/shadow',
 };
@@ -441,7 +441,7 @@ const BernardRoomDynamic = () => {
     for (const ex of roomRef.current.exitTiles) {
       if (nx >= ex.x - 2 && nx <= ex.x + ex.w + 2 && ny >= ex.y - 2 && ny <= ex.y + ex.h + 2) {
         if (!navigatedRef.current) {
-          const target = EXIT_ROUTES[ex.destination] ?? '/village';
+          const target = EXIT_ROUTES[ex.destination] ?? '/world';
           navigatedRef.current = true;
           window.setTimeout(() => navigate(target), 400);
         }
@@ -614,7 +614,7 @@ const BernardRoomDynamic = () => {
           <span>The room is empty here.</span>
           <button
             className="font-cinzel"
-            onClick={() => navigate('/village')}
+            onClick={() => navigate('/world')}
             style={{
               background: 'transparent',
               color: '#9a9890',

@@ -149,7 +149,7 @@ const RugCell = memo(({ trim }: { trim: RugTrim }) => (
 ));
 
 const EXIT_ROUTES: Record<string, string> = {
-  village: '/village',
+  village: '/world',
   maze: '/maze',
   shadow_realm: '/shadow',
 };

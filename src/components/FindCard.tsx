@@ -3,9 +3,9 @@ import { Button } from '@/components/ui/button';
 import { claimFind, findButton, findReceipt, type WorldFind } from '@/lib/worldFinds';
 import type { WorldPoint } from '@/lib/worldTest';
 
-type Props = { find: WorldFind; reading: boolean; at: () => WorldPoint; onClaimed: (id: string) => void };
+type Props = { find: WorldFind; reading: boolean; at: () => WorldPoint; onClaimed: (id: string) => void; onRewarded?: () => void };
 /** Small find card; the server decides every grant. */
-export default function FindCard({ find, reading, at, onClaimed }: Props) {
+export default function FindCard({ find, reading, at, onClaimed, onRewarded }: Props) {
   const [busy, setBusy] = useState(false);
   const [text, setText] = useState<string | null>(reading ? find.text ?? '' : null);
   const [receipt, setReceipt] = useState('');
@@ -15,7 +15,7 @@ export default function FindCard({ find, reading, at, onClaimed }: Props) {
     setBusy(true);
     try {
       const r = await claimFind(find.id, at());
-      if (r.granted) { setText(r.text ?? find.text ?? ''); setReceipt(findReceipt(r)); onClaimed(find.id); }
+      if (r.granted) { setText(r.text ?? find.text ?? ''); setReceipt(findReceipt(r)); onClaimed(find.id); onRewarded?.(); }
       else if (r.reason === 'already') { setText(find.text ?? ''); onClaimed(find.id); }
       else if (r.reason === 'needs') setNote(r.needs === 'sam_coal' ? 'You have nothing to light it with.' : 'Not yet.');
       else if (r.reason === 'needs_flag') setNote('Not yet.');

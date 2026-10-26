@@ -36,7 +36,7 @@ describe('auth navigation rules', () => {
   it('keeps the home destination and credentials for successful login', async () => {
     auth.signInWithPassword.mockResolvedValue({ error: null });
     submit();
-    await waitFor(() => expect(auth.navigate).toHaveBeenCalledWith('/'));
+    await waitFor(() => expect(auth.navigate).toHaveBeenCalledWith('/world'));
     expect(auth.signInWithPassword).toHaveBeenCalledWith({ email: 'wanderer@example.com', password: 'test-secret' });
   });
   it('does not navigate on invalid login credentials', async () => {

@@ -57,10 +57,10 @@ describe('world layers and returns', () => {
     const ps = [{ name: 'a', layer: 1 }, { name: 'b' }] as never[];
     expect(_placesOn(ps, 1).length).toBe(1); expect(_placesOn(ps, 0).length).toBe(1);
   });
-  it('exits go to /world only while a world return is stored', () => {
-    localStorage.clear(); saveWorldPos({ layer: 0, x: 25, y: 25 }); expect(_exit()).toBe('/village');
+  it('exits always go home to /world before, during and after a trip', () => {
+    localStorage.clear(); saveWorldPos({ layer: 0, x: 25, y: 25 }); expect(_exit()).toBe('/world');
     _saveReturn({ layer: 0, x: 97, y: 60 }); expect(_exit()).toBe('/world');
-    expect(_take()).toEqual({ layer: 0, x: 97, y: 60 }); expect(_exit()).toBe('/village');
+    expect(_take()).toEqual({ layer: 0, x: 97, y: 60 }); expect(_exit()).toBe('/world');
   });
   it.each([null, '1', '2'])('ignores obsolete layout %s, then writes version 3', version => {
     localStorage.clear(); if (version) localStorage.setItem(WORLD_LAYOUT_VERSION_KEY, version);

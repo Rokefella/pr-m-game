@@ -15,7 +15,7 @@
 
 - Keep the reversible beta subscription bypass in `src/lib/config.ts`; gate subscription access and paywall entry points without modifying stored entitlement data so disabling it restores the original behavior.
 
-- Coordinate daily step claims through one per-user in-memory session promise; Village publishes a refreshed balance and Maze waits before loading or writing steps to prevent stale balances overwriting grants.
+- Daily claims share one per-user session promise; home pages refresh balances and Maze waits before step writes to avoid overwriting grants.
 - Render ACCOUNT feedback through a portaled modal sized against the visual viewport; keyboard resize must keep the message and submission controls visible.
 - Keep fragment plate primitives presentation-only; coordinate eye, voice and digit readiness in FragmentOverlay, deriving pre-collection counts by excluding the current prime from the Folder query so asynchronous pickup persistence cannot skew the count.
 - Ghosts use caller walkability; Echoes use BFS/rAF; labels use portals. roomConfig sizes NPC bodies before zoom.
@@ -29,7 +29,7 @@
 - ConsolePanel owns server validation, carried-drop selection and lockout display; pass the selected drop UUID to the server and keep key compatibility server-authoritative. DynamicRoom owns console bump blocking and placeholder rifts, and Maze reuses the existing exact-cell room-return marker to preserve runs.
 - npcQuestState shares dialogue predicates; useNpcQuestStates caches event-driven results; NpcOrb only draws. questFlags reconciles Bernard after banking/on Village load from persisted progress, never level/session markers.
 
-- WorldTest at /world requires sign-in; draws one layer (surface/underground chunk caches); place actions fire only on a move. Exits that normally go to /village use worldReturn.exitDestination so trips from /world return there; walking stays session-only.
+- /world is signed-in home; /village is dev-only via DevMenu. exitDestination always returns /world. GameHud/DevMenu/LevelUpCard serve both pages; callers own arrivals. World keeps layer caches, move-triggered places and session-only walking.
 - terrainTile caches base/variant sprites at footprint size with shared picking/flips. World chunks draw ground → height → objects, clipping even-anchored large sprites; sprite/building/neighbour changes invalidate cached art. terrainMotion owns clock/axis rules; cached motion frames draw above ground without changing movement; fire light follows tint.
 - World object underlays resolve neighbouring ground in worldTestRender only, preserving maze skin fallback; worldTest owns terrain-paced movement and safe arrivals, while worldReturn versions local positions to discard obsolete layouts without data writes.
 - worldDiscovery owns per-user OR-merged local/server bits and throttled saves; WorldMap uses cached worldOverview art and library zoom/pan, with reveal strictly presentation-only.

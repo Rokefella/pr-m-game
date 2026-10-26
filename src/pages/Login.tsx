@@ -21,7 +21,7 @@ const Login = () => {
       setError(authErrorMessage(err.message));
       return;
     }
-    navigate('/');
+    navigate('/world');
   };
 
   return <AuthPlate heading="RETURN" linkTo="/signup" linkText="New to PRAEM?">

@@ -22,8 +22,8 @@ export const saveWorldPos = (spot: WorldSpot) => {
 };
 export const hasWorldReturn = () => read(WORLD_RETURN_KEY) !== null;
 
-/** Where an exit that normally goes to the village should go: /world when the trip started there. */
-export const exitDestination = () => hasWorldReturn() ? '/world' : '/village';
+/** Every normal home exit goes to the world, regardless of the trip's origin. */
+export const exitDestination = () => '/world';
 
 /** Opening /world: a pending return wins (and is consumed), then the last position. */
 export function takeWorldOpening(): WorldSpot | null {

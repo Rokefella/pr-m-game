@@ -170,7 +170,7 @@ const GardenDecorTile = memo(({ color }: { color: string }) => (
 ));
 
 const EXIT_ROUTES: Record<string, string> = {
-  village: '/village',
+  village: '/world',
   maze: '/maze',
   shadow_realm: '/shadow',
 };
@@ -775,7 +775,7 @@ const DynamicRoom = () => {
           if (fromMaze) {
             window.setTimeout(() => navigate('/maze'), 400);
           } else {
-            const target = EXIT_ROUTES[ex.destination] ?? '/village';
+            const target = EXIT_ROUTES[ex.destination] ?? '/world';
             window.setTimeout(() => navigate(target), 400);
           }
         }
@@ -987,7 +987,7 @@ const DynamicRoom = () => {
           <span>The room is empty here.</span>
           <button
             className="font-cinzel"
-            onClick={() => navigate('/village')}
+            onClick={() => navigate('/world')}
             style={{
               background: 'transparent',
               color: '#9a9890',
@@ -1007,7 +1007,7 @@ const DynamicRoom = () => {
       {!roomLoading && room && room.exitTiles.length === 0 && (
         <button
           className="font-cinzel"
-          onClick={() => navigate(fromMaze ? '/maze' : '/village')}
+          onClick={() => navigate(fromMaze ? '/maze' : '/world')}
           style={{
             position: 'absolute',
             top: 44,

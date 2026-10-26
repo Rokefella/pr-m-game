@@ -1,7 +1,7 @@
 .world-test { position: fixed; inset: 0; overflow: hidden; background: var(--auth-backdrop); color: var(--auth-text); }
 .world-test canvas { width: 100%; height: 100%; display: block; }
 .world-avatar { position: fixed; top: 0; left: 0; pointer-events: none; }
-.world-hud { position: fixed; top: 0; left: 0; right: 0; display: flex; gap: 8px; align-items: center; background: var(--profile-backdrop); border-bottom: 1px solid var(--plate-edge); padding: max(8px, env(safe-area-inset-top)) 8px 8px; z-index: var(--z-hud); font-size: 10px; letter-spacing: 0; }
+.world-hud { position: fixed; top: 0; left: 0; right: 100px; display: flex; gap: 8px; align-items: center; background: var(--profile-backdrop); border-bottom: 1px solid var(--plate-edge); padding: max(8px, env(safe-area-inset-top)) 8px 8px; z-index: var(--z-hud); font-size: 10px; letter-spacing: 0; }
 .world-hud > button { flex-shrink: 0; color: var(--auth-text); }
 .world-status { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; }
 .world-status span { overflow-wrap: anywhere; }

@@ -19,6 +19,9 @@ import { USER_STEPS_REFRESHED } from '@/lib/mechanics';
 import { refreshDrops } from '@/lib/carriedDrops';
 import { ORB_EVENT, type OrbChange } from '@/lib/orb';
 import GameHud from '@/components/GameHud';
+import MerchantOverlay from '@/components/MerchantOverlay';
+import { MERCHANT_LINES, merchantItems } from '@/lib/merchantItems';
+import { bindWorldStepFlush, HEAVY_LEGS, stepWalkDuration, WorldSteps } from '@/lib/worldSteps';
 import DevMenu from '@/components/DevMenu';
 import LevelUpCard, { TITLES_BY_LEVEL } from '@/components/LevelUpCard';
 import ProfileOverlay from '@/components/ProfileOverlay';
@@ -68,6 +71,28 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const [devOpen, setDevOpen] = useState(false);
   const [arrival, setArrival] = useState<{ newLevel: number; title: string; titleUnlocked: boolean } | null>(null);
   const [dailyMessage, setDailyMessage] = useState<string | null>(null);
+  const [heavyMessage, setHeavyMessage] = useState(false);
+  const [stepBalance, setStepBalance] = useState(initialIdentity.steps_remaining ?? 0);
+  const stepLedger = useRef<WorldSteps | null>(null);
+  if (!stepLedger.current) stepLedger.current = new WorldSteps(initialIdentity.steps_remaining ?? 0, async amount => {
+    if (!userId) throw new Error('No player');
+    const { data, error } = await supabase.rpc('spend_world_steps', { p_amount: amount });
+    if (error || typeof data !== 'number') throw error ?? new Error('Missing step balance');
+    return data;
+  }, () => {
+    const ledger = stepLedger.current;
+    if (ledger) { setStepBalance(ledger.balance); setSpent(ledger.total); }
+  });
+  useEffect(() => {
+    const ledger = stepLedger.current;
+    if (!ledger) return;
+    return bindWorldStepFlush(ledger);
+  }, []);
+  useEffect(() => {
+    if (!heavyMessage) return;
+    const timer = setTimeout(() => setHeavyMessage(false), 5000);
+    return () => clearTimeout(timer);
+  }, [heavyMessage]);
   const [subscription, setSubscription] = useState<SubscriptionStatus | null>(BETA_MODE ? 'active' : null);
   const dev = identity.registration_number === 1;
   const level = effectiveWorldLevel(identity.level, identity.maze_completed_level);
@@ -84,7 +109,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const [layer, setLayer] = useState<WorldLayer>(0);
   const layerRef = useRef<WorldLayer>(0);
   const [spent, setSpent] = useState(0);
-  const spentRef = useRef(0);
+
   const [clock, setClock] = useState(Date.now());
   const caches = useRef({ 0: new WorldChunkCache((x, y) => fetchWorldChunk(x, y, 0)), 1: new WorldChunkCache((x, y) => fetchWorldChunk(x, y, 1), layerSize(1)) });
   const cacheOf = (l: WorldLayer) => caches.current[l];
@@ -174,9 +199,13 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   }, [userId, npcKeys, samTick]);
   const refreshCompleted = useCallback(async () => {
     if (!userId) return;
+    const ledger = stepLedger.current;
+    await ledger?.flush().catch(() => undefined);
+    const revision = ledger?.revision;
     const { data: row, error } = await supabase.from('users').select('*').eq('id', userId).maybeSingle();
     if (!error && row) {
       const next = row as unknown as Identity;
+      if (ledger?.revision === revision) ledger?.refresh(next.steps_remaining ?? 0);
       identityRef.current = next; setIdentity(next);
       setCompleted(Number(next.maze_completed_level) || 0);
     }
@@ -232,7 +261,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     const steps = (e: Event) => {
       const detail = (e as CustomEvent<{ userId: string; steps: number }>).detail;
       if (detail?.userId !== userId) return;
-      if (Number.isFinite(detail.steps)) setIdentity(row => ({ ...row, steps_remaining: detail.steps }));
+      if (Number.isFinite(detail.steps)) { stepLedger.current?.refresh(detail.steps); setIdentity(row => ({ ...row, steps_remaining: detail.steps })); }
       void refreshCompleted();
     };
     const orb = (e: Event) => { const change = (e as CustomEvent<OrbChange>).detail; if (change) setIdentity(row => ({ ...row, ...change })); };
@@ -282,9 +311,14 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     discovery.current?.walk(next.x, next.y, l);
     saveWorldPos({ layer: l, ...next });
     const terrain = world.terrain.find(t => t.key === cache.terrainKey(next.x, next.y));
-    moveDuration.current = terrain ? worldMoveDuration(terrain) : WORLD_MOVE_MS;
+    const ledger = stepLedger.current;
+    const balance = ledger?.balance ?? 0;
+    moveDuration.current = stepWalkDuration(terrain ? worldMoveDuration(terrain) : WORLD_MOVE_MS, balance);
+    if (balance <= 0 && !sessionStorage.getItem(`praem.heavyLegs.${userId}`)) {
+      sessionStorage.setItem(`praem.heavyLegs.${userId}`, '1'); setHeavyMessage(true);
+    }
     journey.current = { from: display.current, started: lastMove.current, duration: moveDuration.current };
-    if (terrain) { spentRef.current += tileCost(terrain, eraAt(eraPointFor(next, l), world.eras)); setSpent(spentRef.current); }
+    if (terrain) ledger?.move(tileCost(terrain, eraAt(eraPointFor(next, l), world.eras)));
     cache.maintain(next);
     const layerPlaces = placesOn(world.places, l);
     const spot = layerPlaces.find(p => p.x === next.x && p.y === next.y) ?? adjacentConversation(layerPlaces, next);
@@ -293,7 +327,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     if (spot) { setEntryMessage(''); setPlaceCard(spot); return; }
     const near = approachedFind(layerFinds, claimedRef.current, approached.current, next, walkable);
     if (near) { approached.current.add(near.id); setFindCard({ find: near, reading: false }); }
-  }, []);
+  }, [userId]);
   useEffect(() => {
     const down = (e: KeyboardEvent) => { if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return; if (e.key.toLowerCase() === 'm' && !e.repeat) { if (blocked.current && !document.querySelector('[aria-label="World map"]')) return; e.preventDefault(); keys.current.clear(); setMapOpen(open => !open); return; } if (convoOpen.current && /^(Arrow|[wasd]$)/i.test(e.key)) { e.preventDefault(); setPlaceCard(null); setFindCard(null); return; } if (blocked.current) return; if (/^(Arrow|[wasd]$)/i.test(e.key)) { e.preventDefault(); keys.current.add(e.key.toLowerCase()); } };
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
@@ -355,7 +389,11 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   useEffect(() => { if (!walking) return; const timer = setTimeout(() => setWalking(false), moveDuration.current); return () => clearTimeout(timer); }, [walking, pos]);
 
   /** Leave the world through a place: remember the place cell so the trip returns here. */
-  const leave = (path: string) => { saveWorldReturn({ layer: layerRef.current, ...posRef.current }); navigate(path); };
+  const leave = async (path: string) => {
+    saveWorldReturn({ layer: layerRef.current, ...posRef.current });
+    await stepLedger.current?.flush();
+    navigate(path);
+  };
   /** Mirrors Village's door trigger: touched flag, the same refusals and the same destinations. */
   const openDoor = async (kind: VillageDoorKind) => {
     if (busy || !userId) return;
@@ -371,13 +409,13 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
         const status = BETA_MODE ? 'active' : override ?? await checkSubscriptionStatus(userId);
         target = BETA_MODE || canAccessMaze(status) ? '/door' : '/paywall';
       }
-      leave(target);
+      await leave(target);
     } catch { setEntryMessage('The door will not open right now.'); }
     finally { setBusy(false); }
   };
-  const openShadow = () => {
+  const openShadow = async () => {
     sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ level, ts: Date.now() }));
-    leave('/shadow');
+    try { await leave('/shadow'); } catch { setEntryMessage('The door will not open right now.'); }
   };
   if (!data) return error ? <div className="world-error"><p className="font-fell">{error}</p><Button onClick={() => setRetry(n => n + 1)}>RETRY</Button></div> : <LoadingScreen />;
   const cache = cacheOf(layer);
@@ -406,7 +444,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     }} />
     <div ref={avatar} className="world-avatar"><PlayerAvatar size={30} palette={orbLook(identity.aura_color, identity.orb_dye, identity.registration_number)} walking={walking} /></div>
     <header className="world-hud font-mono">{dev && <div className="world-status"><span>{pos.x},{pos.y} · A {area.x},{area.y} · {era?.name ?? '—'}</span><span>{layer === 1 ? `UNDERGROUND · ABOVE ${surfacePoint.x},${surfacePoint.y}` : 'SURFACE'}</span><span>{terrain?.name ?? (cache.errors.size ? 'Window unavailable' : 'Loading…')} · COST {terrain ? tileCost(terrain, era) : '—'} · SPENT {Number(spent.toFixed(2))}</span>{layer === 0 && <span>{phase.phase.toUpperCase()} · {Math.ceil(phase.minutesLeft)} MIN</span>}</div>}<Button variant="ghost" size="icon" title="MAP" aria-label="MAP" onClick={() => { keys.current.clear(); setMapOpen(true); }}><MapIcon size={18} /></Button>{dev && <Button variant="outline" className="world-jump" onClick={() => { setJumpX(String(pos.x)); setJumpY(String(pos.y)); setJumpOpen(true); }}><Navigation size={14} />JUMP</Button>}</header>
-    <GameHud stepsRemaining={identity.steps_remaining ?? 0} credits={identity.credits ?? 0} currentLevel={identity.level ?? 1} registrationNumber={identity.registration_number} growthPoints={identity.growth_points ?? 0} subscriptionStatus={subscription} trialDaysRemaining={identity.first_launch_at ? Math.max(0, 14 - Math.floor((Date.now() - new Date(identity.first_launch_at).getTime()) / 86400000)) : identity.trial_end ? getDaysRemainingInTrial(identity.trial_end) : 14} onOpenProfile={() => { keys.current.clear(); setProfileOpen(true); }} onOpenDevMenu={() => { keys.current.clear(); setDevOpen(true); }} />
+    <GameHud stepsRemaining={stepBalance} stepsExhausted={stepBalance === 0} credits={identity.credits ?? 0} currentLevel={identity.level ?? 1} registrationNumber={identity.registration_number} growthPoints={identity.growth_points ?? 0} subscriptionStatus={subscription} trialDaysRemaining={identity.first_launch_at ? Math.max(0, 14 - Math.floor((Date.now() - new Date(identity.first_launch_at).getTime()) / 86400000)) : identity.trial_end ? getDaysRemainingInTrial(identity.trial_end) : 14} onOpenProfile={() => { keys.current.clear(); setProfileOpen(true); }} onOpenDevMenu={() => { keys.current.clear(); setDevOpen(true); }} />
     <ProfileOverlay isOpen={profileOpen} onClose={() => { setProfileOpen(false); void refreshCompleted(); }} context="village" growthPoints={identity.growth_points ?? 0} socialStat={identity.social ?? 0} perceptionStat={identity.perception ?? 0} tradeStat={identity.trade ?? 0} />
     {dev && <DevMenu open={devOpen} onClose={() => setDevOpen(false)} userId={userId} home="world" onChanged={() => void refreshCompleted()} />}
     {arrival && <LevelUpCard newLevel={arrival.newLevel} titleUnlocked={arrival.titleUnlocked} auraColor={identity.aura_color} orbDye={identity.orb_dye} registrationNumber={identity.registration_number} home="world" onContinue={async () => {
@@ -415,12 +453,25 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       if (error) throw error;
       setArrival(null); await refreshCompleted();
     }} />}
+    {heavyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[25%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{HEAVY_LEGS}</p>}
     {dailyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[18%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{dailyMessage}</p>}
     <Thumbstick onMove={move} disabled={profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || (Boolean(placeCard) && !(placeCard && (isWorldConversation(placeCard) || isSignpost(placeCard))))} />
     {mapOpen && <WorldMap bits={discoveryBits} player={pos} layer={layer} aura={identity.aura_color} dev={identity.registration_number === 1} types={data.terrain} places={data.places} finds={finds} claimed={claimed} onClose={() => setMapOpen(false)} />}
     {findCard && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog world-place-card" role="dialog" aria-label={findCard.find.title}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close" onClick={() => setFindCard(null)}><X size={18} /></Button><FindCard key={findCard.find.id + String(findCard.reading)} find={findCard.find} reading={findCard.reading} at={() => posRef.current} onClaimed={markClaimed} onRewarded={() => void refreshReward()} /></section></div>}
     {jumpOpen && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog" role="dialog" aria-label="Jump to a place"><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close jump menu" onClick={() => setJumpOpen(false)}><X size={18} /></Button><h2 className="font-cinzel">JUMP</h2><form onSubmit={e => { e.preventDefault(); const x = Number(jumpX), y = Number(jumpY); if (Number.isFinite(x) && Number.isFinite(y)) place({ x, y }, layer); }}><label className="font-mono">X<Input aria-label="Jump X" type="number" min={0} max={layerSize(layer) - 1} value={jumpX} onChange={e => setJumpX(e.target.value)} required /></label><label className="font-mono">Y<Input aria-label="Jump Y" type="number" min={0} max={layerSize(layer) - 1} value={jumpY} onChange={e => setJumpY(e.target.value)} required /></label><Button type="submit" className="world-jump">GO</Button></form><Button variant="outline" className="world-jump" onClick={() => place(startPoint(data), 0)}>RESTART AT START</Button>{jumpGroups.map(({ l, kind, items }) => <div key={`${l}-${kind}`} className="world-place-group"><h3 className="font-mono">{l === 1 ? 'UNDERGROUND · ' : 'SURFACE · '}{kind.replace(/_/g, ' ').toUpperCase()}</h3>{items.map((p, i) => <Button key={`${p.name}-${i}`} variant="ghost" onClick={() => place(p, l)}>{p.name}{p.maze_level ? ` · L${p.maze_level}` : ''}<span className="font-mono">{p.x},{p.y}</span></Button>)}</div>)}</section></div>}
-    {placeCard && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog world-place-card" role="dialog" aria-label={placeCard.name}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close place" onClick={() => setPlaceCard(null)}><X size={18} /></Button>{placeCard.action === 'npc' && placeCard.npc_key && userId ? <SamCard userId={userId} npcKey={placeCard.npc_key} playerName={identity.username || 'Wanderer'} fallbackName={placeCard.name} onRewarded={() => void refreshReward()} /> : isSignpost(placeCard) ? <><h2 className="font-cinzel">Signpost</h2>{signpostLines(placeCard.notes).map((line, i) => <p key={i} className="font-fell">{line.dir === 'onward' ? '▶ ' : line.dir === 'back' ? '◀ ' : ''}{line.text}</p>)}</> : <><h2 className="font-cinzel">{placeCard.name}{placeCard.maze_level ? `, Level ${placeCard.maze_level}` : ''}</h2>{placeCard.notes && <p className="font-fell">{placeCard.notes}</p>}
+    {userId && <MerchantOverlay open={Boolean(placeCard && placeAction(placeCard) === 'merchant')} onClose={() => setPlaceCard(null)} palette="green" title="The Merchant." openingLines={MERCHANT_LINES} userId={userId} credits={identity.credits ?? 0} onCreditsChange={credits => { identityRef.current = { ...identityRef.current, credits }; setIdentity(row => ({ ...row, credits })); }} items={merchantItems(level, 'world', async () => {
+      const ledger = stepLedger.current;
+      await ledger?.flush();
+      const { data: row, error } = await supabase.from('users').select('steps_remaining').eq('id', userId).maybeSingle();
+      if (error || !row) throw error ?? new Error('Missing player');
+      const next = (Number(row.steps_remaining) || 0) + 500;
+      const { error: saveError } = await supabase.from('users').update({ steps_remaining: next }).eq('id', userId);
+      if (saveError) throw saveError;
+      ledger?.refresh(next);
+      identityRef.current = { ...identityRef.current, steps_remaining: next };
+      setIdentity(row => ({ ...row, steps_remaining: next }));
+    })} />}
+    {placeCard && cardAction !== 'merchant' && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog world-place-card" role="dialog" aria-label={placeCard.name}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close place" onClick={() => setPlaceCard(null)}><X size={18} /></Button>{placeCard.action === 'npc' && placeCard.npc_key && userId ? <SamCard userId={userId} npcKey={placeCard.npc_key} playerName={identity.username || 'Wanderer'} fallbackName={placeCard.name} onRewarded={() => void refreshReward()} /> : isSignpost(placeCard) ? <><h2 className="font-cinzel">Signpost</h2>{signpostLines(placeCard.notes).map((line, i) => <p key={i} className="font-fell">{line.dir === 'onward' ? '▶ ' : line.dir === 'back' ? '◀ ' : ''}{line.text}</p>)}</> : <><h2 className="font-cinzel">{placeCard.name}{placeCard.maze_level ? `, Level ${placeCard.maze_level}` : ''}</h2>{placeCard.notes && <p className="font-fell">{placeCard.notes}</p>}
       {outcome === 'completed' && <p className="font-mono">Completed</p>}
       {outcome === 'locked' && <p className="font-mono">Locked: reach Level {placeCard.maze_level} first</p>}
       {entryMessage && <p className="font-fell">{entryMessage}</p>}
@@ -429,7 +480,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       {cardAction === 'door_exchange' && button('OPEN', () => void openDoor('exchange'))}
       {(cardAction === 'descend' || cardAction === 'ascend') && button('GO', () => { const target = placeCard; place({ x: Number(target.target_x), y: Number(target.target_y) }, Number(target.target_layer) === 1 ? 1 : 0); })}
       {cardAction === 'shadow' && button('ENTER', openShadow)}
-      {isWorldConversation(placeCard) && <><p className="font-fell">{cardAction === 'merchant' ? "The merchant isn't trading yet." : 'Talking to Bernard arrives in the next build.'}</p><Button variant="outline" className="world-jump" onClick={() => setPlaceCard(null)}>Close</Button></>}</>}
+      {isWorldConversation(placeCard) && <><p className="font-fell">Talking to Bernard arrives in the next build.</p><Button variant="outline" className="world-jump" onClick={() => setPlaceCard(null)}>Close</Button></>}</>}
     </section></div>}
   </div>;
 }

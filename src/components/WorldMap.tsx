@@ -7,9 +7,10 @@ import { useReducedMotion } from './theme/useReducedMotion';
 import { discoveredBlock, discoveryCount } from '@/lib/worldDiscovery';
 import { readWorldOverview } from '@/lib/worldOverview';
 import { eraPointFor, type Place, type Terrain, type WorldPoint } from '@/lib/worldTest';
+import { findSprite, type WorldFind } from '@/lib/worldFinds';
 import './world-map.css';
-type Props = { bits: string; player: WorldPoint; layer: 0 | 1; aura: string | null; dev: boolean; types: Terrain[]; places: Place[]; onClose: () => void };
-export default function WorldMap({ bits, player, layer, aura, dev, types, places, onClose }: Props) {
+type Props = { bits: string; player: WorldPoint; layer: 0 | 1; aura: string | null; dev: boolean; types: Terrain[]; places: Place[]; finds?: WorldFind[]; claimed?: Set<string>; onClose: () => void };
+export default function WorldMap({ bits, player, layer, aura, dev, types, places, finds = [], claimed = new Set<string>(), onClose }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null), viewport = useRef<HTMLDivElement>(null);
   const [art, setArt] = useState<HTMLCanvasElement | null>(null), [error, setError] = useState(false), [reveal, setReveal] = useState(false);
   const [size] = useState(() => Math.max(600, Math.min(innerWidth, innerHeight)));
@@ -34,6 +35,11 @@ export default function WorldMap({ bits, player, layer, aura, dev, types, places
     ctx.globalAlpha = 1;
   }, [art, bits, reveal]);
   const visible = places.filter(p => (Number(p.layer) || 0) === 0 && (reveal || discoveredBlock(bits, Math.floor(p.x / 10), Math.floor(p.y / 10))) && (p.kind === 'town' || p.kind === 'maze_entrance' || p.kind === 'npc_home' || p.action === 'door_library' || p.action === 'merchant'));
+  const surfaceFinds = finds.filter(f => (Number(f.layer) || 0) === 0);
+  const findMarks = [
+    ...surfaceFinds.filter(f => f.visibility === 'visible' && (reveal || discoveredBlock(bits, Math.floor(f.x / 10), Math.floor(f.y / 10)))).map(f => ({ f, mark: (findSprite(f, claimed.has(f.id)) ?? '').startsWith('campfire') ? '✶' : '▲', cls: claimed.has(f.id) ? 'world-map-find world-map-find-claimed' : 'world-map-find' })),
+    ...surfaceFinds.filter(f => claimed.has(f.id) && f.visibility !== 'visible').map(f => ({ f, mark: '•', cls: 'world-map-find world-map-find-claimed' })),
+  ];
   return <section className="world-map" role="dialog" aria-modal="true" aria-label="World map" data-game-ui="open">
     <header className="world-map-header"><div><h2 className="font-cinzel">MAP</h2><p className="font-mono">Discovered {(discoveryCount(bits) / 100).toFixed(1)}%</p></div><Button variant="ghost" size="icon" aria-label="Close map" onClick={onClose}><X size={20} /></Button></header>
     <div className="world-map-viewport" ref={viewport}>
@@ -41,6 +47,7 @@ export default function WorldMap({ bits, player, layer, aura, dev, types, places
         {({ setTransform, instance }) => <><TransformComponent wrapperClass="world-map-pan" contentClass="world-map-content"><div className="world-map-picture" style={{ width: size, height: size }}>
           <canvas ref={canvas} width={250} height={250} aria-label="Discovered world terrain" />
           {visible.map((p, i) => <span key={i} className="world-map-place font-fell" style={{ left: `${p.x / 10}%`, top: `${p.y / 10}%` }}><span>{p.kind === 'maze_entrance' ? '◇' : p.kind === 'npc_home' ? '○' : p.action === 'merchant' ? '¤' : p.action === 'door_library' ? '▥' : '⌂'}</span>{p.kind === 'maze_entrance' ? `${p.maze_level} ${p.name}` : p.name}</span>)}
+          {findMarks.map(({ f, mark, cls }) => <span key={f.id} className={cls} style={{ left: `${f.x / 10}%`, top: `${f.y / 10}%` }} aria-hidden="true">{mark}</span>)}
           <span className={`world-map-player ${reduced ? 'is-static' : ''}`} style={{ left: `${point.x / 10}%`, top: `${point.y / 10}%`, color: aura ?? 'var(--instrument-beacon)' }} aria-label="Your position">●{layer === 1 && <span className="font-fell">underground</span>}</span>
         </div></TransformComponent><footer className="world-map-tools">{[1, 2, 4].map(z => <Button key={z} variant="outline" onClick={() => { const s = instance.state, rect = viewport.current?.getBoundingClientRect(); if (!rect) return; const k = z / s.scale; setTransform(rect.width / 2 - (rect.width / 2 - s.positionX) * k, rect.height / 2 - (rect.height / 2 - s.positionY) * k, z, reduced ? 0 : 200); }}>{z}×</Button>)}{dev && <label className="world-map-reveal font-mono"><Switch checked={reveal} onCheckedChange={setReveal} aria-label="Reveal all" />Reveal all</label>}</footer></>}
       </TransformWrapper>

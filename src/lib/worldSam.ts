@@ -36,13 +36,19 @@ export const samTopics = (samStage: number): SamTopic[] => {
   return keys.map(key => ({ key, label: TOPIC_LABELS[key] }));
 };
 
-export type BookNode = { node_key: string; text: string; option_a_label?: string | null; option_a_target?: string | null; option_b_label?: string | null; option_b_target?: string | null };
+export type BookNode = { node_key: string; text: string; topic?: string | null; option_a_label?: string | null; option_a_target?: string | null; option_b_label?: string | null; option_b_target?: string | null };
 /** Picks a random _a/_b variant (or the plain node) for a node key. */
 export const pickNode = (entries: BookNode[], key: string, rand = Math.random) => {
   const list = entries.filter(e => e.node_key === key || e.node_key === `${key}_a` || e.node_key === `${key}_b`);
   return list.length ? list[Math.floor(rand() * list.length)] : null;
 };
-export const topicRoot = (topic: string) => `${topic}_root`;
+const baseKey = (k: string) => k.replace(/_[ab]$/, '');
+/** A topic's roots: entries with that topic whose base node key ends in _root (deduped). */
+export const topicRoots = (entries: BookNode[], topic: string) => [...new Set(entries.filter(e => e.topic === topic && baseKey(e.node_key).endsWith('_root')).map(e => baseKey(e.node_key)))];
+export const topicRoot = (entries: BookNode[], topic: string, rand = Math.random) => {
+  const roots = topicRoots(entries, topic);
+  return roots.length ? roots[Math.floor(rand() * roots.length)] : null;
+};
 
 export const receiptLine = (given: unknown, dropNames: Record<string, string>) => (Array.isArray(given) ? given : []).map((g: Record<string, unknown>) => {
   if (g.steps != null) return `+${g.steps} steps`;

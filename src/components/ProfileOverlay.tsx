@@ -843,6 +843,7 @@ const ProfileOverlay = ({
 
                     {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} maze={context === 'maze' ? mazeUse : undefined} steps={accountRow?.steps_remaining} onRefresh={() => setDropsNonce(n => n + 1)} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); setOwnedDrops(drops => drops.filter(d => d.id !== selectedDrop.id)); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
                     {dyeWhisper && <p className="font-fell italic dye-whisper">{dyeWhisper}</p>}
+                    {ownedDrops.some(d => d.category === 'words') && <div style={{ marginTop: 24 }}><div className="profile-section-label font-mono"><span>CARVED WORDS</span></div>{ownedDrops.filter(d => d.category === 'words').map(d => <div key={d.id} style={{ marginTop: 12 }}><p className="font-cinzel">{d.name}</p>{d.description && <p className="font-fell italic" style={{ whiteSpace: 'pre-line', color: 'var(--plate-label)' }}>{d.description}</p>}</div>)}</div>}
 
                     {/* Status text */}
                     {owned === 0 && (

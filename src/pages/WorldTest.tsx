@@ -22,7 +22,7 @@ import { WorldDiscovery } from '@/lib/worldDiscovery';
 import SamCard from '@/components/SamCard';
 import FindCard from '@/components/FindCard';
 import { currentStage, loadSam, visiblePlaces } from '@/lib/worldSam';
-import { approachedFind, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, findMarked, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
+import { approachedFind, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, findMarked, findShows, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
 import './world-test.css';
 
 type WorldData = Awaited<ReturnType<typeof readWorldData>>;

@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] World home build 1: normal destinations, effective level/Sam gates, shared HUD/dev menu/arrival card, daily gift and player refresh; preserve Village and session-only walking.
+- [x] World home build 1: normal destinations, effective level/Sam gates, shared HUD/dev menu/arrival card, daily gift and player refresh; Village retained and walking session-only. All 416 tests pass; isolated desktop/phone panels and signed-out routing checked.
+- [ ] Verify World home rewards, daily gift and level arrival against a real signed-in player — external game authentication unavailable; managed session minting has no users.
 
 - [x] Add visible shared water/fire animation, cached wind frames and decorative night fire light; regression tests and real published-sprite desktop/phone rendering verified, including static reduced motion. Real signed-in gameplay remains unavailable under the existing external-auth limitation.
 

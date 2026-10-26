@@ -49,7 +49,7 @@ export default function GameHud({ stepsRemaining, credits, currentLevel, registr
           className="font-mono"
           style={{
             position: 'fixed',
-            bottom: 38,
+            bottom: 'calc(48px + env(safe-area-inset-bottom))',
             left: 0,
             right: 0,
             textAlign: 'center',

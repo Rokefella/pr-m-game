@@ -8,8 +8,8 @@
 .game-arrival-title { position: relative; width: 100%; background: var(--plate-inset); border: 1px solid var(--plate-edge); padding: 12px 10px; }
 .game-arrival-title span { font-size: 11px; color: var(--plate-label); }
 .game-arrival-title p { font-size: 16px; color: var(--instrument-beacon); margin-top: 6px; }
-.game-arrival-continue { width: 100%; min-height: 48px; height: auto; font-size: 14px; background: var(--plate-gold); color: var(--eye-pupil); padding: 8px 14px; border-top: 3px solid var(--instrument-beacon); border-bottom: 3px solid var(--plate-button-bottom); margin-top: 24px; border-radius: 0; }
-.game-arrival-continue:hover { background: var(--plate-gold); }
+.game-arrival .game-arrival-continue { width: 100%; min-height: 48px; height: auto; font-size: 14px; background: var(--plate-gold); color: var(--eye-pupil); padding: 8px 14px; border-top: 3px solid var(--instrument-beacon); border-bottom: 3px solid var(--plate-button-bottom); margin-top: 24px; border-radius: 0; }
+.game-arrival .game-arrival-continue:hover { background: var(--plate-gold); }
 .game-hud-bar > span { min-width: 0; }
 @media (max-width: 400px) { .game-hud-bar > span { font-size: 11px !important; } }
 @keyframes game-arrival-fade { from { opacity: 0; } to { opacity: 1; } }

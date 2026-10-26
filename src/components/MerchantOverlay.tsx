@@ -5,6 +5,7 @@ import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { npcBodyPx } from '@/lib/orbSizes';
 import { useAuth } from '@/context/AuthContext';
 import { NPC_DIALOGUE_CLOSED, useNpcQuestStates } from '@/hooks/useNpcQuestStates';
+import { Button } from '@/components/ui/button';
 
 export type MerchantPalette = 'green' | 'orange';
 
@@ -12,7 +13,7 @@ export type MerchantItem = {
   key: string;
   label: string;
   cost: number;
-  /** Called after credits have been deducted. Return optional inline acquired-message override. */
+  /** Complete the purchase effect before saving credits; optionally override the receipt. */
   onPurchase?: () => string | void | Promise<string | void>;
 };
 
@@ -178,7 +179,7 @@ const MerchantOverlay = ({
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-              <button
+              <Button variant="ghost"
                 className="font-cinzel"
                 onClick={() => buy(item)}
                 disabled={busy}
@@ -189,11 +190,13 @@ const MerchantOverlay = ({
                   border: `0.5px solid rgba(${rgb},0.4)`,
                   color: `rgba(${rgb},0.8)`,
                   padding: '6px 16px',
+                  height: 'auto',
+                  borderRadius: 0,
                   cursor: 'pointer',
                 }}
               >
                 BUY
-              </button>
+              </Button>
               {feedback[item.key] && (
                 <span
                   className="font-fell italic"
@@ -212,7 +215,7 @@ const MerchantOverlay = ({
         ))}
       </div>
 
-      <button
+      <Button variant="ghost"
         onClick={onClose}
         style={{
           fontFamily: 'Cinzel, serif',
@@ -227,10 +230,12 @@ const MerchantOverlay = ({
           width: 'auto',
           cursor: 'pointer',
           marginTop: 24,
+          height: 'auto',
+          borderRadius: 0,
         }}
       >
         LEAVE
-      </button>
+      </Button>
 
     </div>
   );

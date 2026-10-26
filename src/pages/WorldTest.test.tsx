@@ -90,6 +90,16 @@ describe('World home mechanics', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'OLD VILLAGE' }));
     await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('spend_world_steps', { p_amount: 1 }));
   });
+  it('subtracts pending fractional costs from a refreshed user balance', async () => {
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    await screen.findByText(/STEPS\s+98/);
+    f.steps = 150;
+    window.dispatchEvent(new CustomEvent('praem:user-steps-refreshed', { detail: { userId: f.uid, steps: 150 } }));
+    await screen.findByText(/STEPS\s+148/);
+    expect(f.rpc.mock.calls.filter(([name]) => name === 'spend_world_steps')).toHaveLength(0);
+  });
   it('buys 500 steps for 5 credits and updates the world HUD', async () => {
     f.places = [{ kind: 'town', action: 'merchant', name: 'Merchant', x: 27, y: 25 }];
     open(); await screen.findByText('25,25 · A 0,0 · Fire');

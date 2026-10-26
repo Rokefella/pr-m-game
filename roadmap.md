@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] World home build 2: fractional step spending, flush lifecycle, zero-step slow walking and shared real merchant; test spending/refetch/leave and purchases.
+
 - [x] World home build 1: normal destinations, effective level/Sam gates, shared HUD/dev menu/arrival card, daily gift and player refresh; Village retained and walking session-only. All 416 tests pass; isolated desktop/phone panels and signed-out routing checked.
 - [ ] Verify World home rewards, daily gift and level arrival against a real signed-in player — external game authentication unavailable; managed session minting has no users.
 

@@ -2,7 +2,7 @@
 
 - Maze loads drops after fresh/resume readiness. Real exits settle claims then runState abandons drops and refreshes inventory; Shadow snapshots carried counts before server banking. DropCrate only draws.
 
-- LoadingScreen owns timing; pages own data/navigation.
+- LoadingScreen owns timing.
 
 - Format primes only at presentation boundaries via format.ts; decode the padded string; persist and compare numbers.
 - Derive carried counts via `fragmentInventory`, excluding the current prime for reveal pre-counts. Shadow progress uses only its transfer snapshot; query Library rows after persistence independently of level-gate timing to keep presentation from altering saving.
@@ -24,8 +24,8 @@
 - Keep maze run records and unbanked deletion in runState; Maze owns awaited deliberate exits and captures room-return intent before config consumes coordinates, while successful Shadow persistence ends the run so banking never suppresses later forfeiture.- Room interiors (DynamicRoom, ExchangeRoom) render through components/theme/rooms: floor/wall cells merged into one CSS-background div per row run, implicit wall ring added to collision, avatar and camera written via DOM refs; keeps rooms cheap and visually consistent.
 - Shadow Realm entry requires a recent sessionStorage entry token written by Maze's golden door and cleared only after a successful banking transfer; transfers persist before any animation, and a run marked completed at the golden door routes back to the Shadow Realm while unbanked fragments remain; its camera, lantern and above-fog garden beacon are written through refs in one rAF loop.
 - Door screens and the Shadow-to-level transfer share components/theme/transition (GateScene + DoorTransition + TransitionFlash); pages stay thin wrappers that own only data and destinations, with CSS-only timing and reduced-motion fallbacks.
-- Intro/ProfileSetup share PlateFrame/PixelSigil; exported nameError keeps username validation testable.
-- Login/Signup share presentation-only AuthPlate/AuthField; pages own auth, navigation and confirmation so visuals cannot change authentication.
+- Intro/ProfileSetup share PlateFrame/PixelSigil; nameError stays exported for tests.
+- Login/Signup share presentation-only AuthPlate/AuthField; pages own auth and navigation.
 - ConsolePanel owns server validation, carried-drop selection and lockout display; pass the selected drop UUID to the server and keep key compatibility server-authoritative. DynamicRoom owns console bump blocking and placeholder rifts, and Maze reuses the existing exact-cell room-return marker to preserve runs.
 - npcQuestState shares dialogue predicates; useNpcQuestStates caches event-driven results; NpcOrb only draws. questFlags reconciles Bernard after banking/on Village load from persisted progress, never level/session markers.
 
@@ -33,3 +33,4 @@
 - terrainTile caches base/variant sprites at footprint size with shared picking/flips. World chunks draw ground → height → objects, clipping even-anchored large sprites; sprite/building/neighbour changes invalidate cached art. terrainMotion owns clock/axis rules; cached motion frames draw above ground without changing movement; fire light follows tint.
 - World object underlays resolve neighbouring ground in worldTestRender only, preserving maze skin fallback; worldTest owns terrain-paced movement and safe arrivals, while worldReturn versions local positions to discard obsolete layouts without data writes.
 - worldDiscovery owns per-user OR-merged local/server bits and throttled saves; WorldMap uses cached worldOverview art and library zoom/pan, with reveal strictly presentation-only.
+- worldSam owns show_when, Sam stage/topic rules and RPCs; SamCard only draws, keeping Village dialogue separate.

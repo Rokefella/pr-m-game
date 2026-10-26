@@ -34,6 +34,11 @@ export const tileCost = (terrain: Terrain, era?: Era) => (terrain.steps ?? 1) * 
 export const worldMoveDuration = (terrain: Pick<Terrain, 'steps'>) => WORLD_MOVE_MS * Math.max(1, terrain.steps ?? 1);
 export const isWading = (terrain: Terrain | undefined) => terrain?.walkable === true && terrain.enabled !== false && terrain.grp === 'water';
 export const isWorldConversation = (place: Place) => place.kind === 'npc_home' || place.action === 'merchant';
+export const isSignpost = (place: Place) => place.action === 'signpost';
+export type SignLine = { dir: 'onward' | 'back' | null; text: string };
+/** Signpost notes: one row per line; Onward/Back lines get their direction. */
+export const signpostLines = (notes: string | null | undefined): SignLine[] => (notes ?? '').split(/\r?\n/).map(t => t.trim()).filter(Boolean)
+  .map(text => ({ text, dir: /^onward\b/i.test(text) ? 'onward' as const : /^back\b/i.test(text) ? 'back' as const : null }));
 export const adjacentConversation = (places: Place[], point: WorldPoint) => places.find(p => isWorldConversation(p) && Math.max(Math.abs(p.x - point.x), Math.abs(p.y - point.y)) <= 1);
 
 /** Arrival recovery searches in walking-distance order without triggering place actions. */

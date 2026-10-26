@@ -146,6 +146,14 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
     const shown = { ...world, places: visiblePlaces(world.places, completed) };
     dataRef.current = shown; setData(shown);
   }, [completed]);
+  const npcKeys = (data?.places ?? []).filter(p => p.action === 'npc' && p.npc_key).map(p => p.npc_key as string).join(',');
+  useEffect(() => {
+    if (!userId || !npcKeys) { samLineRef.current = new Set(); return; }
+    let off = false;
+    void Promise.all(npcKeys.split(',').map(async key => { const d = await loadSam(key); return d && await currentStage(userId, d.stages) ? key : null; }))
+      .then(keys => { if (!off) samLineRef.current = new Set(keys.filter((k): k is string => Boolean(k))); }).catch(() => undefined);
+    return () => { off = true; };
+  }, [userId, npcKeys, samTick]);
   const refreshCompleted = useCallback(async () => {
     if (!userId) return;
     const { data: row } = await supabase.from('users').select('maze_completed_level').eq('id', userId).maybeSingle();

@@ -1,6 +1,6 @@
 import type { Era, Terrain } from './worldTest';
 import { worldHash } from './worldHash';
-import { canSway, flameFrame, flowOffset, lavaBrightness, leanAmount, WATER_MOVES, waterDirection, type TerrainNeighbour } from './terrainMotion';
+import { isGroundSway, waveBand, canSway, flameFrame, flowOffset, lavaBrightness, leanAmount, WATER_MOVES, waterDirection, type TerrainNeighbour } from './terrainMotion';
 export type TerrainInk = { background: string; grid: string; text: string; muted: string; gold: string; cyan: string; shadow: string };
 const TILE = 40;
 const NO_FLIP = new Set(['road', 'square', 'town_wall', 'bridge', 'cliff_edge', 'dune_crest', 'crater', 'building']);
@@ -10,13 +10,19 @@ const sprites = new Map<string, HTMLCanvasElement>();
 const variants = new Map<string, (HTMLCanvasElement | null)[]>();
 const loading = new Map<string, Promise<void>>();
 export let spriteVersion = 0;
-const motionArt = new WeakMap<HTMLCanvasElement, { lean: HTMLCanvasElement; leanLeft: HTMLCanvasElement; flames: HTMLCanvasElement[]; light?: string; warm?: string }>();
+const motionArt = new WeakMap<HTMLCanvasElement, { lean: HTMLCanvasElement; leanLeft: HTMLCanvasElement; wrap: HTMLCanvasElement; wrapLeft: HTMLCanvasElement; flames: HTMLCanvasElement[]; light?: string; warm?: string }>();
 function prepareMotion(sprite: HTMLCanvasElement) {
   const w = sprite.width, h = sprite.height;
   const frame = (shift: number) => {
     const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
     const ctx = canvas.getContext('2d');
     if (ctx) { ctx.imageSmoothingEnabled = false; ctx.drawImage(sprite, 0, h / 2, w, h / 2, 0, h / 2, w, h / 2); ctx.drawImage(sprite, 0, 0, w, h / 2, shift, 0, w, h / 2); }
+    return canvas;
+  };
+  // Ground lean: the shifted-out column wraps to the other edge so the tile stays seamless.
+  const wrapped = (shift: number) => {
+    const canvas = frame(shift), ctx = canvas.getContext('2d');
+    if (ctx) ctx.drawImage(sprite, shift > 0 ? w - shift : 0, 0, Math.abs(shift), h / 2, shift > 0 ? 0 : w + shift, 0, Math.abs(shift), h / 2);
     return canvas;
   };
   let light: string | undefined, warm: string | undefined;
@@ -41,8 +47,9 @@ function prepareMotion(sprite: HTMLCanvasElement) {
     }
     return c;
   });
-  motionArt.set(sprite, { lean: frame(1), leanLeft: frame(-1), flames, light, warm });
+  motionArt.set(sprite, { lean: frame(1), leanLeft: frame(-1), wrap: wrapped(1), wrapLeft: wrapped(-1), flames, light, warm });
 }
+export const motionFrames = (sprite: HTMLCanvasElement) => motionArt.get(sprite);
 export function terrainSprite(key: string | undefined, x?: number, y?: number): HTMLCanvasElement | undefined {
   if (!key) return undefined;
   const choices = variants.get(key);
@@ -108,7 +115,7 @@ export function eraColor(era: Era | undefined, fallback: string): string {
 
 function blit(ctx: CanvasRenderingContext2D, sprite: HTMLCanvasElement, key: string, x: number, y: number, size: number, objectLayer: boolean) {
   const h = NO_FLIP.has(key) ? 0 : worldHash(x, y, 7);
-  const fx = (h >= .25 && h < .5) || h >= .75, fy = !objectLayer && h >= .5;
+  const fx = (h >= .25 && h < .5) || h >= .75, fy = !objectLayer && !key.startsWith('house_') && h >= .5;
   ctx.save(); ctx.imageSmoothingEnabled = false;
   ctx.translate(fx ? size : 0, fy ? size : 0); ctx.scale(fx ? -1 : 1, fy ? -1 : 1);
   ctx.drawImage(sprite, 0, 0, size, size); ctx.restore();
@@ -169,7 +176,7 @@ export function spriteLight(terrain: Terrain, x: number, y: number, ink: Terrain
   return (warm ? art?.warm : art?.light) ?? terrain.color ?? ink.text;
 }
 /** Visible sprite animation in native pixel space, shared by world and maze. */
-export function drawTerrainMotion(ctx: CanvasRenderingContext2D, terrain: Terrain, x: number, y: number, px: number, py: number, time: number, ink: TerrainInk, reduced: boolean, neighbour?: TerrainNeighbour, clock = time, size = TILE, replaceSprite = true) {
+export function drawTerrainMotion(ctx: CanvasRenderingContext2D, terrain: Terrain, x: number, y: number, px: number, py: number, time: number, ink: TerrainInk, reduced: boolean, neighbour?: TerrainNeighbour, clock = time, size = TILE, replaceSprite = true, band = true) {
   const move = terrain.moves ?? ''; if (!move || move === 'none') return;
   const sprite = terrainSprite(terrain.key, x, y), art = sprite ? motionArt.get(sprite) : undefined;
   ctx.save(); ctx.translate(px, py); ctx.scale(size / 16, size / 16); ctx.imageSmoothingEnabled = false;
@@ -177,17 +184,20 @@ export function drawTerrainMotion(ctx: CanvasRenderingContext2D, terrain: Terrai
     if (reduced) blit(ctx, sprite, terrain.key, x, y, 16, isObjectLayer(terrain));
     else if (move === 'sway') {
       const lean = leanAmount(terrain, x, y, clock);
-      if (lean > 0 && art) {
+      if (lean > .05 && art) {
         // Full-strength gust replaces the top half; breathing crossfades subtly.
         ctx.globalAlpha = 1 - lean; blit(ctx, sprite, terrain.key, x, y, 16, isObjectLayer(terrain));
         const flip = NO_FLIP.has(terrain.key) ? 0 : worldHash(x, y, 7);
-        const leant = (flip >= .25 && flip < .5) || flip >= .75 ? art.leanLeft : art.lean;
+        const left = (flip >= .25 && flip < .5) || flip >= .75, ground = isGroundSway(terrain);
+        const leant = ground ? (left ? art.wrapLeft : art.wrap) : left ? art.leanLeft : art.lean;
         ctx.globalAlpha = lean; blit(ctx, leant, terrain.key, x, y, 16, isObjectLayer(terrain)); ctx.globalAlpha = 1;
       } else blit(ctx, sprite, terrain.key, x, y, 16, isObjectLayer(terrain));
     } else blit(ctx, art?.flames[flameFrame(time, x, y)] ?? sprite, terrain.key, x, y, 16, true);
   }
   if (reduced) { ctx.restore(); return; }
   ctx.beginPath(); ctx.rect(0, 0, 16, 16); ctx.clip();
+  const wave = band && move === 'sway' ? waveBand(terrain, x, y, clock) : null;
+  if (wave) { ctx.fillStyle = spriteLight(terrain, x, y, ink); ctx.globalAlpha = .13; ctx.fillRect(0, wave.y, 16, wave.h); }
   ctx.fillStyle = spriteLight(terrain, x, y, ink); ctx.globalAlpha = .55;
   const phase = worldHash(x, y, 29), frame = Math.floor(time * 6 / 1000);
   if (WATER_MOVES.has(move)) {

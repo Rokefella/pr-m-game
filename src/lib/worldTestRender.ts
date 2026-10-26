@@ -1,3 +1,4 @@
+import { isGroundSway, WAVE_BAND_CELL_LIMIT } from './terrainMotion';
 import { chunkOrigin, eraAt, eraPointFor, WORLD_CHUNK, WORLD_TILE, type WorldLayer, type Era, type Place, type Terrain, type WorldChunk, type WorldPoint, type WorldChunkCache } from './worldTest';
 import { drawTerrainBase, drawTerrainMotion, drawTerrainSprite, hasMovingSprite, isObjectLayer, spriteLight, spriteVersion, type TerrainInk } from './terrainTile';
 import { buildingBlockCanvas, buildingVersion } from './theme/buildingCanvas';
@@ -78,7 +79,7 @@ export function chunkCanvas(cache: WorldChunkCache, chunk: WorldChunk, types: Ma
   for (let y = chunk.y0; y < chunk.y0 + chunk.h; y++) for (let x = chunk.x0; x < chunk.x0 + chunk.w; x++) {
     const terrain = types.get(cache.terrainKey(x, y) ?? ''); if (!terrain) continue;
     const era = eraAt(eraPointFor({ x, y }, layer), eras), fallback = era?.ground_key ? types.get(era.ground_key) : undefined;
-    const object = isObjectLayer(terrain) || terrain.footprint === 2 || terrain.key === 'building';
+    const object = isObjectLayer(terrain) || terrain.footprint === 2 || terrain.key === 'building' || terrain.key.startsWith('house_');
     const ground = object ? worldObjectGround(cache, types, x, y, fallback) : fallback;
     const px = (x - chunk.x0) * CHUNK_PX, py = (y - chunk.y0) * CHUNK_PX;
     cells.push({ x, y, px, py, terrain, era, ground, object });
@@ -151,10 +152,13 @@ export function drawWorld(ctx: CanvasRenderingContext2D, cache: WorldChunkCache,
     if (!chunk) { void cache.load(cx, cy); continue; }
     ctx.drawImage(chunkCanvas(cache, chunk, types, eras, ink, layer), chunk.x0 * WORLD_TILE - camera.x, chunk.y0 * WORLD_TILE - camera.y, chunk.w * WORLD_TILE, chunk.h * WORLD_TILE);
   }
+  let fieldCells = 0;
+  for (let y = y0; y <= y1 && fieldCells <= WAVE_BAND_CELL_LIMIT; y++) for (let x = x0; x <= x1; x++) { const t = types.get(cache.terrainKey(x, y) ?? ''); if (t && isGroundSway(t)) fieldCells++; }
+  const band = fieldCells <= WAVE_BAND_CELL_LIMIT;
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     const px = x * WORLD_TILE - camera.x, py = y * WORLD_TILE - camera.y;
     const key = cache.terrainKey(x, y), terrain = key ? types.get(key) : undefined;
-    if (terrain) { if (terrain.moves) drawTerrainMotion(ctx, terrain, x, y, px, py, time, ink, reduced, (nx, ny) => types.get(cache.terrainKey(nx, ny) ?? ''), clock); }
+    if (terrain) { if (terrain.moves) drawTerrainMotion(ctx, terrain, x, y, px, py, time, ink, reduced, (nx, ny) => types.get(cache.terrainKey(nx, ny) ?? ''), clock, WORLD_TILE, true, band); }
     else { ctx.strokeStyle = ink.grid; ctx.globalAlpha = .2; ctx.strokeRect(px, py, WORLD_TILE, WORLD_TILE); ctx.globalAlpha = 1; }
   }
   if (layer === 1) { ctx.fillStyle = ink.shadow; ctx.globalAlpha = .4; ctx.fillRect(0, 0, width, height); ctx.globalAlpha = 1; }

@@ -21,7 +21,8 @@ import { useAuth } from '@/context/AuthContext';
 import Thumbstick from '@/components/Thumbstick';
 import { startResilientLoop } from '@/lib/resilientLoop';
 import { restUpdate } from '@/lib/supabaseRest';
-import MerchantOverlay, { type MerchantItem } from '@/components/MerchantOverlay';
+import MerchantOverlay from '@/components/MerchantOverlay';
+import { MERCHANT_LINES, merchantItems } from '@/lib/merchantItems';
 import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay from '@/components/ProfileOverlay';
 import NpcDialogue from '@/components/NpcDialogue';
@@ -52,11 +53,7 @@ import { useNpcDialogue, type BernardDialogueData } from '@/hooks/useNpcDialogue
 // Village Merchant — TEMP: positioned at map center (col=27,row=17) for visibility testing
 const MERCHANT = { x: 12 * 40, y: 22 * 40 };
 const BERNARD_VILLAGE = { x: 1244, y: 604 };
-const MERCHANT_LINES = [
-  'You need more steps. I have them.',
-  "The fragments don't find themselves.",
-  'What you lack, I carry.',
-];
+
 
 type Rect = { id: string | number; x: number; y: number; w: number; h: number };
 type VillageCell = { col: number; row: number; type: string; npc_name?: string; npc_key?: string; name?: string; title?: string; line?: string; tone?: string };
@@ -2422,49 +2419,12 @@ const Village = () => {
           userId={user.id}
           credits={credits}
           onCreditsChange={(n) => setCredits(n)}
-          items={(() => {
-            const list: MerchantItem[] = [
-              {
-                key: 'steps',
-                label: '500 Steps',
-                cost: 5,
-                onPurchase: () => {
-                  if (!stepsReadyRef.current) return;
-                  const next = stepsRemaining + 500;
-                  setStepsRemaining(next);
-                  updateUser(user.id, { steps_remaining: next });
-                },
-              },
-              {
-                key: 'visibility',
-                label: 'Visibility +2 cells (this run)',
-                cost: 20,
-              },
-            ];
-            if (currentLevel >= 5) {
-              list.push({
-                key: 'detector',
-                label: 'Fragment Detector (60 sec)',
-                cost: 50,
-              });
-            }
-            if (currentLevel >= 10) {
-              list.push({
-                key: 'primemap',
-                label: 'Prime Map (60 sec)',
-                cost: 100,
-              });
-            }
-            if (currentLevel >= 15) {
-              list.push({
-                key: 'pastmaze',
-                label: 'Past Maze Access',
-                cost: 200,
-                onPurchase: () => 'Available in the Shadow Realm.',
-              });
-            }
-            return list;
-          })()}
+          items={merchantItems(currentLevel, 'village', () => {
+            if (!stepsReadyRef.current) return;
+            const next = stepsRemaining + 500;
+            setStepsRemaining(next);
+            void updateUser(user.id, { steps_remaining: next });
+          })}
         />
       )}
 

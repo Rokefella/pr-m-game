@@ -5,6 +5,7 @@ import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { npcBodyPx } from '@/lib/orbSizes';
 import { useAuth } from '@/context/AuthContext';
 import { NPC_DIALOGUE_CLOSED, useNpcQuestStates } from '@/hooks/useNpcQuestStates';
+import { Button } from '@/components/ui/button';
 
 export type MerchantPalette = 'green' | 'orange';
 
@@ -12,8 +13,8 @@ export type MerchantItem = {
   key: string;
   label: string;
   cost: number;
-  /** Called after credits have been deducted. Return optional inline acquired-message override. */
-  onPurchase?: () => string | void;
+  /** Complete the purchase effect before saving credits; optionally override the receipt. */
+  onPurchase?: () => string | void | Promise<string | void>;
 };
 
 interface MerchantOverlayProps {
@@ -51,6 +52,8 @@ const MerchantOverlay = ({
   const [line, setLine] = useState('');
   const [feedback, setFeedback] = useState<Record<string, { text: string; ok: boolean } | undefined>>({});
   const feedbackTimers = useRef<Record<string, number>>({});
+  const buying = useRef(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -70,6 +73,7 @@ const MerchantOverlay = ({
   if (!open) return null;
 
   const buy = async (item: MerchantItem) => {
+    if (buying.current) return;
     if (credits < item.cost) {
       setFeedback((f) => ({ ...f, [item.key]: { text: 'Insufficient credits.', ok: false } }));
       if (feedbackTimers.current[item.key]) window.clearTimeout(feedbackTimers.current[item.key]);
@@ -80,12 +84,18 @@ const MerchantOverlay = ({
       return;
     }
     const next = credits - item.cost;
-    onCreditsChange(next);
-    const override = item.onPurchase?.();
+    buying.current = true; setBusy(true);
+    let override: string | void;
     try {
+      override = await item.onPurchase?.();
+      onCreditsChange(next);
       await updateUser(userId, { credits: next });
     } catch (e) {
       console.error('[Merchant] failed to update credits', e);
+      setFeedback(f => ({ ...f, [item.key]: { text: 'Not right now.', ok: false } }));
+      return;
+    } finally {
+      buying.current = false; setBusy(false);
     }
     setFeedback((f) => ({ ...f, [item.key]: { text: override || 'Acquired.', ok: true } }));
     if (feedbackTimers.current[item.key]) window.clearTimeout(feedbackTimers.current[item.key]);
@@ -169,9 +179,10 @@ const MerchantOverlay = ({
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
-              <button
+              <Button variant="ghost"
                 className="font-cinzel"
                 onClick={() => buy(item)}
+                disabled={busy}
                 style={{
                   fontSize: 9,
                   letterSpacing: '0.2em',
@@ -179,22 +190,24 @@ const MerchantOverlay = ({
                   border: `0.5px solid rgba(${rgb},0.4)`,
                   color: `rgba(${rgb},0.8)`,
                   padding: '6px 16px',
+                  height: 'auto',
+                  borderRadius: 0,
                   cursor: 'pointer',
                 }}
               >
                 BUY
-              </button>
+              </Button>
               {feedback[item.key] && (
                 <span
                   className="font-fell italic"
                   style={{
                     fontSize: 12,
-                    color: feedback[item.key]!.ok
+                    color: feedback[item.key]?.ok
                       ? `rgba(${rgb},0.6)`
                       : 'rgba(200,80,80,0.6)',
                   }}
                 >
-                  {feedback[item.key]!.text}
+                  {feedback[item.key]?.text}
                 </span>
               )}
             </div>
@@ -202,7 +215,7 @@ const MerchantOverlay = ({
         ))}
       </div>
 
-      <button
+      <Button variant="ghost"
         onClick={onClose}
         style={{
           fontFamily: 'Cinzel, serif',
@@ -217,10 +230,12 @@ const MerchantOverlay = ({
           width: 'auto',
           cursor: 'pointer',
           marginTop: 24,
+          height: 'auto',
+          borderRadius: 0,
         }}
       >
         LEAVE
-      </button>
+      </Button>
 
     </div>
   );

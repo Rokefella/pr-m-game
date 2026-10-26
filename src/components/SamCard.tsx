@@ -39,7 +39,7 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
       {stage?.button_label && <Button className="world-jump" disabled={busy} onClick={() => void press()}>{busy ? '…' : stage.button_label}</Button>}
       {receipt && <p className="font-mono world-receipt">{receipt}</p>}
       <h3 className="font-mono world-topics-title">Ask about…</h3>
-      <div className="world-topics">{samTopics(samStage).filter(t => sam && pickNode(sam.book, topicRoot(t.key))).map(t => <Button key={t.key} variant="ghost" onClick={() => go(topicRoot(t.key))}>{t.label}</Button>)}</div>
+      <div className="world-topics">{samTopics(samStage).map(t => ({ ...t, root: sam && pickNode(sam.book, topicRoot(t.key)) ? topicRoot(t.key) : t.key })).filter(t => sam && pickNode(sam.book, t.root)).map(t => <Button key={t.key} variant="ghost" onClick={() => go(t.root)}>{t.label}</Button>)}</div>
     </>}
   </>;
 }

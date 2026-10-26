@@ -7,7 +7,7 @@ export const WORLD_MOVE_MS = 150;
 export type WorldPoint = { x: number; y: number };
 export type Terrain = { key: string; name: string; grp: string; walkable: boolean; steps: number | null; sight: number | null; sight_delta: number | null; light_radius: number | null; moves: string | null; color: string | null; enabled: boolean; icon_svg?: string | null; icon_variants?: unknown; footprint?: number | null; render_layer?: string | null };
 export type Era = { order_index: number; name: string; ring_from: number; ring_to: number; palette: unknown; step_cost: number; darkness: number; ground_key?: string | null };
-export type Place = WorldPoint & { kind: string; name: string; maze_level: number | null; notes: string | null; layer?: number | null; action?: string | null; target_layer?: number | null; target_x?: number | null; target_y?: number | null };
+export type Place = WorldPoint & { kind: string; name: string; maze_level: number | null; notes: string | null; layer?: number | null; action?: string | null; target_layer?: number | null; target_x?: number | null; target_y?: number | null; show_when?: { min_completed_level?: number | null; max_completed_level?: number | null } | null; npc_key?: string | null };
 export type WorldLayer = 0 | 1;
 export const UNDER_SIZE = 250;
 export const layerSize = (layer: WorldLayer) => layer === 1 ? UNDER_SIZE : WORLD_SIZE;
@@ -34,7 +34,7 @@ export const tileCost = (terrain: Terrain, era?: Era) => (terrain.steps ?? 1) * 
 export const worldMoveDuration = (terrain: Pick<Terrain, 'steps'>) => WORLD_MOVE_MS * Math.max(1, terrain.steps ?? 1);
 export const isWading = (terrain: Terrain | undefined) => terrain?.walkable === true && terrain.enabled !== false && terrain.grp === 'water';
 export const isWorldConversation = (place: Place) => place.kind === 'npc_home' || place.action === 'merchant';
-export const adjacentConversation = (places: Place[], point: WorldPoint) => places.find(p => isWorldConversation(p) && Math.abs(p.x - point.x) + Math.abs(p.y - point.y) <= 1);
+export const adjacentConversation = (places: Place[], point: WorldPoint) => places.find(p => isWorldConversation(p) && Math.max(Math.abs(p.x - point.x), Math.abs(p.y - point.y)) <= 1);
 
 /** Arrival recovery searches in walking-distance order without triggering place actions. */
 export async function nearestWorldWalkable(cache: WorldChunkCache, types: Map<string, Terrain>, point: WorldPoint): Promise<WorldPoint | null> {

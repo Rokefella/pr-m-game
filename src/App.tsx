@@ -56,7 +56,7 @@ const App = () => (
 
             <Route path="/maze" element={<Maze />} />
             <Route path="/shadow" element={<ShadowRealm />} />
-            <Route path="/paywall" element={BETA_MODE ? <Navigate to="/village" replace /> : <Paywall />} />
+            <Route path="/paywall" element={BETA_MODE ? <Navigate to="/world" replace /> : <Paywall />} />
             <Route path="/bernard-room" element={<BernardRoomDynamic />} />
             <Route path="/avatar-preview" element={<AvatarPreview />} />
             <Route path="/tiles" element={<TilePreview />} />

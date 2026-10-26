@@ -54,7 +54,7 @@ const ProfileSetup = () => {
     setSaving(true);
     try {
       await upsertUser(user.id, { username: username.trim(), aura_color: auraColor });
-      navigate('/village');
+      navigate('/world');
     } catch (e) {
       console.error('[ProfileSetup] save failed', e);
       setSaving(false);

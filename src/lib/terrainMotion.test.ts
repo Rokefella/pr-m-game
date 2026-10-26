@@ -23,8 +23,8 @@ describe('terrain animation rules', () => {
     expect(lavaBrightness(500)).toBeCloseTo(.24); expect(lavaBrightness(1500)).toBeCloseTo(0); expect(lavaBrightness(2500)).toBeCloseTo(.24);
   });
   it('wind propagates east at eight cells per second on the shared clock', () => {
-    expect(gustStrength(80, 5, 110750)).toBeCloseTo(gustStrength(88, 5, 111750));
-    expect(gustStrength(80, 5, 110750)).toBeGreaterThan(.8);
+    expect(gustStrength(80, 5, 100750)).toBeCloseTo(gustStrength(88, 5, 101750));
+    expect(gustStrength(80, 5, 100750)).toBeGreaterThan(.8);
   });
   it('pines skip odd gusts and rocks/buildings never sway', () => {
     expect(gustStrength(0, 5, 10750, true)).toBe(0);

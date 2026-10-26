@@ -23,15 +23,15 @@ export function flameFrame(time: number, x: number, y: number) {
   return (Math.floor(time * 8 / 1000) + Math.floor(worldHash(x, y, 31) * 3)) % 3;
 }
 export function lavaBrightness(time: number) { return .12 + .12 * Math.sin(time * Math.PI / 1000); }
-// Each clock-aligned ten-second slot may launch a gust; spacing is always 10–20 seconds.
+// Two launches per thirty-second clock cycle; both gaps are always 10–20 seconds.
 export function gustStrength(x: number, y: number, clock: number, pine = false) {
-  const slot = Math.floor(clock / 10000);
+  const cycle = Math.floor(clock / 30000);
   let strength = 0;
   // Retain waves travelling across the full 1000-cell surface (~125 seconds).
-  for (let launch = slot - 14; launch <= slot; launch++) {
-    const active = launch % 2 === 0 || worldHash(launch, 0, 47) > .5;
-    if (!active || (pine && launch % 2 !== 0)) continue;
-    const age = (clock - launch * 10000) / 1000 - x / 8 - worldHash(0, y, 48) * .3;
+  for (let launch = cycle - 5; launch <= cycle; launch++) for (let half = 0; half < 2; half++) {
+    if (pine && half === 1) continue;
+    const start = launch * 30000 + (half ? 10000 + worldHash(launch, 0, 47) * 10000 : 0);
+    const age = (clock - start) / 1000 - x / 8 - worldHash(0, y, 48) * .3;
     if (age >= 0 && age < 1.5) strength = Math.max(strength, Math.sin(age / 1.5 * Math.PI));
   }
   return strength;

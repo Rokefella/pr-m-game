@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { chunkCanvas, drawWorldHeight, worldFootprintAnchor, type WorldInk } from './worldTestRender';
+import { chunkCanvas, drawWorldFireLight, drawWorldHeight, worldFootprintAnchor, type WorldInk } from './worldTestRender';
 import { WorldChunkCache, type Terrain, type WorldChunk } from './worldTest';
 const art = vi.hoisted(() => ({ base: vi.fn(), large: vi.fn((..._args: unknown[]) => true) }));
-vi.mock('./terrainTile', () => ({ drawTerrainBase: art.base, drawTerrainSprite: art.large, drawTerrainMotion: vi.fn(), isObjectLayer: (t?: Terrain) => t?.render_layer === 'object', hasMovingSprite: (t: Terrain) => t.moves === 'sway' || t.moves === 'flicker', spriteVersion: 0 }));
+vi.mock('./terrainTile', () => ({ drawTerrainBase: art.base, drawTerrainSprite: art.large, drawTerrainMotion: vi.fn(), spriteLight: () => 'warm', isObjectLayer: (t?: Terrain) => t?.render_layer === 'object', hasMovingSprite: (t: Terrain) => t.moves === 'sway' || t.moves === 'flicker', spriteVersion: 0 }));
 const ink = { gold: 'warm', text: 'light', shadow: 'dark', background: 'background' } as WorldInk;
 const terrain = (key: string, extra = {}) => ({ key, grp: 'rock', ...extra } as Terrain);
 function context() {
@@ -13,6 +13,26 @@ function context() {
   return { ctx: ctx as unknown as CanvasRenderingContext2D, rects };
 }
 describe('world visual terrain layers', () => {
+  it('keeps swaying objects out of static art, retaining their ground', () => {
+    const cache = new WorldChunkCache(async () => { throw Error(); });
+    const chunk = { x0: 0, y0: 0, w: 1, h: 1, keys: ['tree'], rows: [[0]] } as WorldChunk;
+    cache.chunks.set('0,0', chunk);
+    const types = new Map([terrain('tree', { moves: 'sway', render_layer: 'object' }), terrain('grass', { render_layer: 'ground' })].map(t => [t.key, t]));
+    const { ctx } = context(), spy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as never);
+    try {
+      art.base.mockClear(); chunkCanvas(cache, chunk, types, [{ ground_key: 'grass', ring_from: 0, ring_to: 500 }] as never, ink, 0);
+      expect(art.base.mock.calls.map(c => c[1].key)).toEqual(['grass']);
+    } finally { spy.mockRestore(); }
+  });
+  it('fire light survives static rendering at dusk/night and respects authored radius', () => {
+    const cache = new WorldChunkCache(async () => { throw Error(); });
+    vi.spyOn(cache, 'terrainKey').mockImplementation((x, y) => x === 0 && y === 0 ? 'fire' : undefined);
+    const types = new Map([['fire', terrain('fire', { moves: 'flicker', light_radius: 4 })]]);
+    const { ctx } = context(), gradient = vi.fn(() => ({ addColorStop: vi.fn() })); ctx.createRadialGradient = gradient;
+    drawWorldFireLight(ctx, cache, types, { x: 0, y: 0 }, 40, 40, ink, 'night');
+    expect(gradient).toHaveBeenCalledWith(20, 20, 0, 20, 20, 160);
+    gradient.mockClear(); drawWorldFireLight(ctx, cache, types, { x: 0, y: 0 }, 40, 40, ink, 'day'); expect(gradient).not.toHaveBeenCalled();
+  });
   it('only groups complete even-anchored same-key 2×2 blocks', () => {
     const cache = new WorldChunkCache(async () => { throw Error(); });
     const keys = new Map(['2,4', '3,4', '2,5', '3,5'].map(k => [k, 'boulder_large']));

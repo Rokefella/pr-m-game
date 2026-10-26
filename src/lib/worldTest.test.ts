@@ -62,10 +62,10 @@ describe('world layers and returns', () => {
     _saveReturn({ layer: 0, x: 97, y: 60 }); expect(_exit()).toBe('/world');
     expect(_take()).toEqual({ layer: 0, x: 97, y: 60 }); expect(_exit()).toBe('/village');
   });
-  it.each([null, '1', '3'])('ignores obsolete layout %s, then writes version 2', version => {
+  it.each([null, '1', '2'])('ignores obsolete layout %s, then writes version 3', version => {
     localStorage.clear(); if (version) localStorage.setItem(WORLD_LAYOUT_VERSION_KEY, version);
     localStorage.setItem('praem.worldPos', JSON.stringify({ layer: 0, x: 99, y: 99 }));
-    expect(_take()).toBeNull(); expect(WORLD_LAYOUT_VERSION).toBe(2);
-    expect(localStorage.getItem(WORLD_LAYOUT_VERSION_KEY)).toBe('2');
+    expect(_take()).toBeNull(); expect(WORLD_LAYOUT_VERSION).toBe(3);
+    expect(localStorage.getItem(WORLD_LAYOUT_VERSION_KEY)).toBe('3');
   });
 });

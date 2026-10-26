@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canSway, flameFrame, flowOffset, gustStrength, lavaBrightness, leanAmount, terrainDrawInterval, waterDirection } from './terrainMotion';
+import { waveBand, canSway, flameFrame, flowOffset, gustStrength, lavaBrightness, leanAmount, terrainDrawInterval, waterDirection } from './terrainMotion';
 import type { Terrain } from './worldTest';
 const water = { grp: 'water' } as Terrain;
 describe('terrain animation rules', () => {
@@ -33,5 +33,14 @@ describe('terrain animation rules', () => {
   });
   it('caps moving/gusting drawing at thirty fps and idle drawing at ten', () => {
     expect(terrainDrawInterval(true, false)).toBe(1000 / 30); expect(terrainDrawInterval(false, true)).toBe(1000 / 30); expect(terrainDrawInterval(false, false)).toBe(100);
+  });
+  it('draws the field wave band only while a gust passes', () => {
+    const field = { key: 'crops_corn', moves: 'sway', render_layer: 'ground' } as Terrain;
+    expect(waveBand(field, 80, 5, 100750)).not.toBeNull();
+    expect(waveBand(field, 80, 5, 100000 - 1)).toBeNull();
+    expect(waveBand({ ...field, render_layer: 'object' }, 80, 5, 100750)).toBeNull();
+  });
+  it('house keys never sway', () => {
+    for (const key of ['house_wood', 'house_stilt', 'house_ruin']) expect(canSway({ key, moves: 'sway' } as Terrain)).toBe(false);
   });
 });

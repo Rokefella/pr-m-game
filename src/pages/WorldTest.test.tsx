@@ -12,7 +12,7 @@ vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc, from: (table: string)
   return chain;
 } } }));
 beforeEach(() => {
-  localStorage.clear(); localStorage.setItem('praem.worldLayoutVersion', '2'); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.places = []; f.mutation.mockReset().mockResolvedValue({ error: null });
+  localStorage.clear(); localStorage.setItem('praem.worldLayoutVersion', '3'); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.places = []; f.mutation.mockReset().mockResolvedValue({ error: null });
   f.rpc.mockReset().mockImplementation(async (_name, args) => ({ error: null, data: { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
@@ -70,7 +70,7 @@ describe('world return', () => {
     localStorage.removeItem('praem.worldLayoutVersion');
     localStorage.setItem('praem.worldPos', JSON.stringify({ layer: 0, x: 299, y: 31 }));
     open(); await screen.findByText('25,25 · A 0,0 · Fire');
-    expect(localStorage.getItem('praem.worldLayoutVersion')).toBe('2');
+    expect(localStorage.getItem('praem.worldLayoutVersion')).toBe('3');
     expect(JSON.parse(localStorage.getItem('praem.worldPos') ?? '{}')).toEqual({ layer: 0, x: 25, y: 25 });
   });
   it('recovers a blocked saved position to the nearest walkable cell after loading', async () => {

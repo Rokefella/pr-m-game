@@ -32,3 +32,23 @@ describe('topic gating by sam_stage', () => {
   it('stage 4 hides the cave', () => expect(keys(4)).not.toContain('sam_02'));
   it('never shows quest, trade or hidden', () => expect(keys(5).some(k => ['quest', 'trade', 'hidden'].includes(k))).toBe(false));
 });
+
+import { topicRoot as rootOf, topicRoots } from './worldSam';
+describe('topic roots', () => {
+  const book = [
+    { node_key: 'bg_root_a', topic: 'background', text: '' }, { node_key: 'bg_root_b', topic: 'background', text: '' },
+    { node_key: 'bg_more', topic: 'background', text: '' },
+    { node_key: 'char_temper_root', topic: 'character', text: '' }, { node_key: 'char_time_root_a', topic: 'character', text: '' },
+    { node_key: 'sam_whistle_root', topic: 'whistle', text: '' },
+  ];
+  it('roots are topic entries whose unsuffixed key ends in _root', () => {
+    expect(topicRoots(book, 'background')).toEqual(['bg_root']);
+    expect(topicRoots(book, 'character')).toEqual(['char_temper_root', 'char_time_root']);
+    expect(rootOf(book, 'whistle')).toBe('sam_whistle_root');
+    expect(rootOf(book, 'stones')).toBeNull();
+  });
+  it('picks one of several roots at random', () => {
+    expect(rootOf(book, 'character', () => 0)).toBe('char_temper_root');
+    expect(rootOf(book, 'character', () => .99)).toBe('char_time_root');
+  });
+});

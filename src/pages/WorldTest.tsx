@@ -188,7 +188,10 @@ export function WorldSandbox({ identity, userId }: { identity: Identity; userId?
         ? { x: journey.current.from.x + (point.x - journey.current.from.x) * progress, y: journey.current.from.y + (point.y - journey.current.from.y) * progress } : point;
       camera.current = { x: (display.current.x + .5) * WORLD_TILE - width / 2, y: (display.current.y + .5) * WORLD_TILE - height / 2 };
       const clock = Date.now(), moving = progress < 1 || time < bumpUntil.current;
-      const gust = !reduced && gustStrength(point.x, point.y, clock) > 0;
+      let gust = false;
+      if (!reduced) for (let x = Math.floor(camera.current.x / WORLD_TILE); x <= Math.ceil((camera.current.x + width) / WORLD_TILE); x++) {
+        if (gustStrength(x, point.y, clock) > 0) { gust = true; break; }
+      }
       if (time - lastDraw < terrainDrawInterval(moving, gust)) { frame = requestAnimationFrame(tick); return; }
       lastDraw = time;
       drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l, clock);

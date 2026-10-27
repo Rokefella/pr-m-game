@@ -36,19 +36,15 @@ export function npcStageMet(stage: number, condition: QuestCondition | null, con
 }
 
 /** The same entry buckets used by the dialogue; no inferred quests from character/trade prose. */
-export function npcEntryBucket(key: string, flags: QuestContext['flags']): string {
+export function npcEntryBucket(key: string, _flags: QuestContext['flags']): string {
   if (key === 'banker') return 'bnk_root_menu';
-  if (key !== 'bernard') return 'temper_root';
-  const stage = flags.bernard_stage;
-  if (stage === '1') return 'quest_check_status';
-  if (stage === '3') return 'quest_stage3_root';
-  if (stage === '4') return 'quest_stage4_root';
-  if (stage === '6') return 'quest_stage6_root';
-  return ['touched_23', 'touched_47', 'touched_89'].every(k => flags[k] === 'true') ? 'char_temper_root' : 'quest_intro_root';
+  return 'temper_root';
 }
 
 export function getNpcQuestState(npcKey: string, context: QuestContext): NpcQuestState {
   const key = npcKey.toLowerCase().replace(/^the\s+/, '');
+  // Sam's old village quest is retired; his world card shows its own marker.
+  if (key === 'bernard' || key === 'sam') return 'none';
   const stage = Number(context.flags[`${key}_stage`] ?? 0);
   // Maze rescue is started on Alexandra contact; Claire is recruitable only after that contact.
   if (context.rescue && key === 'alexandra') return context.rescue.alexandraFound ? 'active' : 'available';
@@ -77,17 +73,9 @@ export function getNpcQuestState(npcKey: string, context: QuestContext): NpcQues
       }
     }
   }
-  // Bernard arrival starts the building quest, while the building reward is its hand-in.
-  if (key === 'bernard' && stage === 0 && actions.has('advance_to_1')) return 'available';
-  if (key === 'bernard' && stage === 1 && actions.has('grant_credits_30_advance_2')) return 'ready';
-  // Growth and Wanderer rewards are new interactions only before their stage advances.
-  if (key === 'bernard' && stage === 2 && actions.has('grant_growth_point_1')) return 'available';
-  if (key === 'bernard' && stage === 4 && actions.has('grant_wanderer_title')) return 'ready';
   // Alexandra's offer is suppressed after acceptance/completion; its existing stage gates still apply.
   if (actions.has('accept_alexandra_quest') && !context.flags.alexandra_quest) return 'available';
   // Chef readiness comes solely from the configured completion option and its exact gates.
   if (key === 'chef' && context.flags.chef_recipe_complete !== 'true' && actions.has('complete_chef_recipe')) return 'ready';
-  // Bernard's underway stages have no hand-in action; traders and character-only NPCs are not quests.
-  if (key === 'bernard' && ([1, 2, 3].includes(stage) || context.flags.alexandra_quest === 'active')) return 'active';
   return 'none';
 }

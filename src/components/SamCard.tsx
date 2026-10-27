@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import NpcPortrait from '@/components/NpcPortrait';
-import { currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samStageFlag, cardTopics, topicRoot, type BookNode, type SamStage } from '@/lib/worldSam';
+import { currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samFlags, cardTopics, topicRoot, entryVisible, type BookNode, type SamStage } from '@/lib/worldSam';
 
 export const NOTE_ERROR = 'That didn\'t work. Try again in a moment.';
 
@@ -11,14 +11,15 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
   const [stage, setStage] = useState<SamStage | null>(null);
   const [checked, setChecked] = useState(false);
   const [samStage, setSamStage] = useState(0);
+  const [flags, setFlags] = useState<Record<string, string>>({});
   const [receipt, setReceipt] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [node, setNode] = useState<BookNode | null>(null);
   const refresh = useCallback(async (data = sam) => {
     if (!data) return;
-    const [next, flag] = await Promise.all([currentStage(userId, data.stages), samStageFlag(userId)]);
-    setStage(next); setSamStage(flag); setChecked(true);
+    const [next, all] = await Promise.all([currentStage(userId, data.stages), samFlags(userId)]);
+    setStage(next); setFlags(all); setSamStage(parseInt(all.sam_stage ?? '0', 10) || 0); setChecked(true);
   }, [sam, userId]);
   useEffect(() => { let off = false; void loadSam(npcKey).then(d => { if (off) return; setSam(d); if (d) void refresh(d); else setChecked(true); }); return () => { off = true; }; }, [npcKey, userId]); // eslint-disable-line react-hooks/exhaustive-deps
   const name = (t: string) => fillName(t, playerName);
@@ -55,7 +56,7 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
       {error && <p className="font-mono world-card-error">{error}</p>}
       {receipt && <p className="font-mono world-receipt">{receipt}</p>}
       <h3 className="font-mono world-topics-title">Ask about…</h3>
-      <div className="world-topics">{(sam ? cardTopics(samStage, sam.book) : []).map(t => <Button key={t.key} variant="ghost" className="font-fell" onClick={() => go(sam ? topicRoot(sam.book, t.key) : null)}>{t.label}</Button>)}</div>
+      <div className="world-topics">{(sam ? cardTopics(samStage, sam.book, flags) : []).map(t => <Button key={t.key} variant="ghost" className="font-fell" onClick={() => go(sam ? topicRoot(sam.book.filter(e => entryVisible(e, flags)), t.key) : null)}>{t.label}</Button>)}</div>
     </>}
   </>;
 }

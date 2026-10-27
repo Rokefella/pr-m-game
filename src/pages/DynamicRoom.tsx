@@ -565,7 +565,7 @@ const DynamicRoom = () => {
                   ? (cell.npc_key || cell.npc_name || '').trim().toLowerCase().replace(/\s+/g, '_')
                   : TYPE_NPC_KEYS[cell.type];
               if (key) {
-                npcs.push({ id: `npc-${key}-${cell.col}-${cell.row}`, npcKey: key, x, y });
+                if (key !== 'bernard' && key !== 'sam') npcs.push({ id: `npc-${key}-${cell.col}-${cell.row}`, npcKey: key, x, y });
               }
               break;
             }

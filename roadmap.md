@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Sam rework: stage-driven world homes, Lumen topics, open town doors, door_exchange, Instrument as unusable tool, Sam's land quest line, no Sam in mazes, old village removed. New preview account walked stages 0→3 and received the Instrument and coal; Lumen exchange and maze 1 checked.
+
 - [x] Add dev-menu TOP-UP actions, server-balance HUD refresh and pre-grant world/maze save settling; existing RPC only.
 
 - [x] Walkthrough #9/#15/#22–#25: grouped stacks/quantity use, world Map Scrap discovery/marker, shared terrain and building motion, immediate inventory refresh and ice sliding/NPC avoidance. All 525 tests pass; controlled desktop/phone preview checks cover stack use/HUD, world reveal, open wardrobe refresh and four-cell ice slide/blocked stop. No database changes.

@@ -13,8 +13,7 @@ import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { BETA_MODE } from '@/lib/config';
 import { getAllFlags, getFlag, reconcileBernardAfterShadow, setFlag } from '@/lib/questFlags';
 import { canAccessMaze, checkSubscriptionStatus, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
-import { DOOR_FLAGS, type VillageDoorKind } from '@/lib/villageDoors';
-import { effectiveWorldLevel, worldDoorRefusal } from '@/lib/worldHome';
+import { effectiveWorldLevel, worldDoorRefusal, type WorldDoorKind } from '@/lib/worldHome';
 import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailySteps';
 import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED, WORLD_REVEALED, type MechanicResult } from '@/lib/mechanics';
 import { refreshDrops } from '@/lib/carriedDrops';
@@ -119,6 +118,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const [data, setData] = useState<WorldData | null>(null);
   const rawWorld = useRef<WorldData | null>(null);
   const [completed, setCompleted] = useState(Number(identity.maze_completed_level) || 0);
+  const [samStage, setSamStage] = useState(0);
   const convoOpen = useRef(false);
   const dataRef = useRef<WorldData | null>(null);
   const [error, setError] = useState('');
@@ -253,7 +253,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     void readWorldData().then(world => {
       if (cancelled) return;
       rawWorld.current = world;
-      const shown = { ...world, places: visiblePlaces(world.places, completed) };
+      const shown = { ...world, places: visiblePlaces(world.places, completed, samStage) };
       dataRef.current = shown; setData(shown);
       const opening = takeWorldOpening();
       if (opening) { place(opening, opening.layer); pendingArrival.current = posRef.current; } else place(startPoint(world), 0);
@@ -262,9 +262,9 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   }, [retry, place]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const world = rawWorld.current; if (!world) return;
-    const shown = { ...world, places: visiblePlaces(world.places, completed) };
+    const shown = { ...world, places: visiblePlaces(world.places, completed, samStage) };
     dataRef.current = shown; setData(shown);
-  }, [completed]);
+  }, [completed, samStage]);
   const npcKeys = (data?.places ?? []).filter(p => p.action === 'npc' && p.npc_key).map(p => p.npc_key as string).join(',');
   useEffect(() => {
     if (!userId || !npcKeys) { samLineRef.current = new Set(); return; }
@@ -286,6 +286,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       identityRef.current = next; setIdentity(next);
       setCompleted(Number(next.maze_completed_level) || 0);
     }
+    const flags = await getAllFlags(userId).catch(() => null);
+    if (flags) setSamStage(parseInt(flags.sam_stage ?? '0', 10) || 0);
   }, [userId]);
   const refreshReward = useCallback(async () => {
     await refreshCompleted();
@@ -511,12 +513,11 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     await stepLedger.current?.flush();
     navigate(path);
   };
-  /** Mirrors Village's door trigger: touched flag, the same refusals and the same destinations. */
-  const openDoor = async (kind: VillageDoorKind) => {
+  /** World door trigger: the maze waits for Sam; library and exchange are always open. */
+  const openDoor = async (kind: WorldDoorKind) => {
     if (busy || !userId) return;
     setBusy(true); setEntryMessage('');
     try {
-      void setFlag(userId, DOOR_FLAGS[kind], 'true');
       const flags = await getAllFlags(userId);
       const refusal = worldDoorRefusal(kind, level, flags.sam_stage);
       if (refusal) { setEntryMessage(refusal); return; }

@@ -95,7 +95,7 @@ describe('World home mechanics', () => {
     await screen.findByText(/STEPS\s+98/);
     const plate = screen.getByRole('button', { name: 'Registration number' });
     for (let i = 0; i < 5; i++) fireEvent.pointerDown(plate);
-    fireEvent.click(await screen.findByRole('button', { name: 'OLD VILLAGE' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Skip to Maze' }));
     await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('spend_world_steps', { p_amount: 1 }));
   });
   it('subtracts pending fractional costs from a refreshed user balance', async () => {
@@ -159,11 +159,11 @@ describe('World home mechanics', () => {
     await new Promise(r => setTimeout(r, 2100));
     expect(screen.queryByRole('dialog', { name: 'Level arrival' })).toBeNull();
   });
-  it('opens the World dev menu after five taps and keeps Old Village as a dev shortcut', async () => {
+  it('opens the World dev menu after five taps without an Old Village shortcut', async () => {
     open(); const plate = await screen.findByRole('button', { name: 'Registration number' });
     for (let i = 0; i < 5; i++) fireEvent.pointerDown(plate);
-    fireEvent.click(await screen.findByRole('button', { name: 'OLD VILLAGE' }));
-    await screen.findByText('Village');
+    await screen.findByText('DEV MENU');
+    expect(screen.queryByRole('button', { name: 'OLD VILLAGE' })).toBeNull();
   });
 });
 describe('world return', () => {

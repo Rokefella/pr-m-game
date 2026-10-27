@@ -9,7 +9,6 @@ import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index.tsx";
 
 import ProfileSetup from "./pages/ProfileSetup.tsx";
-import Village from "./pages/Village.tsx";
 import Door from "./pages/Door.tsx";
 import LibraryDoor from "./pages/LibraryDoor.tsx";
 import LibraryRoom from "./pages/LibraryRoom.tsx";
@@ -18,7 +17,6 @@ import ExchangeRoom from "./pages/ExchangeRoom.tsx";
 import Maze from "./pages/Maze.tsx";
 import ShadowRealm from "./pages/ShadowRealm.tsx";
 import Paywall from "./pages/Paywall.tsx";
-import BernardRoomDynamic from "./pages/BernardRoomDynamic.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
@@ -49,7 +47,7 @@ const App = () => (
             
             <Route path="/intro" element={<Intro />} />
             <Route path="/profile-setup" element={<ProfileSetup />} />
-            <Route path="/village" element={<Village />} />
+            <Route path="/village" element={<Navigate to="/world" replace />} />
             <Route path="/door" element={<Door />} />
             <Route path="/library-door" element={<LibraryDoor />} />
             <Route path="/library" element={<LibraryRoom />} />
@@ -59,7 +57,7 @@ const App = () => (
             <Route path="/maze" element={<Maze />} />
             <Route path="/shadow" element={<ShadowRealm />} />
             <Route path="/paywall" element={BETA_MODE ? <Navigate to="/world" replace /> : <Paywall />} />
-            <Route path="/bernard-room" element={<BernardRoomDynamic />} />
+            <Route path="/bernard-room" element={<Navigate to="/world" replace />} />
             <Route path="/avatar-preview" element={<AvatarPreview />} />
             <Route path="/tiles" element={<TilePreview />} />
             <Route path="/room/:levelNumber/:locationKey" element={<DynamicRoom />} />

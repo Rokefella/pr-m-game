@@ -10,11 +10,12 @@ const sam = [
 ];
 const at = (lvl: number | null) => visiblePlaces(sam, lvl).filter(p => p.npc_key).map(p => [p.x, p.y]);
 
-describe('Sam show_when', () => {
-  it('null level counts as 0', () => expect(at(null)).toEqual([[28, 22]]));
-  it('level 1', () => expect(at(1)).toEqual([[303, 28]]));
-  it('level 2', () => expect(at(2)).toEqual([[840, 28]]));
-  it('level 3 and above', () => { expect(at(3)).toEqual([[971, 201]]); expect(at(9)).toEqual([[971, 201]]); });
+const byStage = (stage: number) => visiblePlaces(sam, 9, stage).filter(p => p.npc_key).map(p => [p.x, p.y]);
+describe('Sam place by sam_stage', () => {
+  it('stages 0 to 2 stand at the start fire, whatever the maze level', () => { for (const s of [0, 1, 2]) expect(byStage(s)).toEqual([[28, 22]]); expect(at(null)).toEqual([[28, 22]]); });
+  it('stages 3 and 4 stand at Cinder Hollow', () => { expect(byStage(3)).toEqual([[303, 28]]); expect(byStage(4)).toEqual([[303, 28]]); });
+  it('stage 5 stands at The First Spark', () => expect(byStage(5)).toEqual([[840, 28]]));
+  it('stage 6 and up stand in Lumen', () => { expect(byStage(6)).toEqual([[971, 201]]); expect(byStage(8)).toEqual([[971, 201]]); });
   it('rows without show_when always show', () => expect(visiblePlaces(sam, 4).some(p => p.x === 5)).toBe(true));
 });
 
@@ -58,4 +59,22 @@ describe('cardTopics', () => {
   const book = ['background', 'instrument', 'sam_lantern'].map(t => ({ node_key: `${t}_root`, text: 'x', topic: t }));
   it('shows ungated book topics that have a root', () => expect(cardTopics(0, book).map(t => t.key)).toEqual(['background', 'sam_lantern']));
   it('keeps the Instrument gated until stage two', () => expect(cardTopics(2, book).map(t => t.key)).toContain('instrument'));
+});
+
+import { samLandLine } from './worldSam';
+describe('Lumen topics and retired data', () => {
+  const lumen = ['lumen_well', 'lumen_library', 'lumen_exchange', 'lumen_towns'].map(t => ({ node_key: `${t}_root_a`, text: 'x', topic: t, requires_flags: { sam_lumen: '1' } }));
+  const book = [...lumen, { node_key: 'q_root', text: 'old', topic: 'retired_quest' }, { node_key: 'background_root', text: 'x', topic: 'background' }];
+  it('hides Lumen topics until sam_lumen is 1', () => expect(cardTopics(6, book, {}).map(t => t.key)).toEqual(['background']));
+  it('labels Lumen topics once sam_lumen is 1', () => expect(cardTopics(6, book, { sam_lumen: '1' }).filter(t => t.key.startsWith('lumen')).map(t => t.label)).toEqual(['The well', 'The library', 'The exchange', 'Other towns']));
+  it('never shows retired topics', () => expect(cardTopics(8, book, { sam_lumen: '1' }).some(t => t.key.startsWith('retired'))).toBe(false));
+});
+describe("Sam's land quest line", () => {
+  it('names where Sam waits without numbers', () => {
+    expect(samLandLine(0)).toBe('Sam is waiting by the fire where you woke.');
+    expect(samLandLine(3)).toBe('Sam is waiting outside Cinder Hollow.');
+    expect(samLandLine(5)).toBe('Sam is waiting at The First Spark.');
+    expect(samLandLine(7)).toBe('Sam is waiting in Lumen.');
+    for (let s = 0; s <= 8; s++) expect(samLandLine(s)).not.toMatch(/\d|stage|level|maze/i);
+  });
 });

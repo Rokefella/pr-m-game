@@ -60,3 +60,21 @@ describe('cardTopics', () => {
   it('shows ungated book topics that have a root', () => expect(cardTopics(0, book).map(t => t.key)).toEqual(['background', 'sam_lantern']));
   it('keeps the Instrument gated until stage two', () => expect(cardTopics(2, book).map(t => t.key)).toContain('instrument'));
 });
+
+import { samLandLine } from './worldSam';
+describe('Lumen topics and retired data', () => {
+  const lumen = ['lumen_well', 'lumen_library', 'lumen_exchange', 'lumen_towns'].map(t => ({ node_key: `${t}_root_a`, text: 'x', topic: t, requires_flags: { sam_lumen: '1' } }));
+  const book = [...lumen, { node_key: 'q_root', text: 'old', topic: 'retired_quest' }, { node_key: 'background_root', text: 'x', topic: 'background' }];
+  it('hides Lumen topics until sam_lumen is 1', () => expect(cardTopics(6, book, {}).map(t => t.key)).toEqual(['background']));
+  it('labels Lumen topics once sam_lumen is 1', () => expect(cardTopics(6, book, { sam_lumen: '1' }).filter(t => t.key.startsWith('lumen')).map(t => t.label)).toEqual(['The well', 'The library', 'The exchange', 'Other towns']));
+  it('never shows retired topics', () => expect(cardTopics(8, book, { sam_lumen: '1' }).some(t => t.key.startsWith('retired'))).toBe(false));
+});
+describe("Sam's land quest line", () => {
+  it('names where Sam waits without numbers', () => {
+    expect(samLandLine(0)).toBe('Sam is waiting by the fire where you woke.');
+    expect(samLandLine(3)).toBe('Sam is waiting outside Cinder Hollow.');
+    expect(samLandLine(5)).toBe('Sam is waiting at The First Spark.');
+    expect(samLandLine(7)).toBe('Sam is waiting in Lumen.');
+    for (let s = 0; s <= 8; s++) expect(samLandLine(s)).not.toMatch(/\d|stage|level|maze/i);
+  });
+});

@@ -1670,7 +1670,7 @@ const Maze = () => {
         <ProfileButton onClick={openProfile} />
         {registrationNumber === 1 && <Button variant="ghost" className="font-mono text-xs" aria-label="Registration 0001" onPointerDown={() => {
           const now = Date.now();
-          devTaps.current.count = now - devTaps.current.at < 500 ? devTaps.current.count + 1 : 1;
+          devTaps.current.count = now - devTaps.current.at <= 1500 ? devTaps.current.count + 1 : 1;
           devTaps.current.at = now;
           if (devTaps.current.count >= 5) { devTaps.current.count = 0; devOpenRef.current = true; setDevOpen(true); }
         }}>#0001</Button>}

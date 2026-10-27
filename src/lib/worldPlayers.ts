@@ -23,8 +23,10 @@ export class WorldPresence {
   dispose() { this.off = true; if (this.timer) clearTimeout(this.timer); }
 }
 export async function readWorldPlayers(): Promise<WorldPlayer[]> {
-  const { data, error } = await supabase.from('player_positions').select('*').eq('village_level', 0).gte('last_seen', new Date(Date.now() - 120000).toISOString());
-  if (error) return [];
-  return (data ?? []) as unknown as WorldPlayer[];
+  try {
+    const { data, error } = await supabase.from('player_positions').select('*').eq('village_level', 0).gte('last_seen', new Date(Date.now() - 120000).toISOString());
+    if (error) return [];
+    return (data ?? []) as unknown as WorldPlayer[];
+  } catch { return []; }
 }
 export const writeWorldPlayer = async (row: WorldPlayer) => { const { error } = await supabase.from('player_positions').upsert(row as never); if (error) throw error; };

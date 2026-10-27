@@ -9,8 +9,8 @@ import { Z } from '@/lib/zIndex';
 import './game-home.css';
 import { goBackToStart, START_CONFIRMATION } from '@/lib/goBackToStart';
 
-type Props = { open: boolean; onClose: () => void; userId?: string; home?: 'world' | 'village'; onChanged?: () => void };
-export default function DevMenu({ open, onClose: close, userId, home = 'village', onChanged }: Props) {
+type Props = { open: boolean; onClose: () => void; userId?: string; home?: 'world' | 'village'; onChanged?: () => void; onBeforeStart?: () => Promise<void> };
+export default function DevMenu({ open, onClose: close, userId, home = 'village', onChanged, onBeforeStart }: Props) {
   const navigate = useNavigate();
   const user = userId ? { id: userId } : null;
   const onClose = useCallback(() => { close(); onChanged?.(); }, [close, onChanged]);
@@ -25,10 +25,10 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
   const handleDevReset = useCallback(async () => {
     if (!userId || starting) return;
     setStarting(true);
-    try { await goBackToStart(userId); close(); navigate('/intro'); }
+    try { await onBeforeStart?.(); await goBackToStart(userId); close(); navigate('/intro'); }
     catch (e) { setDevStageNote(e instanceof Error ? e.message : 'Could not start over.'); }
     finally { setStarting(false); }
-  }, [userId, navigate, close, starting]);
+  }, [userId, navigate, close, starting, onBeforeStart]);
   return open ? (
         <div
           className="font-mono" data-game-ui="open"

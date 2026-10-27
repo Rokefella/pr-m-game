@@ -8,7 +8,7 @@ export const START_CONFIRMATION = 'Start over completely? Quests, maze progress,
 export function clearPlayerLocal(userId: string, stores: Storage[] = [localStorage, sessionStorage]) {
   for (const store of stores) {
     for (const key of Object.keys(store)) {
-      const game = /^(praem[._:]|dev_)/.test(key);
+      const game = /^(praem[._:]|dev_)/.test(key) || key === 'visited_shadow_this_run';
       const scoped = /^praem\.(worldDiscovery|heavyLegs)\./.test(key);
       if (game && (!scoped || key.endsWith(`.${userId}`))) store.removeItem(key);
     }

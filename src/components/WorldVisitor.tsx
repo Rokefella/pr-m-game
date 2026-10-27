@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import SkinSprite from './SkinSprite';
 import LegacyOrb, { orbLook } from './LegacyOrb';
-import { frameFor, resolveColors, skinBaseColor, useSkins, type WalkPhase } from '@/lib/skins';
+import { resolveColors, skinBaseColor, useSkins, type WalkPhase } from '@/lib/skins';
 import { playerAppearance, type WorldPlayer } from '@/lib/worldPlayers';
 import { WORLD_TILE, type WorldPoint } from '@/lib/worldTest';
 export default function WorldVisitor({ player, at, camera, reduced }: { player: WorldPlayer; at: WorldPoint; camera: { current: WorldPoint }; reduced: boolean }) {

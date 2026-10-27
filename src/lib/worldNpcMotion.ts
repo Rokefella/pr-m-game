@@ -27,7 +27,8 @@ export class NpcWander {
   sample(home: WorldPoint, key: string, now: number, player: WorldPoint, safe: (p: WorldPoint) => boolean, reduced = false): NpcPose {
     const slot = Math.floor(now / 8000);
     if (slot !== this.slot) {
-      const previous = npcPath(home, key, slot - 1, safe).at(-1) ?? home;
+      const old = npcPath(home, key, slot - 1, safe);
+      const previous = old[old.length - 1] ?? home;
       const next = npcPath(home, key, slot, safe);
       const back = npcPath(home, key, slot - 1, safe).slice().reverse();
       this.path = [previous, ...back.slice(1), ...next.slice(1)]; this.slot = slot;

@@ -69,4 +69,5 @@ export class WorldDiscovery {
     return this.inFlight;
   }
   dispose() { this.disposed = true; clearInterval(this.timer); void this.flush(true); }
+  abandon() { this.disposed = true; this.dirty = false; this.loaded = false; clearInterval(this.timer); }
 }

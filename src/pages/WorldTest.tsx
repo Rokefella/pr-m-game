@@ -141,6 +141,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const presence = useRef<WorldPresence | null>(null);
   const npcWanders = useRef(new Map<string, NpcWander>());
   const npcPoses = useRef(new Map<string, NpcPose>());
+  const npcApproached = useRef(new Set<string>());
   const [npcPhases, setNpcPhases] = useState<Record<string, 'stand' | 'a' | 'b'>>({});
   const npcPhasesRef = useRef<Record<string, 'stand' | 'a' | 'b'>>({});
   const [buildings, setBuildings] = useState<WorldBuilding[]>([]);
@@ -371,7 +372,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     if (terrain) ledger?.move(tileCost(terrain, eraAt(eraPointFor(next, l), world.eras)));
     cache.maintain(next);
     const layerPlaces = currentPlaces(placesOn(world.places, l));
-    const spot = layerPlaces.find(p => p.x === next.x && p.y === next.y) ?? adjacentConversation(layerPlaces, next);
+    for (const p of layerPlaces) if (p.npc_key && chebyshev(p, next) > 1) npcApproached.current.delete(npcId(placesOn(world.places, l).find(home => home.npc_key === p.npc_key) ?? p));
+    const spot = layerPlaces.find(p => !p.npc_key && p.x === next.x && p.y === next.y) ?? adjacentConversation(layerPlaces.filter(p => !p.npc_key), next);
     const layerFinds = findsOn(findsRef.current, l);
     for (const id of [...approached.current]) { const f = layerFinds.find(x => x.id === id); if (!f || chebyshev(f, next) > 1) approached.current.delete(id); }
     if (spot) { setEntryMessage(''); setPlaceCard(spot); return; }
@@ -453,7 +455,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
         const f = pose.facing;
         if (npcFacingsRef.current[key] !== f) { npcFacingsRef.current[key] = f; setNpcFacings({ ...npcFacingsRef.current }); }
         if (npcPhasesRef.current[key] !== pose.phase) { npcPhasesRef.current[key] = pose.phase; setNpcPhases({ ...npcPhasesRef.current }); }
-        if (!blocked.current && chebyshev(pose.cell, point) <= 1) { keys.current.clear(); setPlaceCard({ ...p, ...pose.cell }); }
+        if (chebyshev(pose.cell, point) > 1) npcApproached.current.delete(key);
+        if (!blocked.current && !npcApproached.current.has(key) && chebyshev(pose.cell, point) <= 1) { npcApproached.current.add(key); keys.current.clear(); setPlaceCard({ ...p, ...pose.cell }); }
       }
       frame = requestAnimationFrame(tick);
     };
@@ -530,7 +533,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     <header className="world-hud font-mono">{dev && <div className="world-status"><span>{pos.x},{pos.y} · A {area.x},{area.y} · {era?.name ?? '—'}</span><span>{layer === 1 ? `UNDERGROUND · ABOVE ${surfacePoint.x},${surfacePoint.y}` : 'SURFACE'}</span><span>{terrain?.name ?? (cache.errors.size ? 'Window unavailable' : 'Loading…')} · COST {terrain ? tileCost(terrain, era) : '—'} · SPENT {Number(spent.toFixed(2))}</span>{layer === 0 && <span>{phase.phase.toUpperCase()} · {Math.ceil(phase.minutesLeft)} MIN</span>}</div>}<Button variant="ghost" size="icon" title="MAP" aria-label="MAP" onClick={() => { keys.current.clear(); setMapOpen(true); }}><MapIcon size={18} /></Button>{dev && <Button variant="outline" className="world-jump" onClick={() => { setJumpX(String(pos.x)); setJumpY(String(pos.y)); setJumpOpen(true); }}><Navigation size={14} />JUMP</Button>}</header>
     <GameHud stepsRemaining={stepBalance} stepsExhausted={stepBalance === 0} credits={identity.credits ?? 0} currentLevel={identity.level ?? 1} registrationNumber={identity.registration_number} growthPoints={identity.growth_points ?? 0} subscriptionStatus={subscription} trialDaysRemaining={identity.first_launch_at ? Math.max(0, 14 - Math.floor((Date.now() - new Date(identity.first_launch_at).getTime()) / 86400000)) : identity.trial_end ? getDaysRemainingInTrial(identity.trial_end) : 14} onOpenProfile={() => { keys.current.clear(); setProfileOpen(true); }} onOpenDevMenu={() => { keys.current.clear(); setDevOpen(true); }} />
     <ProfileOverlay isOpen={profileOpen} onClose={() => { setProfileOpen(false); void refreshCompleted(); }} context="village" growthPoints={identity.growth_points ?? 0} socialStat={identity.social ?? 0} perceptionStat={identity.perception ?? 0} tradeStat={identity.trade ?? 0} />
-    {dev && <DevMenu open={devOpen} onClose={() => setDevOpen(false)} userId={userId} home="world" onChanged={() => void refreshCompleted()} />}
+    {dev && <DevMenu open={devOpen} onClose={() => setDevOpen(false)} userId={userId} home="world" onChanged={() => void refreshCompleted()} onBeforeStart={async () => { await stepLedger.current?.flush(); await discovery.current?.flush(true); discovery.current?.abandon(); presence.current?.dispose(); stepLedger.current?.discard(); }} />}
     {arrival && <LevelUpCard newLevel={arrival.newLevel} titleUnlocked={arrival.titleUnlocked} auraColor={identity.aura_color} orbDye={identity.orb_dye} registrationNumber={identity.registration_number} avatarBody={identity.avatar_body} home="world" onContinue={async () => {
       if (!userId) return;
       const { error } = await supabase.from('users').update({ title: arrival.title, levelup_pending: false, levelup_newlevel: 0, level: arrival.newLevel, social: (identityRef.current.social ?? 0) + 1 } as never).eq('id', userId);

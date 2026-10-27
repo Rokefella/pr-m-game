@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import WorldTest from './WorldTest';
-const f = vi.hoisted(() => ({ uid: 'player', granted: 0, registration: 1, level: 1, completed: 0, steps: 100, credits: 50, pending: false, newLevel: 2, social: 2, flags: { sam_stage: '0', bernard_stage: '0' }, signedIn: true, reads: [] as string[], rpc: vi.fn(), mutation: vi.fn(), places: [] as Record<string, unknown>[] }));
+const f = vi.hoisted(() => ({ uid: 'player', granted: 0, registration: 1, level: 1, completed: 0, steps: 100, credits: 50, pending: false, newLevel: 2, social: 2, flags: { sam_stage: '0', bernard_stage: '0' }, signedIn: true, reads: [] as string[], rpc: vi.fn(), mutation: vi.fn(), presence: vi.fn(), places: [] as Record<string, unknown>[] }));
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: f.signedIn ? { id: f.uid } : null, loading: false }) }));
 vi.mock('@/components/ProfileOverlay', () => ({ default: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div role="dialog" aria-label="Profile"><button onClick={onClose}>Close profile</button></div> : null, ProfileButton: ({ onClick }: { onClick: () => void }) => <button onClick={onClick}>Open profile</button> }));
 vi.mock('@/components/Thumbstick', () => ({ default: ({ onMove }: { onMove: (x: number, y: number) => void }) => <button onClick={() => onMove(1, 0)}>Walk east</button> }));
@@ -10,12 +10,13 @@ vi.mock('@/hooks/useNpcQuestStates', () => ({ useNpcQuestStates: () => () => 'no
 vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc, from: (table: string) => {
   f.reads.push(table);
   const result = () => ({ error: null, data: table === 'users' ? { registration_number: f.registration, aura_color: null, level: f.level, maze_completed_level: f.completed, steps_remaining: f.steps, credits: f.credits, levelup_pending: f.pending, levelup_newlevel: f.newLevel, social: f.social, title: 'Wanderer' } : table === 'quest_flags' ? Object.entries(f.flags).map(([flag_key, flag_value]) => ({ flag_key, flag_value })) : table === 'world_terrain_types' ? [{ key: 'path', name: 'Path', grp: 'ground', walkable: true, enabled: true, steps: null }, { key: 'wall', walkable: false, enabled: true }] : table === 'world_eras' ? [{ order_index: 1, name: 'Fire', ring_from: 0, ring_to: 500, step_cost: 1.5 }] : table === 'world_places' ? [{ name: 'Start', kind: 'start', x: 25, y: 25 }, { name: 'Cinder Hollow', kind: 'maze_entrance', maze_level: 1, x: 300, y: 31, notes: 'Ash' }, ...f.places] : table === 'world_settings' ? { day_night: {} } : [] });
-  const chain = { select: () => chain, eq: () => chain, order: () => chain, limit: () => chain, maybeSingle: async () => result(), then: (r: (v: ReturnType<typeof result>) => unknown) => Promise.resolve(result()).then(r), insert: f.mutation, update: (patch: Record<string, unknown>) => { f.mutation(patch); return chain; }, delete: f.mutation, upsert: f.mutation };
+  const chain = { select: () => chain, eq: () => chain, gte: () => chain, order: () => chain, limit: () => chain, maybeSingle: async () => result(), then: (r: (v: ReturnType<typeof result>) => unknown) => Promise.resolve(result()).then(r), insert: f.mutation, update: (patch: Record<string, unknown>) => { f.mutation(patch); return chain; }, delete: f.mutation, upsert: table === 'player_positions' ? f.presence : f.mutation };
   return chain;
 } } }));
 beforeEach(() => {
   localStorage.clear(); localStorage.setItem('praem.worldLayoutVersion', '3'); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.places = []; f.mutation.mockReset().mockResolvedValue({ error: null });
   f.uid += 'x'; f.granted = 0; f.completed = 0; f.steps = 100; f.credits = 50; f.pending = false; f.newLevel = 2; f.social = 2; f.flags = { sam_stage: '0', bernard_stage: '0' };
+  f.presence.mockReset().mockResolvedValue({ error: null });
   f.rpc.mockReset().mockImplementation(async (name, args) => ({ error: null, data: name === 'spend_world_steps' ? (f.steps = Math.max(0, f.steps - args.p_amount)) : name === 'claim_daily_steps' ? f.granted : { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
@@ -154,7 +155,7 @@ describe('world return', () => {
     expect(f.mutation).not.toHaveBeenCalled();
   });
   it.each([
-    { kind: 'npc_home', name: 'Bernard', notes: 'Clearing notes' },
+    { kind: 'npc_home', name: 'Sam', notes: 'Clearing notes' },
     { kind: 'town', action: 'merchant', name: 'Emberfold: merchant', notes: 'Market notes' },
   ])('opens adjacent conversation cards without Home or door places: $name', async spot => {
     f.places = [{ ...spot, x: 27, y: 25 }];

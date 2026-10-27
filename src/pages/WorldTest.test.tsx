@@ -88,6 +88,7 @@ describe('World home mechanics', () => {
     open(); await screen.findByText('25,25 · A 0,0 · Fire');
     await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
     fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    fireEvent.click(screen.getByLabelText('Open world terrain'), { clientX: 1100, clientY: 1020 });
     fireEvent.click(await screen.findByRole('button', { name: 'I am back.' }));
     await waitFor(() => expect(f.mutation).toHaveBeenCalledWith({ title: 'Fragment Seeker', unlocked_titles: ['Wanderer', 'Fragment Seeker'] }));
     expect(f.rpc).toHaveBeenCalledWith('run_npc_stage', { p_stage: 'sam_03_back' });

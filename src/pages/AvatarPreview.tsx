@@ -1,4 +1,4 @@
-import PlayerAvatar, { type AvatarPalette } from '@/components/PlayerAvatar';
+import LegacyOrb, { type AvatarPalette } from '@/components/LegacyOrb';
 
 const PALETTES: AvatarPalette[] = ['purple', 'red', 'amber', 'teal'];
 const SIZES = [24, 30, 48, 96];
@@ -15,7 +15,7 @@ export default function AvatarPreview() {
             <p className="font-mono text-xs mb-2">{walking ? 'WALKING' : 'IDLE'}</p>
             <div className="avatar-preview-sizes">
               {SIZES.map(size => <figure key={size} className="m-0 text-center min-w-0" data-size={size}>
-                <div className="avatar-preview-sprite"><PlayerAvatar palette={palette} walking={walking} size={size} /></div>
+                <div className="avatar-preview-sprite"><LegacyOrb palette={palette} walking={walking} size={size} /></div>
                 <figcaption className="font-mono text-xs mt-2">{size}px</figcaption>
               </figure>)}
             </div>

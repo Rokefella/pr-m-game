@@ -18,6 +18,7 @@ import { readMazeSkin, skinDarkness, type LevelSkin } from '@/lib/mazeSkins';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import { useOrbSync } from '@/lib/orb';
+import { setCurrentSkin, useSkins, type Skin } from '@/lib/skins';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
@@ -30,6 +31,7 @@ import { waitForDailySteps } from '@/lib/dailySteps';
 import { abandonRunDrops, endRun, forfeitUnbanked, getActiveRun, markRunComplete, startRun, STRICT_FORFEIT } from '@/lib/runState';
 import { carriedDropCount, refreshDrops, exitCarryWarning, DROPS_REFRESHED, type DropsRefresh } from '@/lib/carriedDrops';
 import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
+import SkinCard from '@/components/SkinCard';
 import PixelEye from '@/components/theme/PixelEye';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -412,7 +414,10 @@ const Maze = () => {
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [orbIdentity, setOrbIdentity] = useState({ title: '', name: '' });
   const [orbDye, setOrbDye] = useState<string | null>(null);
-  useOrbSync(setAuraColor, setOrbDye);
+  const [avatarBody, setAvatarBody] = useState<string | null>(null);
+  useOrbSync(setAuraColor, setOrbDye, setAvatarBody);
+  const skins = useSkins();
+  const [skinFound, setSkinFound] = useState<Skin | null>(null);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationNumberRef = useRef(0);
   const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
@@ -742,6 +747,8 @@ const Maze = () => {
       setOrbIdentity(previous => previous.title === (row.title ?? '') && previous.name === (row.username ?? '') ? previous : { title: row.title ?? '', name: row.username ?? '' });
       if (row.aura_color) setAuraColor(row.aura_color);
       setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
+      setAvatarBody((row as { avatar_body?: string | null }).avatar_body ?? null);
+      setCurrentSkin((row as { avatar_body?: string | null }).avatar_body ?? null);
       setRegistrationNumber(row.registration_number);
       setPerception(Number((row as unknown as { perception?: number | null }).perception ?? 0));
       registrationNumberRef.current = row.registration_number;
@@ -992,7 +999,9 @@ const Maze = () => {
           const uid = userIdRef.current;
           if (uid) void refreshDrops(uid);
           void refreshRunEffects();
-          showWhisper(`You found: ${result.drop_name ?? 'something'}. (carried)`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
+          const skin = result.drop_name ? skins.find(s => s.name === result.drop_name) : undefined;
+          if (skin) setSkinFound(skin);
+          else showWhisper(`You found: ${result.drop_name ?? 'something'}. (carried)`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
         }
       } catch { /* silent — a failed claim must not interrupt movement */ }
       finally {
@@ -1463,6 +1472,10 @@ const Maze = () => {
           palette={orbLook(auraColor, orbDye, registrationNumber)}
           walking={Math.abs(posRef.current.col - displayPos.col) >= 0.01 || Math.abs(posRef.current.row - displayPos.row) >= 0.01}
           size={MAZE_AVATAR_SIZE}
+          skin={avatarBody}
+          registrationNumber={registrationNumber}
+          auraColor={auraColor}
+          orbDye={orbDye}
         /></div>
         <OrbLabels title={orbIdentity.title} name={orbIdentity.name} size={MAZE_AVATAR_SIZE} />
       </div>
@@ -1582,11 +1595,17 @@ const Maze = () => {
         );
       })()}
 
+      {skinFound && (
+        <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={Z.OVERLAY}>
+          <SkinCard skin={skinFound} description={skinFound.blurb} carried auraColor={auraColor} orbDye={orbDye} registrationNumber={registrationNumber} onClose={() => setSkinFound(null)} />
+        </MazeDialog>
+      )}
+
       <Thumbstick
         onMove={(dc, dr) => tryMove(dc, dr)}
         disabled={
           profileOpenDisplay || exchangeOpen || doorConfirmOpen || insufficientFragmentsOpen ||
-          paywallOpen || activeFragment !== null
+          paywallOpen || activeFragment !== null || skinFound !== null
         }
       />
 

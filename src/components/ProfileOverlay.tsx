@@ -19,6 +19,7 @@ import { publishOrb, type OrbChange } from '@/lib/orb';
 import { X } from 'lucide-react';
 import { fragmentInventory, type FolderFragment } from '@/lib/carriedFragments';
 import DropIcon from '@/components/DropIcon';
+import Wardrobe from '@/components/Wardrobe';
 import { USER_STEPS_REFRESHED, type MazeUseContext } from '@/lib/mechanics';
 import { readOwnedDrops, DROPS_REFRESHED, type DropsRefresh, type OwnedDrop } from '@/lib/carriedDrops';
 
@@ -457,7 +458,7 @@ const ProfileOverlay = ({
       <PlateFrame width="min(100vw, 440px)" className="profile-frame">
         <div className="profile-content">
           <header className="profile-header">
-            <PlayerAvatar size={56} palette={orbLook(accountRow?.aura_color, accountRow?.orb_dye, accountRow?.registration_number)} walking={false} />
+            <PlayerAvatar size={56} palette={orbLook(accountRow?.aura_color, accountRow?.orb_dye, accountRow?.registration_number)} walking={false} skin={accountRow?.avatar_body} registrationNumber={accountRow?.registration_number} auraColor={accountRow?.aura_color} orbDye={accountRow?.orb_dye} />
             <div className="profile-identity">
               <h2 className="font-cinzel">{accountRow?.username?.trim() || `#${regNum}`}</h2>
               <div className="profile-header-plates font-mono"><span className="fragment-registration">#{regNum}</span><span className="profile-level">LEVEL {level.padStart(2, '0')}</span></div>
@@ -579,6 +580,14 @@ const ProfileOverlay = ({
                 }}
               />
             </div>
+
+            <Wardrobe
+              auraColor={accountRow?.aura_color ?? null}
+              orbDye={accountRow?.orb_dye ?? null}
+              registrationNumber={accountRow?.registration_number ?? null}
+              avatarBody={accountRow?.avatar_body ?? null}
+              onEquipped={(skin) => setAccountRow(prev => prev ? { ...prev, avatar_body: skin } : prev)}
+            />
 
             <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center' }}>
               {subStatus === 'dev' ? (
@@ -837,7 +846,7 @@ const ProfileOverlay = ({
                   <div style={{ marginTop: 40 }}>
                     <div className="profile-section-label font-mono"><span>DROPS</span><span>{owned} / {dropCapacity}</span></div>
                     <div className="profile-inventory-grid">
-                      {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? `profile-drop-filled${drop.carried ? ' profile-drop-carried' : ''}` : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="profile-drop-body"><DropIcon svg={drop.icon_svg} category={drop.category} size={40} />{drop.category === 'key' && <span className="profile-key-badge font-mono">KEY</span>}<span className="font-fell italic">{drop.name}</span>{drop.carried && <span className="profile-carried-label font-mono">CARRIED</span>}</span>}</Button>)}
+                      {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? `profile-drop-filled${drop.carried ? ' profile-drop-carried' : ''}` : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="profile-drop-body"><DropIcon svg={drop.icon_svg} category={drop.category} size={40} drop_key={drop.drop_key} />{drop.category === 'key' && <span className="profile-key-badge font-mono">KEY</span>}<span className="font-fell italic">{drop.name}</span>{drop.carried && <span className="profile-carried-label font-mono">CARRIED</span>}</span>}</Button>)}
                     </div>
                     {ownedDrops.some(drop => drop.carried) && <p className="profile-carry-note font-fell italic">Dashed drops are carried. Bank them in the Shadow Realm or lose them if you leave the maze.</p>}
 

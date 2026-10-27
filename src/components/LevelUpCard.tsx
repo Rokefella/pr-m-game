@@ -17,8 +17,8 @@ export const TITLES_BY_LEVEL: Record<number, string> = {
     10: 'First One Through',
   };
 
-type Props = { newLevel: number; titleUnlocked: boolean; auraColor: string | null; orbDye?: string | null; registrationNumber: number | null; onContinue: () => Promise<void>; home?: 'world' | 'village' };
-export default function LevelUpCard({ newLevel, titleUnlocked, auraColor, orbDye, registrationNumber, onContinue, home = 'village' }: Props) {
+type Props = { newLevel: number; titleUnlocked: boolean; auraColor: string | null; orbDye?: string | null; registrationNumber: number | null; avatarBody?: string | null; onContinue: () => Promise<void>; home?: 'world' | 'village' };
+export default function LevelUpCard({ newLevel, titleUnlocked, auraColor, orbDye, registrationNumber, avatarBody, onContinue, home = 'village' }: Props) {
   const reduced = useReducedMotion();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -34,7 +34,7 @@ export default function LevelUpCard({ newLevel, titleUnlocked, auraColor, orbDye
         <h2 className="font-cinzel">LEVEL {String(newLevel).padStart(2, '0')}</h2>
         <hr />
         <p className="font-fell italic">{home === 'world' ? 'The world is different now.' : 'The village is different now.'}</p>
-        <div className="game-arrival-avatar"><PlayerAvatar palette={orbLook(auraColor, orbDye, registrationNumber)} size={64} walking={false} /></div>
+        <div className="game-arrival-avatar"><PlayerAvatar palette={orbLook(auraColor, orbDye, registrationNumber)} size={64} walking={false} skin={avatarBody} registrationNumber={registrationNumber} auraColor={auraColor} orbDye={orbDye} /></div>
         {titleUnlocked && title && <div className="game-arrival-title"><PlateCorners /><span className="font-mono">TITLE UNLOCKED</span><p className="font-cinzel">{title}</p></div>}
         {error && <p className="font-fell" role="alert">Please try again.</p>}
         <Button className="game-arrival-continue font-cinzel" disabled={busy} onClick={() => void proceed()}>{busy ? '…' : 'CONTINUE'}</Button>

@@ -37,7 +37,8 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
   const [filled, setFilled] = useState<number | null>(null);
   const [auraColor, setAuraColor] = useState<string | null>(null);
   const [orbDye, setOrbDye] = useState<string | null>(null);
-  useOrbSync(setAuraColor, setOrbDye);
+  const [avatarBody, setAvatarBody] = useState<string | null>(null);
+  useOrbSync(setAuraColor, setOrbDye, setAvatarBody);
   const [fadingOut, setFadingOut] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
   const savedTimerRef = useRef<number | null>(null);
@@ -74,8 +75,8 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
     })();
     void (async () => {
       try {
-        const { data } = await supabase.from('users').select('aura_color, orb_dye').eq('id', user.id).maybeSingle();
-        if (!cancelled) { setAuraColor(data?.aura_color ?? null); setOrbDye((data as { orb_dye?: string | null } | null)?.orb_dye ?? null); }
+        const { data } = await supabase.from('users').select('aura_color, orb_dye, avatar_body').eq('id', user.id).maybeSingle();
+        if (!cancelled) { setAuraColor(data?.aura_color ?? null); setOrbDye((data as { orb_dye?: string | null } | null)?.orb_dye ?? null); setAvatarBody((data as { avatar_body?: string | null } | null)?.avatar_body ?? null); }
       } catch { /* Use the existing default purple palette. */ }
     })();
     return () => { cancelled = true; };
@@ -176,7 +177,7 @@ const FragmentOverlay = ({ prime, registrationNumber, onContinue }: FragmentOver
             <FolderSlots filled={filled} revealed={revealed} />
           </>}
           <div className="fragment-avatar">
-            <PlayerAvatar size={36} palette={orbLook(auraColor, orbDye, registrationNumber)} walking={false} />
+            <PlayerAvatar size={36} palette={orbLook(auraColor, orbDye, registrationNumber)} walking={false} skin={avatarBody} registrationNumber={registrationNumber} auraColor={auraColor} orbDye={orbDye} />
             <div className={`fragment-registration font-mono ${registrationNumber === 1 ? 'fragment-registration-first' : ''}`}>{regLabel}</div>
           </div>
           <Button className="fragment-save font-cinzel" disabled={!canSave || savedMsg} onClick={handleCapture}>SAVE TO FOLDER</Button>

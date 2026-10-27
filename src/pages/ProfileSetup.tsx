@@ -83,7 +83,7 @@ const ProfileSetup = () => {
           <div className="flex flex-col items-center" style={{ marginBottom: 16 }}>
             <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
               <div aria-hidden="true" style={{ position: 'absolute', left: '50%', top: '42%', width: avatarSize * 1.5, height: avatarSize * 1.5, transform: 'translate(-50%,-50%)', borderRadius: '50%', background: `radial-gradient(circle, ${isFirst ? 'rgba(240,120,120,0.22)' : 'rgba(183,155,255,0.22)'} 0%, transparent 70%)` }} />
-              <div style={{ position: 'relative' }}><PlayerAvatar size={avatarSize} palette={palette} walking={false} /></div>
+              <div style={{ position: 'relative' }}><PlayerAvatar size={avatarSize} palette={palette} walking={false} skin="visitor" registrationNumber={registration} auraColor={auraColor} orbDye={orbDye} /></div>
             </div>
             <span className="font-mono" style={{ marginTop: 6, background: '#0f1329', border: '1px solid #8e99d0', fontSize: 11, padding: '3px 10px', letterSpacing: '0.15em', color: isFirst ? '#f5b0b0' : '#aab4e8' }}>
               {plate}

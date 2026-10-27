@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { readMazeSkin, skinDarkness, skinHash, skinTile, type MazeSkin } from './mazeSkins';
+import { crateFloorWalls, readMazeSkin, skinDarkness, skinHash, skinTile, type MazeSkin } from './mazeSkins';
 const db = vi.hoisted(() => ({ from: vi.fn(), view: null as unknown, override: null as unknown, terrain: [] as unknown[] }));
 vi.mock('@/lib/supabase', () => ({ supabase: { from: db.from } }));
 const skin: MazeSkin = { era_order: 1, name: 'Fire', wall_keys: ['cliff', 'cliff', 'boulder', 'rock_field'], floor_keys: ['sand', 'ash', 'earth'], edge: [], junction_key: null, straight_key: null, darkness: 1, accent: '#e8783a', enabled: true };
@@ -13,6 +13,16 @@ beforeEach(() => {
   });
 });
 describe('exact visual-only skin rules', () => {
+  it('draws both crate types on ordinary floor without changing collision sets', () => {
+    const walls = new Set(['4,4', '5,4', '4,3']);
+    const open = new Set(['3,4', '6,4']);
+    const visual = crateFloorWalls(walls, [{ col: 4, row: 4, type: 'DROP' }, { col: 5, row: 4, type: 'DROP_SPAWN' }]);
+    expect(skinTile(4, 4, skin, open, visual).wall).toBe(false);
+    expect(skinTile(5, 4, skin, open, visual).wall).toBe(false);
+    expect(skinTile(4, 3, skin, open, visual).wall).toBe(true);
+    expect([...walls]).toEqual(['4,4', '5,4', '4,3']);
+    expect([...open]).toEqual(['3,4', '6,4']);
+  });
   it('uses the supplied unsigned 32-bit hash', () => { expect(skinHash(0, 0, 0)).toBe(0); expect(skinHash(17, 29, 5)).toBe(0.9315199633128941); });
   it('uses quarter-probability wall variation and three-cell blocks', () => { expect(skinTile(3, 0, skin, new Set(), new Set(['3,0'])).key).toBe('rock_field'); expect(skinTile(17, 29, skin, new Set(), new Set(['17,29'])).key).toBe('cliff'); });
   it('uses floor variation in two-cell blocks with a .35 threshold', () => {

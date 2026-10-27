@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getFlag, setFlag, questFlagSnapshot, subscribeQuestFlags } from '@/lib/questFlags';
 import { updateUser } from '@/lib/userData';
-import { npcConditionsMet, npcBookConditionsMet, npcStageMet, npcEntryBucket } from '@/lib/npcQuestState';
+import { npcBookConditionsMet, npcStageMet, npcEntryBucket } from '@/lib/npcQuestState';
 import { NPC_DIALOGUE_CLOSED, NPC_INVENTORY_CHANGED } from '@/hooks/useNpcQuestStates';
 
 export type BernardOption = {

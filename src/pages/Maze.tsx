@@ -16,7 +16,7 @@ import { corridorCell } from '@/lib/ghostMotion';
 import { placedGhosts, nearbyGhostLine } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import MazeSkinCanvas, { type MazeSkinHandle } from '@/components/theme/MazeSkinCanvas';
-import { readMazeSkin, skinDarkness, type LevelSkin } from '@/lib/mazeSkins';
+import { crateFloorWalls, readMazeSkin, skinDarkness, type LevelSkin } from '@/lib/mazeSkins';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import type { Facing } from '@/lib/skins';
@@ -546,11 +546,7 @@ const Maze = () => {
         if (!config.openSet.has(k) || config.veilSet?.has(k)) s.add(k);
       }
     }
-    // Crates are overlays on ordinary floor, not wall art; collision stays untouched.
-    for (const cell of config.visualCells ?? []) {
-      if (cell.type === 'DROP' || cell.type === 'DROP_SPAWN') s.delete(`${cell.col},${cell.row}`);
-    }
-    return s;
+    return crateFloorWalls(s, config.visualCells ?? []);
   }, [config]);
 
   // Refs so the rAF movement loop (registered once with empty deps) always reads current values

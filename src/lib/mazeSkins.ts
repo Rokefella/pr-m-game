@@ -6,6 +6,12 @@ export type MazeSkin = { era_order: number; name: string; wall_keys: string[]; f
 export type LevelSkin = { place_name: string; era_name: string; skin: MazeSkin; terrain: Map<string, Terrain> };
 export const skinHash = worldHash;
 export const skinDarkness = (darkness: number) => Math.min(.35, Math.max(0, .05 * (darkness - 1)));
+/** Presentation-only: crate cells use normal floor without opening collision cells. */
+export function crateFloorWalls(walls: Set<string>, cells: readonly { col: number; row: number; type: string }[]) {
+  const visual = new Set(walls);
+  for (const cell of cells) if (cell.type === 'DROP' || cell.type === 'DROP_SPAWN') visual.delete(`${cell.col},${cell.row}`);
+  return visual;
+}
 export function skinTile(x: number, y: number, skin: MazeSkin, open: ReadonlySet<string>, walls: ReadonlySet<string>) {
   const wall = walls.has(`${x},${y}`);
   if (wall) return { wall, key: skin.wall_keys[skinHash(x, y, 5) < .25 ? Math.floor(skinHash(Math.floor(x / 3), Math.floor(y / 3), 3) * skin.wall_keys.length) : 0], edge: undefined, junction: undefined };

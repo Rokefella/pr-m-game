@@ -1,6 +1,6 @@
 import type { Era, Terrain } from './worldTest';
 import { worldHash } from './worldHash';
-import { isGroundSway, waveBand, canSway, flameFrame, flowOffset, lavaBrightness, leanAmount, WATER_MOVES, waterDirection, type TerrainNeighbour } from './terrainMotion';
+import { isGroundSway, waveBand, canSway, flameFrame, flowOffset, lavaBrightness, leanAmount, WATER_MOVES, waterDirection, terrainPulse, puffPhase, glintPhase, type TerrainNeighbour } from './terrainMotion';
 export type TerrainInk = { background: string; grid: string; text: string; muted: string; gold: string; cyan: string; shadow: string };
 const TILE = 40;
 const NO_FLIP = new Set(['road', 'square', 'town_wall', 'bridge', 'cliff_edge', 'dune_crest', 'crater', 'building']);
@@ -9,6 +9,7 @@ const NO_FLIP = new Set(['road', 'square', 'town_wall', 'bridge', 'cliff_edge', 
 const sprites = new Map<string, HTMLCanvasElement>();
 const variants = new Map<string, (HTMLCanvasElement | null)[]>();
 const loading = new Map<string, Promise<void>>();
+const warmMasks = new WeakMap<HTMLCanvasElement, HTMLCanvasElement>();
 export let spriteVersion = 0;
 const motionArt = new WeakMap<HTMLCanvasElement, { lean: HTMLCanvasElement; leanLeft: HTMLCanvasElement; wrap: HTMLCanvasElement; wrapLeft: HTMLCanvasElement; flames: HTMLCanvasElement[]; light?: string; warm?: string }>();
 function prepareMotion(sprite: HTMLCanvasElement) {
@@ -29,14 +30,18 @@ function prepareMotion(sprite: HTMLCanvasElement) {
   const ctx = sprite.getContext('2d');
   if (ctx?.getImageData) {
     const pixels = ctx.getImageData(0, 0, w, h).data;
+    const mask = document.createElement('canvas'); mask.width = w; mask.height = h;
+    const mc = mask.getContext('2d');
     let brightest = -1, hottest = -1;
     for (let i = 0; i < pixels.length; i += 4) {
       if (pixels[i + 3] < 128) continue;
       const r = pixels[i], g = pixels[i + 1], b = pixels[i + 2], brightness = r + g + b;
+      if (mc && r > b * 1.2 && r > 80) { mc.fillStyle = `rgb(${r}, ${g}, ${b})`; mc.fillRect((i / 4) % w, Math.floor(i / 4 / w), 1, 1); }
       if (brightness > brightest) { brightest = brightness; light = `rgb(${r}, ${g}, ${b})`; }
       const heat = r - b + g * .25;
       if (heat > hottest) { hottest = heat; warm = `rgb(${r}, ${g}, ${b})`; }
     }
+    warmMasks.set(sprite, mask);
   }
   const flames = [0, 1, 2].map(n => {
     const c = frame(0), cx = c.getContext('2d');
@@ -171,7 +176,32 @@ export function drawTerrainBase(ctx: CanvasRenderingContext2D, terrain: Terrain,
 }
 
 /** Cached ground stays static; moving objects are composited separately. */
-export const hasMovingSprite = (terrain: Terrain) => Boolean(terrainSprite(terrain.key)) && (canSway(terrain) || terrain.moves === 'flicker');
+export const hasMovingSprite = (terrain: Terrain) => Boolean(terrainSprite(terrain.key)) && (canSway(terrain) || terrain.moves === 'flicker' || terrain.moves === 'flow_slow');
+/** Native rectangular sprites share the world's clock; no timers or per-frame sprite decoding. */
+export function drawSpriteAtmosphere(ctx: CanvasRenderingContext2D, terrain: Terrain, sprite: HTMLCanvasElement, x: number, y: number, time: number, ink: TerrainInk, reduced: boolean) {
+  if (reduced) return;
+  const w = sprite.width, h = sprite.height, move = terrain.moves;
+  ctx.save();
+  if (move === 'glow' || move === 'flicker') {
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = terrainPulse(move, time, x, y);
+    ctx.drawImage(move === 'flicker' ? warmMasks.get(sprite) ?? sprite : sprite, 0, 0);
+  } else if (move === 'smoke' || move === 'steam') {
+    ctx.fillStyle = ink.text;
+    for (let i = 0; i < 3; i++) {
+      const life = puffPhase(time, x, y, i), r = 1 + life * 3;
+      ctx.globalAlpha = (move === 'steam' ? .28 : .18) * Math.sin(life * Math.PI);
+      ctx.beginPath(); ctx.ellipse(w / 2 + Math.sin(life * 4 + i) * 2, h * .15 - life * 12, r, r * .7, 0, 0, Math.PI * 2); ctx.fill();
+    }
+  } else if (move === 'glint') {
+    const phase = glintPhase(time, x, y);
+    if (phase < .08) {
+      ctx.globalAlpha = Math.sin(phase / .08 * Math.PI); ctx.fillStyle = ink.text;
+      const px = Math.floor(w * worldHash(x, y, 73)), py = Math.floor(h * worldHash(x, y, 74));
+      ctx.fillRect(px - 1, py, 3, 1); ctx.fillRect(px, py - 1, 1, 3);
+    }
+  }
+  ctx.restore();
+}
 export function spriteLight(terrain: Terrain, x: number, y: number, ink: TerrainInk, warm = false) {
   const sprite = terrainSprite(terrain.key, x, y), art = sprite ? motionArt.get(sprite) : undefined;
   return (warm ? art?.warm : art?.light) ?? terrain.color ?? ink.text;
@@ -179,6 +209,7 @@ export function spriteLight(terrain: Terrain, x: number, y: number, ink: Terrain
 /** Visible sprite animation in native pixel space, shared by world and maze. */
 export function drawTerrainMotion(ctx: CanvasRenderingContext2D, terrain: Terrain, x: number, y: number, px: number, py: number, time: number, ink: TerrainInk, reduced: boolean, neighbour?: TerrainNeighbour, clock = time, size = TILE, replaceSprite = true, band = true) {
   const move = terrain.moves ?? ''; if (!move || move === 'none') return;
+  if (terrain.key.startsWith('bld_')) return; // Full anchor sprite animates in its depth-sorted canvas.
   const sprite = terrainSprite(terrain.key, x, y), art = sprite ? motionArt.get(sprite) : undefined;
   ctx.save(); ctx.translate(px, py); ctx.scale(size / 16, size / 16); ctx.imageSmoothingEnabled = false;
   if (replaceSprite && sprite && hasMovingSprite(terrain)) {
@@ -193,9 +224,15 @@ export function drawTerrainMotion(ctx: CanvasRenderingContext2D, terrain: Terrai
         const leant = ground ? (left ? art.wrapLeft : art.wrap) : left ? art.leanLeft : art.lean;
         ctx.globalAlpha = lean; blit(ctx, leant, terrain.key, x, y, 16, isObjectLayer(terrain)); ctx.globalAlpha = 1;
       } else blit(ctx, sprite, terrain.key, x, y, 16, isObjectLayer(terrain));
-    } else blit(ctx, art?.flames[flameFrame(time, x, y)] ?? sprite, terrain.key, x, y, 16, true);
+    } else if (move === 'flow_slow') {
+      ctx.save(); ctx.beginPath(); ctx.rect(0, 0, 16, 16); ctx.clip();
+      const offset = Math.floor(time / 650) % 16;
+      for (let dx = -16; dx <= 0; dx += 16) for (let dy = -16; dy <= 0; dy += 16) { ctx.save(); ctx.translate(dx + offset, dy + offset); blit(ctx, sprite, terrain.key, x, y, 16, false); ctx.restore(); }
+      ctx.restore();
+    } else blit(ctx, /campfire|fire/.test(terrain.key) ? art?.flames[flameFrame(time, x, y)] ?? sprite : sprite, terrain.key, x, y, 16, true);
   }
   if (reduced) { ctx.restore(); return; }
+  if (sprite && ['glow', 'flicker', 'steam', 'smoke', 'glint'].includes(move)) drawSpriteAtmosphere(ctx, terrain, sprite, x, y, time, ink, false);
   ctx.beginPath(); ctx.rect(0, 0, 16, 16); ctx.clip();
   const wave = band && move === 'sway' ? waveBand(terrain, x, y, clock) : null;
   if (wave) { ctx.fillStyle = spriteLight(terrain, x, y, ink); ctx.globalAlpha = .13; ctx.fillRect(0, wave.y, 16, wave.h); }

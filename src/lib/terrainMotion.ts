@@ -23,6 +23,13 @@ export function flameFrame(time: number, x: number, y: number) {
   return (Math.floor(time * 8 / 1000) + Math.floor(worldHash(x, y, 31) * 3)) % 3;
 }
 export function lavaBrightness(time: number) { return .12 + .12 * Math.sin(time * Math.PI / 1000); }
+export const terrainPulse = (move: string, time: number, x: number, y: number) => move === 'flicker'
+  ? .08 + worldHash(x, y, Math.floor(time / 90)) * .22
+  : .10 + .10 * Math.sin(time / 650 + worldHash(x, y, 29) * Math.PI * 2);
+export function puffPhase(time: number, x: number, y: number, index: number) {
+  return ((time / 3000 + worldHash(x, y, 71) + index / 3) % 1 + 1) % 1;
+}
+export const glintPhase = (time: number, x: number, y: number) => ((time + worldHash(x, y, 72) * 6000) % 6000) / 6000;
 // Two launches per thirty-second clock cycle; both gaps are always 10–20 seconds.
 export function gustStrength(x: number, y: number, clock: number, pine = false) { return gustWave(x, y, clock, pine).strength; }
 /** Strongest passing gust and how far (0–1) it has travelled through the cell. */

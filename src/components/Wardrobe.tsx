@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { publishOrb } from '@/lib/orb';
+import { INVENTORY_CHANGED } from '@/lib/inventoryEvents';
 import SkinSprite from '@/components/SkinSprite';
 import { isPlayerSkin, normalizeSkinKey, resolveColors, skinBaseColor, skinPublic, useSkins, START_SKIN, type Facing, type Skin } from '@/lib/skins';
 
@@ -23,6 +24,12 @@ export default function Wardrobe({ auraColor, orbDye, registrationNumber, avatar
   const [facings, setFacings] = useState<Record<string, Facing>>({});
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
+  const [nonce, setNonce] = useState(0);
+  useEffect(() => {
+    const refresh = () => setNonce(n => n + 1);
+    window.addEventListener(INVENTORY_CHANGED, refresh);
+    return () => window.removeEventListener(INVENTORY_CHANGED, refresh);
+  }, []);
 
   useEffect(() => {
     let off = false;
@@ -31,7 +38,7 @@ export default function Wardrobe({ auraColor, orbDye, registrationNumber, avatar
       setOwned(new Set([START_SKIN, ...(data as string[])]));
     }).catch(() => undefined);
     return () => { off = true; };
-  }, []);
+  }, [nonce]);
 
   const equipped = normalizeSkinKey(avatarBody);
   const ownedCount = skins.filter(s => owned.has(s.skin_key)).length;

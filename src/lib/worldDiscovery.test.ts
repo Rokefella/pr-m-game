@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { discoverAround, discoveredBlock, discoveryCount, mergeDiscovery, WorldDiscovery } from './worldDiscovery';
+import { discoverRadius, discoverAround, discoveredBlock, discoveryCount, mergeDiscovery, WorldDiscovery } from './worldDiscovery';
 const f = vi.hoisted(() => ({ read: vi.fn(), save: vi.fn() }));
 vi.mock('./supabase', () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: f.read }) }), upsert: f.save }) } }));
 beforeEach(() => { vi.useFakeTimers(); localStorage.clear(); f.read.mockReset().mockResolvedValue({ data: null, error: null }); f.save.mockReset().mockResolvedValue({ error: null }); });
@@ -33,3 +33,4 @@ describe('world discovery rules', () => {
     d.walk(55, 55, 0); d.dispose(); await vi.advanceTimersByTimeAsync(0); expect(f.save).toHaveBeenCalledTimes(3);
   });
 });
+it('reveals all radius-40 cells using existing ten-cell bits and preserves earlier discovery', () => { const bits = discoverRadius('8', 500, 500, 40); expect(discoveredBlock(bits, 0, 0)).toBe(true); for (let y = 460; y <= 540; y++) for (let x = 460; x <= 540; x++) if (Math.hypot(x - 500, y - 500) <= 40) expect(discoveredBlock(bits, Math.floor(x / 10), Math.floor(y / 10))).toBe(true); expect(discoveredBlock(bits, 55, 50)).toBe(false); });

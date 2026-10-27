@@ -67,17 +67,18 @@ describe('mechanic consumption', () => {
     f.rpc.mockResolvedValue({ data: { ok: true, effect, amount, [field]: balance }, error: null });
     const onUsed = vi.fn();
     try {
-      render(<DropDetail drop={{ ...mechanic(name), effect: `${effect}:+${amount}` }} onClose={() => {}} onUsed={onUsed} />);
+      render(<DropDetail drop={{ ...mechanic(name), drop_key: name === 'Purse' ? 'purse' : 'cloth', effect: `${effect}:+${amount}` }} onClose={() => {}} onUsed={onUsed} />);
+      fireEvent.click(screen.getByRole('button', { name: 'USE' }));
       fireEvent.click(screen.getByRole('button', { name: 'USE' }));
       await waitFor(() => expect(onUsed).toHaveBeenCalledTimes(1));
-      expect(f.rpc).toHaveBeenCalledWith('use_mechanic', { p_drop_id: 'first', p_level: null, p_col: null, p_row: null });
+      expect(f.rpc).toHaveBeenCalledWith('use_drops', { p_drop_key: name === 'Purse' ? 'purse' : 'cloth', p_count: 1, p_x: null, p_y: null });
       expect(event.mock.calls[0][0].detail).toEqual({ userId: 'player', [effect]: balance });
     } finally { window.removeEventListener(eventName, event); }
   });
   it.each([
     ['Step Pouch', 'steps'], ['Spare Lace', 'steps'], ['Second Wind', 'steps'],
     ['Lantern Oil', 'lantern'], ['Trail Chalk', 'chalk'], ['Echo Pebble', 'pulse'],
-    ['Lucky Coin', 'lucky'], ['Map Scrap', 'reveal'], ['Compass Shard', 'compass'], ['Magnet Charm', 'magnet'],
+    ['Lucky Coin', 'lucky'], ['Compass Shard', 'compass'], ['Magnet Charm', 'magnet'],
   ])('consumes %s with the server effect', async (name, effect) => {
     f.rpc.mockResolvedValue({ data: { ok: true, effect, amount: 100, steps_remaining: 200 }, error: null });
     const onUsed = vi.fn(), onRefresh = vi.fn();
@@ -92,8 +93,8 @@ describe('mechanic consumption', () => {
     fireEvent.click(screen.getByRole('button', { name: 'USE' }));
     expect(f.rpc).not.toHaveBeenCalled();
   });
-  it('does not call at the 5000 step cap', () => {
-    render(<DropDetail drop={mechanic('Step Pouch')} steps={5000} onClose={() => {}} onUsed={() => {}} />);
+  it('does not call at the 9999 step cap', () => {
+    render(<DropDetail drop={mechanic('Step Pouch')} steps={9999} onClose={() => {}} onUsed={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: 'USE' }));
     expect(f.rpc).not.toHaveBeenCalled();
   });
@@ -113,5 +114,31 @@ describe('mechanic consumption', () => {
     expect(f.rpc).not.toHaveBeenCalled();
     release?.();
     await waitFor(() => expect(f.rpc).toHaveBeenCalledTimes(1));
+  });
+});
+describe('world walkthrough item use', () => {
+  it('uses seven Moss bundles with MAX and one authoritative 840-step receipt', async () => {
+    f.rpc.mockResolvedValue({ data: { ok: true, used: 7, effect: 'steps', amount: 840, steps_remaining: 940 }, error: null });
+    const onUsed = vi.fn();
+    render(<DropDetail drop={{ ...dye, name: 'Moss bundle', category: 'mechanic', drop_key: 'moss', effect: 'steps:+120', count: 7 }} world={{ layer: 0, position: () => ({ x: 25, y: 25 }) }} onClose={() => {}} onUsed={onUsed} />);
+    fireEvent.click(screen.getByRole('button', { name: 'USE' }));
+    expect(f.rpc).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'MAX' }));
+    fireEvent.click(screen.getByRole('button', { name: 'USE' }));
+    await waitFor(() => expect(onUsed).toHaveBeenCalledWith('+840 steps.'));
+    expect(f.rpc).toHaveBeenCalledWith('use_drops', { p_drop_key: 'moss', p_count: 7, p_x: 25, p_y: 25 });
+  });
+  it('uses Map Scrap at world coordinates with no maze level', async () => {
+    f.rpc.mockResolvedValue({ data: { ok: true, effect: 'world_reveal', radius: 40, x: 25, y: 25 }, error: null });
+    const onUsed = vi.fn();
+    render(<DropDetail drop={{ ...dye, name: 'Map Scrap', category: 'mechanic', drop_key: 'mech_map_scrap' }} world={{ layer: 0, position: () => ({ x: 25, y: 25 }) }} onClose={() => {}} onUsed={onUsed} />);
+    fireEvent.click(screen.getByRole('button', { name: 'USE' }));
+    await waitFor(() => expect(onUsed).toHaveBeenCalledTimes(1));
+    expect(f.rpc).toHaveBeenCalledWith('use_mechanic', { p_drop_id: 'first', p_level: null, p_col: 25, p_row: 25 });
+  });
+  it('never consumes Map Scrap inside a maze', () => {
+    render(<DropDetail drop={{ ...dye, name: 'Map Scrap', category: 'mechanic', drop_key: 'mech_map_scrap' }} maze={{ level: 1, position: () => ({ col: 1, row: 2 }) }} onClose={() => {}} onUsed={() => {}} />);
+    expect(screen.getByRole('button', { name: 'USE' })).toBeDisabled();
+    expect(f.rpc).not.toHaveBeenCalled();
   });
 });

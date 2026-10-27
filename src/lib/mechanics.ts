@@ -3,11 +3,18 @@ import { supabase } from '@/lib/supabase';
 export const MECHANIC_USED = 'praem:mechanic-used';
 export const USER_STEPS_REFRESHED = 'praem:user-steps-refreshed';
 export const USER_CREDITS_REFRESHED = 'praem:user-credits-refreshed';
-export const STEP_CAP = 5000;
+export const STEP_CAP = 9999;
+export const WORLD_REVEALED = 'praem:world-revealed';
+export type WorldUseContext = { position: () => { x: number; y: number }; layer: number };
 export type Cell = { col: number; row: number };
 export type MazeUseContext = { level: number; position: () => Cell; beforeUse?: () => Promise<void> };
 export type RunEffects = { lantern_bonus: number; chalk: boolean; compass: boolean; magnet: boolean; lucky: boolean; reveals: Array<Cell & { r: number }> };
-export type MechanicResult = { ok?: boolean; reason?: string; effect?: string; amount?: number; steps_remaining?: number; credits?: number };
+export type MechanicResult = { ok?: boolean; reason?: string; effect?: string; amount?: number; steps_remaining?: number; credits?: number; used?: number; radius?: number; x?: number; y?: number; nearest_find?: { x: number; y: number; title: string } | null };
+export const isWorldMapScrap = (drop: { drop_key?: string; name: string }) => drop.drop_key === 'mech_map_scrap' || drop.name === 'Map Scrap';
+export function stackReceipt(result: MechanicResult, effect: string | null | undefined, count: number) {
+  const expected = Number(effect?.split(':+')[1]) * count;
+  return mechanicWhisper(result) + (result.effect === 'steps' && (result.amount ?? 0) < expected ? ' (steps are full at 9,999)' : '');
+}
 export const emptyRunEffects = (): RunEffects => ({ lantern_bonus: 0, chalk: false, compass: false, magnet: false, lucky: false, reveals: [] });
 export function normalizeRunEffects(value: unknown): RunEffects {
   const row = (value ?? {}) as Partial<RunEffects>;
@@ -37,6 +44,7 @@ export function mechanicWhisper(result: MechanicResult) {
     case 'magnet': return 'Fragments nearby begin to glow.';
     case 'lucky': return 'Your next crate will roll higher.';
     case 'reveal': return 'A part of the maze is revealed.';
+    case 'world_reveal': return 'A part of the world is revealed.';
     case 'pulse': return 'The pebble hums.';
     default: return 'The Instrument responds.';
   }

@@ -97,7 +97,7 @@ const MerchantOverlay = ({
       return;
     }
     buying.current = true; setBusy(true);
-    let receipt: string | void;
+    let receipt: string | undefined;
     try {
       const result = await item.onPurchase?.(count);
       if (result && typeof result === 'object') {
@@ -108,7 +108,7 @@ const MerchantOverlay = ({
         receipt = result.receipt;
         if (typeof result.credits === 'number') onCreditsChange(result.credits);
       } else {
-        receipt = result;
+        receipt = typeof result === 'string' ? result : undefined;
       }
       if (!item.serverSide) {
         const next = credits - item.cost * count;

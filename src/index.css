@@ -21,6 +21,12 @@
     --game-dev-border: rgba(169,140,255,.4);
     --world-map-fog: #16120e;
     --world-map-fallback: #555;
+    --world-map-dev-trader: #ff70df;
+    --world-map-dev-fire: #ff6b6b;
+    --world-map-dev-item: #5cff9a;
+    --world-map-dev-words: #fff;
+    --world-map-dev-claimed: #888;
+    --world-map-dev-sam: #a8d8ff;
     --foreground: 43 14% 85%;
 
     --card: 240 43% 3%;

@@ -4,10 +4,25 @@ import { MemoryRouter, useLocation } from 'react-router-dom';
 import DevMenu from './DevMenu';
 import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED } from '@/lib/mechanics';
 import { WorldSteps } from '@/lib/worldSteps';
+import { DEV_MAP_KEY } from '@/lib/devWorldMap';
 const rpc = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/supabase', () => ({ supabase: { rpc, from: vi.fn() } }));
-afterEach(() => { cleanup(); rpc.mockReset(); });
+afterEach(() => { cleanup(); rpc.mockReset(); localStorage.removeItem(DEV_MAP_KEY); });
 function Location() { return <output aria-label="Destination">{useLocation().pathname}</output>; }
+describe('SHOW ALL developer switch', () => {
+  it('registration one can enable and retain the switch after reopening', () => {
+    const view = render(<MemoryRouter><DevMenu open registrationNumber={1} onClose={() => {}} /></MemoryRouter>);
+    expect(screen.getByRole('switch', { name: 'SHOW ALL' })).not.toBeChecked();
+    fireEvent.click(screen.getByRole('switch', { name: 'SHOW ALL' }));
+    expect(localStorage.getItem(DEV_MAP_KEY)).toBe('1'); view.unmount();
+    render(<MemoryRouter><DevMenu open registrationNumber={1} onClose={() => {}} /></MemoryRouter>);
+    expect(screen.getByRole('switch', { name: 'SHOW ALL' })).toBeChecked(); expect(rpc).not.toHaveBeenCalled();
+  });
+  it('other registration numbers never see the switch', () => {
+    render(<MemoryRouter><DevMenu open registrationNumber={2} onClose={() => {}} /></MemoryRouter>);
+    expect(screen.queryByRole('switch', { name: 'SHOW ALL' })).toBeNull();
+  });
+});
 describe('complete dev restart', () => {
   it('requires in-app confirmation, calls the existing RPC and navigates to intro preserving auth', async () => {
     rpc.mockResolvedValue({ data: { ok: true, rows_cleared: 10 }, error: null });

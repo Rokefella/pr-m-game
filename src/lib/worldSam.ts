@@ -77,10 +77,17 @@ export const cardTopics = (samStage: number, allEntries: BookNode[], flags: Reco
 };
 
 export const isRetired = (value: string | null | undefined) => typeof value === 'string' && value.startsWith('retired');
-/** An entry is visible when every requires_flags value matches the player's flags. */
-export const entryVisible = (e: { requires_flags?: Record<string, unknown> | null }, flags: Record<string, string>) =>
-  Object.entries(e.requires_flags ?? {}).every(([k, v]) => k === 'flags_equal' || String(flags[k] ?? '') === String(v));
-export type BookNode = { node_key: string; text: string; topic?: string | null; requires_flags?: Record<string, unknown> | null; option_a_label?: string | null; option_a_target?: string | null; option_b_label?: string | null; option_b_target?: string | null };
+/** Book minimum gates apply only to numeric requirements with flags_equal=false. */
+export const entryVisible = (e: { requires_flags?: Record<string, unknown> | null; flags_equal?: boolean | null }, flags: Record<string, string>) =>
+  Object.entries(e.requires_flags ?? {}).every(([k, v]) => {
+    if (k === 'flags_equal') return true;
+    const required = String(v), actual = flags[k] ?? '';
+    if (e.flags_equal === false && required.trim() !== '' && Number.isFinite(Number(required))) {
+      return actual.trim() !== '' && Number.isFinite(Number(actual)) && Number(actual) >= Number(required);
+    }
+    return actual === required;
+  });
+export type BookNode = { node_key: string; text: string; topic?: string | null; requires_flags?: Record<string, unknown> | null; flags_equal?: boolean | null; option_a_label?: string | null; option_a_target?: string | null; option_b_label?: string | null; option_b_target?: string | null };
 /** Picks a random _a/_b variant (or the plain node) for a node key. */
 export const pickNode = (entries: BookNode[], key: string, rand = Math.random) => {
   const list = entries.filter(e => e.node_key === key || e.node_key === `${key}_a` || e.node_key === `${key}_b`);

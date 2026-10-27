@@ -11,8 +11,8 @@ import { goBackToStart, START_CONFIRMATION } from '@/lib/goBackToStart';
 import { NOTE_OPEN, NOTE_BUTTONS, noteButtonsOn, toggleNoteButtons } from '@/lib/devNotes';
 import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED } from '@/lib/mechanics';
 
-type Props = { open: boolean; onClose: () => void; userId?: string; home?: 'world' | 'village'; onChanged?: () => void; onBeforeStart?: () => Promise<void>; onBeforeTopup?: () => Promise<unknown> | void };
-export default function DevMenu({ open, onClose: close, userId, home = 'village', onChanged, onBeforeStart, onBeforeTopup }: Props) {
+type Props = { open: boolean; onClose: () => void; userId?: string; home?: 'world'; onChanged?: () => void; onBeforeStart?: () => Promise<void>; onBeforeTopup?: () => Promise<unknown> | void };
+export default function DevMenu({ open, onClose: close, userId, onChanged, onBeforeStart, onBeforeTopup }: Props) {
   const navigate = useNavigate();
   const user = userId ? { id: userId } : null;
   const onClose = useCallback(() => { close(); onChanged?.(); }, [close, onChanged]);
@@ -70,7 +70,6 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
             <div style={{ opacity: 0.7, marginBottom: 6 }}>DEV MENU</div>
             <Button variant="outline" className="world-dev-entry font-mono" onClick={() => { onClose(); navigate('/world'); }}>WORLD TEST</Button>
 
-            {home === 'world' && <Button variant="outline" onClick={() => { onClose(); navigate('/village'); }}>OLD VILLAGE</Button>}
             <div style={{ opacity: 0.7, fontSize: 11 }}>PROFILE</div>
             <div className="text-xs opacity-70">TOP-UP</div>
             {[
@@ -136,8 +135,8 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
                 const n = Math.min(30, Math.max(1, parseInt(devVillageLevel, 10) || 1));
                 onClose();
                 if (user) await updateUser(user.id, { level: n });
-                navigate(home === 'world' ? '/world' : '/village');
-              }} style={{ flex: 1, background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → {home === 'world' ? 'WORLD' : 'VILLAGE'} L#</Button>
+                navigate('/world');
+              }} style={{ flex: 1, background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → WORLD L#</Button>
             </div>
 
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -157,34 +156,19 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
             <div style={{ height: 1, background: 'var(--game-dev-divider)', margin: '6px 0' }} />
             <div style={{ opacity: 0.7, fontSize: 11 }}>SAM STAGE</div>
             {devStageNote && <div style={{ fontSize: 11, color: 'var(--plate-gold)' }}>{devStageNote}</div>}
-            {([
-              { label: 'stage_0', stage: 0, touched: null as boolean | null },
-              { label: 'stage_1 (pending)', stage: 1, touched: false },
-              { label: 'stage_1 (ready)', stage: 1, touched: true },
-              { label: 'stage_2', stage: 2, touched: null },
-              { label: 'stage_3', stage: 3, touched: null },
-              { label: 'stage_4', stage: 4, touched: null },
-              { label: 'stage_5', stage: 5, touched: null },
-              { label: 'stage_6', stage: 6, touched: null },
-            ]).map((s) => (
+            {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
               <Button variant="ghost"
-                key={s.label}
+                key={n}
                 type="button"
                 onClick={async () => {
                   if (!user) return;
-                  await setFlag(user.id, 'bernard_stage', String(s.stage));
-                  if (s.touched !== null) {
-                    const v = s.touched ? 'true' : 'false';
-                    await setFlag(user.id, 'touched_23', v);
-                    await setFlag(user.id, 'touched_47', v);
-                    await setFlag(user.id, 'touched_89', v);
-                  }
-                  setDevStageNote(`SET → ${s.label}`);
+                  await setFlag(user.id, 'sam_stage', String(n));
+                  setDevStageNote(`SET → stage_${n}`);
                   onClose();
                 }}
                 style={{ background: 'transparent', border: '1px solid var(--game-dev-border)', color: 'var(--game-dev-text)', padding: '6px 10px', fontFamily: 'inherit', fontSize: 12, cursor: 'pointer', textAlign: 'left' }}
               >
-                {s.label}
+                stage_{n}
               </Button>
             ))}
 

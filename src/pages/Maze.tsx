@@ -45,7 +45,6 @@ import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/le
 import Thumbstick from '@/components/Thumbstick';
 import { enqueueSave, settleSaves, movementDebug } from '@/lib/netQueue';
 import { startResilientLoop } from '@/lib/resilientLoop';
-import StepExchangeSheet from '@/components/StepExchangeSheet';
 import WallTile from '@/components/theme/WallTile';
 import FloorLayer from '@/components/theme/FloorLayer';
 import PrimeGlowLayer from '@/components/theme/PrimeGlowLayer';

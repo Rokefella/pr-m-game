@@ -23,6 +23,9 @@ export type Skin = {
   frames: SkinFrames;
   walk_rule: string;
   enabled: boolean;
+  /** 'player' (or null) skins live in the wardrobe; 'npc' skins dress a named NPC. */
+  kind?: string | null;
+  npc_key?: string | null;
 };
 
 export const START_SKIN = 'visitor';

@@ -120,6 +120,17 @@ describe('World home mechanics', () => {
     expect(screen.getByText(/CREDITS\s+45/)).toBeInTheDocument();
     expect(f.mutation.mock.calls.every(([payload]) => payload.steps_remaining === undefined && payload.credits === undefined)).toBe(true);
   });
+  it('buys steps at zero steps and fifty credits', async () => {
+    f.steps = 0; f.places = [{ kind: 'town', action: 'merchant', name: 'Merchant', x: 27, y: 25 }];
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'BUY' }));
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('buy_steps', { p_packs: 1 }));
+    await screen.findByText('+500 steps · −5 credits');
+    await screen.findByText(/STEPS\s+500/);
+    expect(screen.getByText(/CREDITS\s+45/)).toBeInTheDocument();
+  });
   it('shows the server reason when buying steps fails', async () => {
     f.places = [{ kind: 'town', action: 'merchant', name: 'Merchant', x: 27, y: 25 }];
     open(); await screen.findByText('25,25 · A 0,0 · Fire');

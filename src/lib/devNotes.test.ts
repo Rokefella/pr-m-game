@@ -1,0 +1,13 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { BUTTONS_KEY, canSaveNote, DRAFT_KEY, isNoteDev, noteButtonsOn, noteDimensions, notePayload, readNoteStorage, toggleNoteButtons, writeNoteStorage } from './devNotes';
+vi.mock('@/lib/supabase', () => ({ supabase: { rpc: vi.fn() } }));
+afterEach(() => { localStorage.clear(); vi.restoreAllMocks(); });
+describe('dev note rules', () => {
+  it('allows only numeric registration 1', () => { expect(isNoteDev(1)).toBe(true); for (const n of [0, 2, null, '1']) expect(isNoteDev(n)).toBe(false); });
+  it('requires text or a screenshot', () => { expect(canSaveNote(' ')).toBe(false); expect(canSaveNote('note')).toBe(true); expect(canSaveNote('', 'data:image/jpeg;base64,shot')).toBe(true); });
+  it('defaults buttons on and remembers off', () => { expect(noteButtonsOn()).toBe(true); expect(toggleNoteButtons()).toBe(false); expect(localStorage.getItem(BUTTONS_KEY)).toBe('off'); expect(noteButtonsOn()).toBe(false); });
+  it('persists drafts and tolerates unavailable storage', () => { writeNoteStorage(DRAFT_KEY, 'keep me'); expect(readNoteStorage(DRAFT_KEY)).toBe('keep me'); vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw Error('blocked'); }); expect(() => writeNoteStorage(DRAFT_KEY, 'safe')).not.toThrow(); vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw Error('blocked'); }); expect(readNoteStorage(DRAFT_KEY, 'fallback')).toBe('fallback'); });
+  it('caps JPEG width at 1280 with the aspect ratio retained', () => { expect(noteDimensions(1920, 1080, 1280)).toEqual({ width: 1280, height: 720 }); expect(noteDimensions(375, 812, 1280)).toEqual({ width: 375, height: 812 }); expect(noteDimensions(1920, 1080, 240)).toEqual({ width: 240, height: 135 }); });
+  it('sends exact world position, layer and available context', () => { const p = notePayload('here', '/world', { x: 838, y: 267, layer: 0, era: 'Gods era', steps_remaining: 42 }); expect(p).toMatchObject({ p_note: 'here', p_route: '/world', p_x: 838, p_y: 267, p_layer: 0, p_era: 'Gods era', p_ctx: { steps_remaining: 42 }, p_shot: '', p_thumb: '' }); });
+  it('keeps maze cells in context, not world coordinates', () => { const p = notePayload('', '/maze', { maze_level: 3, player_cell: { col: 4, row: 5 } }, { shot: 'jpeg', thumb: 'small' }); expect(p).toMatchObject({ p_x: null, p_y: null, p_layer: null, p_ctx: { maze_level: 3, player_cell: { col: 4, row: 5 } }, p_shot: 'jpeg', p_thumb: 'small' }); });
+});

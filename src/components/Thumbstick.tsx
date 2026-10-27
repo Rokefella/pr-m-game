@@ -147,7 +147,9 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
 
   useEffect(() => {
     const isExcluded = (target: EventTarget | null, y: number) => {
-      if (y < window.innerHeight * LOWER_FRACTION) return true;
+      const notePanel = document.querySelector<HTMLElement>('.dev-notepad');
+      const gameHeight = notePanel ? notePanel.getBoundingClientRect().top : window.innerHeight;
+      if (y < gameHeight * LOWER_FRACTION) return true;
       if (y > window.innerHeight - BOTTOM_EXCLUSION) return true;
       const el = target as Element | null;
       if (el && typeof el.closest === 'function' && el.closest(INTERACTIVE)) return true;

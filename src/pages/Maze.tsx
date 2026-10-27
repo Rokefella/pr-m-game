@@ -1672,7 +1672,7 @@ const Maze = () => {
       {user && <SuppliesCard open={exchangeOpen} onClose={() => { setExchangeOpen(false); setExchangeError(false); }} userId={user.id} steps={stepsRemaining} credits={credits}
         beforeBuy={() => settleSaves('steps')}
         onBalances={(s, c) => { stepsRemainingRef.current = s; setStepsRemaining(s); setCredits(c); }} />}
-      {registrationNumber === 1 && <DevMenu open={devOpen} onClose={closeDev} userId={user?.id} onBeforeTopup={() => settleSaves('steps')} />}
+      {registrationNumber === 1 && <DevMenu open={devOpen} onClose={closeDev} userId={user?.id} registrationNumber={registrationNumber} onBeforeTopup={() => settleSaves('steps')} />}
 
       {activeFragment && (
         <FragmentOverlay

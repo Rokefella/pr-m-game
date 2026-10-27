@@ -153,6 +153,11 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const approached = useRef(new Set<string>());
   const samLineRef = useRef<Set<string>>(new Set());
   const [samTick, setSamTick] = useState(0);
+  const skins = useSkins(); // loading the catalogue re-renders so NPC sprites appear
+  const skinnedRef = useRef<Set<string>>(new Set());
+  const npcEls = useRef(new Map<string, HTMLDivElement | null>());
+  const npcFacingsRef = useRef<Record<string, Facing>>({});
+  const [npcFacings, setNpcFacings] = useState<Record<string, Facing>>({});
   const [findCard, setFindCard] = useState<{ find: WorldFind; reading: boolean } | null>(null);
   useEffect(() => {
     if (!userId) return;

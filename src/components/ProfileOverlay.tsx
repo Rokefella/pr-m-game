@@ -34,6 +34,7 @@ type Props = {
   context?: 'village' | 'maze';
   runProgress?: { collected: number; required: number };
   mazeUse?: MazeUseContext;
+  beforeDropUse?: () => Promise<void>;
   growthPoints?: number;
   socialStat?: number;
   perceptionStat?: number;
@@ -71,6 +72,7 @@ const ProfileOverlay = ({
   context = 'village',
   runProgress,
   mazeUse,
+  beforeDropUse,
   growthPoints: growthPointsProp = 0,
   socialStat: socialStatProp = 0,
   perceptionStat: perceptionStatProp = 0,
@@ -850,7 +852,7 @@ const ProfileOverlay = ({
                     </div>
                     {ownedDrops.some(drop => drop.carried) && <p className="profile-carry-note font-fell italic">Dashed drops are carried. Bank them in the Shadow Realm or lose them if you leave the maze.</p>}
 
-                    {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} maze={context === 'maze' ? mazeUse : undefined} steps={accountRow?.steps_remaining} onRefresh={() => setDropsNonce(n => n + 1)} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); setOwnedDrops(drops => drops.filter(d => d.id !== selectedDrop.id)); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
+                    {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} beforeUse={beforeDropUse} maze={context === 'maze' ? mazeUse : undefined} steps={accountRow?.steps_remaining} onRefresh={() => setDropsNonce(n => n + 1)} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); setOwnedDrops(drops => drops.filter(d => d.id !== selectedDrop.id)); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
                     {dyeWhisper && <p className="font-fell italic dye-whisper">{dyeWhisper}</p>}
                     {ownedDrops.some(d => d.category === 'words') && <div style={{ marginTop: 24 }}><div className="profile-section-label font-mono"><span>CARVED WORDS</span></div>{ownedDrops.filter(d => d.category === 'words').map(d => <div key={d.id} style={{ marginTop: 12 }}><p className="font-cinzel">{d.name}</p>{d.description && <p className="font-fell italic" style={{ whiteSpace: 'pre-line', color: 'var(--plate-label)' }}>{d.description}</p>}</div>)}</div>}
 

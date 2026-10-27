@@ -53,7 +53,7 @@ export const topicRoot = (entries: BookNode[], topic: string, rand = Math.random
 export const receiptLine = (given: unknown, dropNames: Record<string, string>) => (Array.isArray(given) ? given : []).map((g: Record<string, unknown>) => {
   if (g.steps != null) return `+${g.steps} steps`;
   if (g.credits != null) return `+${g.credits} credits`;
-  if (g.drop != null) return dropNames[String(g.drop)] ?? String(g.drop);
+  if (g.drop != null) return `Kept: ${dropNames[String(g.drop)] ?? String(g.drop)}`;
   return '';
 }).filter(Boolean).join(' · ');
 

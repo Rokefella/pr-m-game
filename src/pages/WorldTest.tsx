@@ -379,7 +379,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       }
       if (time - lastDraw < terrainDrawInterval(moving, gust)) { frame = requestAnimationFrame(tick); return; }
       lastDraw = time;
-      drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l, clock);
+      drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l, clock, skinnedRef.current);
       const layerFinds = findsOn(findsRef.current, l);
       drawFinds(ctx, layerFinds, claimedRef.current, point, types, camera.current, width, height, time, ink, reduced);
       const phase = worldPhase(clock, data.cycle);

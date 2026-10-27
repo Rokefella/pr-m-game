@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useReducedMotion } from '../useReducedMotion';
-import type { VillageDoorKind } from '@/lib/villageDoors';
+import type { WorldDoorKind as VillageDoorKind } from '@/lib/worldHome';
 
 type Props = { kind: VillageDoorKind; size?: number; touched?: boolean };
 const COLORS: Record<VillageDoorKind, string> = {

@@ -13,7 +13,6 @@ import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { BETA_MODE } from '@/lib/config';
 import { getAllFlags, getFlag, reconcileBernardAfterShadow, setFlag } from '@/lib/questFlags';
 import { canAccessMaze, checkSubscriptionStatus, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
-import { DOOR_FLAGS, type VillageDoorKind } from '@/lib/villageDoors';
 import { effectiveWorldLevel, worldDoorRefusal } from '@/lib/worldHome';
 import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailySteps';
 import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED, WORLD_REVEALED, type MechanicResult } from '@/lib/mechanics';
@@ -511,12 +510,11 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     await stepLedger.current?.flush();
     navigate(path);
   };
-  /** Mirrors Village's door trigger: touched flag, the same refusals and the same destinations. */
-  const openDoor = async (kind: VillageDoorKind) => {
+  /** World door trigger: the maze waits for Sam; library and exchange are always open. */
+  const openDoor = async (kind: WorldDoorKind) => {
     if (busy || !userId) return;
     setBusy(true); setEntryMessage('');
     try {
-      void setFlag(userId, DOOR_FLAGS[kind], 'true');
       const flags = await getAllFlags(userId);
       const refusal = worldDoorRefusal(kind, level, flags.sam_stage);
       if (refusal) { setEntryMessage(refusal); return; }

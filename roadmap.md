@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Rob-only remembered SHOW ALL dev-menu switch, complete raw-place/enabled-find map labels and tappable coordinates; run tests, no database/sample data.
+- [x] Rob-only remembered SHOW ALL dev-menu switch, raw-place/enabled-find labeled map and tappable coordinates; all 569 tests pass. Public live-data trader tap checked; no database/sample data.
+- [ ] Verify SHOW ALL through Rob's signed-in five-tap menu — no mintable session for Rob is available; public-data rendering and registration-gating tests passed.
 
 - [x] Walkthrough: book minimum-flag gating, invisible start, foot/bump-only signposts, private maze notes, normal crate floor and corrected intro spiral. All 552 tests pass; real signed-in foot/bump signpost and entrance checked, intro spiral inspected; no database/sample data.
 

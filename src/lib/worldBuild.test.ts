@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { buildingBox, buildingOpacity, visibleBuildings } from './worldBuildings';
 import { WorldChunkCache, worldWalkable, type Terrain } from './worldTest';
 import { glowRows } from './skins';
-import { NpcWander, npcPath } from './worldNpcMotion';
+import { NpcWander, npcPath, npcPauseMs, NPC_TILE_MS } from './worldNpcMotion';
 import { playerAppearance, shownPlayers, WorldPresence, type WorldPlayer } from './worldPlayers';
 import { clearPlayerLocal, goBackToStart } from './goBackToStart';
 import { claimDailyStepsOnce } from './dailySteps';
@@ -34,15 +34,29 @@ describe('world visitors', () => {
 });
 describe('deterministic NPC wander', () => {
   const home = { x: 20, y: 20 }, safe = (p: { x: number; y: number }) => p.x !== 21;
-  it('each slot chooses identical walkable paths within four cells', () => {
+  it('each slot chooses identical walkable paths within three cells', () => {
     for (let slot = 0; slot < 80; slot++) {
       const path = npcPath(home, 'bernard', slot, safe);
       expect(path).toEqual(npcPath(home, 'bernard', slot, safe));
-      expect(path.every(p => safe(p) && Math.max(Math.abs(p.x - home.x), Math.abs(p.y - home.y)) <= 4)).toBe(true);
+      expect(path.every(p => safe(p) && Math.max(Math.abs(p.x - home.x), Math.abs(p.y - home.y)) <= 3)).toBe(true);
       for (let i = 1; i < path.length; i++) expect(Math.abs(path[i].x - path[i - 1].x) + Math.abs(path[i].y - path[i - 1].y)).toBe(1);
     }
   });
   it('stays home when every path is blocked', () => expect(npcPath(home, 'merchant', 5, () => false)).toEqual([home]));
+  it('takes 600ms for one tile then pauses for a deterministic 6–14 seconds', () => {
+    const w = new NpcWander(), far = { x: 50, y: 50 };
+    const a = w.sample(home, 'merchant', 0, far, safe), mid = w.sample(home, 'merchant', 300, far, safe), end = w.sample(home, 'merchant', 600, far, safe);
+    expect(NPC_TILE_MS).toBe(600); expect(Math.hypot(end.x - a.x, end.y - a.y)).toBe(1); expect(Math.hypot(mid.x - a.x, mid.y - a.y)).toBe(.5); expect(mid.phase).not.toBe('stand');
+    const pause = npcPauseMs('merchant', 0); expect(pause).toBeGreaterThanOrEqual(6000); expect(pause).toBeLessThanOrEqual(14000);
+    expect(w.sample(home, 'merchant', 600 + pause - 1, far, safe)).toEqual(end);
+    for (let slot = 0; slot < 100; slot++) { expect(npcPauseMs('sam', slot)).toBe(npcPauseMs('sam', slot)); expect(npcPauseMs('sam', slot)).toBeGreaterThanOrEqual(6000); expect(npcPauseMs('sam', slot)).toBeLessThanOrEqual(14000); }
+  });
+  it('stops and faces a player three tiles away and remains still throughout a card', () => {
+    const w = new NpcWander(), far = { x: 50, y: 50 }; const at = w.sample(home, 'sam', 600, far, safe);
+    const near = { x: at.cell.x - 3, y: at.cell.y }; const frozen = w.sample(home, 'sam', 700, near, safe);
+    expect(frozen.facing).toBe('left'); expect(frozen.phase).toBe('stand'); expect(w.sample(home, 'sam', 30000, near, safe)).toEqual(frozen);
+    const talking = w.sample(home, 'sam', 50000, far, safe, false, true); expect(talking.x).toBe(frozen.x); expect(talking.y).toBe(frozen.y);
+  });
   it('independent clients agree per slot and freeze next to the player', () => {
     const a = new NpcWander(), b = new NpcWander(), far = { x: 50, y: 50 };
     const pose = a.sample(home, 'merchant', 401000, far, safe);

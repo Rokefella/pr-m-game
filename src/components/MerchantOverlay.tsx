@@ -107,7 +107,7 @@ const MerchantOverlay = ({
   };
 
   return (
-    <div data-game-ui="open"
+    <div data-game-ui="open" data-no-thumbstick
       style={{
         position: 'fixed',
         inset: 0,

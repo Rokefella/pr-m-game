@@ -36,7 +36,7 @@ const NpcDialogue = ({ text, npcName, children, onShow }: Props) => {
           to { transform: translateY(0); opacity: 1; }
         }
       `}</style>
-      <div data-game-ui="open"
+      <div data-game-ui="open" data-no-thumbstick
         style={{
           position: 'fixed', left: 0, right: 0, bottom: 0,
           maxWidth: 640,

@@ -1,9 +1,15 @@
 import { describe, expect, it, vi } from 'vitest';
-import { motionFrames, drawTerrainBase, drawTerrainMotion, loadTerrainSprites, terrainSprite } from './terrainTile';
+import { motionFrames, drawTerrainBase, drawTerrainMotion, drawSpriteAtmosphere, loadTerrainSprites, terrainSprite } from './terrainTile';
 import { worldHash } from './worldHash';
 import type { Terrain } from './worldTest';
 
 describe('shared terrain variants', () => {
+  it('reduced motion suppresses every new rectangular-structure effect', () => {
+    const ctx = { drawImage: vi.fn(), fill: vi.fn(), fillRect: vi.fn() } as unknown as CanvasRenderingContext2D;
+    const sprite = document.createElement('canvas'); sprite.width = 48; sprite.height = 64;
+    for (const moves of ['glow', 'flicker', 'steam', 'smoke', 'glint']) drawSpriteAtmosphere(ctx, { key: 'bld_test', moves } as Terrain, sprite, 1, 2, 1000, { text: 'white' } as never, true);
+    expect(ctx.drawImage).not.toHaveBeenCalled(); expect(ctx.fill).not.toHaveBeenCalled(); expect(ctx.fillRect).not.toHaveBeenCalled();
+  });
   it('reduced motion draws no water highlights or lava pulse', () => {
     const ctx = { save: vi.fn(), restore: vi.fn(), translate: vi.fn(), scale: vi.fn(), fillRect: vi.fn() } as unknown as CanvasRenderingContext2D;
     for (const moves of ['flow', 'shimmer', 'glow']) drawTerrainMotion(ctx, { key: 'missing', moves } as Terrain, 0, 0, 0, 0, 1000, {} as never, true);

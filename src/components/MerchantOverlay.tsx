@@ -80,37 +80,49 @@ const MerchantOverlay = ({
 
   if (!open) return null;
 
+  const showFeedback = (key: string, text: string, ok: boolean) => {
+    setFeedback((f) => ({ ...f, [key]: { text, ok } }));
+    if (feedbackTimers.current[key]) window.clearTimeout(feedbackTimers.current[key]);
+    feedbackTimers.current[key] = window.setTimeout(
+      () => setFeedback((f) => ({ ...f, [key]: undefined })),
+      1500,
+    );
+  };
+
   const buy = async (item: MerchantItem) => {
     if (buying.current) return;
-    if (credits < item.cost) {
-      setFeedback((f) => ({ ...f, [item.key]: { text: 'Insufficient credits.', ok: false } }));
-      if (feedbackTimers.current[item.key]) window.clearTimeout(feedbackTimers.current[item.key]);
-      feedbackTimers.current[item.key] = window.setTimeout(
-        () => setFeedback((f) => ({ ...f, [item.key]: undefined })),
-        1500,
-      );
+    const count = Math.max(1, Math.min(item.maxQty ?? 1, qty[item.key] ?? 1));
+    if (credits < item.cost * count) {
+      showFeedback(item.key, 'Not enough credits.', false);
       return;
     }
-    const next = credits - item.cost;
     buying.current = true; setBusy(true);
-    let override: string | void;
+    let receipt: string | void;
     try {
-      override = await item.onPurchase?.();
-      onCreditsChange(next);
-      await updateUser(userId, { credits: next });
+      const result = await item.onPurchase?.(count);
+      if (result && typeof result === 'object' && 'failure' in result) {
+        showFeedback(item.key, result.failure, false);
+        return;
+      }
+      if (result && typeof result === 'object') {
+        receipt = result.receipt;
+        if (typeof result.credits === 'number') onCreditsChange(result.credits);
+      } else {
+        receipt = result;
+      }
+      if (!item.serverSide) {
+        const next = credits - item.cost * count;
+        onCreditsChange(next);
+        await updateUser(userId, { credits: next });
+      }
     } catch (e) {
-      console.error('[Merchant] failed to update credits', e);
-      setFeedback(f => ({ ...f, [item.key]: { text: 'Not right now.', ok: false } }));
+      console.error('[Merchant] purchase failed', e);
+      showFeedback(item.key, 'Not right now.', false);
       return;
     } finally {
       buying.current = false; setBusy(false);
     }
-    setFeedback((f) => ({ ...f, [item.key]: { text: override || 'Acquired.', ok: true } }));
-    if (feedbackTimers.current[item.key]) window.clearTimeout(feedbackTimers.current[item.key]);
-    feedbackTimers.current[item.key] = window.setTimeout(
-      () => setFeedback((f) => ({ ...f, [item.key]: undefined })),
-      1500,
-    );
+    showFeedback(item.key, receipt || 'Acquired.', true);
   };
 
   return (

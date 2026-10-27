@@ -28,6 +28,7 @@ import DynamicRoom from "./pages/DynamicRoom.tsx";
 import TilePreview from "./pages/TilePreview.tsx";
 import GardenPreview from "./pages/GardenPreview.tsx";
 import WorldTest from "./pages/WorldTest.tsx";
+import DevNotepad from '@/components/DevNotepad';
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ const App = () => (
         <Sonner />
         <MovementDebugOverlay />
         <BrowserRouter>
+          <DevNotepad />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />

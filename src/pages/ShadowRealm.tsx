@@ -1,4 +1,6 @@
 import { exitDestination } from '@/lib/worldReturn';
+import { useDevNoteContext } from '@/hooks/useDevNoteContext';
+import { notepadFocused } from '@/lib/devNotes';
 import { Z } from '@/lib/zIndex';
 import { SHADOW_AVATAR_SIZE, ghostBodyPx, npcBodyPx } from '@/lib/orbSizes';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
@@ -597,10 +599,12 @@ const ShadowRealm = () => {
     void finish();
   }, [user, finish]);
 
+  useDevNoteContext(() => ({ level: currentLevel, avatar_body: avatarBody, x: Math.round(posRef.current.x / STEP), y: Math.round(posRef.current.y / STEP), open_card: transferring ? 'Shadow transfer' : null, phase: 'shadow' }));
   // ---------------- movement ----------------
 
   const move = useCallback(
     (dx: number, dy: number) => {
+      if (notepadFocused()) return;
       if (transferringRef.current) return;
       const next = { x: posRef.current.x + dx * STEP, y: posRef.current.y + dy * STEP };
       // Walls from the published layout block movement.

@@ -1,4 +1,6 @@
 import { exitDestination } from '@/lib/worldReturn';
+import { useDevNoteContext } from '@/hooks/useDevNoteContext';
+import { notepadFocused } from '@/lib/devNotes';
 import { useNpcQuestStates, NPC_INVENTORY_CHANGED } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import OrbLabels from '@/components/OrbLabels';
@@ -1059,6 +1061,7 @@ const Maze = () => {
   };
 
   const tryMove = (dc: number, dr: number) => {
+    if (notepadFocused()) { heldKeysRef.current.clear(); return; }
     movementDebug.locks = { stepsReady: stepsReadyRef.current, exchangeOpen: exchangeOpenRef.current, noSteps: stepsRemainingRef.current <= 0, leaving: leavingRef.current };
     if (!stepsReadyRef.current || profileOpenRef.current) return;
     const cfg = configRef.current;
@@ -1259,6 +1262,7 @@ const Maze = () => {
 
   };
 
+  useDevNoteContext(() => ({ level: currentLevel, maze_level: currentLevel, player_cell: { ...posRef.current }, era: eraSkin?.era_name, steps_remaining: stepsRemainingRef.current, credits, avatar_body: avatarBody, open_card: activeFragment ? 'Fragment' : profileOpenDisplay ? 'Profile' : doorConfirmOpen ? 'Golden door' : skinFound ? 'Skin' : null }));
   // keyboard
   useEffect(() => {
     const onDown = (e: KeyboardEvent) => {

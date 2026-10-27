@@ -1,5 +1,7 @@
 # Architecture rules
 
+- DevNotepad is a registration-one-gated app-level portal; devNotes stores drafts/settings and calls existing RPCs, while page ref getters supply current context without camera subscriptions. Capture lazy-loads html-to-image on body to include root canvases and portaled overlays, excluding notepad UI; capture-phase focus guards release held keys and suppress game shortcuts without disabling the game outside the panel.
+
 - Maze loads drops after fresh/resume readiness. Real exits settle claims then runState abandons drops and refreshes inventory; Shadow snapshots carried counts before server banking. DropCrate only draws.
 
 - LoadingScreen owns timing.

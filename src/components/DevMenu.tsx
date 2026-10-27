@@ -8,6 +8,7 @@ import { _resetQuestFlagCache, setFlag } from '@/lib/questFlags';
 import { Z } from '@/lib/zIndex';
 import './game-home.css';
 import { goBackToStart, START_CONFIRMATION } from '@/lib/goBackToStart';
+import { NOTE_OPEN, NOTE_BUTTONS, noteButtonsOn, toggleNoteButtons } from '@/lib/devNotes';
 
 type Props = { open: boolean; onClose: () => void; userId?: string; home?: 'world' | 'village'; onChanged?: () => void; onBeforeStart?: () => Promise<void> };
 export default function DevMenu({ open, onClose: close, userId, home = 'village', onChanged, onBeforeStart }: Props) {
@@ -20,6 +21,8 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
   const [fullResetArmed, setFullResetArmed] = useState(false);
   const [startArmed, setStartArmed] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [noteButtons, setNoteButtons] = useState(noteButtonsOn);
+  useEffect(() => { const update = () => setNoteButtons(noteButtonsOn()); window.addEventListener(NOTE_BUTTONS, update); return () => window.removeEventListener(NOTE_BUTTONS, update); }, []);
   const fullResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (fullResetTimerRef.current) clearTimeout(fullResetTimerRef.current); }, []);
   const handleDevReset = useCallback(async () => {
@@ -52,6 +55,8 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
 
             {home === 'world' && <Button variant="outline" onClick={() => { onClose(); navigate('/village'); }}>OLD VILLAGE</Button>}
             <div style={{ opacity: 0.7, fontSize: 11 }}>PROFILE</div>
+            <Button variant="outline" onClick={() => { onClose(); window.dispatchEvent(new Event(NOTE_OPEN)); }}>NOTES</Button>
+            <Button variant="outline" role="switch" aria-checked={noteButtons} onClick={() => setNoteButtons(toggleNoteButtons())}>NOTE BUTTONS {noteButtons ? 'ON' : 'OFF'}</Button>
             <Button variant="outline" onClick={() => setStartArmed(true)}>GO BACK TO START</Button>
             {startArmed && <section role="alertdialog" aria-label="Go back to start" className="max-w-[320px] text-foreground"><p className="font-fell leading-relaxed">{START_CONFIRMATION}</p><div className="flex gap-2 mt-3"><Button variant="outline" disabled={starting} onClick={() => void handleDevReset()}>{starting ? '…' : 'CONFIRM'}</Button><Button variant="ghost" disabled={starting} onClick={() => setStartArmed(false)}>CANCEL</Button></div></section>}
             <Button variant="ghost" type="button" onClick={async () => {

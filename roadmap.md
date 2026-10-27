@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Add registration-one dev notepad, screenshot capture, live context, Dev Menu controls and focus-safe walking; existing RPCs only. Real canvas/HUD JPEG capture and isolated desktop/phone save/edit/drop checked; all 479 tests pass.
+- [ ] Verify dev-note persistence as Rob in the real game — the game uses external authentication without a available signed-in session; isolated RPC checks do not establish live saving.
+
 - [x] World build: anchor buildings and depth/fade, character glow, shared player presence, deterministic wandering NPCs, Sam copy, and confirmed GO BACK TO START; existing data only. Today's public world and phone confirmation checked without page errors; game regressions pass.
 - [ ] Verify new buildings after map rebuild and multiplayer/reset against a real signed-in account — new chunks await the user's rebuild; external game auth cannot be minted by the connected backend.
 

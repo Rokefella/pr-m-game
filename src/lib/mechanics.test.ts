@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { cellDistance, emptyRunEffects, inReveal, isStepMechanic, isCreditMechanic, mechanicBlocked, nearestFragment, normalizeRunEffects, restoreChalk } from './mechanics';
+import { cellDistance, emptyRunEffects, inReveal, isStepMechanic, isCreditMechanic, mechanicBlocked, nearestFragment, normalizeRunEffects, restoreChalk, stackReceipt } from './mechanics';
 describe('mechanic rules', () => {
   beforeEach(() => sessionStorage.clear());
   it.each([
@@ -19,8 +19,8 @@ describe('mechanic rules', () => {
     expect(isStepMechanic({ name })).toBe(true);
     expect(mechanicBlocked(isStepMechanic({ name }), 4999)).toBe('');
   });
-  it('blocks steps at the 5000 cap', () => { expect(mechanicBlocked(true, 5000)).toBeTruthy(); expect(mechanicBlocked(true, 4999)).toBe(''); });
-  it.each(['Lantern Oil', 'Trail Chalk', 'Echo Pebble', 'Lucky Coin', 'Map Scrap', 'Compass Shard', 'Magnet Charm'])('%s requires a maze run', name => {
+  it('blocks steps at the 9999 cap', () => { expect(mechanicBlocked(true, 9999)).toBeTruthy(); expect(mechanicBlocked(true, 4999)).toBe(''); });
+  it.each(['Lantern Oil', 'Trail Chalk', 'Echo Pebble', 'Lucky Coin', 'Compass Shard', 'Magnet Charm'])('%s requires a maze run', name => {
     expect(isStepMechanic({ name })).toBe(false);
     expect(mechanicBlocked(false, 100)).toBeTruthy();
     expect(mechanicBlocked(false, 100, { level: 2, position: () => ({ col: 1, row: 1 }) })).toBe('');
@@ -42,3 +42,4 @@ describe('mechanic rules', () => {
   });
   it('starts with every run effect cleared', () => expect(normalizeRunEffects(null)).toEqual(emptyRunEffects()));
 });
+it('uses the actual capped grant and explains the 9999 ceiling', () => { expect(stackReceipt({ effect: 'steps', amount: 99, used: 7, steps_remaining: 9999 }, 'steps:+120', 7)).toBe('+99 steps. (steps are full at 9,999)'); expect(stackReceipt({ effect: 'credits', amount: 105 }, 'credits:+15', 7)).toBe('+105 credits.'); });

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { carriedDropCount, readOwnedDrops, refreshDrops, DROPS_REFRESHED, type OwnedDrop } from './carriedDrops';
+import { stackDrops, carriedDropCount, readOwnedDrops, refreshDrops, DROPS_REFRESHED, type OwnedDrop } from './carriedDrops';
 
 const api = vi.hoisted(() => ({ from: vi.fn(), select: vi.fn(), eq: vi.fn() }));
 vi.mock('@/lib/supabase', () => ({ supabase: { from: api.from } }));
@@ -29,3 +29,4 @@ describe('carried drops', () => {
     window.removeEventListener(DROPS_REFRESHED, event);
   });
 });
+it('groups 99 copies of a drop once without losing instance IDs', () => { const drops = Array.from({ length: 99 }, (_, i) => ({ id: String(i), drop_key: 'moss', name: 'Moss bundle', carried: false } as OwnedDrop)); const stacks = stackDrops(drops); expect(stacks).toHaveLength(1); expect(stacks[0].count).toBe(99); expect(stacks[0].ids).toHaveLength(99); });

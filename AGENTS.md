@@ -4,7 +4,7 @@
 
 - Maze loads drops after fresh/resume readiness. Real exits settle claims then runState abandons drops and refreshes inventory; Shadow snapshots carried counts before server banking. DropCrate only draws.
 
-- LoadingScreen owns timing.
+- LoadingScreen owns timing. DevMenu publishes top-ups after callers settle step saves.
 
 - Format primes only at presentation boundaries via format.ts; decode the padded string; persist and compare numbers.
 - Derive carried counts via `fragmentInventory`, excluding the current prime for reveal pre-counts. Shadow progress uses only its transfer snapshot; query Library rows after persistence independently of level-gate timing to keep presentation from altering saving.
@@ -20,14 +20,13 @@
 - Daily claims share one per-user session promise; home pages refresh balances and Maze waits before step writes to avoid overwriting grants.
 - Render ACCOUNT feedback through a portaled modal sized against the visual viewport; keyboard resize must keep the message and submission controls visible.
 - Keep fragment plate primitives presentation-only; coordinate eye, voice and digit readiness in FragmentOverlay, deriving pre-collection counts by excluding the current prime from the Folder query so asynchronous pickup persistence cannot skew the count.
-- Ghosts use caller walkability; Echoes use BFS/rAF; labels use portals. roomConfig sizes NPC bodies before zoom.
+- Ghosts use caller walkability; Echoes BFS/rAF; labels portals; roomConfig sizes NPCs before zoom.
 - Use zIndex's scale and data-game-ui markers to hide labels during UI; portal Profile to body to escape transforms. Preserve local world ordering.
 - mazeLight owns radii; mechanics reads server run effects, DropDetail consumes via RPC and refreshes inventory/users; Maze draws effects through refs and settles step saves before grants.
 - Keep maze run records and unbanked deletion in runState; Maze owns awaited deliberate exits and captures room-return intent before config consumes coordinates, while successful Shadow persistence ends the run so banking never suppresses later forfeiture.- Room interiors (DynamicRoom, ExchangeRoom) render through components/theme/rooms: floor/wall cells merged into one CSS-background div per row run, implicit wall ring added to collision, avatar and camera written via DOM refs; keeps rooms cheap and visually consistent.
 - Shadow Realm entry requires a recent sessionStorage entry token written by Maze's golden door and cleared only after a successful banking transfer; transfers persist before any animation, and a run marked completed at the golden door routes back to the Shadow Realm while unbanked fragments remain; its camera, lantern and above-fog garden beacon are written through refs in one rAF loop.
 - Door screens and the Shadow-to-level transfer share components/theme/transition (GateScene + DoorTransition + TransitionFlash); pages stay thin wrappers that own only data and destinations, with CSS-only timing and reduced-motion fallbacks.
-- Intro/ProfileSetup share PlateFrame/PixelSigil; nameError stays exported for tests.
-- Login/Signup share presentation-only AuthPlate/AuthField; pages own auth and navigation.
+- Intro/ProfileSetup share PlateFrame/PixelSigil; export nameError. Login/Signup share AuthPlate/AuthField; pages own auth/navigation.
 - ConsolePanel owns server validation, carried-drop selection and lockout display; pass the selected drop UUID to the server and keep key compatibility server-authoritative. DynamicRoom owns console bump blocking and placeholder rifts, and Maze reuses the existing exact-cell room-return marker to preserve runs.
 - npcQuestState shares dialogue predicates; useNpcQuestStates caches event-driven results; NpcOrb only draws. questFlags reconciles Bernard after banking/on Village load from persisted progress, never level/session markers.
 

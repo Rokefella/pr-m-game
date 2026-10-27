@@ -2,6 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { chunkOrigin, eraAt, isWading, nearbyChunks, nearestWorldWalkable, tileCost, worldArea, worldMoveDuration, worldPhase, WorldChunkCache, type Terrain, type Era } from './worldTest';
 import { worldObjectGround } from './worldTestRender';
 import { saveWorldPos, WORLD_LAYOUT_VERSION, WORLD_LAYOUT_VERSION_KEY } from './worldReturn';
+import { adjacentConversation, bumpedSignpost, type Place } from './worldTest';
+it('signpost at 5,3 opens at its foot or a bump into the post at 5,2, never proximity', () => {
+  const sign = { action: 'signpost', kind: 'npc_home', x: 5, y: 3 } as Place;
+  expect(adjacentConversation([sign], { x: 4, y: 3 })).toBeUndefined();
+  expect(bumpedSignpost([sign], { x: 5, y: 2 })).toBe(sign);
+  expect(bumpedSignpost([sign], { x: 5, y: 3 })).toBe(sign);
+  expect(bumpedSignpost([sign], { x: 4, y: 2 })).toBeUndefined();
+});
 describe('read-only world rules', () => {
   it('aligns chunks to 64-cell boundaries', () => { expect(chunkOrigin(25)).toBe(0); expect(chunkOrigin(300)).toBe(256); expect(chunkOrigin(999)).toBe(960); });
   it('prefetches within sixteen cells of an edge', () => { expect(nearbyChunks({ x: 48, y: 32 })).toContainEqual({ x: 64, y: 0 }); expect(nearbyChunks({ x: 47, y: 32 })).toEqual([{ x: 0, y: 0 }]); });

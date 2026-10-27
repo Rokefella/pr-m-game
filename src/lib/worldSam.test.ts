@@ -62,6 +62,27 @@ describe('cardTopics', () => {
 });
 
 import { samLandLine } from './worldSam';
+import { entryVisible } from './worldSam';
+describe('book flag matching', () => {
+  it('false means numeric minimum, including Sam stage four and later', () => {
+    const entry = { requires_flags: { sam_stage: '4' }, flags_equal: false };
+    expect(entryVisible(entry, { sam_stage: '3' })).toBe(false);
+    expect(entryVisible(entry, { sam_stage: '4' })).toBe(true);
+    expect(entryVisible(entry, { sam_stage: '8' })).toBe(true);
+    expect(entryVisible(entry, {})).toBe(false);
+    expect(entryVisible(entry, { sam_stage: 'invalid' })).toBe(false);
+  });
+  it('true or null keep exact matching', () => {
+    for (const flags_equal of [true, null, undefined]) {
+      expect(entryVisible({ requires_flags: { sam_stage: '4' }, flags_equal }, { sam_stage: '4' })).toBe(true);
+      expect(entryVisible({ requires_flags: { sam_stage: '4' }, flags_equal }, { sam_stage: '5' })).toBe(false);
+    }
+  });
+  it('nonnumeric flags remain exact when false', () => {
+    expect(entryVisible({ requires_flags: { met: 'true' }, flags_equal: false }, { met: 'true' })).toBe(true);
+    expect(entryVisible({ requires_flags: { met: 'true' }, flags_equal: false }, { met: 'false' })).toBe(false);
+  });
+});
 describe('Lumen topics and retired data', () => {
   const lumen = ['lumen_well', 'lumen_library', 'lumen_exchange', 'lumen_towns'].map(t => ({ node_key: `${t}_root_a`, text: 'x', topic: t, requires_flags: { sam_lumen: '1' } }));
   const book = [...lumen, { node_key: 'q_root', text: 'old', topic: 'retired_quest' }, { node_key: 'background_root', text: 'x', topic: 'background' }];

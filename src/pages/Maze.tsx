@@ -546,6 +546,10 @@ const Maze = () => {
         if (!config.openSet.has(k) || config.veilSet?.has(k)) s.add(k);
       }
     }
+    // Crates are overlays on ordinary floor, not wall art; collision stays untouched.
+    for (const cell of config.visualCells ?? []) {
+      if (cell.type === 'DROP' || cell.type === 'DROP_SPAWN') s.delete(`${cell.col},${cell.row}`);
+    }
     return s;
   }, [config]);
 

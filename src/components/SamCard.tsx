@@ -22,10 +22,20 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
   const name = (t: string) => fillName(t, playerName);
   const press = async () => {
     if (!stage || busy) return;
-    setBusy(true);
+    setBusy(true); setError('');
     try {
       const res = await runStage(stage.id);
-      if (res.ok) { setReceipt(receiptLine(res.given, await dropNames())); onRewarded?.(); await refresh(); }
+      if (res.ok) {
+        setReceipt(receiptLine(res.given, await dropNames()));
+        onRewarded?.();
+        await refresh();
+      } else {
+        setError(NOTE_ERROR);
+        console.error(`run_npc_stage failed for stage ${stage.id}`, res.reason);
+      }
+    } catch (err) {
+      setError(NOTE_ERROR);
+      console.error(`run_npc_stage failed for stage ${stage.id}`, err);
     } finally { setBusy(false); }
   };
   const go = (target: string | null | undefined) => setNode(target && sam ? pickNode(sam.book, target) : null);

@@ -202,6 +202,15 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const [jumpY, setJumpY] = useState('25');
   const [placeCard, setPlaceCard] = useState<Place | null>(null);
   const talkingNpc = useRef<string | null>(null);
+  useEffect(() => {
+    if (!userId || !placeCard || !shouldMarkMerchantMet(placeCard, flags)) return;
+    void (async () => {
+      const { error } = await (supabase.rpc as unknown as (f: string) => Promise<{ error: unknown }>)('merchant_met');
+      if (error) return;
+      const next = await getAllFlags(userId).catch(() => null);
+      if (next) setFlags({ ...next });
+    })();
+  }, [placeCard, userId]); // eslint-disable-line react-hooks/exhaustive-deps
   const npcCardOpen = Boolean(placeCard && (placeCard.npc_key || placeAction(placeCard) === 'merchant'));
   talkingNpc.current = npcCardOpen ? placeCard?.npc_key ?? 'merchant' : null;
   useEffect(() => { if (npcCardOpen) keys.current.clear(); }, [npcCardOpen]);

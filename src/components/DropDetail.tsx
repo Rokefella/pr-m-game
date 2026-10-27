@@ -26,7 +26,7 @@ export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh, befo
     setBusy(true); setMsg('');
     let called = false;
     try {
-      await beforeUse?.();
+      if (beforeUse) await beforeUse();
       await maze?.beforeUse?.();
       const position = maze?.position();
       called = true;

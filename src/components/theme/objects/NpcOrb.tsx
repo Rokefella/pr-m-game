@@ -3,6 +3,8 @@ import type { NpcQuestState } from '@/lib/npcQuestState';
 import { AVATAR_BODY_RATIO, NPC_BODY_SCALE } from '@/lib/orbSizes';
 import OrbLabels from '@/components/OrbLabels';
 import { useNpcDisplayName } from '@/hooks/useNpcQuestStates';
+import { npcColors, npcSkin, useSkins, type Facing } from '@/lib/skins';
+import { NpcSkinSprite } from '@/components/SkinSprite';
 
 const SYMBOLS = {
   bernard: 'M1 0h3v1h-3zM0 1h5v3h-5zM2 4h1v1h-1z',

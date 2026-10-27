@@ -2,28 +2,38 @@ import { supabase } from '@/lib/supabase';
 import { inventoryChanged } from './inventoryEvents';
 
 /** Optional world_places visibility rule compared against users.maze_completed_level. */
-export type ShowWhen = { min_completed_level?: number | null; max_completed_level?: number | null } | null | undefined;
-export const showWhenMatches = (rule: ShowWhen, completed: number | null | undefined) => {
+export type ShowWhen = { min_completed_level?: number | null; max_completed_level?: number | null; flag?: string | null; flag_absent?: string | null } | null | undefined;
+const flagSet = (flags: Record<string, string>, key: string) => String(flags[key] ?? '') !== '';
+export const showWhenMatches = (rule: ShowWhen, completed: number | null | undefined, flags: Record<string, string> = {}) => {
   if (!rule) return true;
+  if (rule.flag && !flagSet(flags, rule.flag)) return false;
+  if (rule.flag_absent && flagSet(flags, rule.flag_absent)) return false;
   const level = Number(completed) || 0;
   if (rule.min_completed_level != null && level < Number(rule.min_completed_level)) return false;
   if (rule.max_completed_level != null && level > Number(rule.max_completed_level)) return false;
   return true;
 };
+/** Hidden places never appear on the map or in lists, and show their name only up close. */
+export const HIDDEN_PLACE_NAMES = new Set(['Wandering trader']);
+export const isHiddenPlace = (p: { name?: string | null }) => HIDDEN_PLACE_NAMES.has(String(p.name ?? ''));
+export const HIDDEN_LABEL_RADIUS = 3;
+export const LUMEN_MERCHANT = 'Lumen: merchant';
+/** Only the Lumen merchant marks the meeting, and only the first time. */
+export const shouldMarkMerchantMet = (p: { name?: string | null; action?: string | null }, flags: Record<string, string>) => p.name === LUMEN_MERCHANT && p.action === 'merchant' && !flagSet(flags, 'met_lumen_merchant');
 export const SAM_KEYS = new Set(['bernard', 'sam']);
 /** Sam's home tier by sam_stage: start fire, Cinder Hollow, The First Spark, then Lumen. */
 export const samHomeTier = (samStage: number | null | undefined) => { const s = Number(samStage) || 0; return s <= 2 ? 0 : s <= 4 ? 1 : s === 5 ? 2 : 3; };
 /** A Sam home's tier is its show_when minimum (start fire has none). */
 const homeTier = (p: { show_when?: ShowWhen }) => Number(p.show_when?.min_completed_level) || 0;
 /** Applies show_when to every other place; Sam stands only at the home matching his stage. */
-export const visiblePlaces = <T extends { show_when?: ShowWhen; npc_key?: string | null }>(places: T[], completed: number | null | undefined, samStage: number | null | undefined = 0) => {
+export const visiblePlaces = <T extends { show_when?: ShowWhen; npc_key?: string | null }>(places: T[], completed: number | null | undefined, samStage: number | null | undefined = 0, flags: Record<string, string> = {}) => {
   const samHomes = places.filter(p => p.npc_key && SAM_KEYS.has(p.npc_key));
   const tier = samHomeTier(samStage);
   const best = samHomes.filter(p => homeTier(p) <= tier).sort((a, b) => homeTier(b) - homeTier(a))[0] ?? null;
   const seen = new Set<string>();
   return places.filter(p => {
     if (p.npc_key && SAM_KEYS.has(p.npc_key)) return p === best;
-    if (!showWhenMatches(p.show_when, completed)) return false;
+    if (!showWhenMatches(p.show_when, completed, flags)) return false;
     if (!p.npc_key) return true;
     if (seen.has(p.npc_key)) return false;
     seen.add(p.npc_key); return true;

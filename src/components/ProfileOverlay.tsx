@@ -789,7 +789,7 @@ const ProfileOverlay = ({
               {/* DROPS section */}
               {(() => {
                 const tradeStat = accountRow?.trade ?? 0;
-                const dropCapacity = 10 + tradeStat * 2 + extraDropCapacity;
+                const dropCapacity = 20 + tradeStat * 2 + extraDropCapacity;
                 const stacks = stackDrops(ownedDrops);
                 const owned = stacks.length;
                 const dropCells = Array.from({ length: dropCapacity }, (_, i) => stacks[i] || null);

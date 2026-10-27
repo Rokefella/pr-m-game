@@ -1,3 +1,4 @@
+import { isHiddenPlace } from '@/lib/worldSam';
 import { useEffect, useRef, useState } from 'react';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { X } from 'lucide-react';
@@ -35,7 +36,7 @@ export default function WorldMap({ bits, player, layer, aura, dev, types, places
     }
     ctx.globalAlpha = 1;
   }, [art, bits, reveal]);
-  const visible = places.filter(p => (Number(p.layer) || 0) === 0 && (reveal || discoveredBlock(bits, Math.floor(p.x / 10), Math.floor(p.y / 10))) && (p.kind === 'town' || p.kind === 'maze_entrance' || p.kind === 'npc_home' || p.action === 'door_library' || p.action === 'merchant'));
+  const visible = places.filter(p => !isHiddenPlace(p) && (Number(p.layer) || 0) === 0 && (reveal || discoveredBlock(bits, Math.floor(p.x / 10), Math.floor(p.y / 10))) && (p.kind === 'town' || p.kind === 'maze_entrance' || p.kind === 'npc_home' || p.action === 'door_library' || p.action === 'merchant'));
   const surfaceFinds = finds.filter(f => (Number(f.layer) || 0) === 0);
   const findMarks = [
     ...surfaceFinds.filter(f => f.visibility === 'visible' && (reveal || discoveredBlock(bits, Math.floor(f.x / 10), Math.floor(f.y / 10)))).map(f => ({ f, mark: (findSprite(f, claimed.has(f.id)) ?? '').startsWith('campfire') ? '✶' : '▲', cls: claimed.has(f.id) ? 'world-map-find world-map-find-claimed' : 'world-map-find' })),

@@ -79,7 +79,7 @@ export function chunkCanvas(cache: WorldChunkCache, chunk: WorldChunk, types: Ma
   for (let y = chunk.y0; y < chunk.y0 + chunk.h; y++) for (let x = chunk.x0; x < chunk.x0 + chunk.w; x++) {
     const terrain = types.get(cache.terrainKey(x, y) ?? ''); if (!terrain) continue;
     const era = eraAt(eraPointFor({ x, y }, layer), eras), fallback = era?.ground_key ? types.get(era.ground_key) : undefined;
-    const object = isObjectLayer(terrain) || terrain.footprint === 2 || terrain.key === 'building' || terrain.key.startsWith('house_');
+    const object = isObjectLayer(terrain) || terrain.footprint === 2 || terrain.key === 'building' || terrain.key.startsWith('house_') || terrain.key.startsWith('bld_');
     const ground = object ? worldObjectGround(cache, types, x, y, fallback) : fallback;
     const px = (x - chunk.x0) * CHUNK_PX, py = (y - chunk.y0) * CHUNK_PX;
     cells.push({ x, y, px, py, terrain, era, ground, object });
@@ -89,7 +89,7 @@ export function chunkCanvas(cache: WorldChunkCache, chunk: WorldChunk, types: Ma
   for (const c of cells) drawWorldHeight(ctx, cache, c.object ? c.ground ?? c.terrain : c.terrain, c.x, c.y, c.px, c.py, ink, layer);
   const seen = new Set<string>(), largeSeen = new Set<string>();
   for (const { x, y, px, py, terrain, era, ground, object } of cells) {
-    if (!object || hasMovingSprite(terrain)) continue;
+    if (!object || hasMovingSprite(terrain) || terrain.key.startsWith('bld_')) continue;
     if (terrain.footprint === 2) {
       const anchor = worldFootprintAnchor(cache, terrain, x, y);
       if (anchor) {

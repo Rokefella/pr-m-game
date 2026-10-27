@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] World build: anchor buildings and depth/fade, character glow, shared player presence, deterministic wandering NPCs, Sam copy, and confirmed GO BACK TO START; existing data only. Today's public world and phone confirmation checked without page errors; game regressions pass.
+- [ ] Verify new buildings after map rebuild and multiplayer/reset against a real signed-in account — new chunks await the user's rebuild; external game auth cannot be minted by the connected backend.
+
 - [x] Player skins: Visitor default suit, dye zones, walk frames, wardrobe with hidden unfound skins, skin-found cards for world finds and maze pickups, dev grant; frame/colour/privacy/orb-event tests pass.
 - [ ] Verify skin equip, finds and maze skin drops against a real signed-in player — the avatar_skins table and skin RPCs were not visible through the backend tools, and external game authentication remains unavailable.
 
@@ -117,7 +120,7 @@
 - [ ] Verify console codes, keys and unlock persistence against a real player's published maze — the game uses a separate external auth session unavailable to the checker; isolated tests are not live server verification.
 
 - [x] Dyes: any-colour orb, consume-only USE dye sheet and live orb updates; wardrobe removed.
-- [ ] Ghost players show the dye colour — the positions table has no colour column (needs a database change on the game server).
+- [x] World visitors use the existing position row's skin, dye, facing and layer; nearby sprites and distant/map dots implemented.
 - [ ] Verify consume-only dye USE on a real account — the game sign-in is unavailable to the checker.
 
 - [x] Make all ten mechanic drops usable; refresh steps/run state and draw run effects with reduced-motion support. Consumption tests and controlled browser cue checks pass.

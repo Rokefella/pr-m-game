@@ -3,7 +3,7 @@ import type { NpcQuestState } from '@/lib/npcQuestState';
 import { AVATAR_BODY_RATIO, NPC_BODY_SCALE } from '@/lib/orbSizes';
 import OrbLabels from '@/components/OrbLabels';
 import { useNpcDisplayName } from '@/hooks/useNpcQuestStates';
-import { npcColors, npcSkin, useSkins, type Facing } from '@/lib/skins';
+import { npcColors, npcSkin, useSkins, type Facing, type WalkPhase } from '@/lib/skins';
 import { NpcSkinSprite } from '@/components/SkinSprite';
 
 const SYMBOLS = {
@@ -21,13 +21,14 @@ const SYMBOLS = {
 
 export function npcOrbIdentity(npc: string): keyof typeof SYMBOLS | 'unknown' {
   const name = npc.toLowerCase();
+  if (name === 'sam') return 'bernard';
   return (Object.keys(SYMBOLS) as (keyof typeof SYMBOLS)[]).find(key => name.includes(key)) ?? 'unknown';
 }
 
 /** The SVG's halo centre, not its body, is anchored at the caller's position. */
 export function npcBodySize(avatarSize: number) { return Math.round(avatarSize * AVATAR_BODY_RATIO * NPC_BODY_SCALE); }
 export function npcSvgWidth(bodySize: number) { return bodySize * 60 / 36; }
-export default memo(function NpcOrb({ npc, name, size = 29, quest = 'none', facing = 'down' }: { npc: string; name?: string; size?: number; quest?: NpcQuestState; facing?: Facing }) {
+export default memo(function NpcOrb({ npc, name, size = 29, quest = 'none', facing = 'down', phase = 'stand' }: { npc: string; name?: string; size?: number; quest?: NpcQuestState; facing?: Facing; phase?: WalkPhase }) {
   const svg = useRef<SVGSVGElement>(null);
   const box = useRef<HTMLSpanElement>(null);
   const displayName = useNpcDisplayName(npc);
@@ -36,14 +37,14 @@ export default memo(function NpcOrb({ npc, name, size = 29, quest = 'none', faci
   const identity = npcOrbIdentity(npc);
   const c = (i: number) => `var(--npc-${identity}-${i})`;
   const lit = quest === 'available' || quest === 'ready';
-  const skin = npcSkin(identity);
+  const skin = npcSkin(npc) ?? npcSkin(identity);
   if (skin) {
     const height = Math.round(size * 14 / 16);
     return <span ref={box} className={`npc-orb npc-quest-${quest}`} data-npc={identity} data-quest={quest} aria-hidden="true" style={{ position: 'relative', display: 'inline-block', width: size, height }}>
       <svg width={size} height={Math.max(6, Math.round(size * 0.3))} style={{ position: 'absolute', left: 0, bottom: -2, overflow: 'visible' }} shapeRendering="crispEdges">
         <ellipse className={`npc-orb-halo${lit ? ' npc-quest-halo' : ''}`} cx={size / 2} cy={3} rx={size * 0.52} ry={Math.max(2, size * 0.14)} fill={lit ? 'var(--npc-quest-light)' : c(1)} fillOpacity={lit ? '.3' : '.14'} stroke={lit ? 'var(--npc-quest-light)' : c(1)} strokeOpacity={lit ? '.95' : '.6'} strokeWidth={lit ? 2 : 1} />
       </svg>
-      <NpcSkinSprite skin={skin} facing={facing} size={size} colors={npcColors(skin)} />
+      <NpcSkinSprite skin={skin} facing={facing} phase={phase} size={size} colors={npcColors(skin)} />
       {lit && <svg width="22" height="22" viewBox="0 0 22 22" style={{ position: 'absolute', left: size / 2 - 11, top: -Math.round(size * 0.55) }} shapeRendering="crispEdges"><g className="npc-quest-marker">
         <path d="M11 0L22 11L11 22L0 11Z" fill="var(--npc-quest-plate)" stroke="var(--npc-quest-outline)" strokeWidth="2" />
         <path d="M11 4L18 11L11 18L4 11Z" fill="var(--npc-quest-light)" />

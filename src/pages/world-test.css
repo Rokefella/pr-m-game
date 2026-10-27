@@ -1,6 +1,12 @@
 .world-test { position: fixed; inset: 0; overflow: hidden; background: var(--auth-backdrop); color: var(--auth-text); }
 .world-test canvas { width: 100%; height: 100%; display: block; }
 .world-avatar { position: fixed; top: 0; left: 0; pointer-events: none; }
+.world-scene { position: absolute; inset: 0; isolation: isolate; z-index: 0; }
+.world-scene canvas.world-building { position: fixed; top: 0; left: 0; pointer-events: none; image-rendering: pixelated; }
+.world-markers { position: fixed; inset: 0; pointer-events: none; z-index: 50000; }
+.world-visitor { opacity: .65; }
+.world-visitor-name { display: block; width: 60px; margin-left: -12px; text-align: center; font-size: 8px; color: var(--auth-text); text-shadow: 0 1px 2px var(--instrument-shadow); }
+.world-visitor-dot { display: block; width: 36px; text-align: center; color: var(--plate-label); opacity: .4; }
 .world-hud { position: fixed; top: 0; left: 0; right: 100px; display: flex; gap: 8px; align-items: center; background: var(--profile-backdrop); border-bottom: 1px solid var(--plate-edge); padding: max(8px, env(safe-area-inset-top)) 8px 8px; z-index: var(--z-hud); font-size: 10px; letter-spacing: 0; }
 .world-hud > button { flex-shrink: 0; color: var(--auth-text); }
 .world-status { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 3px; }

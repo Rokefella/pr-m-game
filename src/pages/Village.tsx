@@ -920,7 +920,7 @@ const Village = () => {
     // Stage 0 — first meeting: greet, then advance to stage 1 (arrival complete).
     if (stage === 0) {
       return {
-        text: 'You are here. I heard your bell before you did. Welcome. My name is Bernard. Three buildings — 23, 47, 89. Find them all. Come back when you have stood at each one.',
+        text: 'You are here. I heard your bell before you did. Welcome. My name is Sam. Three buildings — 23, 47, 89. Find them all. Come back when you have stood at each one.',
         buttonLabel: null,
         onShow: () => { advanceBernardStage(1); },
       };
@@ -962,7 +962,7 @@ const Village = () => {
     if (stage === 4) {
       return {
         text: 'Congratulations. You made it through.',
-        buttonLabel: 'Thank you Bernard',
+        buttonLabel: 'Thank you Sam',
         buttonAction: async () => {
           const credNum = credits + 100;
           setCredits(credNum);
@@ -2048,7 +2048,7 @@ const Village = () => {
           }}
         >
           <div style={{ fontWeight: 700, marginBottom: 6 }}>
-            BERNARD PARITY CHECK — {parityRows.filter((r) => r.ok).length}/{parityRows.length} MATCH
+            SAM PARITY CHECK — {parityRows.filter((r) => r.ok).length}/{parityRows.length} MATCH
           </div>
           {parityRows.map((r) => (
             <div key={r.label} style={{ padding: '4px 0', borderTop: '1px solid #222' }}>
@@ -2438,7 +2438,7 @@ const Village = () => {
 
       {/* Bernard dialogue overlay */}
       {bernardOpen && resolvedDialogue && (
-        <NpcDialogue npcName="Bernard" npcPortraitSrc={bernardMarkerUrl} text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>
+        <NpcDialogue npcName="Sam" npcPortraitSrc={bernardMarkerUrl} text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>
           {(resolvedDialogue.options ?? []).map((o, i) => (
             <button
               key={`${o.label}-${i}`}

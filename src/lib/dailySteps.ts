@@ -1,6 +1,7 @@
 // In-memory only: remounts share a claim, but a new app session starts fresh.
 const sessionClaims = new Map<string, Promise<number>>();
 const announcedClaims = new Set<string>();
+export function resetDailySteps(userId: string) { sessionClaims.delete(userId); announcedClaims.delete(userId); }
 
 export function claimDailyStepsOnce(userId: string, claim: () => Promise<number>): Promise<number> {
   const existing = sessionClaims.get(userId);

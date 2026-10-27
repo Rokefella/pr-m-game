@@ -37,6 +37,12 @@ import { currentStage, loadSam, visiblePlaces } from '@/lib/worldSam';
 import { approachedFind, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, findMarked, findShows, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
 import { npcFacingToward, npcSkin, setCurrentSkin, useSkins, type Facing } from '@/lib/skins';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
+import { worldWalkable } from '@/lib/worldTest';
+import { buildingBox, buildingOpacity, visibleBuildings, type WorldBuilding } from '@/lib/worldBuildings';
+import { terrainSprite } from '@/lib/terrainTile';
+import { npcId, NpcWander, type NpcPose } from '@/lib/worldNpcMotion';
+import { readWorldPlayers, shownPlayers, WorldPresence, writeWorldPlayer, type WorldPlayer } from '@/lib/worldPlayers';
+import WorldVisitor from '@/components/WorldVisitor';
 import './world-test.css';
 
 /** The suited figure stands ~90% of a tile wide, feet on the tile. */
@@ -131,6 +137,35 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const bumpUntil = useRef(0);
   const [walking, setWalking] = useState(false);
   const [facing, setFacing] = useState<Facing>('down');
+  const [players, setPlayers] = useState<WorldPlayer[]>([]);
+  const presence = useRef<WorldPresence | null>(null);
+  const npcWanders = useRef(new Map<string, NpcWander>());
+  const npcPoses = useRef(new Map<string, NpcPose>());
+  const npcApproached = useRef(new Set<string>());
+  const [npcPhases, setNpcPhases] = useState<Record<string, 'stand' | 'a' | 'b'>>({});
+  const npcPhasesRef = useRef<Record<string, 'stand' | 'a' | 'b'>>({});
+  const [buildings, setBuildings] = useState<WorldBuilding[]>([]);
+  const buildingSignature = useRef('');
+  const buildingEls = useRef(new Map<string, HTMLCanvasElement>());
+  const markerCanvas = useRef<HTMLCanvasElement>(null);
+  const currentPlaces = (list: Place[]) => list.map(p => { const pose = npcPoses.current.get(npcId(p)); return pose ? { ...p, ...pose.cell } : p; });
+  useEffect(() => {
+    if (!userId) return;
+    const publisher = new WorldPresence(writeWorldPlayer); presence.current = publisher;
+    let off = false;
+    const read = () => { void readWorldPlayers().then(rows => { if (!off) setPlayers(rows); }); };
+    read(); const timer = setInterval(read, 3000);
+    return () => { off = true; clearInterval(timer); publisher.dispose(); presence.current = null; };
+  }, [userId]);
+  useEffect(() => {
+    if (!userId) return;
+    presence.current?.publish({ user_id: userId, ...pos, layer, facing, village_level: 0, avatar_body: identity.avatar_body, orb_dye: identity.orb_dye, aura_color: identity.aura_color, last_seen: new Date().toISOString() });
+  }, [userId, pos, layer, facing, identity.avatar_body, identity.orb_dye, identity.aura_color]);
+  useEffect(() => {
+    if (!userId) return;
+    const timer = setInterval(() => { const row = identityRef.current; presence.current?.publish({ user_id: userId, ...posRef.current, layer: layerRef.current, facing, village_level: 0, avatar_body: row.avatar_body, orb_dye: row.orb_dye, aura_color: row.aura_color, last_seen: new Date().toISOString() }); }, 30000);
+    return () => clearInterval(timer);
+  }, [userId, facing]);
   const [jumpOpen, setJumpOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [discoveryBits, setDiscoveryBits] = useState('');
@@ -310,7 +345,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       const terrainKey = cache.terrainKey(point.x, point.y);
       const terrain = world.terrain.find(t => t.key === terrainKey);
       if (!terrainKey) void cache.load(point.x, point.y);
-      return terrain?.walkable === true && terrain.enabled !== false;
+      return worldWalkable(terrain);
     };
     const bumpOpen = (cell: WorldPoint) => {
       const f = bumpedFind(findsOn(findsRef.current, l), claimedRef.current, cell);
@@ -336,8 +371,9 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     journey.current = { from: display.current, started: lastMove.current, duration: moveDuration.current };
     if (terrain) ledger?.move(tileCost(terrain, eraAt(eraPointFor(next, l), world.eras)));
     cache.maintain(next);
-    const layerPlaces = placesOn(world.places, l);
-    const spot = layerPlaces.find(p => p.x === next.x && p.y === next.y) ?? adjacentConversation(layerPlaces, next);
+    const layerPlaces = currentPlaces(placesOn(world.places, l));
+    for (const p of layerPlaces) if (p.npc_key && chebyshev(p, next) > 1) npcApproached.current.delete(npcId(placesOn(world.places, l).find(home => home.npc_key === p.npc_key) ?? p));
+    const spot = layerPlaces.find(p => !p.npc_key && p.x === next.x && p.y === next.y) ?? adjacentConversation(layerPlaces.filter(p => !p.npc_key), next);
     const layerFinds = findsOn(findsRef.current, l);
     for (const id of [...approached.current]) { const f = layerFinds.find(x => x.id === id); if (!f || chebyshev(f, next) > 1) approached.current.delete(id); }
     if (spot) { setEntryMessage(''); setPlaceCard(spot); return; }
@@ -360,8 +396,9 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     const ink: WorldInk = { background: token('--auth-backdrop'), grid: token('--plate-edge'), text: token('--auth-text'), muted: token('--plate-label'), gold: token('--instrument-beacon'), cyan: token('--console-teal'), shadow: token('--instrument-shadow'), dusk: token('--world-dusk'), night: token('--world-night'), dawn: token('--world-dawn') };
     const types = new Map(data.terrain.map(t => [t.key, t]));
     const layerPlaces = { 0: placesOn(data.places, 0), 1: placesOn(data.places, 1) };
+    const markers = markerCanvas.current, markerCtx = markers?.getContext('2d');
     let width = innerWidth, height = innerHeight, frame = 0, lastDraw = -Infinity;
-    const resize = () => { width = innerWidth; height = innerHeight; const dpr = Math.min(devicePixelRatio || 1, 2); el.width = Math.round(width * dpr); el.height = Math.round(height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+    const resize = () => { width = innerWidth; height = innerHeight; const dpr = Math.min(devicePixelRatio || 1, 2); el.width = Math.round(width * dpr); el.height = Math.round(height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); if (markers && markerCtx) { markers.width = el.width; markers.height = el.height; markerCtx.setTransform(dpr, 0, 0, dpr, 0, 0); } };
     resize(); window.addEventListener('resize', resize);
     const tick = (time: number) => {
       const k = keys.current;
@@ -389,21 +426,38 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
         if (tint) { ctx.globalAlpha = phase.phase === 'dawn' ? 1 - phase.progress : 1; ctx.fillStyle = tint; ctx.fillRect(0, 0, width, height); ctx.globalAlpha = 1; }
       }
       if (l === 0) { drawWorldFireLight(ctx, cache, types, camera.current, width, height, ink, phase.phase); drawFindLight(ctx, layerFinds, claimedRef.current, types, camera.current, ink, phase.phase); }
-      drawFindMarkers(ctx, layerFinds, claimedRef.current, camera.current, width, height, time, ink, reduced);
-      for (const p of layerPlaces[l]) if (p.npc_key && samLineRef.current.has(p.npc_key)) drawMarker(ctx, p.x * WORLD_TILE - camera.current.x, p.y * WORLD_TILE - camera.current.y - 10, time, ink, reduced);
+      if (markerCtx) { markerCtx.clearRect(0, 0, width, height); drawFindMarkers(markerCtx, layerFinds, claimedRef.current, camera.current, width, height, time, ink, reduced); }
       if (isWading(types.get(cache.terrainKey(point.x, point.y) ?? ''))) {
         const pulse = reduced ? 0 : (Math.sin(time / 240) + 1) / 2;
         ctx.save(); ctx.strokeStyle = ink.text; ctx.globalAlpha = .35 + pulse * .2; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.ellipse(width / 2, height / 2 + 5, 10 + pulse * 4, 4 + pulse * 2, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
       }
-      if (avatar.current) avatar.current.style.transform = `translate(${width / 2 - WORLD_AVATAR_SIZE / 2 + (time < bumpUntil.current ? Math.sin(time * .1) * 3 : 0)}px, ${height / 2 - WORLD_AVATAR_SIZE / 2}px)`;
+      if (avatar.current) { avatar.current.style.transform = `translate(${width / 2 - WORLD_AVATAR_SIZE / 2 + (time < bumpUntil.current ? Math.sin(time * .1) * 3 : 0)}px, ${height / 2 + WORLD_TILE / 2 - Math.round(WORLD_AVATAR_SIZE * 14 / 16)}px)`; avatar.current.style.zIndex = String(Math.round((display.current.y + 1) * WORLD_TILE)); }
+      const visible = visibleBuildings(cache, types, camera.current, width, height);
+      const sig = `${l}:` + visible.map(b => `${b.x},${b.y}:${b.terrain.key}`).join('|');
+      if (sig !== buildingSignature.current) { buildingSignature.current = sig; setBuildings(visible); }
+      for (const b of visible) {
+        const el = buildingEls.current.get(`${b.x},${b.y}`), box = buildingBox(b), sprite = terrainSprite(b.terrain.key, b.x, b.y);
+        if (!el) continue;
+        el.style.transform = `translate(${box.x * WORLD_TILE - camera.current.x}px, ${box.y * WORLD_TILE - camera.current.y}px)`;
+        el.style.zIndex = String(Math.round(box.bottom * WORLD_TILE)); el.style.opacity = String(buildingOpacity(b, point));
+        const c = el.getContext('2d'); if (c && sprite) { c.clearRect(0, 0, el.width, el.height); c.imageSmoothingEnabled = false; c.drawImage(sprite, 0, 0, el.width, el.height); }
+      }
       for (const p of layerPlaces[l]) {
         if (!p.npc_key || !skinnedRef.current.has(p.npc_key)) continue;
-        const key = `${p.npc_key}:${p.x}:${p.y}`;
+        const key = npcId(p);
+        let wander = npcWanders.current.get(key); if (!wander) { wander = new NpcWander(); npcWanders.current.set(key, wander); }
+        if (Math.max(Math.abs(p.x - point.x), Math.abs(p.y - point.y)) > Math.max(width, height) / WORLD_TILE + 7) { const el = npcEls.current.get(key); if (el) el.style.display = 'none'; continue; }
+        const pose = wander.sample(p, p.npc_key, clock, point, cell => { const t = types.get(cache.terrainKey(cell.x, cell.y) ?? ''); return worldWalkable(t) && t?.grp !== 'water' && !/building|^house_|^bld_|signpost/.test(t?.key ?? '') && !layerPlaces[l].some(other => other !== p && other.x === cell.x && other.y === cell.y); }, reduced);
+        npcPoses.current.set(key, pose);
         const el = npcEls.current.get(key);
-        if (el) el.style.transform = `translate(${p.x * WORLD_TILE - camera.current.x + (WORLD_TILE - WORLD_NPC_SIZE) / 2}px, ${p.y * WORLD_TILE - camera.current.y + WORLD_TILE - Math.round(WORLD_NPC_SIZE * 14 / 16)}px)`;
-        const f = npcFacingToward(p, point);
+        if (el) { el.style.display = ''; el.style.transform = `translate(${pose.x * WORLD_TILE - camera.current.x + (WORLD_TILE - WORLD_NPC_SIZE) / 2}px, ${pose.y * WORLD_TILE - camera.current.y + WORLD_TILE - Math.round(WORLD_NPC_SIZE * 14 / 16)}px)`; el.style.zIndex = String(Math.round((pose.y + 1) * WORLD_TILE)); }
+        if (markerCtx && samLineRef.current.has(p.npc_key)) drawMarker(markerCtx, pose.x * WORLD_TILE - camera.current.x, pose.y * WORLD_TILE - camera.current.y - 10, time, ink, reduced);
+        const f = pose.facing;
         if (npcFacingsRef.current[key] !== f) { npcFacingsRef.current[key] = f; setNpcFacings({ ...npcFacingsRef.current }); }
+        if (npcPhasesRef.current[key] !== pose.phase) { npcPhasesRef.current[key] = pose.phase; setNpcPhases({ ...npcPhasesRef.current }); }
+        if (chebyshev(pose.cell, point) > 1) npcApproached.current.delete(key);
+        if (!blocked.current && !npcApproached.current.has(key) && chebyshev(pose.cell, point) <= 1) { npcApproached.current.add(key); keys.current.clear(); setPlaceCard({ ...p, ...pose.cell }); }
       }
       frame = requestAnimationFrame(tick);
     };
@@ -455,12 +509,13 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     const list = placesOn(data.places, l);
     return [...new Set(list.map(p => p.kind))].map(kind => ({ l, kind, items: list.filter(p => p.kind === kind).sort((a, b) => kind === 'maze_entrance' ? (a.maze_level ?? 0) - (b.maze_level ?? 0) : a.name.localeCompare(b.name)) }));
   });
-  return <div className="world-test">
+  const visitors = shownPlayers(players, userId, layer, clock);
+  return <div className="world-test" data-night={phase.phase === 'night' || phase.phase === 'dusk'}><div className="world-scene">
     <canvas ref={canvas} aria-label="Open world terrain" onClick={e => {
       if (blocked.current) return;
       const bounds = e.currentTarget.getBoundingClientRect();
       const x = Math.floor((e.clientX - bounds.left + camera.current.x) / WORLD_TILE), y = Math.floor((e.clientY - bounds.top + camera.current.y) / WORLD_TILE);
-      const spot = placesOn(data.places, layer).find(p => (isWorldConversation(p) || isSignpost(p)) && p.x === x && p.y === y && Math.max(Math.abs(x - posRef.current.x), Math.abs(y - posRef.current.y)) <= 1);
+      const spot = currentPlaces(placesOn(data.places, layer)).find(p => (isWorldConversation(p) || isSignpost(p)) && p.x === x && p.y === y && Math.max(Math.abs(x - posRef.current.x), Math.abs(y - posRef.current.y)) <= 1);
       if (spot) { setEntryMessage(''); setPlaceCard(spot); return; }
       const f = findsOn(findsRef.current, layer).find(f => f.x === x && f.y === y && chebyshev(f, posRef.current) <= 1);
       if (!f) return;
@@ -468,15 +523,18 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       if (findMarked(f, isClaimed) || (!isClaimed && findShows(f, posRef.current, false))) setFindCard({ find: f, reading: false });
       else if (isClaimed && f.visibility === 'visible' && f.kind === 'landmark') setFindCard({ find: f, reading: true });
     }} />
+    {buildings.map(b => { const box = buildingBox(b), id = `${b.x},${b.y}`; return <canvas key={id} ref={el => { if (el) buildingEls.current.set(id, el); else buildingEls.current.delete(id); }} width={b.terrain.sprite_w ?? box.w * 16} height={b.terrain.sprite_h ?? box.h * 16} className="world-building" style={{ width: box.w * WORLD_TILE, height: box.h * WORLD_TILE }} aria-hidden="true" />; })}
+    {visitors.map(p => <WorldVisitor key={p.user_id} player={p} at={pos} camera={camera} reduced={reduced} />)}
     <div ref={avatar} className="world-avatar"><PlayerAvatar size={WORLD_AVATAR_SIZE} palette={orbLook(identity.aura_color, identity.orb_dye, identity.registration_number)} walking={walking} skin={identity.avatar_body} facing={facing} registrationNumber={identity.registration_number} auraColor={identity.aura_color} orbDye={identity.orb_dye} /></div>
     {placesOn(data.places, layer).filter(p => p.npc_key && skinned.has(p.npc_key)).map(p => {
       const key = `${p.npc_key}:${p.x}:${p.y}`;
-      return <div key={key} ref={el => { if (el) npcEls.current.set(key, el); else npcEls.current.delete(key); }} className="world-avatar" style={{ pointerEvents: 'none' }}><NpcOrb npc={p.npc_key as string} size={WORLD_NPC_SIZE} facing={npcFacings[key] ?? 'down'} /></div>;
+      return <div key={key} ref={el => { if (el) npcEls.current.set(key, el); else npcEls.current.delete(key); }} className="world-avatar" style={{ pointerEvents: 'none' }}><NpcOrb npc={p.npc_key as string} size={WORLD_NPC_SIZE} facing={npcFacings[key] ?? 'down'} phase={npcPhases[key] ?? 'stand'} /></div>;
     })}
+    <canvas ref={markerCanvas} className="world-markers" aria-hidden="true" /></div>
     <header className="world-hud font-mono">{dev && <div className="world-status"><span>{pos.x},{pos.y} · A {area.x},{area.y} · {era?.name ?? '—'}</span><span>{layer === 1 ? `UNDERGROUND · ABOVE ${surfacePoint.x},${surfacePoint.y}` : 'SURFACE'}</span><span>{terrain?.name ?? (cache.errors.size ? 'Window unavailable' : 'Loading…')} · COST {terrain ? tileCost(terrain, era) : '—'} · SPENT {Number(spent.toFixed(2))}</span>{layer === 0 && <span>{phase.phase.toUpperCase()} · {Math.ceil(phase.minutesLeft)} MIN</span>}</div>}<Button variant="ghost" size="icon" title="MAP" aria-label="MAP" onClick={() => { keys.current.clear(); setMapOpen(true); }}><MapIcon size={18} /></Button>{dev && <Button variant="outline" className="world-jump" onClick={() => { setJumpX(String(pos.x)); setJumpY(String(pos.y)); setJumpOpen(true); }}><Navigation size={14} />JUMP</Button>}</header>
     <GameHud stepsRemaining={stepBalance} stepsExhausted={stepBalance === 0} credits={identity.credits ?? 0} currentLevel={identity.level ?? 1} registrationNumber={identity.registration_number} growthPoints={identity.growth_points ?? 0} subscriptionStatus={subscription} trialDaysRemaining={identity.first_launch_at ? Math.max(0, 14 - Math.floor((Date.now() - new Date(identity.first_launch_at).getTime()) / 86400000)) : identity.trial_end ? getDaysRemainingInTrial(identity.trial_end) : 14} onOpenProfile={() => { keys.current.clear(); setProfileOpen(true); }} onOpenDevMenu={() => { keys.current.clear(); setDevOpen(true); }} />
     <ProfileOverlay isOpen={profileOpen} onClose={() => { setProfileOpen(false); void refreshCompleted(); }} context="village" growthPoints={identity.growth_points ?? 0} socialStat={identity.social ?? 0} perceptionStat={identity.perception ?? 0} tradeStat={identity.trade ?? 0} />
-    {dev && <DevMenu open={devOpen} onClose={() => setDevOpen(false)} userId={userId} home="world" onChanged={() => void refreshCompleted()} />}
+    {dev && <DevMenu open={devOpen} onClose={() => setDevOpen(false)} userId={userId} home="world" onChanged={() => void refreshCompleted()} onBeforeStart={async () => { await stepLedger.current?.flush(); await discovery.current?.flush(true); discovery.current?.abandon(); presence.current?.dispose(); stepLedger.current?.discard(); }} />}
     {arrival && <LevelUpCard newLevel={arrival.newLevel} titleUnlocked={arrival.titleUnlocked} auraColor={identity.aura_color} orbDye={identity.orb_dye} registrationNumber={identity.registration_number} avatarBody={identity.avatar_body} home="world" onContinue={async () => {
       if (!userId) return;
       const { error } = await supabase.from('users').update({ title: arrival.title, levelup_pending: false, levelup_newlevel: 0, level: arrival.newLevel, social: (identityRef.current.social ?? 0) + 1 } as never).eq('id', userId);
@@ -486,7 +544,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     {heavyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[25%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{HEAVY_LEGS}</p>}
     {dailyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[18%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{dailyMessage}</p>}
     <Thumbstick onMove={move} disabled={profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || (Boolean(placeCard) && !(placeCard && (isWorldConversation(placeCard) || isSignpost(placeCard))))} />
-    {mapOpen && <WorldMap bits={discoveryBits} player={pos} layer={layer} aura={identity.aura_color} dev={identity.registration_number === 1} types={data.terrain} places={data.places} finds={finds} claimed={claimed} onClose={() => setMapOpen(false)} />}
+    {mapOpen && <WorldMap bits={discoveryBits} player={pos} layer={layer} aura={identity.aura_color} dev={identity.registration_number === 1} types={data.terrain} places={data.places} finds={finds} claimed={claimed} players={visitors} onClose={() => setMapOpen(false)} />}
     {findCard && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog world-place-card" role="dialog" aria-label={findCard.find.title}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close" onClick={() => setFindCard(null)}><X size={18} /></Button><FindCard key={findCard.find.id + String(findCard.reading)} find={findCard.find} reading={findCard.reading} at={() => posRef.current} onClaimed={markClaimed} onRewarded={() => void refreshReward()} onClose={() => setFindCard(null)} auraColor={identity.aura_color} orbDye={identity.orb_dye ?? null} registrationNumber={identity.registration_number} /></section></div>}
     {jumpOpen && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog" role="dialog" aria-label="Jump to a place"><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close jump menu" onClick={() => setJumpOpen(false)}><X size={18} /></Button><h2 className="font-cinzel">JUMP</h2><form onSubmit={e => { e.preventDefault(); const x = Number(jumpX), y = Number(jumpY); if (Number.isFinite(x) && Number.isFinite(y)) place({ x, y }, layer); }}><label className="font-mono">X<Input aria-label="Jump X" type="number" min={0} max={layerSize(layer) - 1} value={jumpX} onChange={e => setJumpX(e.target.value)} required /></label><label className="font-mono">Y<Input aria-label="Jump Y" type="number" min={0} max={layerSize(layer) - 1} value={jumpY} onChange={e => setJumpY(e.target.value)} required /></label><Button type="submit" className="world-jump">GO</Button></form><Button variant="outline" className="world-jump" onClick={() => place(startPoint(data), 0)}>RESTART AT START</Button>{jumpGroups.map(({ l, kind, items }) => <div key={`${l}-${kind}`} className="world-place-group"><h3 className="font-mono">{l === 1 ? 'UNDERGROUND · ' : 'SURFACE · '}{kind.replace(/_/g, ' ').toUpperCase()}</h3>{items.map((p, i) => <Button key={`${p.name}-${i}`} variant="ghost" onClick={() => place(p, l)}>{p.name}{p.maze_level ? ` · L${p.maze_level}` : ''}<span className="font-mono">{p.x},{p.y}</span></Button>)}</div>)}</section></div>}
     {userId && <MerchantOverlay open={Boolean(placeCard && placeAction(placeCard) === 'merchant')} onClose={() => setPlaceCard(null)} palette="green" title="The Merchant." openingLines={MERCHANT_LINES} userId={userId} credits={identity.credits ?? 0} onCreditsChange={credits => { identityRef.current = { ...identityRef.current, credits }; setIdentity(row => ({ ...row, credits })); }} items={merchantItems(level, 'world', async () => {
@@ -510,7 +568,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       {cardAction === 'door_exchange' && button('OPEN', () => void openDoor('exchange'))}
       {(cardAction === 'descend' || cardAction === 'ascend') && button('GO', () => { const target = placeCard; place({ x: Number(target.target_x), y: Number(target.target_y) }, Number(target.target_layer) === 1 ? 1 : 0); })}
       {cardAction === 'shadow' && button('ENTER', openShadow)}
-      {isWorldConversation(placeCard) && <><p className="font-fell">Talking to Bernard arrives in the next build.</p><Button variant="outline" className="world-jump" onClick={() => setPlaceCard(null)}>Close</Button></>}</>}
+      {isWorldConversation(placeCard) && <Button variant="outline" className="world-jump" onClick={() => setPlaceCard(null)}>Close</Button>}</>}
     </section></div>}
   </div>;
 }

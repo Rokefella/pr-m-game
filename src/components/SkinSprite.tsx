@@ -1,10 +1,13 @@
-import { memo, useEffect, useState } from 'react';
-import { blinkFrame, frameFor, skinSvg, type Facing, type Skin, type WalkPhase } from '@/lib/skins';
+import { memo, useEffect, useId, useState } from 'react';
+import { blinkFrame, frameFor, glowRows, skinSvg, type Facing, type Skin, type WalkPhase } from '@/lib/skins';
 
 const CSS = `
 @keyframes skinPrism { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }
 .skin-prism .skin-dye { animation: skinPrism 6s linear infinite; }
-@media (prefers-reduced-motion: reduce) { .skin-prism .skin-dye { animation: none !important; } }
+@keyframes skinGlow { 0%, 100% { opacity: .45; } 50% { opacity: .75; } }
+.skin-glow { animation: skinGlow 3s ease-in-out infinite; }
+[data-night="true"] .skin-glow { mix-blend-mode: screen; filter: brightness(1.5); }
+@media (prefers-reduced-motion: reduce) { .skin-prism .skin-dye, .skin-glow { animation: none !important; } }
 `;
 
 type Props = {
@@ -29,11 +32,14 @@ function SkinSprite({ skin, facing = 'down', phase = 'stand', size = 48, colors,
   const base = frameFor(skin, facing, phase);
   const rows = blink && facing === 'down' ? blinkFrame(base) : base;
   const inner = skinSvg(rows, colors, skin.dye_chars ?? '', { silhouette, glow });
+  const filterId = `skin-glow-${useId().replace(/:/g, '')}`;
+  const luminous = !silhouette && skin.glow_chars ? skinSvg(glowRows(rows, skin.glow_chars), colors, skin.dye_chars ?? '').replace(/<ellipse[^>]*\/>/, '') : '';
   return (
     <svg viewBox="0 0 16 14" width={size} height={Math.round(size * 14 / 16)} shapeRendering="crispEdges"
       className={prism && !silhouette ? 'skin-prism' : undefined}
       style={{ display: 'block', overflow: 'visible', pointerEvents: 'none', imageRendering: 'pixelated' }} aria-hidden="true">
       <style>{CSS}</style>
+      {luminous && <><defs><filter id={filterId} x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.2" /><feComponentTransfer><feFuncA type="linear" slope={Math.max(0, skin.glow_strength ?? 1)} /></feComponentTransfer></filter></defs><g className="skin-glow"><g filter={`url(#${filterId})`} dangerouslySetInnerHTML={{ __html: luminous }} /></g></>}
       <g dangerouslySetInnerHTML={{ __html: inner }} />
     </svg>
   );
@@ -54,7 +60,7 @@ export function TurningSkinSprite({ skin, colors, size = 96, glow = null, prism 
 }
 
 /** NPC idle life: a blink every 3–6 s (random per mount) and now and then a 1 px bob. Static with reduced motion. */
-export function NpcSkinSprite({ skin, facing = 'down', size = 48, colors }: { skin: Skin; facing?: Facing; size?: number; colors: Record<string, string> }) {
+export function NpcSkinSprite({ skin, facing = 'down', phase = 'stand', size = 48, colors }: { skin: Skin; facing?: Facing; phase?: WalkPhase; size?: number; colors: Record<string, string> }) {
   const [blink, setBlink] = useState(false);
   const [bob, setBob] = useState(false);
   useEffect(() => {
@@ -73,7 +79,7 @@ export function NpcSkinSprite({ skin, facing = 'down', size = 48, colors }: { sk
   }, []);
   return (
     <span style={{ display: 'inline-block', transform: bob ? 'translateY(-1px)' : undefined }}>
-      <SkinSprite skin={skin} facing={facing} size={size} colors={colors} blink={blink} />
+      <SkinSprite skin={skin} facing={facing} phase={phase} size={size} colors={colors} blink={blink && phase === 'stand'} />
     </span>
   );
 }

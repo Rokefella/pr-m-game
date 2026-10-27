@@ -553,7 +553,7 @@ const BernardRoomDynamic = () => {
           pointerEvents: 'none',
         }}
       >
-        BERNARD'S ROOM
+        SAM'S ROOM
       </div>
 
       {message && (
@@ -740,7 +740,7 @@ const BernardRoomDynamic = () => {
       )}
 
       {bernardOpen && resolvedDialogue && (
-        <NpcDialogue npcName="Bernard" npcPortraitSrc={bernardMarkerUrl} text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>
+        <NpcDialogue npcName="Sam" npcPortraitSrc={bernardMarkerUrl} text={resolvedDialogue.text} onShow={resolvedDialogue.onShow}>
           {(resolvedDialogue.options ?? []).map((o, i) => (
             <button
               key={`${o.label}-${i}`}

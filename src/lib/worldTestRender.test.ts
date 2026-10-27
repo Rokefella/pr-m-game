@@ -13,6 +13,13 @@ function context() {
   return { ctx: ctx as unknown as CanvasRenderingContext2D, rects };
 }
 describe('world visual terrain layers', () => {
+  it('caches only era ground beneath building anchors and parts', () => {
+    const cache = new WorldChunkCache(async () => { throw Error(); });
+    const chunk: WorldChunk = { x0: 0, y0: 0, w: 2, h: 1, keys: ['bld_wood_block', 'bld_part'], rows: [[0, 1]] }; cache.chunks.set('0,0', chunk);
+    const types = new Map(['bld_wood_block', 'bld_part', 'grass'].map(key => [key, terrain(key, { render_layer: key === 'grass' ? 'ground' : 'object' })]));
+    const { ctx } = context(), spy = vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(ctx as never);
+    try { art.base.mockClear(); art.large.mockClear(); chunkCanvas(cache, chunk, types, [{ ground_key: 'grass', ring_from: 0, ring_to: 500 }] as never, ink, 0); expect(art.base.mock.calls.map(c => c[1].key)).toEqual(['grass', 'grass']); expect(art.large).not.toHaveBeenCalled(); } finally { spy.mockRestore(); }
+  });
   it('keeps swaying objects out of static art, retaining their ground', () => {
     const cache = new WorldChunkCache(async () => { throw Error(); });
     const chunk = { x0: 0, y0: 0, w: 1, h: 1, keys: ['tree'], rows: [[0]] } as WorldChunk;

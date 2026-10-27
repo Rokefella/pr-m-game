@@ -5,6 +5,8 @@ export type FragmentDef = Cell & { prime: number };
 export type DoorToRoom = Cell & { roomId: string; reentry: Cell };
 
 export type EggDef = Cell & { line: string };
+const SAM_NAMES = new Set(['bernard', 'sam']);
+export const isSamCell = (cell: { npc_key?: string; npc_name?: string; name?: string; type?: string }) => [cell.npc_key, cell.npc_name, cell.name, cell.type].some(v => typeof v === 'string' && SAM_NAMES.has(v.toLowerCase()));
 export type VisualCell = Cell & { type: string; color?: string; npc_key?: string; npc_name?: string; name?: string; title?: string; line?: string; tone?: string };
 
 export type LoadedLevelConfig = {
@@ -172,7 +174,8 @@ export async function loadLevelFromSupabase(
       ...doorsToRoomArr.map((cell) => ({ ...cell, type: 'ROOM_DOOR' })),
       ...((Array.isArray(d.dropSpawns) ? d.dropSpawns : []) as Cell[]).map((cell) => ({ ...cell, type: 'DROP_SPAWN' })),
       ...((Array.isArray(d.drops) ? d.drops : []) as Cell[]).map((cell) => ({ ...cell, type: 'DROP' })),
-      ...((Array.isArray(d.npcs) ? d.npcs : []) as Cell[]).map((cell) => ({ ...cell, type: 'NPC' })),
+      // Sam never appears in a maze.
+      ...((Array.isArray(d.npcs) ? d.npcs : []) as VisualCell[]).filter((cell) => !isSamCell(cell)).map((cell) => ({ ...cell, type: 'NPC' })),
     ].filter((cell) => cell && Number.isFinite(cell.col) && Number.isFinite(cell.row))
       .map((cell) => ({ ...cell, ...rot(cell) })),
   };

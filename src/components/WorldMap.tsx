@@ -9,8 +9,9 @@ import { readWorldOverview } from '@/lib/worldOverview';
 import { eraPointFor, type Place, type Terrain, type WorldPoint } from '@/lib/worldTest';
 import { findSprite, type WorldFind } from '@/lib/worldFinds';
 import './world-map.css';
-type Props = { bits: string; player: WorldPoint; layer: 0 | 1; aura: string | null; dev: boolean; types: Terrain[]; places: Place[]; finds?: WorldFind[]; claimed?: Set<string>; onClose: () => void };
-export default function WorldMap({ bits, player, layer, aura, dev, types, places, finds = [], claimed = new Set<string>(), onClose }: Props) {
+import type { WorldPlayer } from '@/lib/worldPlayers';
+type Props = { bits: string; player: WorldPoint; layer: 0 | 1; aura: string | null; dev: boolean; types: Terrain[]; places: Place[]; finds?: WorldFind[]; claimed?: Set<string>; players?: WorldPlayer[]; onClose: () => void };
+export default function WorldMap({ bits, player, layer, aura, dev, types, places, finds = [], claimed = new Set<string>(), players = [], onClose }: Props) {
   const canvas = useRef<HTMLCanvasElement>(null), viewport = useRef<HTMLDivElement>(null);
   const [art, setArt] = useState<HTMLCanvasElement | null>(null), [error, setError] = useState(false), [reveal, setReveal] = useState(false);
   const [size] = useState(() => Math.max(600, Math.min(innerWidth, innerHeight)));
@@ -48,6 +49,7 @@ export default function WorldMap({ bits, player, layer, aura, dev, types, places
           <canvas ref={canvas} width={250} height={250} aria-label="Discovered world terrain" />
           {visible.map((p, i) => <span key={i} className="world-map-place font-fell" style={{ left: `${p.x / 10}%`, top: `${p.y / 10}%` }}><span>{p.kind === 'maze_entrance' ? '◇' : p.kind === 'npc_home' ? '○' : p.action === 'merchant' ? '¤' : p.action === 'door_library' ? '▥' : '⌂'}</span>{p.kind === 'maze_entrance' ? `${p.maze_level} ${p.name}` : p.name}</span>)}
           {findMarks.map(({ f, mark, cls }) => <span key={f.id} className={cls} style={{ left: `${f.x / 10}%`, top: `${f.y / 10}%` }} aria-hidden="true">{mark}</span>)}
+          {players.map(p => { const at = eraPointFor(p, layer); return <span key={p.user_id} className="world-map-find" style={{ left: `${at.x / 10}%`, top: `${at.y / 10}%`, opacity: .65 }} aria-label={p.username || 'Visitor'}>•</span>; })}
           <span className={`world-map-player ${reduced ? 'is-static' : ''}`} style={{ left: `${point.x / 10}%`, top: `${point.y / 10}%`, color: aura ?? 'var(--instrument-beacon)' }} aria-label="Your position">●{layer === 1 && <span className="font-fell">underground</span>}</span>
         </div></TransformComponent><footer className="world-map-tools">{[1, 2, 4].map(z => <Button key={z} variant="outline" onClick={() => { const s = instance.state, rect = viewport.current?.getBoundingClientRect(); if (!rect) return; const k = z / s.scale; setTransform(rect.width / 2 - (rect.width / 2 - s.positionX) * k, rect.height / 2 - (rect.height / 2 - s.positionY) * k, z, reduced ? 0 : 200); }}>{z}×</Button>)}{dev && <label className="world-map-reveal font-mono"><Switch checked={reveal} onCheckedChange={setReveal} aria-label="Reveal all" />Reveal all</label>}</footer></>}
       </TransformWrapper>

@@ -28,4 +28,4 @@ export async function devNoteRpc<T>(fn: string, args: Record<string, unknown>): 
 // Getters read current refs only when needed, never subscribe the camera loop to React.
 let currentContext: (() => NoteContext) | null = null;
 export function registerNoteContext(getter: () => NoteContext) { currentContext = getter; return () => { if (currentContext === getter) currentContext = null; }; }
-export function readNoteContext(): NoteContext { return currentContext?.() ?? {}; }
+export function readNoteContext(): NoteContext { return Object.fromEntries(Object.entries(currentContext?.() ?? {}).filter(([, value]) => value !== undefined)) as NoteContext; }

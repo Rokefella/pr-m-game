@@ -11,19 +11,23 @@ import './dev-notepad.css';
 export default function DevNotepad() {
   const { user } = useAuth(); const { pathname } = useLocation();
   const [allowedUser, setAllowedUser] = useState<string | null>(null);
+  const [playerContext, setPlayerContext] = useState<NoteContext>({});
   useEffect(() => {
     setAllowedUser(null); if (!user) return;
     let cancelled = false;
-    void supabase.from('users').select('registration_number').eq('id', user.id).maybeSingle().then(({ data, error }) => {
-      if (!cancelled && !error && isNoteDev(data?.registration_number)) setAllowedUser(user.id);
+    void supabase.from('users').select('*').eq('id', user.id).maybeSingle().then(({ data, error }) => {
+      if (!cancelled && !error && isNoteDev(data?.registration_number)) {
+        setPlayerContext({ level: data.level, maze_completed_level: data.maze_completed_level, steps_remaining: data.steps_remaining, credits: data.credits, avatar_body: data.avatar_body });
+        setAllowedUser(user.id);
+      }
     });
     return () => { cancelled = true; };
   }, [user?.id]);
   if (!user || allowedUser !== user.id || ['/login', '/signup', '/'].includes(pathname)) return null;
-  return <DevNotepadPanel key={user.id} route={pathname} />;
+  return <DevNotepadPanel key={user.id} route={pathname} playerContext={playerContext} />;
 }
 
-export function DevNotepadPanel({ route }: { route: string }) {
+export function DevNotepadPanel({ route, playerContext = {} }: { route: string; playerContext?: NoteContext }) {
   const [open, setOpen] = useState(false), [buttons, setButtons] = useState(noteButtonsOn);
   const [draft, setDraft] = useState(() => readNoteStorage(DRAFT_KEY));
   const [shot, setShot] = useState<{ shot: string; thumb: string }>();
@@ -41,21 +45,21 @@ export function DevNotepadPanel({ route }: { route: string }) {
   }, []);
   const snap = useCallback(async () => {
     if (lock.current) return; lock.current = true; setBusy(true);
-    const ctx = readNoteContext();
+    const ctx = { ...playerContext, ...readNoteContext() };
     try { const image = await captureDevNote(); setShot(image); setShotContext({ route, context: ctx }); setFeedback(''); }
     catch { setFeedback('Screenshot failed. You can still save text.'); }
     finally { lock.current = false; setBusy(false); setOpen(true); }
-  }, [route]);
+  }, [route, playerContext]);
   const save = useCallback(async () => {
     if (lock.current || !canSaveNote(draft, shot?.shot)) return; lock.current = true; setBusy(true);
     try {
-      const id = await devNoteRpc<number | string>('dev_note_add', notePayload(draft, shotContext?.route ?? route, shotContext?.context ?? readNoteContext(), shot));
+      const id = await devNoteRpc<number | string>('dev_note_add', notePayload(draft, shotContext?.route ?? route, shotContext?.context ?? { ...playerContext, ...readNoteContext() }, shot));
       setDraft(''); writeNoteStorage(DRAFT_KEY, ''); setShot(undefined); setShotContext(undefined); setFeedback(`Saved #${id}`);
       if (timer.current) clearTimeout(timer.current); timer.current = setTimeout(() => setFeedback(''), 2000);
       void refresh(); textarea.current?.focus({ preventScroll: true });
     } catch { setFeedback('Could not save. Your draft is still here.'); }
     finally { lock.current = false; setBusy(false); }
-  }, [draft, shot, shotContext, route, refresh]);
+  }, [draft, shot, shotContext, route, refresh, playerContext]);
   useEffect(() => {
     const show = () => setOpen(true), visibility = () => setButtons(noteButtonsOn());
     window.addEventListener(NOTE_OPEN, show); window.addEventListener(NOTE_BUTTONS, visibility);

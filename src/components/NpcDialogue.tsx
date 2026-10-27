@@ -1,27 +1,32 @@
-import { Z } from '@/lib/zIndex';
-import { ReactNode, useEffect } from 'react';
+import { Children, cloneElement, isValidElement, ReactElement, ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import NpcPortrait from '@/components/NpcPortrait';
-import { NPC_DIALOGUE_CLOSED, useNpcQuestStates } from '@/hooks/useNpcQuestStates';
-import { useAuth } from '@/context/AuthContext';
+import { buttonVariants } from '@/components/ui/button';
+import { NPC_DIALOGUE_CLOSED } from '@/hooks/useNpcQuestStates';
+import { cn } from '@/lib/utils';
+import '@/pages/world-test.css';
 
 interface Props {
   text: string;
-  /** Display name shown above the dialogue text (e.g. "Bernard", "The Banker"). */
+  /** Display name shown above the dialogue text (e.g. "Sam", "The Banker"). */
   npcName: string;
-  /** Portrait image source for this NPC (imported asset URL). */
-  npcPortraitSrc: string;
+  /** Internal NPC key used to find the skin; falls back to the name. */
+  npcKey?: string;
+  /** Legacy portrait asset (unused: portraits come from the NPC's skin). */
+  npcPortraitSrc?: string;
   children?: ReactNode; // action buttons
   onShow?: () => void;
 }
 
-// Rendered through a Portal into document.body: both Village's and DynamicRoom's
-// world containers use CSS transforms, which make position:fixed inside them size
-// against the transformed map instead of the real viewport. A portal avoids any
-// transformed ancestor entirely.
-const NpcDialogue = ({ text, npcName, children, onShow }: Props) => {
-  const { user } = useAuth();
-  const questState = useNpcQuestStates(user?.id);
+/** Callers' buttons are restyled to the world card's buttons so every NPC card looks the same. */
+const asCardButton = (child: ReactNode, index: number) => {
+  if (!isValidElement(child)) return child;
+  const el = child as ReactElement<{ className?: string; style?: unknown }>;
+  return cloneElement(el, { style: undefined, className: cn(buttonVariants({ variant: index === 0 ? 'default' : 'outline' }), 'world-jump npc-card-action') });
+};
+
+// Portaled to body so transformed world containers never size the card.
+const NpcDialogue = ({ text, npcName, npcKey, children, onShow }: Props) => {
   useEffect(() => {
     onShow?.();
     return () => { window.dispatchEvent(new Event(NPC_DIALOGUE_CLOSED)); };
@@ -29,56 +34,14 @@ const NpcDialogue = ({ text, npcName, children, onShow }: Props) => {
   }, []);
 
   return createPortal(
-    <>
-      <style>{`
-        @keyframes bernardImgIn {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-      `}</style>
-      <div data-game-ui="open" data-no-thumbstick
-        style={{
-          position: 'fixed', left: 0, right: 0, bottom: 0,
-          maxWidth: 640,
-          margin: '0 auto',
-          background: 'linear-gradient(to top, rgba(4,4,10,0.97) 0%, rgba(4,4,10,0.85) 100%)',
-          borderTop: '0.5px solid rgba(91,79,212,0.3)',
-          zIndex: Z.SHEET,
-          minHeight: 220,
-          display: 'flex',
-          padding: '20px 24px 28px',
-          gap: 20,
-        }}
-      >
-        {/* Left: NPC portrait */}
-        <div
-          style={{
-            width: '40%',
-            maxWidth: 280,
-            position: 'relative',
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-            animation: 'bernardImgIn 600ms ease-out',
-          }}
-        >
-          <NpcPortrait npc={npcName} />
-        </div>
-
-        {/* Right: dialogue */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', minWidth: 0 }}>
-          <p className="font-cinzel" style={{ color: '#c8963a', fontSize: 16, letterSpacing: '0.2em', margin: 0 }}>
-            {npcName}
-          </p>
-          <p className="font-fell italic" style={{ color: 'rgba(200,185,255,0.95)', fontSize: 16, lineHeight: 1.65, margin: '12px 0 16px' }}>
-            {text}
-          </p>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            {children}
-          </div>
-        </div>
-      </div>
-    </>,
+    <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick>
+      <section className="world-dialog world-place-card" role="dialog" aria-label={npcName}>
+        <NpcPortrait npc={npcKey || npcName} />
+        <h2 className="font-cinzel">{npcName}</h2>
+        <p className="font-fell">{text}</p>
+        <div className="npc-card-actions">{Children.toArray(children).map(asCardButton)}</div>
+      </section>
+    </div>,
     document.body
   );
 };

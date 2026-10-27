@@ -13,4 +13,7 @@
 .game-hud-bar > span { min-width: 0; }
 @media (max-width: 400px) { .game-hud-bar > span { font-size: 11px !important; } }
 @keyframes game-arrival-fade { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .game-arrival { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .game-arrival { animation: none; } }.hud-counter { background: transparent; border: 0; padding: 4px 2px; margin: -4px -2px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.hud-counter-plus { font-size: 10px; line-height: 1; padding: 0 3px; border: 0.5px solid currentColor; opacity: 0.6; }
+.hud-counter:active { opacity: 0.6; transform: translateY(1px); }
+.hud-counter:focus-visible { outline: 1px solid var(--plate-gold); outline-offset: 2px; }

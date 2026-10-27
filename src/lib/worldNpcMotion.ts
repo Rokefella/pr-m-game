@@ -25,6 +25,7 @@ export class NpcWander {
   private frozen: NpcPose | null = null;
   private last: NpcPose | null = null;
   sample(home: WorldPoint, key: string, now: number, player: WorldPoint, safe: (p: WorldPoint) => boolean, reduced = false): NpcPose {
+    if (reduced) return { ...home, cell: home, facing: npcFacingToward(home, player), phase: 'stand' };
     const slot = Math.floor(now / 8000);
     if (slot !== this.slot) {
       const old = npcPath(home, key, slot - 1, safe);

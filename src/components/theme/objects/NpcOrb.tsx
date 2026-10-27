@@ -21,6 +21,7 @@ const SYMBOLS = {
 
 export function npcOrbIdentity(npc: string): keyof typeof SYMBOLS | 'unknown' {
   const name = npc.toLowerCase();
+  if (name === 'sam') return 'bernard';
   return (Object.keys(SYMBOLS) as (keyof typeof SYMBOLS)[]).find(key => name.includes(key)) ?? 'unknown';
 }
 

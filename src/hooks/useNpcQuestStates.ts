@@ -22,7 +22,7 @@ function refresh(userId: string): Promise<void> {
   const request = (async () => {
     try {
       const [npcRows, stages, entries, drops, player] = await Promise.all([
-        supabase.from('npcs').select('id, npc_key, display_name'),
+        supabase.from('npcs').select('*'),
         supabase.from('npc_dialogue_stages').select('*').order('order_index'),
         supabase.from('npc_book_entries').select('*'),
         supabase.from('drops').select('drop_types(drop_key)').eq('user_id', userId),
@@ -32,7 +32,7 @@ function refresh(userId: string): Promise<void> {
       if ([npcRows, stages, entries, drops, player].some(r => r.error)) return;
       const npcs: Data['npcs'] = {};
       for (const npc of npcRows.data ?? []) npcs[npc.npc_key] = {
-        displayName: npc.display_name,
+        displayName: (npc as unknown as { name?: string }).name || npc.display_name,
         stages: (stages.data ?? []).filter(r => r.npc_id === npc.id) as unknown as QuestStage[],
         entries: (entries.data ?? []).filter(r => r.npc_id === npc.id) as unknown as QuestEntry[],
       };
@@ -57,7 +57,7 @@ function refresh(userId: string): Promise<void> {
 export function useNpcDisplayName(npc: string) {
   const data = useSyncExternalStore(subscribe, () => snapshot);
   const key = npc.toLowerCase().replace(/^the\s+/, '').split(' ')[0];
-  return data.npcs[key]?.displayName || (npc ? npc.charAt(0).toUpperCase() + npc.slice(1) : '');
+  return key === 'bernard' || key === 'sam' ? 'Sam' : data.npcs[key]?.displayName || (npc ? npc.charAt(0).toUpperCase() + npc.slice(1) : '');
 }
 
 /** One session snapshot shared by every orb; no queries or rule evaluation in animation loops. */

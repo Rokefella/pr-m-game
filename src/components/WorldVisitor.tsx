@@ -24,6 +24,6 @@ export default function WorldVisitor({ player, at, camera, reduced }: { player: 
   }, [player, camera, reduced]);
   const tone = skin ? skinBaseColor(skin, appearance) : null;
   return <div ref={el} className="world-avatar world-visitor" aria-label={player.username || 'Visitor'}>
-    {appearance.near ? <>{skin && tone ? <SkinSprite skin={skin} facing={appearance.facing} phase={reduced ? 'stand' : phase} size={36} colors={resolveColors(skin, tone.base)} glow={tone.dyed ? tone.base : null} prism={tone.prism} /> : <LegacyOrb size={36} palette={orbLook(player.aura_color, player.orb_dye)} walking={walking} />}<span className="world-visitor-name font-fell">{player.username?.slice(0, 14)}</span></> : <span className="world-visitor-dot">•</span>}
+    {appearance.near ? <>{skin && tone ? <SkinSprite skin={skin} facing={appearance.facing} phase={reduced ? 'stand' : phase} size={36} colors={resolveColors(skin, tone.base)} glow={tone.dyed ? tone.base : null} prism={tone.prism} /> : <LegacyOrb size={36} palette={orbLook(player.aura_color, player.orb_dye)} walking={walking} />}<span className="world-visitor-name font-fell">{player.username?.slice(0, 14) || 'Visitor'}</span></> : <span className="world-visitor-dot">•</span>}
   </div>;
 }

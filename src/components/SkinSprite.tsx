@@ -39,7 +39,7 @@ function SkinSprite({ skin, facing = 'down', phase = 'stand', size = 48, colors,
       className={prism && !silhouette ? 'skin-prism' : undefined}
       style={{ display: 'block', overflow: 'visible', pointerEvents: 'none', imageRendering: 'pixelated' }} aria-hidden="true">
       <style>{CSS}</style>
-      {luminous && <><defs><filter id={filterId} x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.2" /><feComponentTransfer><feFuncA type="linear" slope={Math.max(0, skin.glow_strength ?? 1)} /></feComponentTransfer></filter></defs><g className="skin-glow" filter={`url(#${filterId})`} dangerouslySetInnerHTML={{ __html: luminous }} /></>}
+      {luminous && <><defs><filter id={filterId} x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="1.2" /><feComponentTransfer><feFuncA type="linear" slope={Math.max(0, skin.glow_strength ?? 1)} /></feComponentTransfer></filter></defs><g className="skin-glow"><g filter={`url(#${filterId})`} dangerouslySetInnerHTML={{ __html: luminous }} /></g></>}
       <g dangerouslySetInnerHTML={{ __html: inner }} />
     </svg>
   );

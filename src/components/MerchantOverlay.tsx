@@ -8,6 +8,12 @@ import NpcPortrait from '@/components/NpcPortrait';
 import { useAuth } from '@/context/AuthContext';
 import { NPC_DIALOGUE_CLOSED, useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import { Button } from '@/components/ui/button';
+import { readOwnedDrops, stackDrops, type DropStack } from '@/lib/carriedDrops';
+import { canSell, clampCount, discardDrops, discardFailure, saleReceipt } from '@/lib/letGo';
+import { INVENTORY_CHANGED } from '@/lib/inventoryEvents';
+
+export const SELL_LINE = 'Show me what you carry. I pay fair for what keeps.';
+export const SELL_EMPTY = 'Nothing I would take today. Come back with fuller pockets.';
 
 export type MerchantPalette = 'green' | 'orange';
 
@@ -69,6 +75,17 @@ const MerchantOverlay = ({
   const buying = useRef(false);
   const [busy, setBusy] = useState(false);
   const [qty, setQty] = useState<Record<string, number>>({});
+  const [tab, setTab] = useState<'buy' | 'sell'>('buy');
+  const [sellable, setSellable] = useState<DropStack[] | null>(null);
+  const [sellQty, setSellQty] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (!open || tab !== 'sell') return;
+    let off = false;
+    const load = () => void readOwnedDrops(userId).then(d => { if (!off) setSellable(stackDrops(d.filter(x => !x.carried && canSell(x)))); }).catch(() => { if (!off) setSellable([]); });
+    load(); window.addEventListener(INVENTORY_CHANGED, load);
+    return () => { off = true; window.removeEventListener(INVENTORY_CHANGED, load); };
+  }, [open, tab, userId]);
+  useEffect(() => { if (!open) setTab('buy'); }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -95,6 +112,39 @@ const MerchantOverlay = ({
       1500,
     );
   };
+
+  const sell = async (drop: DropStack) => {
+    if (buying.current) return;
+    buying.current = true; setBusy(true);
+    const n = clampCount(sellQty[drop.drop_key] ?? 1, drop.count);
+    try {
+      const res = await discardDrops(userId, drop.drop_key, n, true);
+      if (!res.ok) { showFeedback(`sell:${drop.drop_key}`, discardFailure(res.reason), false); return; }
+      if (typeof res.credits === 'number') onCreditsChange(res.credits);
+      setSellQty(q => ({ ...q, [drop.drop_key]: 1 }));
+      showFeedback(`sell:${drop.drop_key}`, saleReceipt(res.earned ?? 0), true);
+    } catch { showFeedback(`sell:${drop.drop_key}`, 'No signal. Try again.', false); }
+    finally { buying.current = false; setBusy(false); }
+  };
+  const tabStyle = (on: boolean) => ({ fontSize: 10, letterSpacing: '0.2em', color: `rgba(${rgb},${on ? 0.9 : 0.4})`, background: 'transparent', border: 'none', borderBottom: `1px solid rgba(${rgb},${on ? 0.6 : 0})`, borderRadius: 0, height: 'auto', padding: '6px 14px' });
+  const sellRows = (sellable ?? []).map((drop, i) => {
+    const n = clampCount(sellQty[drop.drop_key] ?? 1, drop.count), fb = feedback[`sell:${drop.drop_key}`];
+    const step = (d: number) => setSellQty(q => ({ ...q, [drop.drop_key]: clampCount(n + d, drop.count) }));
+    const small = { fontSize: 12, color: `rgba(${rgb},0.8)`, border: `0.5px solid rgba(${rgb},0.4)`, background: 'transparent', padding: '4px 10px', height: 'auto', borderRadius: 0 };
+    return <div key={drop.drop_key} style={{ display: 'flex', flexDirection: 'column', padding: '14px 4px', borderTop: i === 0 ? 'none' : '1px solid rgba(100,80,160,0.15)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div className="font-fell italic" style={{ fontSize: 14, color: 'rgba(160,140,200,0.8)', flex: 1, textAlign: 'left' }}>{drop.name} ×{drop.count}</div>
+        <div className="font-mono" style={{ fontSize: 12, color: '#c8963a' }}>{drop.value}c each</div>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
+        <Button variant="ghost" className="font-cinzel" disabled={busy} onClick={() => void sell(drop)} style={{ ...small, fontSize: 9, letterSpacing: '0.2em', background: `rgba(${rgb},0.15)`, padding: '6px 16px' }}>SELL</Button>
+        <Button variant="ghost" aria-label={`Fewer ${drop.name} to sell`} disabled={busy || n <= 1} onClick={() => step(-1)} style={small}>−</Button>
+        <span className="font-mono" aria-label={`${drop.name} to sell`} style={{ fontSize: 12, color: `rgba(${rgb},0.8)`, minWidth: 18, textAlign: 'center' }}>{n}</span>
+        <Button variant="ghost" aria-label={`More ${drop.name} to sell`} disabled={busy || n >= drop.count} onClick={() => step(1)} style={small}>+</Button>
+        {fb && <span className="font-fell italic" style={{ fontSize: 12, color: fb.ok ? `rgba(${rgb},0.6)` : 'rgba(200,80,80,0.6)' }}>{fb.text}</span>}
+      </div>
+    </div>;
+  });
 
   const buy = async (item: MerchantItem) => {
     if (buying.current) return;
@@ -173,8 +223,12 @@ const MerchantOverlay = ({
           padding: '0 16px',
         }}
       >
-        {line}
+        {tab === 'sell' ? SELL_LINE : line}
       </p>
+      <div role="tablist" style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+        <Button variant="ghost" role="tab" aria-selected={tab === 'buy'} className="font-cinzel" onClick={() => setTab('buy')} style={tabStyle(tab === 'buy')}>BUY</Button>
+        <Button variant="ghost" role="tab" aria-selected={tab === 'sell'} className="font-cinzel" onClick={() => setTab('sell')} style={tabStyle(tab === 'sell')}>SELL</Button>
+      </div>
 
       <div
         style={{
@@ -186,7 +240,7 @@ const MerchantOverlay = ({
           flexDirection: 'column',
         }}
       >
-        {items.map((item, i) => (
+        {tab === 'sell' ? (sellable === null ? <p className="font-fell italic" style={{ textAlign: 'center', color: 'rgba(160,140,200,0.6)' }}>…</p> : sellRows.length ? sellRows : <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 14, color: 'rgba(160,140,200,0.6)' }}>{SELL_EMPTY}</p>) : items.map((item, i) => (
           <div
             key={item.key}
             style={{

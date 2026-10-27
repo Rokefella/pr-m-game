@@ -38,6 +38,6 @@ export default function SuppliesCard({ open, onClose, userId, steps, credits, on
       if (!r?.ok) return { failure: r?.reason === 'steps_full' ? 'Your steps are full.' : 'Not enough credits.' };
       const s = Number(r.steps_remaining) || 0, c = Number(r.credits) || 0;
       onBalances(s, c);
-      return { receipt: formatStepsBought(Number(r.packs) || qty, Number(r.cost) || qty * 5), credits: c };
+      return { receipt: formatStepsBought(Number(r.packs) || qty, Number(r.cost) || qty * 5) };
     } }]} />;
 }

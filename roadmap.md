@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Add dev-menu TOP-UP actions, server-balance HUD refresh and pre-grant world/maze save settling; existing RPC only.
+
 - [x] Walkthrough #9/#15/#22–#25: grouped stacks/quantity use, world Map Scrap discovery/marker, shared terrain and building motion, immediate inventory refresh and ice sliding/NPC avoidance. All 525 tests pass; controlled desktop/phone preview checks cover stack use/HUD, world reveal, open wardrobe refresh and four-cell ice slide/blocked stop. No database changes.
 - [ ] Verify new stack/Map Scrap RPC persistence and gifts as Rob — external game auth is unavailable; controlled preview responses do not establish live persistence.
 

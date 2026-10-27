@@ -8,7 +8,7 @@ import GhostLayer from '@/components/theme/objects/GhostLayer';
 import EchoLayer, { type EchoLayerHandle } from '@/components/theme/objects/EchoLayer';
 import { echoCount, spawnEchoes } from '@/lib/echoGhosts';
 import { lanternRadii } from '@/lib/mazeLight';
-import { emptyRunEffects, readRunEffects, restoreChalk, MECHANIC_USED, USER_STEPS_REFRESHED, type RunEffects } from '@/lib/mechanics';
+import { emptyRunEffects, readRunEffects, restoreChalk, MECHANIC_USED, USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED, type RunEffects } from '@/lib/mechanics';
 import { MazeMechanicEffects, MechanicChips, MechanicCompass, type MechanicEffectsHandle } from '@/components/MazeMechanicEffects';
 import { MAZE_AVATAR_SIZE, echoBodyPx, ghostBodyPx, npcBodyPx } from '@/lib/orbSizes';
 import { Z } from '@/lib/zIndex';
@@ -24,6 +24,8 @@ import { useOrbSync } from '@/lib/orb';
 import { setCurrentSkin, useSkins, type Skin } from '@/lib/skins';
 import { useNavigate } from 'react-router-dom';
 import SuppliesCard from '@/components/SuppliesCard';
+import DevMenu from '@/components/DevMenu';
+import { Button } from '@/components/ui/button';
 import '@/components/game-home.css';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
@@ -424,6 +426,10 @@ const Maze = () => {
   const [skinFound, setSkinFound] = useState<Skin | null>(null);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationNumberRef = useRef(0);
+  const [devOpen, setDevOpen] = useState(false);
+  const devOpenRef = useRef(false);
+  const devTaps = useRef({ count: 0, at: 0 });
+  const closeDev = () => { devOpenRef.current = false; setDevOpen(false); };
   const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
   const [insufficientFragmentsOpen, setInsufficientFragmentsOpen] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
@@ -827,12 +833,17 @@ const Maze = () => {
     };
     const refreshed = (event: Event) => {
       const detail = (event as CustomEvent).detail;
-      if (detail?.userId !== userIdRef.current || !profileOpenRef.current || !Number.isFinite(detail.steps)) return;
+      if (detail?.userId !== userIdRef.current || !Number.isFinite(detail.steps)) return;
       stepsRemainingRef.current = detail.steps; setStepsRemaining(detail.steps);
     };
     window.addEventListener(MECHANIC_USED, used);
     window.addEventListener(USER_STEPS_REFRESHED, refreshed);
-    return () => { effectsReadVersion.current++; window.removeEventListener(MECHANIC_USED, used); window.removeEventListener(USER_STEPS_REFRESHED, refreshed); };
+    const refreshedCredits = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail?.userId === userIdRef.current && Number.isFinite(detail.credits)) setCredits(detail.credits);
+    };
+    window.addEventListener(USER_CREDITS_REFRESHED, refreshedCredits);
+    return () => { effectsReadVersion.current++; window.removeEventListener(MECHANIC_USED, used); window.removeEventListener(USER_STEPS_REFRESHED, refreshed); window.removeEventListener(USER_CREDITS_REFRESHED, refreshedCredits); };
   }, []);
 
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
@@ -1067,7 +1078,7 @@ const Maze = () => {
   const tryMove = (dc: number, dr: number) => {
     if (notepadFocused()) { heldKeysRef.current.clear(); return; }
     movementDebug.locks = { stepsReady: stepsReadyRef.current, exchangeOpen: exchangeOpenRef.current, noSteps: stepsRemainingRef.current <= 0, leaving: leavingRef.current };
-    if (!stepsReadyRef.current || profileOpenRef.current) return;
+    if (!stepsReadyRef.current || profileOpenRef.current || devOpenRef.current) return;
     const cfg = configRef.current;
     if (!cfg) return;
     const now = Date.now();
@@ -1614,7 +1625,7 @@ const Maze = () => {
       <Thumbstick
         onMove={(dc, dr) => tryMove(dc, dr)}
         disabled={
-          profileOpenDisplay || exchangeOpen || doorConfirmOpen || insufficientFragmentsOpen ||
+          devOpen || profileOpenDisplay || exchangeOpen || doorConfirmOpen || insufficientFragmentsOpen ||
           paywallOpen || activeFragment !== null || skinFound !== null
         }
       />
@@ -1657,11 +1668,18 @@ const Maze = () => {
 
         <span style={{ color: '#5b4fd4' }}>LEVEL {String(currentLevel).padStart(2, '0')}</span>
         <ProfileButton onClick={openProfile} />
+        {registrationNumber === 1 && <Button variant="ghost" className="font-mono text-xs" aria-label="Registration 0001" onPointerDown={() => {
+          const now = Date.now();
+          devTaps.current.count = now - devTaps.current.at <= 1500 ? devTaps.current.count + 1 : 1;
+          devTaps.current.at = now;
+          if (devTaps.current.count >= 5) { devTaps.current.count = 0; devOpenRef.current = true; setDevOpen(true); }
+        }}>#0001</Button>}
       </div>
 
       {user && <SuppliesCard open={exchangeOpen} onClose={() => { setExchangeOpen(false); setExchangeError(false); }} userId={user.id} steps={stepsRemaining} credits={credits}
         beforeBuy={() => settleSaves('steps')}
         onBalances={(s, c) => { stepsRemainingRef.current = s; setStepsRemaining(s); setCredits(c); }} />}
+      {registrationNumber === 1 && <DevMenu open={devOpen} onClose={closeDev} userId={user?.id} onBeforeTopup={() => settleSaves('steps')} />}
 
       {activeFragment && (
         <FragmentOverlay

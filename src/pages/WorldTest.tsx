@@ -13,7 +13,7 @@ import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { BETA_MODE } from '@/lib/config';
 import { getAllFlags, getFlag, reconcileBernardAfterShadow, setFlag } from '@/lib/questFlags';
 import { canAccessMaze, checkSubscriptionStatus, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
-import { effectiveWorldLevel, worldDoorRefusal } from '@/lib/worldHome';
+import { effectiveWorldLevel, worldDoorRefusal, type WorldDoorKind } from '@/lib/worldHome';
 import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailySteps';
 import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED, WORLD_REVEALED, type MechanicResult } from '@/lib/mechanics';
 import { refreshDrops } from '@/lib/carriedDrops';

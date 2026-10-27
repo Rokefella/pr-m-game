@@ -15,11 +15,11 @@ describe('World home rules', () => {
     expect(worldDoorRefusal('maze', 3, '1')).not.toBeNull();
     expect(worldDoorRefusal('maze', 3, '2')).toBeNull();
   });
-  it('uses effective level for the unchanged library minimum of three', () => {
+  it('opens the library from the start', () => {
     expect(worldDoorRefusal('library', effectiveWorldLevel(1, 0), '0')).toBeNull();
     expect(worldDoorRefusal('library', effectiveWorldLevel(1, 2), '0')).toBeNull();
   });
-  it('retains the exchange minimum of one without a Sam requirement', () => {
+  it('opens the exchange from the start', () => {
     expect(worldDoorRefusal('exchange', 0, '0')).toBeNull();
     expect(worldDoorRefusal('exchange', 1, undefined)).toBeNull();
   });

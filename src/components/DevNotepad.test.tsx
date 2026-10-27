@@ -32,7 +32,7 @@ describe('notepad controls', () => {
     let rows = [{ id: 7, created_at: '2026-10-27T13:38:00Z', note: 'wall', route: '/world', x: 838, y: 267, layer: 0, claude_note: 'Answered', thumb: null }];
     mocks.rpc.mockImplementation(async (name: string) => { if (name === 'dev_note_drop') rows = []; return { data: name === 'dev_notes_list' ? rows : 8, error: null }; });
     render(<DevNotepadPanel route="/world" />); fireEvent.click(screen.getByLabelText('Screenshot and note')); await screen.findByAltText('Attached screenshot');
-    fireEvent.click(screen.getByRole('button', { name: 'SAVE', exact: true })); await screen.findByText('Saved #8'); expect(mocks.rpc).toHaveBeenCalledWith('dev_note_add', expect.objectContaining({ p_note: '', p_shot: 'data:image/jpeg;base64,shot' }));
+    fireEvent.click(screen.getByRole('button', { name: /^SAVE$/ })); await screen.findByText('Saved #8'); expect(mocks.rpc).toHaveBeenCalledWith('dev_note_add', expect.objectContaining({ p_note: '', p_shot: 'data:image/jpeg;base64,shot' }));
     fireEvent.click(await screen.findByLabelText('Edit note 7')); fireEvent.change(screen.getByLabelText('Edit note'), { target: { value: 'updated' } }); fireEvent.click(screen.getByText('SAVE EDIT'));
     await waitFor(() => expect(mocks.rpc).toHaveBeenCalledWith('dev_note_edit', { p_id: 7, p_note: 'updated' }));
     await waitFor(() => expect(screen.queryByLabelText('Edit note')).toBeNull()); fireEvent.click(screen.getByLabelText('Drop note 7')); await waitFor(() => expect(mocks.rpc).toHaveBeenCalledWith('dev_note_drop', { p_id: 7 }));

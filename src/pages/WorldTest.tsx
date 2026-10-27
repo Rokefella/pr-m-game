@@ -446,6 +446,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const terrain = data.terrain.find(t => t.key === cache.terrainKey(pos.x, pos.y));
   const surfacePoint = layer === 1 ? { x: pos.x * 4, y: pos.y * 4 } : pos;
   const era = eraAt(eraPointFor(pos, layer), data.eras), area = worldArea(surfacePoint), phase = worldPhase(clock, data.cycle);
+  const skinned = new Set(skins.filter(s => s.kind === 'npc' && s.enabled !== false && s.npc_key).map(s => s.npc_key as string));
+  skinnedRef.current = skinned;
   const cardAction = placeCard ? placeAction(placeCard) : null;
   const outcome = placeCard && cardAction === 'maze' ? mazeOutcome(placeCard.maze_level, level) : null;
   const button = (label: string, onClick: () => void) => <Button className="world-jump" disabled={busy} onClick={onClick}>{busy ? '…' : label}</Button>;

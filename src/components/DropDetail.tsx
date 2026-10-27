@@ -3,6 +3,7 @@ import { inventoryChanged } from '@/lib/inventoryEvents';
 import { Minus, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import DropIcon from '@/components/DropIcon';
+import { canLetGo, clampCount, discardDrops, discardFailure, letGoQuestion } from '@/lib/letGo';
 import { Button } from '@/components/ui/button';
 import { type OrbChange } from '@/lib/orb';
 import { useAuth } from '@/context/AuthContext';
@@ -21,6 +22,20 @@ export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh, befo
   const [choosing, setChoosing] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const count = Math.max(1, drop.count ?? 1);
+  const [letting, setLetting] = useState(false);
+  const [letCount, setLetCount] = useState(1);
+  const [asking, setAsking] = useState(false);
+  const letGo = async () => {
+    if (busy || !drop.drop_key) return;
+    setBusy(true); setMsg('');
+    try {
+      const res = await discardDrops(user?.id, drop.drop_key, letCount, false);
+      if (!res.ok) { setMsg(discardFailure(res.reason)); return; }
+      onRefresh?.();
+      onUsed(`Left behind: ${res.removed ?? letCount} × ${drop.name}.`);
+    } catch { setMsg('No signal. Try again.'); }
+    finally { setBusy(false); setAsking(false); }
+  };
   const isDye = drop.category === 'dye';
   const isMechanic = drop.category === 'mechanic';
   const stepDrop = isStepMechanic(drop);
@@ -84,6 +99,11 @@ export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh, befo
     {isDye || isMechanic
       ? <><Button type="button" className="font-cinzel drop-detail-use" disabled={busy || Boolean(blocked)} onClick={isDye ? use : () => { if (stackUse && !choosing) setChoosing(true); else void useMechanic(); }}>USE</Button>{choosing && <div className="flex items-center justify-center gap-2 py-2"><span className="font-fell">How many?</span><Button variant="ghost" size="icon" aria-label="Decrease quantity" disabled={busy || quantity <= 1} onClick={() => setQuantity(n => Math.max(1, n - 1))}><Minus size={16} /></Button><output className="font-mono" aria-label="Quantity">{quantity}</output><Button variant="ghost" size="icon" aria-label="Increase quantity" disabled={busy || quantity >= count} onClick={() => setQuantity(n => Math.min(count, n + 1))}><Plus size={16} /></Button><Button variant="outline" disabled={busy} onClick={() => setQuantity(count)}>MAX</Button></div>}{blocked && <p className="font-fell italic drop-detail-msg">{blocked}</p>}</>
       : drop.category === 'tool' ? null : <p className="font-fell italic drop-detail-msg">Not usable yet.</p>}
+    {canLetGo(drop) && drop.drop_key && (!letting
+      ? <Button type="button" variant="outline" className="font-cinzel" disabled={busy} onClick={() => { setLetting(true); setLetCount(1); }}>LET GO</Button>
+      : asking
+        ? <div role="alertdialog" aria-label="Let go" className="py-2"><p className="font-fell">{letGoQuestion(letCount, drop.name)}</p><div className="flex justify-center gap-2 mt-2"><Button variant="outline" disabled={busy} onClick={() => void letGo()}>{busy ? '…' : 'LEAVE IT'}</Button><Button variant="ghost" disabled={busy} onClick={() => setAsking(false)}>KEEP</Button></div></div>
+        : <div className="flex items-center justify-center gap-2 py-2"><span className="font-fell">How many?</span><Button variant="ghost" size="icon" aria-label="Fewer to let go" disabled={letCount <= 1} onClick={() => setLetCount(n => clampCount(n - 1, count))}><Minus size={16} /></Button><output className="font-mono" aria-label="Let go quantity">{letCount}</output><Button variant="ghost" size="icon" aria-label="More to let go" disabled={letCount >= count} onClick={() => setLetCount(n => clampCount(n + 1, count))}><Plus size={16} /></Button><Button variant="outline" onClick={() => setAsking(true)}>LET GO</Button><Button variant="ghost" onClick={() => setLetting(false)}>CANCEL</Button></div>)}
     {msg && <p className="font-fell italic drop-detail-msg">{msg}</p>}
   </div>;
 }

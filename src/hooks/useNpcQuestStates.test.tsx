@@ -10,8 +10,8 @@ vi.mock('@/lib/supabase', () => ({ supabase: {
     const chain = {
       select: () => chain, eq: () => chain, order: () => chain, maybeSingle: () => chain, upsert: () => chain,
       then: (resolve: (r: unknown) => unknown) => Promise.resolve({ error: null, data:
-        table === 'quest_flags' ? [] : table === 'npcs' ? [{ id: 'b', npc_key: 'bernard' }, { id: 'c', npc_key: 'chef' }] :
-        table === 'npc_dialogue_stages' ? [{ npc_id: 'b', stage_key: 'stage_0', condition: { stage: 0 }, on_show_action_key: 'advance_to_1' }] :
+        table === 'quest_flags' ? [] : table === 'npcs' ? [{ id: 'b', npc_key: 'priest' }, { id: 'c', npc_key: 'chef' }] :
+        table === 'npc_dialogue_stages' ? [{ npc_id: 'b', stage_key: 'stage_0', condition: { stage: 0 }, on_show_action_key: 'accept_alexandra_quest' }] :
         table === 'npc_book_entries' ? [{ npc_id: 'c', bucket_key: 'temper_root', requires_drops: ['herb'], option_a_action_key: 'complete_chef_recipe' }] :
         table === 'drops' ? fixture.drops.map(drop_key => ({ drop_types: { drop_key } })) : { level: 1 },
       }).then(resolve),
@@ -25,15 +25,16 @@ describe('Event-driven NPC quest snapshot', () => {
     fixture.channels = 0;
     const a = renderHook(() => useNpcQuestStates('player'));
     const b = renderHook(() => useNpcQuestStates('player'));
-    await waitFor(() => expect(a.result.current('bernard')).toBe('available'));
+    await waitFor(() => expect(a.result.current('priest')).toBe('available'));
+    expect(a.result.current('bernard')).toBe('none');
     expect(fixture.channels).toBe(1);
-    await act(async () => { await setFlag('player', 'bernard_stage', '1'); });
-    expect(a.result.current('bernard')).toBe('active');
-    expect(b.result.current('bernard')).toBe('active');
+    await act(async () => { await setFlag('player', 'alexandra_quest', 'active'); });
+    expect(a.result.current('priest')).toBe('none');
+    expect(b.result.current('priest')).toBe('none');
   });
   it('refreshes carried drops on dialogue close and removes hand-in on completion', async () => {
     const hook = renderHook(() => useNpcQuestStates('player-2'));
-    await waitFor(() => expect(hook.result.current('bernard')).toBe('available'));
+    await waitFor(() => expect(hook.result.current('priest')).toBe('available'));
     expect(hook.result.current('chef')).toBe('none');
     fixture.drops = ['herb'];
     act(() => { window.dispatchEvent(new Event(NPC_DIALOGUE_CLOSED)); });
@@ -43,7 +44,7 @@ describe('Event-driven NPC quest snapshot', () => {
   });
   it('refreshes quest readiness after a carried-drop pickup', async () => {
     const hook = renderHook(() => useNpcQuestStates('player-3'));
-    await waitFor(() => expect(hook.result.current('bernard')).toBe('available'));
+    await waitFor(() => expect(hook.result.current('priest')).toBe('available'));
     fixture.drops = ['herb'];
     act(() => { window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED)); });
     await waitFor(() => expect(hook.result.current('chef')).toBe('ready'));

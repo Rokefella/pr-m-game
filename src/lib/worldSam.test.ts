@@ -10,11 +10,12 @@ const sam = [
 ];
 const at = (lvl: number | null) => visiblePlaces(sam, lvl).filter(p => p.npc_key).map(p => [p.x, p.y]);
 
-describe('Sam show_when', () => {
-  it('null level counts as 0', () => expect(at(null)).toEqual([[28, 22]]));
-  it('level 1', () => expect(at(1)).toEqual([[303, 28]]));
-  it('level 2', () => expect(at(2)).toEqual([[840, 28]]));
-  it('level 3 and above', () => { expect(at(3)).toEqual([[971, 201]]); expect(at(9)).toEqual([[971, 201]]); });
+const byStage = (stage: number) => visiblePlaces(sam, 9, stage).filter(p => p.npc_key).map(p => [p.x, p.y]);
+describe('Sam place by sam_stage', () => {
+  it('stages 0 to 2 stand at the start fire, whatever the maze level', () => { for (const s of [0, 1, 2]) expect(byStage(s)).toEqual([[28, 22]]); expect(at(null)).toEqual([[28, 22]]); });
+  it('stages 3 and 4 stand at Cinder Hollow', () => { expect(byStage(3)).toEqual([[303, 28]]); expect(byStage(4)).toEqual([[303, 28]]); });
+  it('stage 5 stands at The First Spark', () => expect(byStage(5)).toEqual([[840, 28]]));
+  it('stage 6 and up stand in Lumen', () => { expect(byStage(6)).toEqual([[971, 201]]); expect(byStage(8)).toEqual([[971, 201]]); });
   it('rows without show_when always show', () => expect(visiblePlaces(sam, 4).some(p => p.x === 5)).toBe(true));
 });
 

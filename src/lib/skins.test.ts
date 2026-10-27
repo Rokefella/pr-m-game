@@ -102,6 +102,45 @@ describe('wardrobe privacy', () => {
   });
 });
 
+describe('NPC skins', () => {
+  const npcRow = (over: Partial<Skin> = {}) => makeSkin({ skin_key: 'npc_sam', name: 'Sam', kind: 'npc', npc_key: 'bernard', ...over });
+  it('the wardrobe lists only player skins; a null kind counts as player', () => {
+    const rows = [makeSkin(), npcRow(), makeSkin({ skin_key: 'scout', kind: null }), makeSkin({ skin_key: 'diver', kind: 'player' })];
+    expect(rows.filter(isPlayerSkin).map(s => s.skin_key)).toEqual(['visitor', 'scout', 'diver']);
+  });
+  it('npcSkin returns the enabled NPC row for its npc_key', () => {
+    _primeSkins([makeSkin(), npcRow()]);
+    expect(npcSkin('bernard')?.skin_key).toBe('npc_sam');
+    expect(npcSkin('merchant')).toBeNull();
+    expect(npcSkin(null)).toBeNull();
+    _primeSkins(null);
+  });
+  it('npcSkin falls back to the orb when the row is missing or disabled', () => {
+    _primeSkins([npcRow({ enabled: false })]);
+    expect(npcSkin('bernard')).toBeNull();
+    _primeSkins(null);
+    expect(npcSkin('bernard')).toBeNull();
+  });
+  it('NPC colours come from their own undyed hex, never a dye', () => {
+    const skin = npcRow({ undyed_hex: '#4a7bd8' });
+    expect(npcColors(skin).M).toBe('#4a7bd8');
+  });
+  it('an NPC faces an adjacent player and looks down otherwise', () => {
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 6, y: 5 })).toBe('right');
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 4, y: 6 })).toBe('left');
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 5, y: 4 })).toBe('up');
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 5, y: 6 })).toBe('down');
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 5, y: 5 })).toBe('down');
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 7, y: 5 })).toBe('down');
+  });
+  it('the blink frame swaps only p pixels', () => {
+    const out = blinkFrame(['..pp..Ma..', 'p.......p.', '........']);
+    expect(out[0]).toBe('..aa..Ma..');
+    expect(out[1]).toBe('a.......a.');
+    expect(out[2]).toBe('........');
+  });
+});
+
 describe('orb event carries the equipped skin', () => {
   it('publishOrb updates the shared skin store so every mounted avatar follows', () => {
     publishOrb({ aura_color: null, orb_dye: null, avatar_body: 'scout' });

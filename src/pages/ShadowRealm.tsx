@@ -178,9 +178,10 @@ const ShadowRealm = () => {
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationRef = useRef<number | null>(null);
   const [auraColor, setAuraColor] = useState<string | null>(null);
+  const [avatarBody, setAvatarBody] = useState<string | null>(null);
   const [orbIdentity, setOrbIdentity] = useState({ title: '', name: '' });
   const [orbDye, setOrbDye] = useState<string | null>(null);
-  useOrbSync(setAuraColor, setOrbDye);
+  useOrbSync(setAuraColor, setOrbDye, setAvatarBody);
   const [walking, setWalking] = useState(false);
   const walkingRef = useRef(false);
   const displayRef = useRef({ x: 0, y: 0 });
@@ -402,6 +403,8 @@ const ShadowRealm = () => {
       setAuraColor(row.aura_color ?? null);
       setOrbIdentity(previous => previous.title === (row.title ?? '') && previous.name === (row.username ?? '') ? previous : { title: row.title ?? '', name: row.username ?? '' });
       setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
+      setAvatarBody((row as { avatar_body?: string | null }).avatar_body ?? null);
+      setCurrentSkin((row as { avatar_body?: string | null }).avatar_body ?? null);
       setFlag(user.id, 'shadow_visited', 'true');
 
       const { data } = await supabase
@@ -750,7 +753,7 @@ const ShadowRealm = () => {
 
       {/* Player — fixed at screen centre; the world moves instead */}
       <div style={{ position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: Z.OBJECTS, pointerEvents: 'none' }}>
-        <PlayerAvatar palette={palette} walking={walking} size={SHADOW_AVATAR_SIZE} />
+        <PlayerAvatar palette={palette} walking={walking} size={SHADOW_AVATAR_SIZE} skin={avatarBody} registrationNumber={registrationNumber} auraColor={auraColor} orbDye={orbDye} />
         <OrbLabels title={orbIdentity.title} name={orbIdentity.name} size={SHADOW_AVATAR_SIZE} />
       </div>
 

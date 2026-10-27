@@ -764,8 +764,9 @@ const Village = () => {
   const [overlaySelectedTitle, setOverlaySelectedTitle] = useState<string>('');
   const [levelUpHandled, setLevelUpHandled] = useState(false);
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
+  const [avatarBody, setAvatarBody] = useState<string | null>(null);
   const [orbDye, setOrbDye] = useState<string | null>(null);
-  useOrbSync(setAuraColor, setOrbDye);
+  useOrbSync(setAuraColor, setOrbDye, setAvatarBody);
   const [username, setUsername] = useState<string>('');
   const usernameRef = useRef<string>('');
   const [unlockedTitles, setUnlockedTitles] = useState<string[]>([]);
@@ -1181,6 +1182,8 @@ const Village = () => {
     setRegistrationNumber(row.registration_number);
     setAuraColor(row.aura_color || '#5b4fd4');
     setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
+    setAvatarBody((row as { avatar_body?: string | null }).avatar_body ?? null);
+    setCurrentSkin((row as { avatar_body?: string | null }).avatar_body ?? null);
     setUsername(row.username || '');
     usernameRef.current = row.username || '';
     setUnlockedTitles(row.unlocked_titles && row.unlocked_titles.length ? row.unlocked_titles : []);
@@ -2259,6 +2262,10 @@ const Village = () => {
             palette={orbLook(auraColor, orbDye, registrationNumber)}
             walking={Math.hypot(playerTargetRef.current.x - player.x, playerTargetRef.current.y - player.y) >= 0.5}
             size={VILLAGE_AVATAR_SIZE}
+            skin={avatarBody}
+            registrationNumber={registrationNumber}
+            auraColor={auraColor}
+            orbDye={orbDye}
           />
           <OrbLabels title={currentTitle} name={username} size={VILLAGE_AVATAR_SIZE} />
         </div>
@@ -2361,7 +2368,7 @@ const Village = () => {
 
       {/* Profile rendered via shared ProfileOverlay below (matches ShadowRealm pattern) */}
 
-      {levelUpOverlay && <LevelUpCard newLevel={levelUpOverlay.newLevel} titleUnlocked={parseInt(getFlag('bernard_stage') || '0', 10) >= 5} auraColor={auraColor} orbDye={orbDye} registrationNumber={registrationNumber} onContinue={async () => {
+      {levelUpOverlay && <LevelUpCard newLevel={levelUpOverlay.newLevel} titleUnlocked={parseInt(getFlag('bernard_stage') || '0', 10) >= 5} auraColor={auraColor} orbDye={orbDye} registrationNumber={registrationNumber} avatarBody={avatarBody} onContinue={async () => {
                     setLevelUpHandled(true);
                     const newLv = levelUpOverlay.newLevel;
                     const newSocial = socialStatus + 1; // fixed gain per level-up

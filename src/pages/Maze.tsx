@@ -412,7 +412,8 @@ const Maze = () => {
   const [auraColor, setAuraColor] = useState<string>('#5b4fd4');
   const [orbIdentity, setOrbIdentity] = useState({ title: '', name: '' });
   const [orbDye, setOrbDye] = useState<string | null>(null);
-  useOrbSync(setAuraColor, setOrbDye);
+  const [avatarBody, setAvatarBody] = useState<string | null>(null);
+  useOrbSync(setAuraColor, setOrbDye, setAvatarBody);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationNumberRef = useRef(0);
   const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
@@ -742,6 +743,8 @@ const Maze = () => {
       setOrbIdentity(previous => previous.title === (row.title ?? '') && previous.name === (row.username ?? '') ? previous : { title: row.title ?? '', name: row.username ?? '' });
       if (row.aura_color) setAuraColor(row.aura_color);
       setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
+      setAvatarBody((row as { avatar_body?: string | null }).avatar_body ?? null);
+      setCurrentSkin((row as { avatar_body?: string | null }).avatar_body ?? null);
       setRegistrationNumber(row.registration_number);
       setPerception(Number((row as unknown as { perception?: number | null }).perception ?? 0));
       registrationNumberRef.current = row.registration_number;
@@ -1463,6 +1466,10 @@ const Maze = () => {
           palette={orbLook(auraColor, orbDye, registrationNumber)}
           walking={Math.abs(posRef.current.col - displayPos.col) >= 0.01 || Math.abs(posRef.current.row - displayPos.row) >= 0.01}
           size={MAZE_AVATAR_SIZE}
+          skin={avatarBody}
+          registrationNumber={registrationNumber}
+          auraColor={auraColor}
+          orbDye={orbDye}
         /></div>
         <OrbLabels title={orbIdentity.title} name={orbIdentity.name} size={MAZE_AVATAR_SIZE} />
       </div>

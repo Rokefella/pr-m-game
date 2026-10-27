@@ -53,3 +53,18 @@ it('shows the receipt for what was given, then moves to the next stage', async (
   expect(await screen.findByText('Kept: Map Scrap · +50 steps · +10 credits')).toBeInTheDocument();
   expect(await screen.findByText('Stage 1')).toBeInTheDocument();
 });
+
+it('waits for the world title refresh when Sam reaches stage three', async () => {
+  f.flag = 2;
+  f.load.mockResolvedValue({ npc: { name: 'Sam' }, stages: [], book: [] });
+  f.run.mockImplementation(async () => { f.flag = 3; return { ok: true }; });
+  let complete: (() => void) | undefined;
+  const refreshed = vi.fn(() => new Promise<void>(resolve => { complete = resolve; }));
+  render(<SamCard {...props} onRewarded={refreshed} />);
+  fireEvent.click(await screen.findByRole('button', { name: "I'll go" }));
+  await screen.findByText('…');
+  expect(f.flag).toBe(3);
+  expect(refreshed).toHaveBeenCalledOnce();
+  complete?.();
+  await screen.findByText('Stage 3');
+});

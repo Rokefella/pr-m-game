@@ -52,3 +52,10 @@ describe('topic roots', () => {
     expect(rootOf(book, 'character', () => .99)).toBe('char_time_root');
   });
 });
+
+import { cardTopics } from './worldSam';
+describe('cardTopics', () => {
+  const book = ['background', 'instrument', 'sam_lantern'].map(t => ({ node_key: `${t}_root`, text: 'x', topic: t }));
+  it('shows ungated book topics that have a root', () => expect(cardTopics(0, book).map(t => t.key)).toEqual(['background', 'sam_lantern']));
+  it('keeps the Instrument gated until stage two', () => expect(cardTopics(2, book).map(t => t.key)).toContain('instrument'));
+});

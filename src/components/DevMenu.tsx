@@ -10,9 +10,12 @@ import './game-home.css';
 import { goBackToStart, START_CONFIRMATION } from '@/lib/goBackToStart';
 import { NOTE_OPEN, NOTE_BUTTONS, noteButtonsOn, toggleNoteButtons } from '@/lib/devNotes';
 import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED } from '@/lib/mechanics';
+import { Switch } from './ui/switch';
+import { setDevMapEnabled, useDevMapEnabled } from '@/lib/devWorldMap';
 
-type Props = { open: boolean; onClose: () => void; userId?: string; home?: 'world'; onChanged?: () => void; onBeforeStart?: () => Promise<void>; onBeforeTopup?: () => Promise<unknown> | void };
-export default function DevMenu({ open, onClose: close, userId, onChanged, onBeforeStart, onBeforeTopup }: Props) {
+type Props = { open: boolean; onClose: () => void; userId?: string; registrationNumber?: number | null; home?: 'world'; onChanged?: () => void; onBeforeStart?: () => Promise<void>; onBeforeTopup?: () => Promise<unknown> | void };
+export default function DevMenu({ open, onClose: close, userId, registrationNumber, onChanged, onBeforeStart, onBeforeTopup }: Props) {
+  const showAll = useDevMapEnabled(registrationNumber);
   const navigate = useNavigate();
   const user = userId ? { id: userId } : null;
   const onClose = useCallback(() => { close(); onChanged?.(); }, [close, onChanged]);
@@ -68,6 +71,7 @@ export default function DevMenu({ open, onClose: close, userId, onChanged, onBef
             }}
           >
             <div style={{ opacity: 0.7, marginBottom: 6 }}>DEV MENU</div>
+            {registrationNumber === 1 && <label className="flex items-center justify-between gap-4">SHOW ALL<Switch aria-label="SHOW ALL" checked={showAll} onCheckedChange={on => setDevMapEnabled(registrationNumber, on)} /></label>}
             <Button variant="outline" className="world-dev-entry font-mono" onClick={() => { onClose(); navigate('/world'); }}>WORLD TEST</Button>
 
             <div style={{ opacity: 0.7, fontSize: 11 }}>PROFILE</div>

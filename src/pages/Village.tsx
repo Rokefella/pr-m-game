@@ -29,6 +29,7 @@ import NpcDialogue from '@/components/NpcDialogue';
 import CharacterEye from '@/components/CharacterEye';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import { useOrbSync } from '@/lib/orb';
+import { setCurrentSkin } from '@/lib/skins';
 import { checkSubscriptionStatus, canAccessMaze, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { BETA_MODE } from '@/lib/config';
 import { supabase } from '@/lib/supabase';

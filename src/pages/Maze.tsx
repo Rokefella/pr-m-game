@@ -18,6 +18,7 @@ import { readMazeSkin, skinDarkness, type LevelSkin } from '@/lib/mazeSkins';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import { useOrbSync } from '@/lib/orb';
+import { setCurrentSkin, useSkins, type Skin } from '@/lib/skins';
 import { useNavigate } from 'react-router-dom';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';

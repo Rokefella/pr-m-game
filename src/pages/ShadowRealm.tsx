@@ -19,6 +19,7 @@ import { carriedDropCount, readOwnedDrops, refreshDrops } from '@/lib/carriedDro
 import Thumbstick from '@/components/Thumbstick';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import { useOrbSync } from '@/lib/orb';
+import { setCurrentSkin } from '@/lib/skins';
 import { patternUri } from '@/lib/theme/patterns';
 import { SHADOW } from '@/lib/theme/shadow';
 import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';

@@ -9,9 +9,10 @@ import { Z } from '@/lib/zIndex';
 import './game-home.css';
 import { goBackToStart, START_CONFIRMATION } from '@/lib/goBackToStart';
 import { NOTE_OPEN, NOTE_BUTTONS, noteButtonsOn, toggleNoteButtons } from '@/lib/devNotes';
+import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED } from '@/lib/mechanics';
 
-type Props = { open: boolean; onClose: () => void; userId?: string; home?: 'world' | 'village'; onChanged?: () => void; onBeforeStart?: () => Promise<void> };
-export default function DevMenu({ open, onClose: close, userId, home = 'village', onChanged, onBeforeStart }: Props) {
+type Props = { open: boolean; onClose: () => void; userId?: string; home?: 'world' | 'village'; onChanged?: () => void; onBeforeStart?: () => Promise<void>; onBeforeTopup?: () => Promise<unknown> | void };
+export default function DevMenu({ open, onClose: close, userId, home = 'village', onChanged, onBeforeStart, onBeforeTopup }: Props) {
   const navigate = useNavigate();
   const user = userId ? { id: userId } : null;
   const onClose = useCallback(() => { close(); onChanged?.(); }, [close, onChanged]);
@@ -22,6 +23,22 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
   const [startArmed, setStartArmed] = useState(false);
   const [starting, setStarting] = useState(false);
   const [noteButtons, setNoteButtons] = useState(noteButtonsOn);
+  const [topupBusy, setTopupBusy] = useState(false);
+  const topupFlight = useRef(false);
+  const [topupNote, setTopupNote] = useState('');
+  const topup = async (credits: number, steps: number) => {
+    if (!userId || topupFlight.current) return;
+    topupFlight.current = true; setTopupBusy(true); setTopupNote('');
+    try {
+      await onBeforeTopup?.();
+      const { data, error } = await (supabase.rpc as unknown as (fn: string, args: { p_credits: number; p_steps: number }) => Promise<{ data: { ok: boolean; credits: number; steps_remaining: number; reason?: string } | null; error: { message: string } | null }>)('dev_topup', { p_credits: credits, p_steps: steps });
+      if (error || !data?.ok) throw new Error(error?.message || data?.reason || 'Top-up failed. Try again.');
+      window.dispatchEvent(new CustomEvent(USER_STEPS_REFRESHED, { detail: { userId, steps: data.steps_remaining } }));
+      window.dispatchEvent(new CustomEvent(USER_CREDITS_REFRESHED, { detail: { userId, credits: data.credits } }));
+      setTopupNote(`Credits ${data.credits.toLocaleString('en-US')} · Steps ${data.steps_remaining.toLocaleString('en-US')}`);
+    } catch (error) { setTopupNote(error instanceof Error ? error.message : 'Top-up failed. Try again.'); }
+    finally { topupFlight.current = false; setTopupBusy(false); }
+  };
   useEffect(() => { const update = () => setNoteButtons(noteButtonsOn()); window.addEventListener(NOTE_BUTTONS, update); return () => window.removeEventListener(NOTE_BUTTONS, update); }, []);
   const fullResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (fullResetTimerRef.current) clearTimeout(fullResetTimerRef.current); }, []);
@@ -55,6 +72,15 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
 
             {home === 'world' && <Button variant="outline" onClick={() => { onClose(); navigate('/village'); }}>OLD VILLAGE</Button>}
             <div style={{ opacity: 0.7, fontSize: 11 }}>PROFILE</div>
+            <div className="text-xs opacity-70">TOP-UP</div>
+            {[
+              { label: '+100 CREDITS', credits: 100, steps: 0 },
+              { label: '+1000 CREDITS', credits: 1000, steps: 0 },
+              { label: '+1000 STEPS', credits: 0, steps: 1000 },
+              { label: 'STEPS FULL (9,999)', credits: 0, steps: 9999 },
+              { label: 'CREDITS → 0', credits: -999999, steps: 0 },
+            ].map(item => <Button key={item.label} variant="outline" disabled={topupBusy || !userId} onClick={() => void topup(item.credits, item.steps)}>{item.label}</Button>)}
+            {topupNote && <div role="status" className="text-xs">{topupNote}</div>}
             <Button variant="outline" onClick={() => { onClose(); window.dispatchEvent(new Event(NOTE_OPEN)); }}>NOTES</Button>
             <Button variant="outline" role="switch" aria-checked={noteButtons} onClick={() => setNoteButtons(toggleNoteButtons())}>NOTE BUTTONS {noteButtons ? 'ON' : 'OFF'}</Button>
             <Button variant="outline" onClick={() => setStartArmed(true)}>GO BACK TO START</Button>

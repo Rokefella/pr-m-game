@@ -1,8 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { waveBand, canSway, flameFrame, flowOffset, gustStrength, lavaBrightness, leanAmount, terrainDrawInterval, waterDirection } from './terrainMotion';
+import { waveBand, canSway, flameFrame, flowOffset, gustStrength, lavaBrightness, leanAmount, terrainDrawInterval, waterDirection, terrainPulse, puffPhase, glintPhase } from './terrainMotion';
 import type { Terrain } from './worldTest';
 const water = { grp: 'water' } as Terrain;
 describe('terrain animation rules', () => {
+  it('shares deterministic varying pulse and rising puff phases without timers', () => {
+    expect(terrainPulse('flicker', 0, 2, 3)).not.toBe(terrainPulse('flicker', 900, 2, 3));
+    expect(terrainPulse('glow', 0, 2, 3)).not.toBe(terrainPulse('glow', 900, 2, 3));
+    expect(puffPhase(3000, 2, 3, 0)).toBeCloseTo(puffPhase(0, 2, 3, 0));
+    expect(glintPhase(6000, 2, 3)).toBeCloseTo(glintPhase(0, 2, 3));
+  });
   it('follows a diagonal river rather than the world centre', () => {
     const direction = waterDirection(900, 900, (x, y) => x - 900 === y - 900 ? water : undefined);
     expect(direction.x).toBeCloseTo(Math.SQRT1_2); expect(direction.y).toBeCloseTo(Math.SQRT1_2);

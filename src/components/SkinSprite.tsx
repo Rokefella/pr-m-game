@@ -1,5 +1,5 @@
 import { memo, useEffect, useState } from 'react';
-import { frameFor, skinSvg, type Facing, type Skin, type WalkPhase } from '@/lib/skins';
+import { blinkFrame, frameFor, skinSvg, type Facing, type Skin, type WalkPhase } from '@/lib/skins';
 
 const CSS = `
 @keyframes skinPrism { from { filter: hue-rotate(0deg); } to { filter: hue-rotate(360deg); } }

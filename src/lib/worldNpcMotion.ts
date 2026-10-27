@@ -4,6 +4,7 @@ export const npcId = (p: Place) => `${p.npc_key}:${p.x}:${p.y}`;
 const hash = (key: string, slot: number) => { let h = slot | 0; for (const c of key) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
 /** Paths are home-rooted, so independent clients need no prior slot history. */
 export function npcPath(home: WorldPoint, key: string, slot: number, safe: (p: WorldPoint) => boolean): WorldPoint[] {
+  if (!safe(home)) return [home];
   const cells: WorldPoint[] = [], queue = [home], parents = new Map<string, WorldPoint | null>([[`${home.x},${home.y}`, null]]);
   for (let i = 0; i < queue.length; i++) {
     const p = queue[i]; if (safe(p)) cells.push(p);

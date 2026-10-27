@@ -1,6 +1,6 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useNpcQuestStates, NPC_DIALOGUE_CLOSED, NPC_INVENTORY_CHANGED } from './useNpcQuestStates';
+import { useNpcQuestStates, useNpcDisplayName, NPC_DIALOGUE_CLOSED, NPC_INVENTORY_CHANGED } from './useNpcQuestStates';
 import { setFlag, _resetQuestFlagCache } from '@/lib/questFlags';
 const fixture = vi.hoisted(() => ({ drops: [] as string[], channels: 0 }));
 vi.mock('@/lib/supabase', () => ({ supabase: {
@@ -20,6 +20,7 @@ vi.mock('@/lib/supabase', () => ({ supabase: {
 } }));
 afterEach(() => { cleanup(); _resetQuestFlagCache(); fixture.drops = []; });
 describe('Event-driven NPC quest snapshot', () => {
+  it('uses Sam as the visible name without changing the internal NPC key', () => { const hook = renderHook(() => useNpcDisplayName('bernard')); expect(hook.result.current).toBe('Sam'); });
   it('shares one subscription and updates immediately when acceptance changes flags', async () => {
     fixture.channels = 0;
     const a = renderHook(() => useNpcQuestStates('player'));

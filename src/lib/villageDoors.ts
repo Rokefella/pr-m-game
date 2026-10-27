@@ -27,7 +27,7 @@ export function footprintHasDoor(b: Footprint, doors: VillageDoorDef[]): boolean
 }
 
 export function doorRefusal(kind: VillageDoorKind, level: number, stage: number, libraryMin: number, exchangeMin: number): string | null {
-  if (kind === 'maze' && stage < 2) return 'Not yet. Speak to Bernard first.';
+  if (kind === 'maze' && stage < 2) return 'Not yet. Speak to Sam first.';
   if (kind === 'library' && level < libraryMin) return 'The Library opens later.';
   if (kind === 'exchange' && level < exchangeMin) return 'The Exchange opens later.';
   return null;

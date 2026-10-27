@@ -14,7 +14,7 @@ describe('Village entrance rules', () => {
     expect(villageDoors([door], [{ id: 89, x: 0, y: 0, w: 90, h: 70 }, { id: 23, x: 20, y: 20, w: 70, h: 50 }])).toEqual([door, { kind: 'library', x: 45, y: 50 }]);
   });
   it('requires Bernard stage two for maze entry', () => {
-    expect(doorRefusal('maze', 1, 1, 3, 1)).toBe('Not yet. Speak to Bernard first.');
+    expect(doorRefusal('maze', 1, 1, 3, 1)).toBe('Not yet. Speak to Sam first.');
     expect(doorRefusal('maze', 1, 2, 3, 1)).toBeNull();
   });
   it('requires library level three', () => {

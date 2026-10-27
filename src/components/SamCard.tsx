@@ -10,6 +10,7 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
   const [checked, setChecked] = useState(false);
   const [samStage, setSamStage] = useState(0);
   const [receipt, setReceipt] = useState('');
+  const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [node, setNode] = useState<BookNode | null>(null);
   const refresh = useCallback(async (data = sam) => {

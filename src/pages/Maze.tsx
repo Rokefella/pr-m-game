@@ -19,6 +19,7 @@ import MazeSkinCanvas, { type MazeSkinHandle } from '@/components/theme/MazeSkin
 import { readMazeSkin, skinDarkness, type LevelSkin } from '@/lib/mazeSkins';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
+import type { Facing } from '@/lib/skins';
 import { useOrbSync } from '@/lib/orb';
 import { setCurrentSkin, useSkins, type Skin } from '@/lib/skins';
 import { useNavigate } from 'react-router-dom';
@@ -558,6 +559,7 @@ const Maze = () => {
 
 
   const [pos, setPos] = useState<Cell>({ col: 0, row: 0 });
+  const [facing, setFacing] = useState<Facing>('down');
   const posRef = useRef<Cell>({ col: 0, row: 0 });
   const [displayPos, setDisplayPos] = useState<Cell>({ col: 0, row: 0 });
   const displayPosRef = useRef<Cell>({ col: 0, row: 0 });
@@ -1090,6 +1092,7 @@ const Maze = () => {
     const newPos = { col: nc, row: nr };
     posRef.current = newPos;
     setPos(newPos);
+    setFacing(sdc > 0 ? 'right' : sdc < 0 ? 'left' : sdr < 0 ? 'up' : 'down');
     if (runEffectsRef.current.chalk) {
       chalkCellsRef.current.add(`${nc},${nr}`);
       try { sessionStorage.setItem(`praem_chalk_${currentLevelRef.current}`, JSON.stringify([...chalkCellsRef.current])); } catch { /* quota */ }
@@ -1478,6 +1481,7 @@ const Maze = () => {
           walking={Math.abs(posRef.current.col - displayPos.col) >= 0.01 || Math.abs(posRef.current.row - displayPos.row) >= 0.01}
           size={MAZE_AVATAR_SIZE}
           skin={avatarBody}
+          facing={facing}
           registrationNumber={registrationNumber}
           auraColor={auraColor}
           orbDye={orbDye}

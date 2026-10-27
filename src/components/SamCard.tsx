@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import NpcPortrait from '@/components/NpcPortrait';
-import { currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samStageFlag, samTopics, topicRoot, type BookNode, type SamStage } from '@/lib/worldSam';
+import { currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samStageFlag, cardTopics, topicRoot, type BookNode, type SamStage } from '@/lib/worldSam';
 
 export const NOTE_ERROR = 'That didn\'t work. Try again in a moment.';
 
@@ -55,7 +55,7 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
       {error && <p className="font-mono world-card-error">{error}</p>}
       {receipt && <p className="font-mono world-receipt">{receipt}</p>}
       <h3 className="font-mono world-topics-title">Ask about…</h3>
-      <div className="world-topics">{samTopics(samStage).filter(t => sam && topicRoot(sam.book, t.key)).map(t => <Button key={t.key} variant="ghost" onClick={() => go(sam ? topicRoot(sam.book, t.key) : null)}>{t.label}</Button>)}</div>
+      <div className="world-topics">{(sam ? cardTopics(samStage, sam.book) : []).map(t => <Button key={t.key} variant="ghost" className="font-fell" onClick={() => go(sam ? topicRoot(sam.book, t.key) : null)}>{t.label}</Button>)}</div>
     </>}
   </>;
 }

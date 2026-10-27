@@ -36,6 +36,16 @@ export const samTopics = (samStage: number): SamTopic[] => {
   return keys.map(key => ({ key, label: TOPIC_LABELS[key] }));
 };
 
+const GATED = new Set(['instrument', 'sam_02', 'whistle', 'stones', 'words']);
+const topicLabel = (key: string) => TOPIC_LABELS[key] ?? key.replace(/^sam_/, '').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
+/** Stage-gated topics plus every other topic the book has a root for, so ungated topics are never dropped. */
+export const cardTopics = (samStage: number, entries: BookNode[]): SamTopic[] => {
+  const listed = samTopics(samStage);
+  const known = new Set([...GATED, ...listed.map(t => t.key)]);
+  const extra = [...new Set(entries.map(e => e.topic).filter((t): t is string => !!t && !known.has(t)))].map(key => ({ key, label: topicLabel(key) }));
+  return [...listed, ...extra].filter(t => topicRoot(entries, t.key));
+};
+
 export type BookNode = { node_key: string; text: string; topic?: string | null; option_a_label?: string | null; option_a_target?: string | null; option_b_label?: string | null; option_b_target?: string | null };
 /** Picks a random _a/_b variant (or the plain node) for a node key. */
 export const pickNode = (entries: BookNode[], key: string, rand = Math.random) => {

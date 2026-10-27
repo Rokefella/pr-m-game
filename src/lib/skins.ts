@@ -210,7 +210,10 @@ export const isPlayerSkin = (skin: Skin) => skin.kind == null || skin.kind === '
 /** The enabled NPC skin for an npc_key, or null when the row is missing/disabled (callers keep the orb). */
 export function npcSkin(npcKey: string | null | undefined): Skin | null {
   if (!npcKey || !cache) return null;
-  return cache.find(s => s.kind === 'npc' && s.npc_key === npcKey && s.enabled !== false) ?? null;
+  const find = (k: string) => cache!.find(s => s.kind === 'npc' && s.npc_key === k && s.enabled !== false) ?? null;
+  const key = npcKey.toLowerCase();
+  // Sam's internal key stays 'bernard'; his skin may be keyed either way.
+  return find(npcKey) ?? (key === 'bernard' ? find('sam') : key === 'sam' ? find('bernard') : null);
 }
 
 /** NPCs never take dyes: fixed palette plus the ramp from their own undyed colour. */

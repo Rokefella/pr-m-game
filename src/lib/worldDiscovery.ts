@@ -22,6 +22,19 @@ export function discoverAround(bits: string, x: number, y: number, layer: number
   }
   return chars.join('');
 }
+/** Existing bits represent ten-cell blocks; reveal every block containing a cell in the circle. */
+export function discoverRadius(bits: string, x: number, y: number, radius: number) {
+  const chars = Array.from(normalise(bits));
+  for (let by = Math.max(0, Math.floor((y - radius) / 10)); by <= Math.min(99, Math.floor((y + radius) / 10)); by++) {
+    for (let bx = Math.max(0, Math.floor((x - radius) / 10)); bx <= Math.min(99, Math.floor((x + radius) / 10)); bx++) {
+      const cx = Math.max(bx * 10, Math.min(x, bx * 10 + 9)), cy = Math.max(by * 10, Math.min(y, by * 10 + 9));
+      if (Math.hypot(cx - x, cy - y) > radius) continue;
+      const i = by * 100 + bx, digit = Math.floor(i / 4);
+      chars[digit] = (parseInt(chars[digit], 16) | (8 >> (i % 4))).toString(16);
+    }
+  }
+  return chars.join('');
+}
 export class WorldDiscovery {
   bits: string;
   private dirty = false;
@@ -55,6 +68,12 @@ export class WorldDiscovery {
     const next = discoverAround(this.bits, x, y, layer);
     if (next === this.bits) return;
     this.bits = next; this.dirty = true; this.publish();
+  }
+  reveal(x: number, y: number, radius: number) {
+    const next = discoverRadius(this.bits, x, y, radius);
+    if (next === this.bits) return;
+    this.bits = next; this.dirty = true; this.publish();
+    void this.flush();
   }
   flush(force = false): Promise<void> {
     if (this.inFlight) return force ? this.inFlight.then(() => this.flush(true)) : this.inFlight;

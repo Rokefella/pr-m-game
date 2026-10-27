@@ -13,3 +13,4 @@ export function merchantItems(level: number, home: 'world' | 'village', buySteps
   if (level >= 15) items.push({ key: 'pastmaze', label: 'Past Maze Access', cost: 200, onPurchase: () => 'Available in the Shadow Realm.' });
   return items;
 }
+export const formatStepsBought = (packs: number, cost: number) => `+${packs * 500} steps · −${cost} credits`;

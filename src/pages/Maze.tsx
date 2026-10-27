@@ -23,6 +23,8 @@ import type { Facing } from '@/lib/skins';
 import { useOrbSync } from '@/lib/orb';
 import { setCurrentSkin, useSkins, type Skin } from '@/lib/skins';
 import { useNavigate } from 'react-router-dom';
+import SuppliesCard from '@/components/SuppliesCard';
+import '@/components/game-home.css';
 import FragmentOverlay from '@/components/FragmentOverlay';
 import PaywallOverlay from '@/components/PaywallOverlay';
 import { BETA_MODE } from '@/lib/config';
@@ -43,7 +45,6 @@ import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/le
 import Thumbstick from '@/components/Thumbstick';
 import { enqueueSave, settleSaves, movementDebug } from '@/lib/netQueue';
 import { startResilientLoop } from '@/lib/resilientLoop';
-import StepExchangeSheet from '@/components/StepExchangeSheet';
 import WallTile from '@/components/theme/WallTile';
 import FloorLayer from '@/components/theme/FloorLayer';
 import PrimeGlowLayer from '@/components/theme/PrimeGlowLayer';
@@ -1634,7 +1635,7 @@ const Maze = () => {
             cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2,
           }}
         >
-          <span>STEPS {stepsRemaining}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }} className="hud-counter" role="button" aria-label="Add steps">STEPS {stepsRemaining}<span className="hud-counter-plus" aria-hidden="true">+</span></span>
           <MechanicChips effects={runEffects} />
           <span
             style={{
@@ -1658,31 +1659,9 @@ const Maze = () => {
         <ProfileButton onClick={openProfile} />
       </div>
 
-      <StepExchangeSheet
-        open={exchangeOpen}
-        credits={credits}
-        steps={stepsRemaining}
-        onClose={() => { setExchangeOpen(false); setExchangeError(false); }}
-        onConfirm={(spent) => {
-          if (!stepsReadyRef.current) return;
-          if (credits < spent) {
-            setExchangeError(true);
-            window.setTimeout(() => { setExchangeOpen(false); setExchangeError(false); }, 2000);
-            return;
-          }
-          setSelectedCredits(spent);
-          const newCredits = credits - spent;
-          setCredits(newCredits);
-          const gained = spent * 100;
-          stepsRemainingRef.current += gained;
-          setStepsRemaining(stepsRemainingRef.current);
-          if (user) updateUser(user.id, {
-            credits: newCredits,
-            steps_remaining: stepsRemainingRef.current,
-          });
-          setExchangeOpen(false);
-        }}
-      />
+      {user && <SuppliesCard open={exchangeOpen} onClose={() => { setExchangeOpen(false); setExchangeError(false); }} userId={user.id} steps={stepsRemaining} credits={credits}
+        beforeBuy={() => settleSaves('steps')}
+        onBalances={(s, c) => { stepsRemainingRef.current = s; setStepsRemaining(s); setCredits(c); }} />}
 
       {activeFragment && (
         <FragmentOverlay

@@ -1,9 +1,9 @@
-import { useRef } from 'react';
+import { useRef, type CSSProperties, type ReactNode } from 'react';
 import { ProfileButton } from '@/components/ProfileOverlay';
 import { Z } from '@/lib/zIndex';
 import './game-home.css';
-type Props = { stepsRemaining: number; stepsExhausted?: boolean; credits: number; currentLevel: number; registrationNumber: number | null; growthPoints: number; subscriptionStatus: string | null; trialDaysRemaining: number; onOpenProfile: () => void; onOpenDevMenu: () => void };
-export default function GameHud({ stepsRemaining, stepsExhausted = false, credits, currentLevel, registrationNumber, growthPoints, subscriptionStatus, trialDaysRemaining, onOpenProfile: openProfile, onOpenDevMenu }: Props) {
+type Props = { stepsRemaining: number; stepsExhausted?: boolean; credits: number; currentLevel: number; registrationNumber: number | null; growthPoints: number; subscriptionStatus: string | null; trialDaysRemaining: number; onOpenProfile: () => void; onOpenDevMenu: () => void; onOpenSupplies?: () => void };
+export default function GameHud({ stepsRemaining, stepsExhausted = false, credits, currentLevel, registrationNumber, growthPoints, subscriptionStatus, trialDaysRemaining, onOpenProfile: openProfile, onOpenDevMenu, onOpenSupplies }: Props) {
   const taps = useRef({ count: 0, last: 0 });
   const handleRegTap = () => {
     if (registrationNumber !== 1) return;
@@ -31,12 +31,8 @@ export default function GameHud({ stepsRemaining, stepsExhausted = false, credit
           zIndex: Z.HUD,
         }}
       >
-        <span className="font-mono" style={{ fontSize: 13, letterSpacing: 0, color: stepsExhausted ? 'var(--game-hud-tired)' : 'var(--game-hud-text)', whiteSpace: 'nowrap' }}>
-          STEPS&nbsp;{String(stepsRemaining).padStart(2, '0')}
-        </span>
-        <span className="font-mono" style={{ fontSize: 13, letterSpacing: 0, color: 'var(--plate-gold)', whiteSpace: 'nowrap' }}>
-          CREDITS&nbsp;{String(credits).padStart(2, '0')}
-        </span>
+        <HudCounter label="Add steps" color={stepsExhausted ? 'var(--game-hud-tired)' : 'var(--game-hud-text)'} onTap={onOpenSupplies}>STEPS&nbsp;{String(stepsRemaining).padStart(2, '0')}</HudCounter>
+        <HudCounter label="Add credits" color="var(--plate-gold)" onTap={onOpenSupplies}>CREDITS&nbsp;{String(credits).padStart(2, '0')}</HudCounter>
         <span className="font-mono" style={{ fontSize: 13, letterSpacing: 0, color: 'var(--game-hud-level)', whiteSpace: 'nowrap' }}>
           LEVEL&nbsp;{String(currentLevel).padStart(2, '0')}
         </span>
@@ -116,4 +112,10 @@ export default function GameHud({ stepsRemaining, stepsExhausted = false, credit
 
 
   </>;
+}
+
+/** Tappable HUD number with a small "+" affordance; a button so the thumbstick ignores it. */
+export function HudCounter({ label, color, onTap, children, style }: { label: string; color: string; onTap?: () => void; children: ReactNode; style?: CSSProperties }) {
+  if (!onTap) return <span className="font-mono" style={{ fontSize: 13, letterSpacing: 0, color, whiteSpace: 'nowrap', ...style }}>{children}</span>;
+  return <button type="button" aria-label={label} className="font-mono hud-counter" data-no-thumbstick onClick={onTap} style={{ fontSize: 13, letterSpacing: 0, color, whiteSpace: 'nowrap', ...style }}>{children}<span className="hud-counter-plus" aria-hidden="true">+</span></button>;
 }

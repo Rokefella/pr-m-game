@@ -1,5 +1,6 @@
 import { Z } from '@/lib/zIndex';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { X } from 'lucide-react';
 import { updateUser } from '@/lib/userData';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { npcBodyPx } from '@/lib/orbSizes';
@@ -34,6 +35,10 @@ interface MerchantOverlayProps {
   userId: string;
   credits: number;
   onCreditsChange: (next: number) => void;
+  /** Extra content under the items (e.g. balances). */
+  footer?: ReactNode;
+  /** Show a ✕ and close when tapping outside the content. */
+  dismissible?: boolean;
 }
 
 const PALETTE = {
@@ -51,6 +56,8 @@ const MerchantOverlay = ({
   userId,
   credits,
   onCreditsChange,
+  footer,
+  dismissible = false,
 }: MerchantOverlayProps) => {
   const questState = useNpcQuestStates(userId);
   const { rgb } = PALETTE[palette];
@@ -126,7 +133,8 @@ const MerchantOverlay = ({
   };
 
   return (
-    <div data-game-ui="open" data-no-thumbstick
+    <div data-game-ui="open" data-no-thumbstick role="dialog" aria-label={title}
+      onClick={dismissible ? (e) => { if (e.target === e.currentTarget) onClose(); } : undefined}
       style={{
         position: 'fixed',
         inset: 0,
@@ -140,6 +148,7 @@ const MerchantOverlay = ({
         overflowY: 'auto',
       }}
     >
+      {dismissible && <Button variant="ghost" size="icon" aria-label="Close" onClick={onClose} style={{ position: 'absolute', top: 12, right: 12, color: 'rgba(160,140,200,0.6)', borderRadius: 0 }}><X size={18} /></Button>}
       <div style={{ marginTop: 40 }}><NpcPortrait npc="merchant" /></div>
       <div
         className="font-cinzel"
@@ -254,6 +263,7 @@ const MerchantOverlay = ({
           </div>
         ))}
       </div>
+      {footer}
 
       <Button variant="ghost"
         onClick={onClose}

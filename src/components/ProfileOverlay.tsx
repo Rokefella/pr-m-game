@@ -19,6 +19,7 @@ import { publishOrb, type OrbChange } from '@/lib/orb';
 import { X } from 'lucide-react';
 import { fragmentInventory, type FolderFragment } from '@/lib/carriedFragments';
 import DropIcon from '@/components/DropIcon';
+import Wardrobe from '@/components/Wardrobe';
 import { USER_STEPS_REFRESHED, type MazeUseContext } from '@/lib/mechanics';
 import { readOwnedDrops, DROPS_REFRESHED, type DropsRefresh, type OwnedDrop } from '@/lib/carriedDrops';
 
@@ -457,7 +458,7 @@ const ProfileOverlay = ({
       <PlateFrame width="min(100vw, 440px)" className="profile-frame">
         <div className="profile-content">
           <header className="profile-header">
-            <PlayerAvatar size={56} palette={orbLook(accountRow?.aura_color, accountRow?.orb_dye, accountRow?.registration_number)} walking={false} />
+            <PlayerAvatar size={56} palette={orbLook(accountRow?.aura_color, accountRow?.orb_dye, accountRow?.registration_number)} walking={false} skin={accountRow?.avatar_body} registrationNumber={accountRow?.registration_number} auraColor={accountRow?.aura_color} orbDye={accountRow?.orb_dye} />
             <div className="profile-identity">
               <h2 className="font-cinzel">{accountRow?.username?.trim() || `#${regNum}`}</h2>
               <div className="profile-header-plates font-mono"><span className="fragment-registration">#{regNum}</span><span className="profile-level">LEVEL {level.padStart(2, '0')}</span></div>
@@ -579,6 +580,14 @@ const ProfileOverlay = ({
                 }}
               />
             </div>
+
+            <Wardrobe
+              auraColor={accountRow?.aura_color ?? null}
+              orbDye={accountRow?.orb_dye ?? null}
+              registrationNumber={accountRow?.registration_number ?? null}
+              avatarBody={accountRow?.avatar_body ?? null}
+              onEquipped={(skin) => setAccountRow(prev => prev ? { ...prev, avatar_body: skin } : prev)}
+            />
 
             <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center' }}>
               {subStatus === 'dev' ? (

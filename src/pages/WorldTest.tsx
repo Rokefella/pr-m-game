@@ -38,7 +38,7 @@ import { approachedFind, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, 
 import './world-test.css';
 
 type WorldData = Awaited<ReturnType<typeof readWorldData>>;
-export type Identity = { registration_number: number | null; aura_color: string | null; orb_dye?: string | null; level?: number | null; username?: string | null; maze_completed_level?: number | null; steps_remaining?: number; credits?: number; growth_points?: number; social?: number; perception?: number; trade?: number; title?: string; levelup_pending?: boolean; levelup_newlevel?: number | null; subscription_status?: string; trial_end?: string; first_launch_at?: string };
+export type Identity = { registration_number: number | null; aura_color: string | null; orb_dye?: string | null; avatar_body?: string | null; level?: number | null; username?: string | null; maze_completed_level?: number | null; steps_remaining?: number; credits?: number; growth_points?: number; social?: number; perception?: number; trade?: number; title?: string; levelup_pending?: boolean; levelup_newlevel?: number | null; subscription_status?: string; trial_end?: string; first_launch_at?: string };
 const DEFAULT_IDENTITY: Identity = { registration_number: null, aura_color: null };
 export default function WorldTest() {
   const { user, loading } = useAuth();
@@ -122,6 +122,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const journey = useRef({ from: pos, started: 0, duration: WORLD_MOVE_MS });
   const bumpUntil = useRef(0);
   const [walking, setWalking] = useState(false);
+  const [facing, setFacing] = useState<Facing>('down');
   const [jumpOpen, setJumpOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(false);
   const [discoveryBits, setDiscoveryBits] = useState('');
@@ -308,6 +309,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     moveDuration.current = WORLD_MOVE_MS;
     if (next.x < 0 || next.y < 0 || next.x >= size || next.y >= size || !walkable(next) || (stepX && stepY && !walkable({ x: next.x, y: from.y }) && !walkable({ x: from.x, y: next.y }))) { bumpUntil.current = performance.now() + 150; bumpOpen(next); return; }
     posRef.current = next; setPos(next); setWalking(true);
+    setFacing(stepX > 0 ? 'right' : stepX < 0 ? 'left' : stepY < 0 ? 'up' : 'down');
     discovery.current?.walk(next.x, next.y, l);
     saveWorldPos({ layer: l, ...next });
     const terrain = world.terrain.find(t => t.key === cache.terrainKey(next.x, next.y));
@@ -380,7 +382,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
         ctx.save(); ctx.strokeStyle = ink.text; ctx.globalAlpha = .35 + pulse * .2; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.ellipse(width / 2, height / 2 + 5, 10 + pulse * 4, 4 + pulse * 2, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
       }
-      if (avatar.current) avatar.current.style.transform = `translate(${width / 2 - 15 + (time < bumpUntil.current ? Math.sin(time * .1) * 3 : 0)}px, ${height / 2 - 15}px)`;
+      if (avatar.current) avatar.current.style.transform = `translate(${width / 2 - WORLD_AVATAR_SIZE / 2 + (time < bumpUntil.current ? Math.sin(time * .1) * 3 : 0)}px, ${height / 2 - WORLD_AVATAR_SIZE / 2}px)`;
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -442,7 +444,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       if (findMarked(f, isClaimed) || (!isClaimed && findShows(f, posRef.current, false))) setFindCard({ find: f, reading: false });
       else if (isClaimed && f.visibility === 'visible' && f.kind === 'landmark') setFindCard({ find: f, reading: true });
     }} />
-    <div ref={avatar} className="world-avatar"><PlayerAvatar size={30} palette={orbLook(identity.aura_color, identity.orb_dye, identity.registration_number)} walking={walking} /></div>
+    <div ref={avatar} className="world-avatar"><PlayerAvatar size={WORLD_AVATAR_SIZE} palette={orbLook(identity.aura_color, identity.orb_dye, identity.registration_number)} walking={walking} skin={identity.avatar_body} facing={facing} registrationNumber={identity.registration_number} auraColor={identity.aura_color} orbDye={identity.orb_dye} /></div>
     <header className="world-hud font-mono">{dev && <div className="world-status"><span>{pos.x},{pos.y} · A {area.x},{area.y} · {era?.name ?? '—'}</span><span>{layer === 1 ? `UNDERGROUND · ABOVE ${surfacePoint.x},${surfacePoint.y}` : 'SURFACE'}</span><span>{terrain?.name ?? (cache.errors.size ? 'Window unavailable' : 'Loading…')} · COST {terrain ? tileCost(terrain, era) : '—'} · SPENT {Number(spent.toFixed(2))}</span>{layer === 0 && <span>{phase.phase.toUpperCase()} · {Math.ceil(phase.minutesLeft)} MIN</span>}</div>}<Button variant="ghost" size="icon" title="MAP" aria-label="MAP" onClick={() => { keys.current.clear(); setMapOpen(true); }}><MapIcon size={18} /></Button>{dev && <Button variant="outline" className="world-jump" onClick={() => { setJumpX(String(pos.x)); setJumpY(String(pos.y)); setJumpOpen(true); }}><Navigation size={14} />JUMP</Button>}</header>
     <GameHud stepsRemaining={stepBalance} stepsExhausted={stepBalance === 0} credits={identity.credits ?? 0} currentLevel={identity.level ?? 1} registrationNumber={identity.registration_number} growthPoints={identity.growth_points ?? 0} subscriptionStatus={subscription} trialDaysRemaining={identity.first_launch_at ? Math.max(0, 14 - Math.floor((Date.now() - new Date(identity.first_launch_at).getTime()) / 86400000)) : identity.trial_end ? getDaysRemainingInTrial(identity.trial_end) : 14} onOpenProfile={() => { keys.current.clear(); setProfileOpen(true); }} onOpenDevMenu={() => { keys.current.clear(); setDevOpen(true); }} />
     <ProfileOverlay isOpen={profileOpen} onClose={() => { setProfileOpen(false); void refreshCompleted(); }} context="village" growthPoints={identity.growth_points ?? 0} socialStat={identity.social ?? 0} perceptionStat={identity.perception ?? 0} tradeStat={identity.trade ?? 0} />

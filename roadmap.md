@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Walkthrough #9/#15/#22–#25: stacked resource use, world Map Scrap discovery, shared terrain/structure motion, live inventory refresh and ice sliding/NPC avoidance; existing RPCs only.
+
 - [x] Walkthrough notes #3–#7: collect-before-use drops, words/cairn claims and receipts, drop-first Folder/global resource use with HUD refresh, start flag without label, Gods sprites/rectangular ship/water underlays and layout version 4. Controlled desktop/phone claim/use/re-read flows and all 24 real public terrain sprites checked; no tables, migrations or sample data.
 - [ ] Verify Rob's live find claims and resource consumption — the game uses external authentication; no authenticated game session is available and the managed service has no mintable users. Controlled responses do not establish live persistence.
 

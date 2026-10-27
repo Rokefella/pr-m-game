@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { inventoryChanged } from './inventoryEvents';
 import { drawTerrainMotion, drawTerrainSprite, spriteLight, type TerrainInk } from './terrainTile';
 import { WORLD_TILE, type Terrain, type WorldPoint } from './worldTest';
 
@@ -69,7 +70,9 @@ export async function loadFinds(userId: string) {
 export async function claimFind(id: string, at: WorldPoint): Promise<ClaimResult> {
   const { data, error } = await db.rpc('claim_find', { p_find: id, p_x: at.x, p_y: at.y });
   if (error) return { granted: false, reason: 'error' };
-  return normalizeClaim(data);
+  const result = normalizeClaim(data);
+  if (result.granted) inventoryChanged();
+  return result;
 }
 
 /** Draws showing finds over the world (sparkles for glint/hidden, sprites for visible). */

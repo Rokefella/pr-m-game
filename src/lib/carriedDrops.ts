@@ -9,6 +9,17 @@ export type OwnedDrop = {
 };
 export type DropsRefresh = { userId: string; drops: OwnedDrop[] };
 
+export type DropStack = OwnedDrop & { count: number; ids: string[] };
+export function stackDrops(drops: OwnedDrop[]): DropStack[] {
+  const stacks = new Map<string, DropStack>();
+  for (const drop of drops) {
+    const key = drop.drop_key || drop.id, stack = stacks.get(key);
+    if (stack) { stack.count++; stack.ids.push(drop.id); stack.carried ||= drop.carried; }
+    else stacks.set(key, { ...drop, count: 1, ids: [drop.id] });
+  }
+  return [...stacks.values()];
+}
+
 export async function readOwnedDrops(userId: string): Promise<OwnedDrop[]> {
   const { data, error } = await supabase.from('drops' as never)
     .select('id, carried, run_level, drop_types(drop_key, name, description, category, icon_svg, rarity, effect)')

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { inventoryChanged } from './inventoryEvents';
 
 /** Optional world_places visibility rule compared against users.maze_completed_level. */
 export type ShowWhen = { min_completed_level?: number | null; max_completed_level?: number | null } | null | undefined;
@@ -87,7 +88,9 @@ export async function currentStage(userId: string, stages: SamStage[]) {
 export async function runStage(stageId: string) {
   const { data, error } = await db.rpc('run_npc_stage', { p_stage: stageId });
   if (error) return { ok: false, reason: error.message } as { ok: boolean; given?: unknown; reason?: string };
-  return (data ?? { ok: false }) as { ok: boolean; given?: unknown; reason?: string };
+  const result = (data ?? { ok: false }) as { ok: boolean; given?: unknown; reason?: string };
+  if (result.ok) inventoryChanged();
+  return result;
 }
 export async function dropNames() {
   const { data } = await db.from('drop_types').select('drop_key, name');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dyeRamp, frameFor, getCurrentSkin, liftBoot, mirrorFrame, mirrorLegs, normalizeSkinKey, resolveColors, setCurrentSkin, skinBaseColor, skinForDrop, skinPublic, type Skin } from './skins';
+import { _primeSkins, blinkFrame, dyeRamp, frameFor, getCurrentSkin, isPlayerSkin, liftBoot, mirrorFrame, mirrorLegs, normalizeSkinKey, npcColors, npcFacingToward, npcSkin, resolveColors, setCurrentSkin, skinBaseColor, skinForDrop, skinPublic, type Skin } from './skins';
 import { publishOrb } from './orb';
 
 const row = (chars: string) => chars.padEnd(16, '.').slice(0, 16);

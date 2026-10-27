@@ -5,7 +5,7 @@ import { currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runS
 
 export const NOTE_ERROR = 'That didn\'t work. Try again in a moment.';
 
-type Props = { userId: string; npcKey: string; playerName: string; fallbackName: string; onRewarded?: () => void };
+type Props = { userId: string; npcKey: string; playerName: string; fallbackName: string; onRewarded?: () => void | Promise<void> };
 export default function SamCard({ userId, npcKey, playerName, fallbackName, onRewarded }: Props) {
   const [sam, setSam] = useState<Awaited<ReturnType<typeof loadSam>>>(null);
   const [stage, setStage] = useState<SamStage | null>(null);
@@ -30,7 +30,7 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
       const res = await runStage(stage.id);
       if (res.ok) {
         setReceipt(receiptLine(res.given, await dropNames()));
-        onRewarded?.();
+        await onRewarded?.();
         await refresh();
       } else {
         setError(NOTE_ERROR);

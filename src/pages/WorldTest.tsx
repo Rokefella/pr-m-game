@@ -25,6 +25,8 @@ import { MERCHANT_LINES, merchantItems } from '@/lib/merchantItems';
 import { bindWorldStepFlush, HEAVY_LEGS, stepWalkDuration, WorldSteps } from '@/lib/worldSteps';
 import DevMenu from '@/components/DevMenu';
 import LevelUpCard, { TITLES_BY_LEVEL } from '@/components/LevelUpCard';
+import { firstTitlePatch, titlesUnlocked } from '@/lib/playerTitles';
+import WorldPlayerLabel from '@/components/WorldPlayerLabel';
 import ProfileOverlay from '@/components/ProfileOverlay';
 import { saveWorldPos, saveWorldReturn, takeWorldOpening } from '@/lib/worldReturn';
 import { isSignpost, signpostLines, adjacentConversation, clampWorld, eraAt, eraPointFor, fetchWorldChunk, isWading, isWorldConversation, layerSize, mazeOutcome, nearestWorldWalkable, placeAction, placesOn, readWorldData, tileCost, worldArea, worldMoveDuration, worldPhase, WORLD_MOVE_MS, WORLD_TILE, WorldChunkCache, type Place, type WorldLayer, type WorldPoint } from '@/lib/worldTest';
@@ -54,7 +56,7 @@ const WORLD_AVATAR_SIZE = Math.round(WORLD_TILE * 0.9);
 const WORLD_NPC_SIZE = WORLD_AVATAR_SIZE;
 
 type WorldData = Awaited<ReturnType<typeof readWorldData>>;
-export type Identity = { registration_number: number | null; aura_color: string | null; orb_dye?: string | null; avatar_body?: string | null; level?: number | null; username?: string | null; maze_completed_level?: number | null; steps_remaining?: number; credits?: number; growth_points?: number; social?: number; perception?: number; trade?: number; title?: string; levelup_pending?: boolean; levelup_newlevel?: number | null; subscription_status?: string; trial_end?: string; first_launch_at?: string };
+export type Identity = { registration_number: number | null; aura_color: string | null; orb_dye?: string | null; avatar_body?: string | null; level?: number | null; username?: string | null; maze_completed_level?: number | null; steps_remaining?: number; credits?: number; growth_points?: number; social?: number; perception?: number; trade?: number; title?: string; unlocked_titles?: string[] | null; levelup_pending?: boolean; levelup_newlevel?: number | null; subscription_status?: string; trial_end?: string; first_launch_at?: string };
 const DEFAULT_IDENTITY: Identity = { registration_number: null, aura_color: null };
 export default function WorldTest() {
   const { user, loading } = useAuth();
@@ -297,7 +299,18 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       setCompleted(Number(next.maze_completed_level) || 0);
     }
     const flags = await getAllFlags(userId).catch(() => null);
-    if (flags) setFlags({ ...flags });
+    if (flags) {
+      setFlags({ ...flags });
+      if (!error && row) {
+        const patch = firstTitlePatch(flags, row as unknown as Identity);
+        if (patch) {
+          const { error: titleError } = await supabase.from('users').update(patch).eq('id', userId);
+          if (titleError) throw titleError;
+          identityRef.current = { ...identityRef.current, ...patch };
+          setIdentity(current => ({ ...current, ...patch }));
+        }
+      }
+    }
   }, [userId]);
   const refreshReward = useCallback(async () => {
     await refreshCompleted();
@@ -327,7 +340,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       if (cancelled) return;
       const newLevel = row.levelup_newlevel ?? row.level ?? 1;
       if (row.levelup_pending && newLevel >= 2) {
-        const titleUnlocked = (parseInt(getFlag('bernard_stage') || '0', 10) || 0) >= 5;
+        const titleUnlocked = titlesUnlocked({ sam_stage: getFlag('sam_stage') ?? '0' });
         const title = titleUnlocked ? TITLES_BY_LEVEL[newLevel] || row.title || '' : row.title || '';
         arrivalTimer = setTimeout(() => { if (!cancelled) { keys.current.clear(); setArrival({ newLevel, title, titleUnlocked }); } }, 2000);
       }
@@ -576,7 +589,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     }} />
     {buildings.map(b => { const box = buildingBox(b), id = `${b.x},${b.y}`; return <canvas key={id} ref={el => { if (el) buildingEls.current.set(id, el); else buildingEls.current.delete(id); }} width={b.terrain.sprite_w ?? box.w * 16} height={(b.terrain.sprite_h ?? box.h * 16) + 16} className="world-building" style={{ width: box.w * WORLD_TILE, height: (box.h + 1) * WORLD_TILE }} aria-hidden="true" />; })}
     {visitors.map(p => <WorldVisitor key={p.user_id} player={p} at={pos} camera={camera} reduced={reduced} />)}
-    <div ref={avatar} className="world-avatar"><PlayerAvatar size={WORLD_AVATAR_SIZE} palette={orbLook(identity.aura_color, identity.orb_dye, identity.registration_number)} walking={walking && !sliding} skin={identity.avatar_body} facing={facing} registrationNumber={identity.registration_number} auraColor={identity.aura_color} orbDye={identity.orb_dye} /></div>
+    <div ref={avatar} className="world-avatar"><PlayerAvatar size={WORLD_AVATAR_SIZE} palette={orbLook(identity.aura_color, identity.orb_dye, identity.registration_number)} walking={walking && !sliding} skin={identity.avatar_body} facing={facing} registrationNumber={identity.registration_number} auraColor={identity.aura_color} orbDye={identity.orb_dye} /><WorldPlayerLabel username={identity.username} title={identity.title} /></div>
     {placesOn(data.places, layer).filter(p => p.npc_key && skinned.has(p.npc_key)).map(p => {
       const key = `${p.npc_key}:${p.x}:${p.y}`;
       return <div key={key} ref={el => { if (el) npcEls.current.set(key, el); else npcEls.current.delete(key); }} className="world-avatar" style={{ pointerEvents: 'none' }}><NpcOrb npc={p.npc_key as string} size={WORLD_NPC_SIZE} facing={npcFacings[key] ?? 'down'} phase={npcPhases[key] ?? 'stand'} /></div>;
@@ -614,7 +627,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       setIdentity(row => ({ ...row, steps_remaining: steps, credits }));
       return { receipt: `+${(Number(r.packs) || qty) * 500} steps · −${Number(r.cost) || qty * 5} credits`, credits };
     })} />}
-    {placeCard && cardAction !== 'merchant' && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={placeCard.name}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close place" onClick={() => setPlaceCard(null)}><X size={18} /></Button>{placeCard.action === 'npc' && placeCard.npc_key && userId ? <SamCard key={placeCard.npc_key} userId={userId} npcKey={placeCard.npc_key} playerName={identity.username || 'Wanderer'} fallbackName={placeCard.name} onRewarded={() => void refreshReward()} /> : isSignpost(placeCard) ? <><h2 className="font-cinzel">Signpost</h2>{signpostLines(placeCard.notes).map((line, i) => <p key={i} className="font-fell">{line.dir === 'onward' ? '▶ ' : line.dir === 'back' ? '◀ ' : ''}{line.text}</p>)}</> : <><h2 className="font-cinzel">{placeCard.name}{placeCard.maze_level ? `, Level ${placeCard.maze_level}` : ''}</h2>{placeCard.notes && <p className="font-fell">{placeCard.notes}</p>}
+    {placeCard && cardAction !== 'merchant' && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={placeCard.name}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close place" onClick={() => setPlaceCard(null)}><X size={18} /></Button>{placeCard.action === 'npc' && placeCard.npc_key && userId ? <SamCard key={placeCard.npc_key} userId={userId} npcKey={placeCard.npc_key} playerName={identity.username || 'Wanderer'} fallbackName={placeCard.name} onRewarded={refreshReward} /> : isSignpost(placeCard) ? <><h2 className="font-cinzel">Signpost</h2>{signpostLines(placeCard.notes).map((line, i) => <p key={i} className="font-fell">{line.dir === 'onward' ? '▶ ' : line.dir === 'back' ? '◀ ' : ''}{line.text}</p>)}</> : <><h2 className="font-cinzel">{placeCard.name}{placeCard.maze_level ? `, Level ${placeCard.maze_level}` : ''}</h2>{placeCard.notes && <p className="font-fell">{placeCard.notes}</p>}
       {outcome === 'completed' && <p className="font-mono">Completed</p>}
       {outcome === 'locked' && <p className="font-mono">Locked: reach Level {placeCard.maze_level} first</p>}
       {entryMessage && <p className="font-fell">{entryMessage}</p>}

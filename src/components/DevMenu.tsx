@@ -51,6 +51,11 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
             <div style={{ opacity: 0.7, fontSize: 11 }}>PROFILE</div>
             <Button variant="ghost" type="button" onClick={handleDevReset} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Replay intro (identity only)</Button>
             <Button variant="ghost" type="button" onClick={async () => {
+              const { data, error } = await (supabase.rpc as unknown as (fn: string) => Promise<{ data: unknown; error: { message: string } | null }>)('dev_grant_skins');
+              setDevStageNote(error ? error.message : `GRANTED ${typeof data === 'number' ? data : 0} SKINS`);
+              onChanged?.();
+            }} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>GRANT ALL SKINS</Button>
+            <Button variant="ghost" type="button" onClick={async () => {
               if (!fullResetArmed) {
                 setFullResetArmed(true);
                 if (fullResetTimerRef.current) clearTimeout(fullResetTimerRef.current);

@@ -60,7 +60,7 @@ export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh }: { 
   };
   return <div className="drop-detail" role="dialog" aria-label={drop.name}>
     <Button type="button" variant="ghost" className="drop-detail-close font-mono" aria-label="Close" onClick={onClose}>×</Button>
-    <DropIcon svg={drop.icon_svg} category={drop.category} size={64} />
+    <DropIcon svg={drop.icon_svg} category={drop.category} size={64} drop_key={drop.drop_key} />
     <div className="font-cinzel drop-detail-name">{drop.name}</div>
     {drop.rarity && <span className="drop-rarity-chip font-mono">{drop.rarity.toUpperCase()}</span>}
     <p className="font-fell italic drop-detail-desc">{drop.description ?? 'Its purpose is not yet clear.'}</p>

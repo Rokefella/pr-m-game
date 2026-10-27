@@ -1,4 +1,6 @@
 import { memo } from 'react';
+import SkinSprite from '@/components/SkinSprite';
+import { resolveColors, skinForDrop, useSkins } from '@/lib/skins';
 
 export function isSafeIconSvg(svg?: string | null): svg is string {
   if (!svg) return false;
@@ -20,8 +22,18 @@ function GenericCrate({ size }: { size: number }) {
   </svg>;
 }
 
-type Props = { svg?: string | null; category?: string | null; size: number };
-export default memo(function DropIcon({ svg, category, size }: Props) {
+/** Skin drops draw their suit sprite (undyed) instead of an icon. */
+function SkinDropIcon({ dropKey, size }: { dropKey: string; size: number }) {
+  const skins = useSkins();
+  const key = skinForDrop(dropKey);
+  const skin = key ? skins.find(s => s.skin_key === key) : undefined;
+  if (!skin) return <GenericCrate size={size} />;
+  return <SkinSprite skin={skin} size={size} colors={resolveColors(skin, skin.undyed_hex)} />;
+}
+
+type Props = { svg?: string | null; category?: string | null; size: number; drop_key?: string };
+export default memo(function DropIcon({ svg, category, size, drop_key }: Props) {
+  if (category === 'skin' && drop_key) return <SkinDropIcon dropKey={drop_key} size={size} />;
   if (isSafeIconSvg(svg)) {
     return <img src={'data:image/svg+xml;utf8,' + encodeURIComponent(svg.trim())} width={size} height={size} style={{ imageRendering: 'pixelated' }} alt="" />;
   }

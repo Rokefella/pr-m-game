@@ -7,6 +7,7 @@ import { updateUser } from '@/lib/userData';
 import { _resetQuestFlagCache, setFlag } from '@/lib/questFlags';
 import { Z } from '@/lib/zIndex';
 import './game-home.css';
+import { goBackToStart, START_CONFIRMATION } from '@/lib/goBackToStart';
 
 type Props = { open: boolean; onClose: () => void; userId?: string; home?: 'world' | 'village'; onChanged?: () => void };
 export default function DevMenu({ open, onClose: close, userId, home = 'village', onChanged }: Props) {
@@ -17,15 +18,17 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
   const [devMazeLevel, setDevMazeLevel] = useState('1');
   const [devStageNote, setDevStageNote] = useState<string | null>(null);
   const [fullResetArmed, setFullResetArmed] = useState(false);
+  const [startArmed, setStartArmed] = useState(false);
+  const [starting, setStarting] = useState(false);
   const fullResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (fullResetTimerRef.current) clearTimeout(fullResetTimerRef.current); }, []);
   const handleDevReset = useCallback(async () => {
-    if (user) {
-      await updateUser(user.id, { entity_answer: null, username: null, aura_color: '#5b4fd4', level: 1 });
-    }
-    onClose();
-    navigate('/intro');
-  }, [user, navigate, onClose]);
+    if (!userId || starting) return;
+    setStarting(true);
+    try { await goBackToStart(userId); close(); navigate('/intro'); }
+    catch (e) { setDevStageNote(e instanceof Error ? e.message : 'Could not start over.'); }
+    finally { setStarting(false); }
+  }, [userId, navigate, close, starting]);
   return open ? (
         <div
           className="font-mono" data-game-ui="open"
@@ -49,7 +52,8 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
 
             {home === 'world' && <Button variant="outline" onClick={() => { onClose(); navigate('/village'); }}>OLD VILLAGE</Button>}
             <div style={{ opacity: 0.7, fontSize: 11 }}>PROFILE</div>
-            <Button variant="ghost" type="button" onClick={handleDevReset} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Replay intro (identity only)</Button>
+            <Button variant="outline" onClick={() => setStartArmed(true)}>GO BACK TO START</Button>
+            {startArmed && <section role="alertdialog" aria-label="Go back to start" className="max-w-[320px] text-foreground"><p className="font-fell leading-relaxed">{START_CONFIRMATION}</p><div className="flex gap-2 mt-3"><Button variant="outline" disabled={starting} onClick={() => void handleDevReset()}>{starting ? '…' : 'CONFIRM'}</Button><Button variant="ghost" disabled={starting} onClick={() => setStartArmed(false)}>CANCEL</Button></div></section>}
             <Button variant="ghost" type="button" onClick={async () => {
               const { data, error } = await (supabase.rpc as unknown as (fn: string) => Promise<{ data: unknown; error: { message: string } | null }>)('dev_grant_skins');
               setDevStageNote(error ? error.message : `GRANTED ${typeof data === 'number' ? data : 0} SKINS`);
@@ -120,7 +124,7 @@ export default function DevMenu({ open, onClose: close, userId, home = 'village'
             </div>
 
             <div style={{ height: 1, background: 'var(--game-dev-divider)', margin: '6px 0' }} />
-            <div style={{ opacity: 0.7, fontSize: 11 }}>BERNARD STAGE</div>
+            <div style={{ opacity: 0.7, fontSize: 11 }}>SAM STAGE</div>
             {devStageNote && <div style={{ fontSize: 11, color: 'var(--plate-gold)' }}>{devStageNote}</div>}
             {([
               { label: 'stage_0', stage: 0, touched: null as boolean | null },

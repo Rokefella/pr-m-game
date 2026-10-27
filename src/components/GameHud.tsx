@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, type CSSProperties, type ReactNode } from 'react';
 import { ProfileButton } from '@/components/ProfileOverlay';
 import { Z } from '@/lib/zIndex';
 import './game-home.css';
@@ -115,7 +115,7 @@ export default function GameHud({ stepsRemaining, stepsExhausted = false, credit
 }
 
 /** Tappable HUD number with a small "+" affordance; a button so the thumbstick ignores it. */
-export function HudCounter({ label, color, onTap, children, style }: { label: string; color: string; onTap?: () => void; children: React.ReactNode; style?: React.CSSProperties }) {
+export function HudCounter({ label, color, onTap, children, style }: { label: string; color: string; onTap?: () => void; children: ReactNode; style?: CSSProperties }) {
   if (!onTap) return <span className="font-mono" style={{ fontSize: 13, letterSpacing: 0, color, whiteSpace: 'nowrap', ...style }}>{children}</span>;
   return <button type="button" aria-label={label} className="font-mono hud-counter" data-no-thumbstick onClick={onTap} style={{ fontSize: 13, letterSpacing: 0, color, whiteSpace: 'nowrap', ...style }}>{children}<span className="hud-counter-plus" aria-hidden="true">+</span></button>;
 }

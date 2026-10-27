@@ -22,6 +22,7 @@ import Thumbstick from '@/components/Thumbstick';
 import { startResilientLoop } from '@/lib/resilientLoop';
 import { restUpdate } from '@/lib/supabaseRest';
 import MerchantOverlay from '@/components/MerchantOverlay';
+import SuppliesCard from '@/components/SuppliesCard';
 import { MERCHANT_LINES, merchantItems } from '@/lib/merchantItems';
 import PaywallOverlay from '@/components/PaywallOverlay';
 import ProfileOverlay from '@/components/ProfileOverlay';
@@ -826,6 +827,7 @@ const Village = () => {
   const [devOverlay, setDevOverlay] = useState(false);
   const [credits, setCredits] = useState<number>(0);
   const [merchantOpen, setMerchantOpen] = useState(false);
+  const [suppliesOpen, setSuppliesOpen] = useState(false);
   const merchantTriggerLockRef = useRef(false);
 
   // ── Ghost players (real-time positions of other players) ──
@@ -2362,10 +2364,11 @@ const Village = () => {
 
       <Thumbstick
         onDirectionChange={(dc, dr) => { stickDirRef.current = { dc, dr }; }}
-        disabled={profileOpenDisplay || merchantOpen || bernardOpen || paywallOpen}
+        disabled={profileOpenDisplay || merchantOpen || suppliesOpen || bernardOpen || paywallOpen}
       />
 
-      <GameHud stepsRemaining={stepsRemaining} credits={credits} currentLevel={currentLevel} registrationNumber={registrationNumber} growthPoints={growthPoints} subscriptionStatus={subscriptionStatus} trialDaysRemaining={trialDaysRemaining} onOpenProfile={openProfile} onOpenDevMenu={() => setDevOverlay(true)} />
+      <GameHud stepsRemaining={stepsRemaining} credits={credits} currentLevel={currentLevel} registrationNumber={registrationNumber} growthPoints={growthPoints} subscriptionStatus={subscriptionStatus} trialDaysRemaining={trialDaysRemaining} onOpenProfile={openProfile} onOpenDevMenu={() => setDevOverlay(true)} onOpenSupplies={() => setSuppliesOpen(true)} />
+      {user && <SuppliesCard open={suppliesOpen} onClose={() => setSuppliesOpen(false)} userId={user.id} steps={stepsRemaining} credits={credits} onBalances={(s, c) => { setStepsRemaining(s); setCredits(c); }} />}
 
       <DevMenu open={devOverlay} onClose={() => setDevOverlay(false)} userId={user?.id} />
 

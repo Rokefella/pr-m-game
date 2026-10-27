@@ -3,6 +3,8 @@ import { Button } from '@/components/ui/button';
 import NpcPortrait from '@/components/NpcPortrait';
 import { currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samStageFlag, samTopics, topicRoot, type BookNode, type SamStage } from '@/lib/worldSam';
 
+export const NOTE_ERROR = 'That didn\'t work. Try again in a moment.';
+
 type Props = { userId: string; npcKey: string; playerName: string; fallbackName: string; onRewarded?: () => void };
 export default function SamCard({ userId, npcKey, playerName, fallbackName, onRewarded }: Props) {
   const [sam, setSam] = useState<Awaited<ReturnType<typeof loadSam>>>(null);
@@ -50,6 +52,7 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
     </> : <>
       <p className="font-fell">{stage ? name(stage.text) : 'Sam pokes the fire.'}</p>
       {stage?.button_label && <Button className="world-jump" disabled={busy} onClick={() => void press()}>{busy ? '…' : stage.button_label}</Button>}
+      {error && <p className="font-mono world-card-error">{error}</p>}
       {receipt && <p className="font-mono world-receipt">{receipt}</p>}
       <h3 className="font-mono world-topics-title">Ask about…</h3>
       <div className="world-topics">{samTopics(samStage).filter(t => sam && topicRoot(sam.book, t.key)).map(t => <Button key={t.key} variant="ghost" onClick={() => go(sam ? topicRoot(sam.book, t.key) : null)}>{t.label}</Button>)}</div>

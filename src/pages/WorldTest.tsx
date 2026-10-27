@@ -44,6 +44,8 @@ import { npcId, NpcWander, type NpcPose } from '@/lib/worldNpcMotion';
 import { readWorldPlayers, shownPlayers, WorldPresence, writeWorldPlayer, type WorldPlayer } from '@/lib/worldPlayers';
 import WorldVisitor from '@/components/WorldVisitor';
 import './world-test.css';
+import { useDevNoteContext } from '@/hooks/useDevNoteContext';
+import { notepadFocused } from '@/lib/devNotes';
 
 /** The suited figure stands ~90% of a tile wide, feet on the tile. */
 const WORLD_AVATAR_SIZE = Math.round(WORLD_TILE * 0.9);
@@ -334,6 +336,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     });
   }, [data, chunkTick, place]);
   const move = useCallback((dx: number, dy: number) => {
+    if (notepadFocused()) { keys.current.clear(); return; }
     if (convoOpen.current && (dx || dy)) { convoOpen.current = false; blocked.current = false; setPlaceCard(null); setFindCard(null); return; }
     if (blocked.current || !dataRef.current || performance.now() - lastMove.current < moveDuration.current) return;
     if (dx === 0 && dy === 0) return;

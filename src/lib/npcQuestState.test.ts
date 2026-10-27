@@ -8,26 +8,11 @@ const stages = [
   { stage_key: 'stage_5_offer', condition: { stage: 5, requires_flags: { alexandra_quest: 'active' }, flags_equal: false }, on_show_action_key: null, button_action_key: 'accept_alexandra_quest' },
 ];
 describe('NPC quest rules shared with dialogue', () => {
-  it('marks Bernard arrival available, then active immediately after acceptance', () => {
-    expect(getNpcQuestState('bernard', { ...base, stages })).toBe('available');
-    expect(getNpcQuestState('bernard', { ...base, stages, flags: { bernard_stage: '1' } })).toBe('active');
+  it('never shows the retired village quest marker on Sam', () => {
+    for (const stage of ['0', '1', '3', '4', '5', '6']) expect(getNpcQuestState('bernard', { ...base, stages, flags: { bernard_stage: stage, alexandra_quest: 'active' } })).toBe('none');
   });
-  it('requires all three visited buildings for Bernard hand-in', () => {
-    const entries = [entry({ bucket_key: 'quest_check_status', requires_flags: { touched_23: 'true', touched_47: 'true', touched_89: 'true' }, option_a_action_key: 'grant_credits_30_advance_2' })];
-    expect(getNpcQuestState('bernard', { ...base, entries, flags: { bernard_stage: '1', touched_23: 'true', touched_47: 'true' } })).toBe('active');
-    expect(getNpcQuestState('bernard', { ...base, entries, flags: { bernard_stage: '1', touched_23: 'true', touched_47: 'true', touched_89: 'true' } })).toBe('ready');
-  });
-  it('marks Wanderer hand-in ready only at its configured stage', () => {
-    expect(getNpcQuestState('bernard', { ...base, stages, flags: { bernard_stage: '3' } })).toBe('active');
-    expect(getNpcQuestState('bernard', { ...base, stages, flags: { bernard_stage: '4' } })).toBe('ready');
-  });
-  it('offers the stage 4 Wanderer hand-in in Village 2 from quest flags, not village level', () => {
-    expect(getNpcQuestState('bernard', { ...base, level: 2, stages, flags: { bernard_stage: '4' } })).toBe('ready');
-    expect(getNpcQuestState('bernard', { ...base, level: 2, stages, flags: { bernard_stage: '3' } })).toBe('active');
-  });
-  it('removes Alexandra offer after accepting it', () => {
-    expect(getNpcQuestState('bernard', { ...base, stages, flags: { bernard_stage: '5' } })).toBe('available');
-    expect(getNpcQuestState('bernard', { ...base, stages, flags: { bernard_stage: '6', alexandra_quest: 'active' } })).toBe('active');
+  it('still offers Alexandra to other configured NPCs before acceptance', () => {
+    expect(getNpcQuestState('priest', { ...base, stages: [{ stage_key: 'stage_0', condition: { stage: 0 }, on_show_action_key: null, button_action_key: 'accept_alexandra_quest' }] })).toBe('available');
   });
   it('uses configured Chef level, social, flags and carried-drop gates, never banked fragments', () => {
     const entries = [entry({ option_a_action_key: 'complete_chef_recipe', min_level: 2, min_social: 2, requires_flags: { recipe_started: 'true' }, requires_drops: ['herb', 'root', 'spice'] })];

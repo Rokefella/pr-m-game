@@ -58,11 +58,11 @@ describe('Go back to start', () => {
     localStorage.clear(); sessionStorage.clear();
     const keys = ['praem.worldPos', 'praem.worldReturn', 'praem.worldLayoutVersion', 'praem.worldDiscovery.self', 'praem_intro_seen', 'praem_run'];
     keys.forEach(k => localStorage.setItem(k, '1'));
-    localStorage.setItem('sb-auth-token', 'keep'); localStorage.setItem('praem.worldDiscovery.other', 'keep');
+    localStorage.setItem('sb-auth-token', 'keep'); localStorage.setItem('praem-auth-token', 'keep'); localStorage.setItem('praem.worldDiscovery.other', 'keep');
     sessionStorage.setItem('visited_shadow_this_run', '1'); sessionStorage.setItem('praem_shadow_entry', '1');
     const claim = vi.fn().mockResolvedValue(10); await claimDailyStepsOnce('self', claim);
     clearPlayerLocal('self'); keys.forEach(k => expect(localStorage.getItem(k)).toBeNull());
-    expect(localStorage.getItem('sb-auth-token')).toBe('keep'); expect(localStorage.getItem('praem.worldDiscovery.other')).toBe('keep'); expect(sessionStorage.length).toBe(0);
+    expect(localStorage.getItem('sb-auth-token')).toBe('keep'); expect(localStorage.getItem('praem-auth-token')).toBe('keep'); expect(localStorage.getItem('praem.worldDiscovery.other')).toBe('keep'); expect(sessionStorage.length).toBe(0);
     await claimDailyStepsOnce('self', claim); expect(claim).toHaveBeenCalledTimes(2);
   });
   it('calls the reset RPC before clearing, and leaves state intact on refusal', async () => {

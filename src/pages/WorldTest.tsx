@@ -447,10 +447,11 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
         if (!p.npc_key || !skinnedRef.current.has(p.npc_key)) continue;
         const key = npcId(p);
         let wander = npcWanders.current.get(key); if (!wander) { wander = new NpcWander(); npcWanders.current.set(key, wander); }
-        const pose = wander.sample(p, p.npc_key, clock, point, cell => { const t = types.get(cache.terrainKey(cell.x, cell.y) ?? ''); return worldWalkable(t) && t?.grp !== 'water' && !/building|^house_|^bld_|signpost/.test(t?.key ?? '') && !layerPlaces[l].some(other => other.x === cell.x && other.y === cell.y); }, reduced);
+        if (Math.max(Math.abs(p.x - point.x), Math.abs(p.y - point.y)) > Math.max(width, height) / WORLD_TILE + 7) { const el = npcEls.current.get(key); if (el) el.style.display = 'none'; continue; }
+        const pose = wander.sample(p, p.npc_key, clock, point, cell => { const t = types.get(cache.terrainKey(cell.x, cell.y) ?? ''); return worldWalkable(t) && t?.grp !== 'water' && !/building|^house_|^bld_|signpost/.test(t?.key ?? '') && !layerPlaces[l].some(other => other !== p && other.x === cell.x && other.y === cell.y); }, reduced);
         npcPoses.current.set(key, pose);
         const el = npcEls.current.get(key);
-        if (el) { el.style.transform = `translate(${pose.x * WORLD_TILE - camera.current.x + (WORLD_TILE - WORLD_NPC_SIZE) / 2}px, ${pose.y * WORLD_TILE - camera.current.y + WORLD_TILE - Math.round(WORLD_NPC_SIZE * 14 / 16)}px)`; el.style.zIndex = String(Math.round((pose.y + 1) * WORLD_TILE)); }
+        if (el) { el.style.display = ''; el.style.transform = `translate(${pose.x * WORLD_TILE - camera.current.x + (WORLD_TILE - WORLD_NPC_SIZE) / 2}px, ${pose.y * WORLD_TILE - camera.current.y + WORLD_TILE - Math.round(WORLD_NPC_SIZE * 14 / 16)}px)`; el.style.zIndex = String(Math.round((pose.y + 1) * WORLD_TILE)); }
         if (markerCtx && samLineRef.current.has(p.npc_key)) drawMarker(markerCtx, pose.x * WORLD_TILE - camera.current.x, pose.y * WORLD_TILE - camera.current.y - 10, time, ink, reduced);
         const f = pose.facing;
         if (npcFacingsRef.current[key] !== f) { npcFacingsRef.current[key] = f; setNpcFacings({ ...npcFacingsRef.current }); }

@@ -6,7 +6,7 @@ export const WORLD_CHUNK = 64;
 export const WORLD_MOVE_MS = 150;
 export type WorldPoint = { x: number; y: number };
 export type Terrain = { key: string; name: string; grp: string; walkable: boolean; steps: number | null; sight: number | null; sight_delta: number | null; light_radius: number | null; moves: string | null; color: string | null; enabled: boolean; icon_svg?: string | null; icon_variants?: unknown; footprint?: number | null; footprint_w?: number | null; footprint_h?: number | null; sprite_w?: number | null; sprite_h?: number | null; render_layer?: string | null };
-export const isWorldBuilding = (key: string) => key.startsWith('bld_');
+export const isWorldBuilding = (key: string | undefined) => key?.startsWith('bld_') === true;
 export const worldWalkable = (terrain: Terrain | undefined) => terrain?.walkable === true && terrain.enabled !== false && !isWorldBuilding(terrain.key);
 export type Era = { order_index: number; name: string; ring_from: number; ring_to: number; palette: unknown; step_cost: number; darkness: number; ground_key?: string | null };
 export type Place = WorldPoint & { kind: string; name: string; maze_level: number | null; notes: string | null; layer?: number | null; action?: string | null; target_layer?: number | null; target_x?: number | null; target_y?: number | null; show_when?: { min_completed_level?: number | null; max_completed_level?: number | null } | null; npc_key?: string | null };

@@ -6,7 +6,7 @@ const CSS = `
 .skin-prism .skin-dye { animation: skinPrism 6s linear infinite; }
 @keyframes skinGlow { 0%, 100% { opacity: .45; } 50% { opacity: .75; } }
 .skin-glow { animation: skinGlow 3s ease-in-out infinite; }
-[data-night="true"] .skin-glow { mix-blend-mode: screen; }
+[data-night="true"] .skin-glow { mix-blend-mode: screen; filter: brightness(1.5); }
 @media (prefers-reduced-motion: reduce) { .skin-prism .skin-dye, .skin-glow { animation: none !important; } }
 `;
 

@@ -4,18 +4,8 @@ import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import './game-home.css';
-export const TITLES_BY_LEVEL: Record<number, string> = {
-    1: 'Wanderer',
-    2: 'Fragment Seeker',
-    3: 'The Initiated',
-    4: 'Threshold Walker',
-    5: 'One Who Returns',
-    6: 'The Remembered',
-    7: 'Junction Finder',
-    8: 'The Spiral Knows',
-    9: 'Almost There',
-    10: 'First One Through',
-  };
+import { TITLES_BY_LEVEL } from '@/lib/playerTitles';
+export { TITLES_BY_LEVEL } from '@/lib/playerTitles';
 
 type Props = { newLevel: number; titleUnlocked: boolean; auraColor: string | null; orbDye?: string | null; registrationNumber: number | null; avatarBody?: string | null; onContinue: () => Promise<void>; home?: 'world' | 'village' };
 export default function LevelUpCard({ newLevel, titleUnlocked, auraColor, orbDye, registrationNumber, avatarBody, onContinue, home = 'village' }: Props) {

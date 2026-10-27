@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] World player/presence labels and Sam-stage-three immediate title grant using existing users fields; all 545 tests pass. Signed-in desktop/phone labels and Profile checked; named sam_03_back grant regression-tested. No schema or sample-data changes.
+
 - [x] Sam rework: stage-driven world homes, Lumen topics, open town doors, door_exchange, Instrument as unusable tool, Sam's land quest line, no Sam in mazes, old village removed. New preview account walked stages 0→3 and received the Instrument and coal; Lumen exchange and maze 1 checked.
 
 - [x] Add dev-menu TOP-UP actions, server-balance HUD refresh and pre-grant world/maze save settling; existing RPC only.

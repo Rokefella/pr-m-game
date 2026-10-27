@@ -2,20 +2,20 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import WorldTest from './WorldTest';
-const f = vi.hoisted(() => ({ uid: 'player', granted: 0, registration: 1, level: 1, completed: 0, steps: 100, credits: 50, pending: false, newLevel: 2, social: 2, flags: { sam_stage: '0', bernard_stage: '0' }, signedIn: true, reads: [] as string[], rpc: vi.fn(), mutation: vi.fn(), presence: vi.fn(), places: [] as Record<string, unknown>[] }));
+const f = vi.hoisted(() => ({ uid: 'player', granted: 0, registration: 1, level: 1, completed: 0, steps: 100, credits: 50, pending: false, newLevel: 2, social: 2, title: 'Wanderer', unlocked: [] as string[], flags: { sam_stage: '0', bernard_stage: '0' }, signedIn: true, reads: [] as string[], rpc: vi.fn(), mutation: vi.fn(), presence: vi.fn(), places: [] as Record<string, unknown>[] }));
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: f.signedIn ? { id: f.uid } : null, loading: false }) }));
 vi.mock('@/components/ProfileOverlay', () => ({ default: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div role="dialog" aria-label="Profile"><button onClick={onClose}>Close profile</button></div> : null, ProfileButton: ({ onClick }: { onClick: () => void }) => <button onClick={onClick}>Open profile</button> }));
 vi.mock('@/components/Thumbstick', () => ({ default: ({ onMove }: { onMove: (x: number, y: number) => void }) => <button onClick={() => onMove(1, 0)}>Walk east</button> }));
 vi.mock('@/hooks/useNpcQuestStates', () => ({ useNpcQuestStates: () => () => 'none', useNpcDisplayName: () => 'Merchant', NPC_DIALOGUE_CLOSED: 'npc-closed' }));
 vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc, from: (table: string) => {
   f.reads.push(table);
-  const result = () => ({ error: null, data: table === 'users' ? { registration_number: f.registration, aura_color: null, level: f.level, maze_completed_level: f.completed, steps_remaining: f.steps, credits: f.credits, levelup_pending: f.pending, levelup_newlevel: f.newLevel, social: f.social, title: 'Wanderer' } : table === 'quest_flags' ? Object.entries(f.flags).map(([flag_key, flag_value]) => ({ flag_key, flag_value })) : table === 'world_terrain_types' ? [{ key: 'path', name: 'Path', grp: 'ground', walkable: true, enabled: true, steps: null }, { key: 'wall', walkable: false, enabled: true }] : table === 'world_eras' ? [{ order_index: 1, name: 'Fire', ring_from: 0, ring_to: 500, step_cost: 1.5 }] : table === 'world_places' ? [{ name: 'Start', kind: 'start', x: 25, y: 25 }, { name: 'Cinder Hollow', kind: 'maze_entrance', maze_level: 1, x: 300, y: 31, notes: 'Ash' }, ...f.places] : table === 'world_settings' ? { day_night: {} } : [] });
+  const result = () => ({ error: null, data: table === 'users' ? { registration_number: f.registration, aura_color: null, username: 'Rob', level: f.level, maze_completed_level: f.completed, steps_remaining: f.steps, credits: f.credits, levelup_pending: f.pending, levelup_newlevel: f.newLevel, social: f.social, title: f.title, unlocked_titles: f.unlocked } : table === 'quest_flags' ? Object.entries(f.flags).map(([flag_key, flag_value]) => ({ flag_key, flag_value })) : table === 'npcs' ? { id: 'sam', name: 'Sam' } : table === 'npc_dialogue_stages' ? [{ id: 'sam_03_back', condition: {}, text: 'You returned.', button_label: 'I am back.' }] : table === 'world_terrain_types' ? [{ key: 'path', name: 'Path', grp: 'ground', walkable: true, enabled: true, steps: null }, { key: 'wall', walkable: false, enabled: true }] : table === 'world_eras' ? [{ order_index: 1, name: 'Fire', ring_from: 0, ring_to: 500, step_cost: 1.5 }] : table === 'world_places' ? [{ name: 'Start', kind: 'start', x: 25, y: 25 }, { name: 'Cinder Hollow', kind: 'maze_entrance', maze_level: 1, x: 300, y: 31, notes: 'Ash' }, ...f.places] : table === 'world_settings' ? { day_night: {} } : [] });
   const chain = { select: () => chain, eq: () => chain, gte: () => chain, order: () => chain, limit: () => chain, maybeSingle: async () => result(), then: (r: (v: ReturnType<typeof result>) => unknown) => Promise.resolve(result()).then(r), insert: f.mutation, update: (patch: Record<string, unknown>) => { f.mutation(patch); return chain; }, delete: f.mutation, upsert: table === 'player_positions' ? f.presence : f.mutation };
   return chain;
 } } }));
 beforeEach(() => {
   localStorage.clear(); localStorage.setItem('praem.worldLayoutVersion', '5'); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.places = []; f.mutation.mockReset().mockResolvedValue({ error: null });
-  f.uid += 'x'; f.granted = 0; f.completed = 0; f.steps = 100; f.credits = 50; f.pending = false; f.newLevel = 2; f.social = 2; f.flags = { sam_stage: '0', bernard_stage: '0' };
+  f.uid += 'x'; f.granted = 0; f.completed = 0; f.steps = 100; f.credits = 50; f.pending = false; f.newLevel = 2; f.social = 2; f.title = 'Wanderer'; f.unlocked = []; f.flags = { sam_stage: '0', bernard_stage: '0' };
   f.presence.mockReset().mockResolvedValue({ error: null });
   f.rpc.mockReset().mockImplementation(async (name, args) => ({ error: null, data: name === 'spend_world_steps' ? (f.steps = Math.max(0, f.steps - args.p_amount)) : name === 'claim_daily_steps' ? f.granted : name === 'buy_steps' ? (f.credits -= args.p_packs * 5, f.steps += args.p_packs * 500, { ok: true, packs: args.p_packs, cost: args.p_packs * 5, credits: f.credits, steps_remaining: f.steps }) : { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
@@ -72,6 +72,28 @@ describe('world sandbox access and read-only movement', () => {
   });
 });
 describe('World home mechanics', () => {
+  it('persists the first current-level title when sam_03_back reaches stage three', async () => {
+    f.title = ''; f.level = 2; f.flags.sam_stage = '2'; f.unlocked = ['Wanderer'];
+    f.places = [{ kind: 'npc_home', action: 'npc', npc_key: 'sam', name: 'Sam', x: 27, y: 25 }];
+    const originalRpc = f.rpc.getMockImplementation();
+    f.rpc.mockImplementation(async (name, args) => {
+      if (name === 'npc_stage_matches') return { error: null, data: f.flags.sam_stage === '2' };
+      if (name === 'run_npc_stage') { f.flags.sam_stage = '3'; return { error: null, data: { ok: true } }; }
+      return originalRpc?.(name, args);
+    });
+    f.mutation.mockImplementation(async patch => {
+      if (patch.title) { f.title = patch.title; f.unlocked = patch.unlocked_titles; }
+      return { error: null };
+    });
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    fireEvent.click(screen.getByLabelText('Open world terrain'), { clientX: 1100, clientY: 1020 });
+    fireEvent.click(await screen.findByRole('button', { name: 'I am back.' }));
+    await waitFor(() => expect(f.mutation).toHaveBeenCalledWith({ title: 'Fragment Seeker', unlocked_titles: ['Wanderer', 'Fragment Seeker'] }));
+    expect(f.rpc).toHaveBeenCalledWith('run_npc_stage', { p_stage: 'sam_03_back' });
+    expect(f.flags.sam_stage).toBe('3'); expect(f.title).toBe('Fragment Seeker');
+  });
   it('updates credits immediately for the active user only', async () => {
     open(); await screen.findByText(/CREDITS\s+50/);
     fireEvent(window, new CustomEvent('praem:user-credits-refreshed', { detail: { userId: 'other', credits: 500 } }));
@@ -149,7 +171,7 @@ describe('World home mechanics', () => {
     expect(f.rpc.mock.calls.filter(([name]) => name === 'claim_daily_steps')).toHaveLength(1);
   });
   it('shows arrivals from level two and continues with title, pending reset, level and social plus one', async () => {
-    f.pending = true; f.flags.bernard_stage = '5'; open();
+    f.pending = true; f.flags.sam_stage = '3'; open();
     await screen.findByRole('dialog', { name: 'Level arrival' }, { timeout: 3000 });
     fireEvent.click(screen.getByRole('button', { name: 'CONTINUE' }));
     await waitFor(() => expect(f.mutation).toHaveBeenCalledWith({ title: 'Fragment Seeker', levelup_pending: false, levelup_newlevel: 0, level: 2, social: 3 }));
@@ -158,6 +180,12 @@ describe('World home mechanics', () => {
     f.pending = true; f.newLevel = 1; open(); await screen.findByRole('button', { name: 'MAP' });
     await new Promise(r => setTimeout(r, 2100));
     expect(screen.queryByRole('dialog', { name: 'Level arrival' })).toBeNull();
+  });
+  it('retired Bernard stage five cannot award a title on arrival before Sam stage three', async () => {
+    f.pending = true; f.flags.sam_stage = '2'; f.flags.bernard_stage = '5'; open();
+    await screen.findByRole('dialog', { name: 'Level arrival' }, { timeout: 3000 });
+    fireEvent.click(screen.getByRole('button', { name: 'CONTINUE' }));
+    await waitFor(() => expect(f.mutation).toHaveBeenCalledWith({ title: 'Wanderer', levelup_pending: false, levelup_newlevel: 0, level: 2, social: 3 }));
   });
   it('opens the World dev menu after five taps without an Old Village shortcut', async () => {
     open(); const plate = await screen.findByRole('button', { name: 'Registration number' });

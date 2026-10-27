@@ -100,11 +100,11 @@ const MerchantOverlay = ({
     let receipt: string | void;
     try {
       const result = await item.onPurchase?.(count);
-      if (result && typeof result === 'object' && 'failure' in result) {
-        showFeedback(item.key, result.failure, false);
-        return;
-      }
       if (result && typeof result === 'object') {
+        if ('failure' in result) {
+          showFeedback(item.key, result.failure, false);
+          return;
+        }
         receipt = result.receipt;
         if (typeof result.credits === 'number') onCreditsChange(result.credits);
       } else {

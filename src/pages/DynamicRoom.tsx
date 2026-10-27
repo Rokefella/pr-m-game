@@ -306,6 +306,7 @@ const NpcActor = ({
       {isOpen && resolvedDialogue && (
         <NpcDialogue
           npcName={displayName}
+          npcKey={npcKey}
           npcPortraitSrc={markerSrc}
           text={resolvedDialogue.text}
           onShow={resolvedDialogue.onShow}
@@ -694,7 +695,7 @@ const DynamicRoom = () => {
     void (async () => {
       const { data, error } = await supabase
         .from('npcs')
-        .select('npc_key, display_name, marker_asset')
+        .select('*')
         .in('npc_key', npcKeys);
       if (cancelled) return;
       if (error) {
@@ -703,13 +704,14 @@ const DynamicRoom = () => {
       const rows = (data ?? []) as unknown as {
         npc_key: string;
         display_name: string | null;
+        name?: string | null;
         marker_asset: string | null;
       }[];
       const meta: Record<string, { name: string; marker: string }> = {};
       npcKeys.forEach((k) => {
         const row = rows.find((r) => r.npc_key === k);
         meta[k] = {
-          name: row?.display_name || k.charAt(0).toUpperCase() + k.slice(1),
+          name: k === 'bernard' || k === 'sam' ? 'Sam' : row?.name || row?.display_name || k.charAt(0).toUpperCase() + k.slice(1),
           marker: resolveMarker(row?.marker_asset, k),
         };
       });

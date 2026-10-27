@@ -27,6 +27,9 @@
 .world-place-group button span { font-size: 9px; flex-shrink: 0; color: var(--plate-label); }
 .world-place-card p { line-height: 1.5; margin: 12px 0 18px; }
 .world-error { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 16px; background: var(--auth-backdrop); color: var(--auth-text); }.world-receipt { font-size: 10px; opacity: .7; margin: 8px 0; }.world-card-error { font-size: 10px; color: var(--game-dev-danger); margin: 8px 0; }
-.world-topics-title { font-size: 10px; letter-spacing: .1em; margin: 14px 0 6px; opacity: .7; }
+.world-topics-title { font-size: 16px; letter-spacing: .05em; margin: 14px 0 6px; opacity: .8; }
 .world-topics { display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+.world-topics button { font-size: 16px; min-height: 44px; height: auto; white-space: normal; border-radius: 0; }
+.npc-card-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+.world-place-card .npc-card-action { width: 100%; }
 .world-find-text { white-space: pre-line; }

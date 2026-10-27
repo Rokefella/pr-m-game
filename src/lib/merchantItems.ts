@@ -5,7 +5,7 @@ export const MERCHANT_LINES = [
   'What you lack, I carry.',
 ];
 export function merchantItems(level: number, home: 'world' | 'village', buySteps: NonNullable<MerchantItem['onPurchase']>): MerchantItem[] {
-  const items: MerchantItem[] = [{ key: 'steps', label: '500 Steps', cost: 5, onPurchase: buySteps }];
+  const items: MerchantItem[] = [{ key: 'steps', label: '500 Steps', cost: 5, maxQty: 20, serverSide: true, onPurchase: buySteps }];
   if (home === 'world') return items;
   items.push({ key: 'visibility', label: 'Visibility +2 cells (this run)', cost: 20 });
   if (level >= 5) items.push({ key: 'detector', label: 'Fragment Detector (60 sec)', cost: 50 });

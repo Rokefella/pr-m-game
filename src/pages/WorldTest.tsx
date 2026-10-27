@@ -35,11 +35,13 @@ import SamCard from '@/components/SamCard';
 import FindCard from '@/components/FindCard';
 import { currentStage, loadSam, visiblePlaces } from '@/lib/worldSam';
 import { approachedFind, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, findMarked, findShows, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
-import { setCurrentSkin, type Facing } from '@/lib/skins';
+import { npcFacingToward, npcSkin, setCurrentSkin, useSkins, type Facing } from '@/lib/skins';
+import NpcOrb from '@/components/theme/objects/NpcOrb';
 import './world-test.css';
 
 /** The suited figure stands ~90% of a tile wide, feet on the tile. */
 const WORLD_AVATAR_SIZE = Math.round(WORLD_TILE * 0.9);
+const WORLD_NPC_SIZE = WORLD_AVATAR_SIZE;
 
 type WorldData = Awaited<ReturnType<typeof readWorldData>>;
 export type Identity = { registration_number: number | null; aura_color: string | null; orb_dye?: string | null; avatar_body?: string | null; level?: number | null; username?: string | null; maze_completed_level?: number | null; steps_remaining?: number; credits?: number; growth_points?: number; social?: number; perception?: number; trade?: number; title?: string; levelup_pending?: boolean; levelup_newlevel?: number | null; subscription_status?: string; trial_end?: string; first_launch_at?: string };

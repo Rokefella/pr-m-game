@@ -1,23 +1,26 @@
 import { useEffect } from 'react';
+import { setCurrentSkin } from './skins';
 
-/** Broadcast when the player's dye changes so every mounted orb updates immediately. */
+/** Broadcast when the player's dye or skin changes so every mounted avatar updates immediately. */
 export const ORB_EVENT = 'praem:orb-changed';
-export type OrbChange = { aura_color: string | null; orb_dye: string | null };
+export type OrbChange = { aura_color: string | null; orb_dye: string | null; avatar_body?: string | null };
 
 export function publishOrb(change: OrbChange) {
+  if ('avatar_body' in change) setCurrentSkin(change.avatar_body);
   window.dispatchEvent(new CustomEvent<OrbChange>(ORB_EVENT, { detail: change }));
 }
 
-export function useOrbSync(setAura: (c: string) => void, setDye: (d: string | null) => void) {
+export function useOrbSync(setAura: (c: string) => void, setDye: (d: string | null) => void, setBody?: (b: string | null) => void) {
   useEffect(() => {
     const on = (e: Event) => {
       const d = (e as CustomEvent<OrbChange>).detail;
       if (d.aura_color) setAura(d.aura_color);
       setDye(d.orb_dye);
+      if (setBody && 'avatar_body' in d) setBody(d.avatar_body ?? null);
     };
     window.addEventListener(ORB_EVENT, on);
     return () => window.removeEventListener(ORB_EVENT, on);
-  }, [setAura, setDye]);
+  }, [setAura, setDye, setBody]);
 }
 
 export const RARITY_ORDER = ['common', 'uncommon', 'rare', 'epic', 'ultra', 'legendary'];

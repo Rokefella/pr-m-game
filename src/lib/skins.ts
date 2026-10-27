@@ -41,14 +41,18 @@ let pending: Promise<Skin[]> | null = null;
 export function loadSkins(): Promise<Skin[]> {
   if (cache) return Promise.resolve(cache);
   if (!pending) {
-    pending = (supabase as unknown as { from: (t: string) => any }).from('avatar_skins')
-      .select('*').eq('enabled', true).order('sort_order')
-      .then(({ data, error }: { data: unknown; error: unknown }) => {
-        if (error || !Array.isArray(data)) { pending = null; return cache ?? []; }
-        cache = data as Skin[];
-        return cache;
-      })
-      .catch(() => { pending = null; return cache ?? []; });
+    try {
+      const query = (supabase as unknown as { from: (t: string) => any }).from('avatar_skins')
+        .select('*').eq('enabled', true).order('sort_order');
+      if (!query || typeof query.then !== 'function') return Promise.resolve(cache ?? []);
+      pending = query
+        .then(({ data, error }: { data: unknown; error: unknown }) => {
+          if (error || !Array.isArray(data)) { pending = null; return cache ?? []; }
+          cache = data as Skin[];
+          return cache;
+        })
+        .catch(() => { pending = null; return cache ?? []; });
+    } catch { return Promise.resolve(cache ?? []); }
   }
   return pending;
 }

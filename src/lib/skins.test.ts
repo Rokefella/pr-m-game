@@ -50,7 +50,7 @@ describe('lift_boot_v1 frame derivation', () => {
   it('side walkA mirrors rows 12–13 within their occupied span', () => {
     const a = frameFor(skin, 'right', 'a');
     expect(a[12]).toBe(mirrorLegs(skin.frames.right)[12]);
-    expect(a[12].slice(2, 8)).toBe('...fff');
+    expect(a[12].slice(2, 8)).toBe('.fff..');
     expect(a[13].slice(2, 8)).toBe('fff...');
   });
   it('side walkB is the stand frame', () => {

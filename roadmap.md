@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] World build: anchor buildings and depth/fade, character glow, shared player presence, deterministic wandering NPCs, Sam copy, and confirmed GO BACK TO START; existing data only.
+
 - [x] Player skins: Visitor default suit, dye zones, walk frames, wardrobe with hidden unfound skins, skin-found cards for world finds and maze pickups, dev grant; frame/colour/privacy/orb-event tests pass.
 - [ ] Verify skin equip, finds and maze skin drops against a real signed-in player — the avatar_skins table and skin RPCs were not visible through the backend tools, and external game authentication remains unavailable.
 

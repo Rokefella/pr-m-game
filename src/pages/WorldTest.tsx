@@ -1,3 +1,4 @@
+import { latestBuiltAt, isStale, CHUNKS_BUILT_KEY } from '@/lib/worldFreshness';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Map as MapIcon, Navigation, X } from 'lucide-react';

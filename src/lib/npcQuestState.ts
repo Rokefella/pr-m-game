@@ -1,3 +1,4 @@
+import { entryVisible } from './worldSam';
 export type NpcQuestState = 'available' | 'active' | 'ready' | 'none';
 export type QuestContext = {
   level: number; social?: number; perception?: number; trade?: number;
@@ -35,6 +36,10 @@ export function npcStageMet(stage: number, condition: QuestCondition | null, con
   return condition.flags_equal === false ? !all : all;
 }
 
+/** Book flags use minimum/exact matching; stage conditions retain their existing rules. */
+export const npcBookConditionsMet = (entry: QuestCondition, context: QuestContext) =>
+  npcConditionsMet({ ...entry, requires_flags: null }, context) && entryVisible(entry, context.flags);
+
 /** The same entry buckets used by the dialogue; no inferred quests from character/trade prose. */
 export function npcEntryBucket(key: string, _flags: QuestContext['flags']): string {
   if (key === 'banker') return 'bnk_root_menu';
@@ -56,7 +61,7 @@ export function getNpcQuestState(npcKey: string, context: QuestContext): NpcQues
     if (match.button_action_key) actions.add(match.button_action_key);
     if (match.on_show_action_key) actions.add(match.on_show_action_key);
   } else {
-    const entries = (context.entries ?? []).filter(entry => npcConditionsMet(entry, context));
+    const entries = (context.entries ?? []).filter(entry => npcBookConditionsMet(entry, context));
     const root = npcEntryBucket(key, context.flags);
     // Dialogue falls back to its full eligible pool only when the requested bucket is absent.
     const queue = entries.some(e => e.bucket_key === root) ? [root] : entries.map(e => e.bucket_key ?? '');

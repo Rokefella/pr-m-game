@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getNpcQuestState, npcConditionsMet, npcStageMet, type QuestContext, type QuestEntry } from './npcQuestState';
+import { getNpcQuestState, npcBookConditionsMet, npcConditionsMet, npcStageMet, type QuestContext, type QuestEntry } from './npcQuestState';
 const base: QuestContext = { level: 1, flags: {}, drops: new Set() };
 const entry = (overrides: Partial<QuestEntry>): QuestEntry => ({ bucket_key: 'temper_root', option_a_target: null, option_b_target: null, option_a_action_key: null, option_b_action_key: null, ...overrides });
 const stages = [
@@ -8,6 +8,12 @@ const stages = [
   { stage_key: 'stage_5_offer', condition: { stage: 5, requires_flags: { alexandra_quest: 'active' }, flags_equal: false }, on_show_action_key: null, button_action_key: 'accept_alexandra_quest' },
 ];
 describe('NPC quest rules shared with dialogue', () => {
+  it('book numeric minimums differ from unchanged stage flag conditions', () => {
+    const book = { requires_flags: { sam_stage: '4' }, flags_equal: false };
+    expect(npcBookConditionsMet(book, { ...base, flags: { sam_stage: '3' } })).toBe(false);
+    expect(npcBookConditionsMet(book, { ...base, flags: { sam_stage: '4' } })).toBe(true);
+    expect(npcBookConditionsMet(book, { ...base, flags: { sam_stage: '8' } })).toBe(true);
+  });
   it('never shows the retired village quest marker on Sam', () => {
     for (const stage of ['0', '1', '3', '4', '5', '6']) expect(getNpcQuestState('bernard', { ...base, stages, flags: { bernard_stage: stage, alexandra_quest: 'active' } })).toBe('none');
   });

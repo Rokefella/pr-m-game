@@ -195,6 +195,18 @@ describe('World home mechanics', () => {
   });
 });
 describe('world return', () => {
+  it('signposts do not pop up nearby; walking onto the foot opens the card', async () => {
+    localStorage.setItem('praem.worldPos', JSON.stringify({ layer: 0, x: 3, y: 3 }));
+    f.places = [{ name: 'signpost', kind: 'npc_home', action: 'signpost', x: 5, y: 3, notes: 'Onward: explore' }];
+    open(); await screen.findByText('3,3 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    await screen.findByText('4,3 · A 0,0 · Fire');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    await new Promise(r => setTimeout(r, 170));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    await screen.findByRole('dialog', { name: 'signpost' });
+  });
   it('discards obsolete saved coordinates and saves layout version 2 at Start', async () => {
     localStorage.removeItem('praem.worldLayoutVersion');
     localStorage.setItem('praem.worldPos', JSON.stringify({ layer: 0, x: 299, y: 31 }));

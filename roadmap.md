@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Walkthrough: book minimum-flag gating, invisible start, foot/bump-only signposts, private maze notes, normal crate floor and corrected intro spiral. All 552 tests pass; real signed-in foot/bump signpost and entrance checked, intro spiral inspected; no database/sample data.
+
 - [x] World player/presence labels and Sam-stage-three immediate title grant using existing users fields; all 545 tests pass. Signed-in desktop/phone labels and Profile checked; named sam_03_back grant regression-tested. No schema or sample-data changes.
 
 - [x] Sam rework: stage-driven world homes, Lumen topics, open town doors, door_exchange, Instrument as unusable tool, Sam's land quest line, no Sam in mazes, old village removed. New preview account walked stages 0→3 and received the Instrument and coal; Lumen exchange and maze 1 checked.

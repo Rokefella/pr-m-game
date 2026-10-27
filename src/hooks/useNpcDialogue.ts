@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getFlag, setFlag, questFlagSnapshot, subscribeQuestFlags } from '@/lib/questFlags';
 import { updateUser } from '@/lib/userData';
-import { npcConditionsMet, npcStageMet, npcEntryBucket } from '@/lib/npcQuestState';
+import { npcBookConditionsMet, npcStageMet, npcEntryBucket } from '@/lib/npcQuestState';
 import { NPC_DIALOGUE_CLOSED, NPC_INVENTORY_CHANGED } from '@/hooks/useNpcQuestStates';
 
 export type BernardOption = {
@@ -209,7 +209,7 @@ function useNpcDialogueImpl({
       if (cancelled) return;
       const rows = (data as unknown as BernardBookEntry[]) || [];
       // Per-entry gating: flat stat thresholds + the dialogue flag-matching semantics.
-      const eligible = rows.filter(r => npcConditionsMet(r, { level: currentLevel, social: socialStat, perception: perceptionStat, trade: tradeStat, flags: questFlagSnapshot(), drops: ownedDropKeys }));
+      const eligible = rows.filter(r => npcBookConditionsMet(r, { level: currentLevel, social: socialStat, perception: perceptionStat, trade: tradeStat, flags: questFlagSnapshot(), drops: ownedDropKeys }));
       setBernardBookEntries(eligible);
       setBookLoaded(true);
     })();

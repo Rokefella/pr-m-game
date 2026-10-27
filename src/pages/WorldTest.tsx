@@ -29,7 +29,7 @@ import { firstTitlePatch, titlesUnlocked } from '@/lib/playerTitles';
 import WorldPlayerLabel from '@/components/WorldPlayerLabel';
 import ProfileOverlay from '@/components/ProfileOverlay';
 import { saveWorldPos, saveWorldReturn, takeWorldOpening } from '@/lib/worldReturn';
-import { isSignpost, signpostLines, adjacentConversation, clampWorld, eraAt, eraPointFor, fetchWorldChunk, isWading, isWorldConversation, layerSize, mazeOutcome, nearestWorldWalkable, placeAction, placesOn, readWorldData, tileCost, worldArea, worldMoveDuration, worldPhase, WORLD_MOVE_MS, WORLD_TILE, WorldChunkCache, type Place, type WorldLayer, type WorldPoint } from '@/lib/worldTest';
+import { bumpedSignpost, isSignpost, signpostLines, adjacentConversation, clampWorld, eraAt, eraPointFor, fetchWorldChunk, isWading, isWorldConversation, layerSize, mazeOutcome, nearestWorldWalkable, placeAction, placesOn, readWorldData, tileCost, worldArea, worldMoveDuration, worldPhase, WORLD_MOVE_MS, WORLD_TILE, WorldChunkCache, type Place, type WorldLayer, type WorldPoint } from '@/lib/worldTest';
 import { drawWorld, drawWorldFireLight, type WorldInk } from '@/lib/worldTestRender';
 import { gustStrength, terrainDrawInterval } from '@/lib/terrainMotion';
 import WorldMap from '@/components/WorldMap';
@@ -409,7 +409,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     };
     const bumpOpen = (cell: WorldPoint) => {
       const f = bumpedFind(findsOn(findsRef.current, l), claimedRef.current, cell);
-      const sign = f ? null : placesOn(world.places, l).find(p => isSignpost(p) && p.x === cell.x && p.y === cell.y);
+      const sign = f ? null : bumpedSignpost(placesOn(world.places, l), cell);
       if (!f && !sign) return;
       blocked.current = true; keys.current.clear();
       setTimeout(() => { if (f) setFindCard({ find: f, reading: false }); else if (sign) setPlaceCard(sign); }, 160);
@@ -439,7 +439,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     const spot = layerPlaces.find(p => !p.npc_key && p.x === next.x && p.y === next.y) ?? adjacentConversation(layerPlaces.filter(p => !p.npc_key), next);
     const layerFinds = findsOn(findsRef.current, l);
     for (const id of [...approached.current]) { const f = layerFinds.find(x => x.id === id); if (!f || chebyshev(f, next) > 1) approached.current.delete(id); }
-    if (spot) { setEntryMessage(''); setPlaceCard(spot); return; }
+    if (spot) { if (isSignpost(spot)) keys.current.clear(); setEntryMessage(''); setPlaceCard(spot); return; }
     const near = approachedFind(layerFinds, claimedRef.current, approached.current, next, walkable);
     if (near) { approached.current.add(near.id); setFindCard({ find: near, reading: false }); }
   }, [userId]);
@@ -627,7 +627,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       setIdentity(row => ({ ...row, steps_remaining: steps, credits }));
       return { receipt: `+${(Number(r.packs) || qty) * 500} steps · −${Number(r.cost) || qty * 5} credits`, credits };
     })} />}
-    {placeCard && cardAction !== 'merchant' && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={placeCard.name}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close place" onClick={() => setPlaceCard(null)}><X size={18} /></Button>{placeCard.action === 'npc' && placeCard.npc_key && userId ? <SamCard key={placeCard.npc_key} userId={userId} npcKey={placeCard.npc_key} playerName={identity.username || 'Wanderer'} fallbackName={placeCard.name} onRewarded={refreshReward} /> : isSignpost(placeCard) ? <><h2 className="font-cinzel">Signpost</h2>{signpostLines(placeCard.notes).map((line, i) => <p key={i} className="font-fell">{line.dir === 'onward' ? '▶ ' : line.dir === 'back' ? '◀ ' : ''}{line.text}</p>)}</> : <><h2 className="font-cinzel">{placeCard.name}{placeCard.maze_level ? `, Level ${placeCard.maze_level}` : ''}</h2>{placeCard.notes && <p className="font-fell">{placeCard.notes}</p>}
+    {placeCard && cardAction !== 'merchant' && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={placeCard.name}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close place" onClick={() => setPlaceCard(null)}><X size={18} /></Button>{placeCard.action === 'npc' && placeCard.npc_key && userId ? <SamCard key={placeCard.npc_key} userId={userId} npcKey={placeCard.npc_key} playerName={identity.username || 'Wanderer'} fallbackName={placeCard.name} onRewarded={refreshReward} /> : isSignpost(placeCard) ? <><h2 className="font-cinzel">Signpost</h2>{signpostLines(placeCard.notes).map((line, i) => <p key={i} className="font-fell">{line.dir === 'onward' ? '▶ ' : line.dir === 'back' ? '◀ ' : ''}{line.text}</p>)}</> : <><h2 className="font-cinzel">{placeCard.name}</h2>{placeCard.notes && placeCard.kind !== 'maze_entrance' && cardAction !== 'maze' && cardAction !== 'door_maze' && <p className="font-fell">{placeCard.notes}</p>}
       {outcome === 'completed' && <p className="font-mono">Completed</p>}
       {outcome === 'locked' && <p className="font-mono">Locked: reach Level {placeCard.maze_level} first</p>}
       {entryMessage && <p className="font-fell">{entryMessage}</p>}

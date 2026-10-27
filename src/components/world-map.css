@@ -17,7 +17,7 @@
 .world-map-loading { position: absolute; top: 40%; width: 100%; text-align: center; }
 @keyframes world-map-pulse { 50% { opacity: .45; } }.world-map-find { position: absolute; transform: translate(-50%, -50%); font-size: 9px; line-height: 9px; color: var(--auth-text); text-shadow: 0 0 2px var(--instrument-shadow); pointer-events: none; }
 .world-map-find-claimed { color: var(--instrument-beacon); font-size: 12px; }
-.world-map-dev-marker { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 0; height: auto; min-width: 24px; padding: 2px; border-radius: 0; color: var(--auth-text); background: transparent; line-height: 12px; text-shadow: 0 1px 2px var(--instrument-shadow), 1px 0 2px var(--instrument-shadow); }
+.world-map-dev-marker { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; gap: 0; width: 12px; height: 12px; min-width: 12px; padding: 0; border-radius: 0; color: var(--auth-text); background: transparent; line-height: 12px; text-shadow: 0 1px 2px var(--instrument-shadow), 1px 0 2px var(--instrument-shadow); }
 .world-map-dev-marker > span { color: var(--instrument-beacon); font-size: 12px; }
 .world-map-dev-marker small { position: absolute; top: 100%; font-size: 9px; line-height: 11px; white-space: nowrap; pointer-events: none; }
 .world-map-dev-marker:hover, .world-map-dev-marker:focus-visible { z-index: 1; background: var(--plate-inset); color: inherit; }

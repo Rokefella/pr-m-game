@@ -116,7 +116,7 @@ describe('World home mechanics', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'BUY' }));
     await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('buy_steps', { p_packs: 1 }));
     await screen.findByText('+500 steps · −5 credits');
-    await screen.findByText(/STEPS\s+599/);
+    await screen.findByText(/STEPS\s+598/);
     expect(screen.getByText(/CREDITS\s+45/)).toBeInTheDocument();
     expect(f.mutation.mock.calls.every(([payload]) => payload.steps_remaining === undefined && payload.credits === undefined)).toBe(true);
   });

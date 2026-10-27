@@ -35,7 +35,11 @@ import SamCard from '@/components/SamCard';
 import FindCard from '@/components/FindCard';
 import { currentStage, loadSam, visiblePlaces } from '@/lib/worldSam';
 import { approachedFind, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, findMarked, findShows, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
+import { setCurrentSkin, type Facing } from '@/lib/skins';
 import './world-test.css';
+
+/** The suited figure stands ~90% of a tile wide, feet on the tile. */
+const WORLD_AVATAR_SIZE = Math.round(WORLD_TILE * 0.9);
 
 type WorldData = Awaited<ReturnType<typeof readWorldData>>;
 export type Identity = { registration_number: number | null; aura_color: string | null; orb_dye?: string | null; avatar_body?: string | null; level?: number | null; username?: string | null; maze_completed_level?: number | null; steps_remaining?: number; credits?: number; growth_points?: number; social?: number; perception?: number; trade?: number; title?: string; levelup_pending?: boolean; levelup_newlevel?: number | null; subscription_status?: string; trial_end?: string; first_launch_at?: string };
@@ -51,7 +55,9 @@ export default function WorldTest() {
       try {
         const { data, error } = await supabase.from('users').select('*').eq('id', user.id).maybeSingle();
         if (cancelled) return;
-        setIdentity(!error && data ? data as Identity : DEFAULT_IDENTITY); setCheckedUser(user.id);
+        const row = (!error && data ? data : null) as Identity | null;
+        setCurrentSkin(row?.avatar_body);
+        setIdentity(row ?? DEFAULT_IDENTITY); setCheckedUser(user.id);
       } catch { if (!cancelled) { setIdentity(DEFAULT_IDENTITY); setCheckedUser(user.id); } }
     })();
     return () => { cancelled = true; };
@@ -207,6 +213,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     if (!error && row) {
       const next = row as unknown as Identity;
       if (ledger?.revision === revision) ledger?.refresh(next.steps_remaining ?? 0);
+      setCurrentSkin(next.avatar_body);
       identityRef.current = next; setIdentity(next);
       setCompleted(Number(next.maze_completed_level) || 0);
     }
@@ -459,7 +466,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     {dailyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[18%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{dailyMessage}</p>}
     <Thumbstick onMove={move} disabled={profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || (Boolean(placeCard) && !(placeCard && (isWorldConversation(placeCard) || isSignpost(placeCard))))} />
     {mapOpen && <WorldMap bits={discoveryBits} player={pos} layer={layer} aura={identity.aura_color} dev={identity.registration_number === 1} types={data.terrain} places={data.places} finds={finds} claimed={claimed} onClose={() => setMapOpen(false)} />}
-    {findCard && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog world-place-card" role="dialog" aria-label={findCard.find.title}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close" onClick={() => setFindCard(null)}><X size={18} /></Button><FindCard key={findCard.find.id + String(findCard.reading)} find={findCard.find} reading={findCard.reading} at={() => posRef.current} onClaimed={markClaimed} onRewarded={() => void refreshReward()} /></section></div>}
+    {findCard && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog world-place-card" role="dialog" aria-label={findCard.find.title}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close" onClick={() => setFindCard(null)}><X size={18} /></Button><FindCard key={findCard.find.id + String(findCard.reading)} find={findCard.find} reading={findCard.reading} at={() => posRef.current} onClaimed={markClaimed} onRewarded={() => void refreshReward()} onClose={() => setFindCard(null)} auraColor={identity.aura_color} orbDye={identity.orb_dye ?? null} registrationNumber={identity.registration_number} /></section></div>}
     {jumpOpen && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog" role="dialog" aria-label="Jump to a place"><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close jump menu" onClick={() => setJumpOpen(false)}><X size={18} /></Button><h2 className="font-cinzel">JUMP</h2><form onSubmit={e => { e.preventDefault(); const x = Number(jumpX), y = Number(jumpY); if (Number.isFinite(x) && Number.isFinite(y)) place({ x, y }, layer); }}><label className="font-mono">X<Input aria-label="Jump X" type="number" min={0} max={layerSize(layer) - 1} value={jumpX} onChange={e => setJumpX(e.target.value)} required /></label><label className="font-mono">Y<Input aria-label="Jump Y" type="number" min={0} max={layerSize(layer) - 1} value={jumpY} onChange={e => setJumpY(e.target.value)} required /></label><Button type="submit" className="world-jump">GO</Button></form><Button variant="outline" className="world-jump" onClick={() => place(startPoint(data), 0)}>RESTART AT START</Button>{jumpGroups.map(({ l, kind, items }) => <div key={`${l}-${kind}`} className="world-place-group"><h3 className="font-mono">{l === 1 ? 'UNDERGROUND · ' : 'SURFACE · '}{kind.replace(/_/g, ' ').toUpperCase()}</h3>{items.map((p, i) => <Button key={`${p.name}-${i}`} variant="ghost" onClick={() => place(p, l)}>{p.name}{p.maze_level ? ` · L${p.maze_level}` : ''}<span className="font-mono">{p.x},{p.y}</span></Button>)}</div>)}</section></div>}
     {userId && <MerchantOverlay open={Boolean(placeCard && placeAction(placeCard) === 'merchant')} onClose={() => setPlaceCard(null)} palette="green" title="The Merchant." openingLines={MERCHANT_LINES} userId={userId} credits={identity.credits ?? 0} onCreditsChange={credits => { identityRef.current = { ...identityRef.current, credits }; setIdentity(row => ({ ...row, credits })); }} items={merchantItems(level, 'world', async () => {
       const ledger = stepLedger.current;

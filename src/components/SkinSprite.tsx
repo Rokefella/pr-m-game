@@ -58,7 +58,7 @@ export function NpcSkinSprite({ skin, facing = 'down', size = 48, colors }: { sk
   const [blink, setBlink] = useState(false);
   const [bob, setBob] = useState(false);
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let off = false, t1 = 0, t2 = 0;
     const cycle = () => {
       t1 = window.setTimeout(() => {

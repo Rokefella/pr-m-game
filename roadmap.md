@@ -1,5 +1,8 @@
 # Roadmap
 
+- [ ] Walkthrough notes #3–#7: collect-before-use find drops, words/cairn claims and receipts, drop-first Folder with global resource use and HUD refresh, start flag without label, database-driven Gods terrain and rectangular ship/water underlays; no database writes beyond existing gameplay RPCs.
+- [ ] Verify these changes against Rob's real signed-in game if an authenticated session is available.
+
 - [ ] Repair NPC card taps and portraits; calm deterministic one-tile wandering, three-tile proximity stops and talking freeze; verify Sam topics and stage advancement.
 
 - [x] Add registration-one dev notepad, screenshot capture, live context, Dev Menu controls and focus-safe walking; existing RPCs only. Real canvas/HUD JPEG capture and isolated desktop/phone save/edit/drop checked; all 479 tests pass.

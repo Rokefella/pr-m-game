@@ -22,7 +22,7 @@ export default function FindCard({ find, reading, at, onClaimed, onRewarded, onC
   const [note, setNote] = useState('');
   const [skinFound, setSkinFound] = useState<{ description: string | null } | null>(null);
   const skinKey = skinForDrop(find.drop_key);
-  const skin = skinKey ? skins.find(s => s.skin_key === skinKey) : undefined;
+  const skin = skinKey ? skins.find(s => s.skin_key === skinKey && isPlayerSkin(s)) : undefined;
 
   const press = async () => {
     if (busy) return;

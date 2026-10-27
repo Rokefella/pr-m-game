@@ -18,7 +18,7 @@ type Props = {
 
 /** WARDROBE: owned skins can be worn; unfound skins stay nameless silhouettes. */
 export default function Wardrobe({ auraColor, orbDye, registrationNumber, avatarBody, onEquipped }: Props) {
-  const skins = useSkins();
+  const skins = useSkins().filter(isPlayerSkin);
   const [owned, setOwned] = useState<Set<string>>(new Set([START_SKIN]));
   const [facings, setFacings] = useState<Record<string, Facing>>({});
   const [busy, setBusy] = useState(false);

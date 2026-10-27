@@ -121,7 +121,7 @@ const MerchantOverlay = ({
         overflowY: 'auto',
       }}
     >
-      <div className="npc-dialogue-orb" style={{ marginTop: 40 }}><NpcOrb npc="merchant" size={npcBodyPx('village')} quest={questState('merchant')} /></div>
+      <div className="npc-dialogue-orb" style={{ marginTop: 40 }}><NpcOrb npc="merchant" size={npcSkin('merchant') ? 96 : npcBodyPx('village')} quest={questState('merchant')} /></div>
       <div
         className="font-cinzel"
         style={{

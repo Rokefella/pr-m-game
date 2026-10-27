@@ -12,6 +12,7 @@ export function readWorldOverview(types: Terrain[]): Promise<HTMLCanvasElement> 
     const styles = getComputedStyle(document.documentElement);
     const fallback = styles.getPropertyValue('--world-map-fallback').trim();
     const colors = keys.map(key => {
+      if (key.startsWith('bld_')) return types.find(t => t.key === key)?.color ?? fallback;
       const sprite = terrainSprite(key), ctx = sprite?.getContext('2d');
       if (ctx && sprite) {
         const pixels = ctx.getImageData(0, 0, 16, 16).data; let r = 0, g = 0, b = 0, weight = 0;

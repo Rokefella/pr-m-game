@@ -5,7 +5,9 @@ export const WORLD_TILE = 40;
 export const WORLD_CHUNK = 64;
 export const WORLD_MOVE_MS = 150;
 export type WorldPoint = { x: number; y: number };
-export type Terrain = { key: string; name: string; grp: string; walkable: boolean; steps: number | null; sight: number | null; sight_delta: number | null; light_radius: number | null; moves: string | null; color: string | null; enabled: boolean; icon_svg?: string | null; icon_variants?: unknown; footprint?: number | null; render_layer?: string | null };
+export type Terrain = { key: string; name: string; grp: string; walkable: boolean; steps: number | null; sight: number | null; sight_delta: number | null; light_radius: number | null; moves: string | null; color: string | null; enabled: boolean; icon_svg?: string | null; icon_variants?: unknown; footprint?: number | null; footprint_w?: number | null; footprint_h?: number | null; sprite_w?: number | null; sprite_h?: number | null; render_layer?: string | null };
+export const isWorldBuilding = (key: string) => key.startsWith('bld_');
+export const worldWalkable = (terrain: Terrain | undefined) => terrain?.walkable === true && terrain.enabled !== false && !isWorldBuilding(terrain.key);
 export type Era = { order_index: number; name: string; ring_from: number; ring_to: number; palette: unknown; step_cost: number; darkness: number; ground_key?: string | null };
 export type Place = WorldPoint & { kind: string; name: string; maze_level: number | null; notes: string | null; layer?: number | null; action?: string | null; target_layer?: number | null; target_x?: number | null; target_y?: number | null; show_when?: { min_completed_level?: number | null; max_completed_level?: number | null } | null; npc_key?: string | null };
 export type WorldLayer = 0 | 1;
@@ -50,7 +52,7 @@ export async function nearestWorldWalkable(cache: WorldChunkCache, types: Map<st
     const key = cache.terrainKey(p.x, p.y);
     if (!key) continue; // Unavailable chunks are not evidence of a blocked cell.
     const terrain = types.get(key);
-    if (terrain?.walkable === true && terrain.enabled !== false) return p;
+    if (worldWalkable(terrain)) return p;
     for (const [dx, dy] of [[-1, 0], [0, -1], [1, 0], [0, 1]]) {
       const next = { x: p.x + dx, y: p.y + dy }, id = `${next.x},${next.y}`;
       if (next.x >= 0 && next.y >= 0 && next.x < cache.size && next.y < cache.size && !seen.has(id)) { seen.add(id); queue.push(next); }

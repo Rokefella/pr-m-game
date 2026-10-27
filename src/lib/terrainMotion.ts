@@ -39,7 +39,7 @@ export function gustWave(x: number, y: number, clock: number, pine = false) {
   return { strength, progress };
 }
 export function canSway(terrain: Terrain) {
-  return terrain.moves === 'sway' && !/boulder|rock|building|factory|^house_/.test(terrain.key);
+  return terrain.moves === 'sway' && !/boulder|rock|building|factory|^house_|^bld_/.test(terrain.key);
 }
 export function leanAmount(terrain: Terrain, x: number, y: number, clock: number) {
   if (!canSway(terrain)) return 0;

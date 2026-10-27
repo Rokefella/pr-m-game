@@ -78,11 +78,12 @@ export function loadTerrainSprites(types: Iterable<Terrain>): Promise<void> {
   const jobs: Promise<void>[] = [];
   for (const t of types) {
     const size = t.footprint === 2 ? 32 : 16;
+    const w = t.sprite_w ?? size, h = t.sprite_h ?? size;
     if (typeof t.icon_svg === 'string' && t.icon_svg.trim() && !sprites.has(t.key)) {
       const id = `${t.key}:base`;
       let job = loading.get(id);
       if (!job) {
-        job = loadSvgCanvas(t.icon_svg, size, size).then(c => { if (c) { sprites.set(t.key, c); spriteVersion++; } });
+        job = loadSvgCanvas(t.icon_svg, w, h).then(c => { if (c) { sprites.set(t.key, c); spriteVersion++; } });
         loading.set(id, job);
       }
       jobs.push(job);
@@ -92,7 +93,7 @@ export function loadTerrainSprites(types: Iterable<Terrain>): Promise<void> {
       const id = `${t.key}:variants`;
       let job = loading.get(id);
       if (!job) {
-        job = Promise.all(svgs.map(svg => loadSvgCanvas(svg, size, size))).then(canvases => { variants.set(t.key, canvases); spriteVersion++; });
+        job = Promise.all(svgs.map(svg => loadSvgCanvas(svg, w, h))).then(canvases => { variants.set(t.key, canvases); spriteVersion++; });
         loading.set(id, job);
       }
       jobs.push(job);

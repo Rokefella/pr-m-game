@@ -195,7 +195,7 @@ const MerchantOverlay = ({
                 {item.label}
               </div>
               <div className="font-mono" style={{ fontSize: 12, color: '#c8963a' }}>
-                {item.cost}c
+                {item.cost * Math.max(1, Math.min(item.maxQty ?? 1, qty[item.key] ?? 1))}c
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
@@ -217,6 +217,26 @@ const MerchantOverlay = ({
               >
                 BUY
               </Button>
+              {item.maxQty ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Button variant="ghost" aria-label={`Fewer ${item.label}`} disabled={busy}
+                    onClick={() => setQty((q) => ({ ...q, [item.key]: Math.max(1, (q[item.key] ?? 1) - 1) }))}
+                    style={{ fontSize: 12, color: `rgba(${rgb},0.8)`, border: `0.5px solid rgba(${rgb},0.4)`, background: 'transparent', padding: '4px 10px', height: 'auto', borderRadius: 0, cursor: 'pointer' }}
+                  >−</Button>
+                  <span className="font-mono" style={{ fontSize: 12, color: `rgba(${rgb},0.8)`, minWidth: 18, textAlign: 'center' }}>
+                    {Math.max(1, Math.min(item.maxQty, qty[item.key] ?? 1))}
+                  </span>
+                  <Button variant="ghost" aria-label={`More ${item.label}`} disabled={busy}
+                    onClick={() => setQty((q) => ({ ...q, [item.key]: Math.min(item.maxQty, (q[item.key] ?? 1) + 1) }))}
+                    style={{ fontSize: 12, color: `rgba(${rgb},0.8)`, border: `0.5px solid rgba(${rgb},0.4)`, background: 'transparent', padding: '4px 10px', height: 'auto', borderRadius: 0, cursor: 'pointer' }}
+                  >+</Button>
+                  <Button variant="ghost" aria-label={`Max ${item.label}`} disabled={busy}
+                    onClick={() => setQty((q) => ({ ...q, [item.key]: item.maxQty }))}
+                    className="font-cinzel"
+                    style={{ fontSize: 9, letterSpacing: '0.2em', color: `rgba(${rgb},0.8)`, border: `0.5px solid rgba(${rgb},0.4)`, background: 'transparent', padding: '4px 10px', height: 'auto', borderRadius: 0, cursor: 'pointer' }}
+                  >MAX</Button>
+                </div>
+              ) : null}
               {feedback[item.key] && (
                 <span
                   className="font-fell italic"

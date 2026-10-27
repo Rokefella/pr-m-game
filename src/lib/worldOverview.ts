@@ -1,8 +1,13 @@
 import { supabase } from './supabase';
 import { terrainSprite } from './terrainTile';
 import type { Terrain } from './worldTest';
+import { latestBuiltAt, isStale, OVERVIEW_BUILT_KEY } from './worldFreshness';
 let overview: Promise<HTMLCanvasElement> | null = null;
-export function readWorldOverview(types: Terrain[]): Promise<HTMLCanvasElement> {
+let overviewStamp: number | null = null;
+export async function readWorldOverview(types: Terrain[]): Promise<HTMLCanvasElement> {
+  const stamp = await latestBuiltAt('world_overview');
+  if (isStale(OVERVIEW_BUILT_KEY, stamp) || (stamp !== null && overviewStamp !== null && stamp > overviewStamp)) overview = null;
+  if (stamp !== null) overviewStamp = stamp;
   if (overview) return overview;
   overview = (async () => {
     const { data, error } = await supabase.from('world_overview' as never).select('y,row').order('y');

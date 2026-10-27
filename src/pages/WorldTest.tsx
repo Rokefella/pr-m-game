@@ -228,6 +228,10 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const startPoint = (world: WorldData) => world.places.find(p => p.kind === 'start' && (Number(p.layer) || 0) === 0) ?? { x: 25, y: 25 };
   useEffect(() => {
     let cancelled = false;
+    void latestBuiltAt('world_chunk_cache').then(stamp => {
+      if (cancelled || !isStale(CHUNKS_BUILT_KEY, stamp)) return;
+      for (const cache of [caches.current[0], caches.current[1]]) { cache.chunks.clear(); cache.errors.clear(); cache.maintain(cache.center); }
+    });
     setError('');
     void readWorldData().then(world => {
       if (cancelled) return;

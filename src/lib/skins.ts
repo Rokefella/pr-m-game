@@ -26,6 +26,8 @@ export type Skin = {
   /** 'player' (or null) skins live in the wardrobe; 'npc' skins dress a named NPC. */
   kind?: string | null;
   npc_key?: string | null;
+  glow_chars?: string | null;
+  glow_strength?: number | null;
 };
 
 export const START_SKIN = 'visitor';
@@ -78,6 +80,7 @@ export function useSkins(): Skin[] {
 let currentSkin: string | null = null;
 export const setCurrentSkin = (key: string | null | undefined) => { currentSkin = normalizeSkinKey(key); };
 export const getCurrentSkin = () => currentSkin;
+export function resetSkinCache() { cache = null; pending = null; currentSkin = START_SKIN; }
 
 // ---------- colours ----------
 
@@ -168,6 +171,8 @@ export function frameFor(skin: Skin, facing: Facing, phase: WalkPhase): string[]
 // ---------- SVG rendering ----------
 
 export type SkinSvgOptions = { silhouette?: boolean; glow?: string | null };
+/** The luminous copy contains only explicitly authored glow characters. */
+export function glowRows(rows: string[], chars: string) { return rows.map(row => [...row].map(ch => chars.includes(ch) && ch !== '.' ? ch : '.').join('')); }
 
 /** One path per colour, merging same-colour runs per row; dye pixels are grouped for the prism hue cycle. */
 export function skinSvg(rows: string[], colors: Record<string, string>, dyeChars: string, opts: SkinSvgOptions = {}): string {

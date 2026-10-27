@@ -1,8 +1,9 @@
 import { Z } from '@/lib/zIndex';
 import { ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import NpcOrb from '@/components/theme/objects/NpcOrb';
+import NpcOrb, { npcOrbIdentity } from '@/components/theme/objects/NpcOrb';
 import { npcBodyPx } from '@/lib/orbSizes';
+import { npcSkin } from '@/lib/skins';
 import { NPC_DIALOGUE_CLOSED, useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import { useAuth } from '@/context/AuthContext';
 

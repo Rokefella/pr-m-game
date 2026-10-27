@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { publishOrb } from '@/lib/orb';
 import SkinSprite from '@/components/SkinSprite';
-import { normalizeSkinKey, resolveColors, skinBaseColor, skinPublic, useSkins, START_SKIN, type Facing, type Skin } from '@/lib/skins';
+import { isPlayerSkin, normalizeSkinKey, resolveColors, skinBaseColor, skinPublic, useSkins, START_SKIN, type Facing, type Skin } from '@/lib/skins';
 
 const rpc = (fn: string, args: Record<string, unknown>) => (supabase.rpc as unknown as (f: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>)(fn, args);
 

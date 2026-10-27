@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import NpcOrb from '@/components/theme/objects/NpcOrb';
+import { npcBodyPx } from '@/lib/orbSizes';
+import { npcSkin } from '@/lib/skins';
 import { currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samStageFlag, samTopics, topicRoot, type BookNode, type SamStage } from '@/lib/worldSam';
 
 type Props = { userId: string; npcKey: string; playerName: string; fallbackName: string; onRewarded?: () => void };

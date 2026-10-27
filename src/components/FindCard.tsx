@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { claimFind, findButton, findReceipt, type WorldFind } from '@/lib/worldFinds';
-import { skinForDrop, useSkins } from '@/lib/skins';
+import { isPlayerSkin, skinForDrop, useSkins } from '@/lib/skins';
 import { publishOrb } from '@/lib/orb';
 import SkinCard from '@/components/SkinCard';
 import type { WorldPoint } from '@/lib/worldTest';

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '@/lib/userData';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { npcBodyPx } from '@/lib/orbSizes';
+import { npcSkin } from '@/lib/skins';
 import { useAuth } from '@/context/AuthContext';
 import { NPC_DIALOGUE_CLOSED, useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import { Button } from '@/components/ui/button';

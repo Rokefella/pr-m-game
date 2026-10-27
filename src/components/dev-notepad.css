@@ -1,0 +1,27 @@
+.dev-note-buttons { position: fixed; left: max(10px, env(safe-area-inset-left)); bottom: calc(76px + env(safe-area-inset-bottom)); display: flex; gap: 6px; z-index: var(--z-modal); }
+.dev-note-buttons button, .dev-notepad button { border-radius: 0; background: var(--instrument-shadow); color: var(--game-dev-text); border: 1px solid var(--game-dev-border); font-family: inherit; letter-spacing: 0; }
+.dev-note-buttons button { width: 40px; height: 40px; padding: 0; font-size: 21px; }
+.dev-note-buttons button:hover, .dev-notepad button:hover { background: var(--plate-inset); color: var(--game-dev-text); }
+.dev-notepad { position: fixed; left: 0; right: 0; bottom: 0; height: 52dvh; z-index: var(--z-modal); background: var(--instrument-shadow); border-top: 1px solid var(--game-dev-text); color: var(--game-dev-text); padding: 10px max(12px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); display: flex; flex-direction: column; gap: 8px; font-size: 12px; letter-spacing: 0; animation: dev-notepad-in 160ms ease-out; }
+.dev-note-context { font-size: 11px; line-height: 1.4; overflow-wrap: anywhere; }
+.dev-note-compose { display: flex; gap: 8px; min-height: 64px; height: 100px; flex-shrink: 0; }
+.dev-notepad textarea { resize: none; width: 100%; min-width: 0; background: var(--plate-inset); color: var(--game-hud-text); border: 1px solid var(--game-dev-border); outline-color: var(--game-dev-text); padding: 8px; font: inherit; font-size: 16px; user-select: text; }
+.dev-note-attachment { position: relative; width: 100px; flex: 0 0 100px; }
+.dev-note-attachment img { width: 100%; height: 100%; object-fit: contain; }
+.dev-note-attachment button { position: absolute; right: 0; top: 0; width: 32px; height: 32px; padding: 0; }
+.dev-note-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.dev-note-actions button { min-height: 36px; padding: 4px 12px; font-size: 11px; }
+.dev-note-feedback { margin: 0; color: var(--plate-gold); min-height: 16px; overflow-wrap: anywhere; }
+.dev-note-list { min-height: 0; overflow-y: auto; overscroll-behavior: contain; flex: 1; }
+.dev-note-item { border-top: 1px solid var(--game-dev-divider); padding: 10px 0; display: grid; grid-template-columns: minmax(0,1fr) 32px; gap: 6px; }
+.dev-note-item time, .dev-note-place { opacity: .7; font-size: 10px; overflow-wrap: anywhere; }
+.dev-note-item img { float: left; width: 64px; max-height: 70px; object-fit: contain; margin: 6px 8px 4px 0; }
+.dev-note-item .dev-note-text { display: block; border: 0; background: transparent; padding: 6px 0; height: auto; min-height: 32px; width: 100%; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--game-hud-text); justify-content: flex-start; }
+.dev-note-item .dev-note-text:hover { background: transparent; color: var(--game-hud-text); }
+.dev-note-item > button { width: 32px; height: 32px; padding: 0; }
+.dev-note-reply { margin: 4px 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--plate-gold); }
+.dev-note-edit { min-height: 72px; }
+[data-note-capture] [data-dev-notepad] { visibility: hidden !important; }
+@keyframes dev-notepad-in { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@media (max-height: 500px) { .dev-note-compose { height: 64px; } .dev-notepad { gap: 4px; } }
+@media (prefers-reduced-motion: reduce) { .dev-notepad { animation: none; } }

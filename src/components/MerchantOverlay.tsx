@@ -61,6 +61,7 @@ const MerchantOverlay = ({
   const feedbackTimers = useRef<Record<string, number>>({});
   const buying = useRef(false);
   const [busy, setBusy] = useState(false);
+  const [qty, setQty] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (open) {

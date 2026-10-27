@@ -24,7 +24,8 @@ export function drawPlace(ctx: CanvasRenderingContext2D, place: Place, px: numbe
   ctx.stroke();
   ctx.font = '9px "DM Mono", monospace'; ctx.textAlign = 'center'; ctx.fillStyle = ink.gold;
   if (place.kind === 'maze_entrance') ctx.fillText(String(place.maze_level ?? ''), 0, 3);
-  ctx.font = '11px "IM Fell English", serif'; ctx.strokeStyle = ink.shadow; ctx.lineWidth = 3; ctx.strokeText(place.name, 0, -20); ctx.fillStyle = ink.text; ctx.fillText(place.name, 0, -20); ctx.restore();
+  if (place.kind !== 'start') { ctx.font = '11px "IM Fell English", serif'; ctx.strokeStyle = ink.shadow; ctx.lineWidth = 3; ctx.strokeText(place.name, 0, -20); ctx.fillStyle = ink.text; ctx.fillText(place.name, 0, -20); }
+  ctx.restore();
 }
 const CHUNK_PX = 16;
 type ChunkArt = { canvas: HTMLCanvasElement; sig: string };
@@ -32,6 +33,14 @@ const chunkArt = new WeakMap<WorldChunk, ChunkArt>();
 const neighbourSig = (cache: WorldChunkCache, c: WorldChunk) => [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([dx, dy]) => cache.chunks.has(cache.key(c.x0 + dx * WORLD_CHUNK, c.y0 + dy * WORLD_CHUNK)) ? 1 : 0).join('');
 /** Objects borrow authored ground, with deterministic left/up/right/down precedence. */
 export function worldObjectGround(cache: WorldChunkCache, types: Map<string, Terrain>, x: number, y: number, fallback?: Terrain): Terrain | undefined {
+  const objectKey = cache.terrainKey(x, y);
+  if (objectKey === 'rowboat' || objectKey === 'water_lantern') {
+    for (const [dx, dy] of [[-1, 0], [0, -1], [1, 0], [0, 1]]) {
+      const neighbour = types.get(cache.terrainKey(x + dx, y + dy) ?? '');
+      if (neighbour?.grp === 'water') return neighbour;
+    }
+    return types.get('lotus_water') ?? types.get('water') ?? fallback;
+  }
   for (const [dx, dy] of [[-1, 0], [0, -1], [1, 0], [0, 1]]) {
     const neighbour = types.get(cache.terrainKey(x + dx, y + dy) ?? '');
     if (neighbour && (neighbour.render_layer === 'ground' || (!neighbour.icon_svg?.trim() && !isObjectLayer(neighbour)))) return neighbour;

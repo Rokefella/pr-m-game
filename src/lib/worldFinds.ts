@@ -8,7 +8,7 @@ export type WorldFind = {
   drop_key?: string | null; amount?: number | null; title: string; text?: string | null;
   visibility: 'glint' | 'hidden' | 'visible' | string; glint_radius?: number | null; sprite_key?: string | null;
 };
-export type ClaimResult = { granted: boolean; reason?: string; needs?: string; kind?: string; title?: string; text?: string; drop_name?: string; amount?: number };
+export type ClaimResult = { granted: boolean; ok?: boolean; reason?: string; needs?: string; kind?: string; title?: string; text?: string; drop_name?: string; amount?: number };
 
 export const chebyshev = (a: WorldPoint, b: WorldPoint) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 /** Distance within which an unclaimed find shows; visible finds always show, claimed glint/hidden never. */
@@ -21,7 +21,28 @@ export const findShows = (f: WorldFind, player: WorldPoint, claimed: boolean) =>
 /** Sprite to draw for a visible find; a claimed cold quest fire is lit (personal). */
 export const findSprite = (f: WorldFind, claimed: boolean) => f.kind === 'quest_object' && claimed && f.sprite_key === 'campfire_cold' ? 'campfire' : f.sprite_key ?? null;
 export const findButton = (kind: string) => kind === 'landmark' ? 'Look closer' : kind === 'quest_object' ? 'Light it' : kind === 'words' ? 'Read it' : 'Take it';
-export const findReceipt = (r: ClaimResult) => r.kind === 'cache_steps' ? `+${r.amount ?? 0} steps` : r.kind === 'cache_credits' ? `+${r.amount ?? 0} credits` : (r.kind === 'thing' || r.kind === 'tool' || r.kind === 'words') ? r.drop_name ?? '' : '';
+export const findReceipt = (r: ClaimResult) => r.kind === 'words' ? 'Kept in your Folder' : r.kind === 'landmark' ? 'Noted in your Folder' : r.drop_name ? `Kept: ${r.drop_name}` : '';
+export const claimFailure = (reason?: string) => {
+  switch (reason) {
+    case 'too_far': return 'Come a little closer.';
+    case 'needs': case 'needs_flag': return 'Something is missing.';
+    case 'folder_full': case 'drops_full': case 'capacity': case 'full': return 'Your Folder is full.';
+    case 'not_found': case 'disabled': return 'This find is no longer here.';
+    case 'not_authenticated': case 'unauthorized': return 'Sign in again to keep this find.';
+    default: return 'Could not keep this find. Try again.';
+  }
+};
+/** Older claims report granted; current claims report ok. Only explicit success counts. */
+export function normalizeClaim(value: unknown): ClaimResult {
+  const r = (value ?? {}) as Partial<ClaimResult>;
+  return { ...r, granted: r.granted === true || (r.ok === true && r.granted !== false), reason: r.reason === 'already_claimed' ? 'already' : r.reason };
+}
+export async function findWords(find: WorldFind): Promise<string> {
+  if (find.text?.trim()) return find.text;
+  if (!find.drop_key) return '';
+  const { data } = await db.from('drop_types').select('description').eq('drop_key', find.drop_key).maybeSingle();
+  return data?.description ?? '';
+}
 /** Unclaimed glint/hidden finds carry a floating marker at any distance. */
 export const findMarked = (f: WorldFind, claimed: boolean) => !claimed && (f.visibility === 'glint' || f.visibility === 'hidden');
 /** The unclaimed glint/hidden find in a bumped (blocked) cell, if any. */
@@ -48,7 +69,7 @@ export async function loadFinds(userId: string) {
 export async function claimFind(id: string, at: WorldPoint): Promise<ClaimResult> {
   const { data, error } = await db.rpc('claim_find', { p_find: id, p_x: at.x, p_y: at.y });
   if (error) return { granted: false, reason: 'error' };
-  return (data ?? { granted: false }) as ClaimResult;
+  return normalizeClaim(data);
 }
 
 /** Draws showing finds over the world (sparkles for glint/hidden, sprites for visible). */

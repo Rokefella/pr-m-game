@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Walkthrough notes #3–#7: collect-before-use drops, words/cairn claims and receipts, drop-first Folder/global resource use with HUD refresh, start flag without label, Gods sprites/rectangular ship/water underlays and layout version 4. Controlled desktop/phone claim/use/re-read flows and all 24 real public terrain sprites checked; no tables, migrations or sample data.
+- [ ] Verify Rob's live find claims and resource consumption — the game uses external authentication; no authenticated game session is available and the managed service has no mintable users. Controlled responses do not establish live persistence.
+
 - [ ] Repair NPC card taps and portraits; calm deterministic one-tile wandering, three-tile proximity stops and talking freeze; verify Sam topics and stage advancement.
 
 - [x] Add registration-one dev notepad, screenshot capture, live context, Dev Menu controls and focus-safe walking; existing RPCs only. Real canvas/HUD JPEG capture and isolated desktop/phone save/edit/drop checked; all 479 tests pass.

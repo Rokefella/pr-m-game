@@ -4,13 +4,14 @@ export const DROPS_REFRESHED = 'praem:drops-refreshed';
 export type OwnedDrop = {
   id: string; drop_key: string; name: string; description: string | null;
   category: string | null; icon_svg: string | null; rarity?: string | null;
+  effect?: string | null;
   carried: boolean; run_level: number | null;
 };
 export type DropsRefresh = { userId: string; drops: OwnedDrop[] };
 
 export async function readOwnedDrops(userId: string): Promise<OwnedDrop[]> {
   const { data, error } = await supabase.from('drops' as never)
-    .select('id, carried, run_level, drop_types(drop_key, name, description, category, icon_svg, rarity)')
+    .select('id, carried, run_level, drop_types(drop_key, name, description, category, icon_svg, rarity, effect)')
     .eq('user_id', userId);
   if (error) throw error;
   type DropType = Partial<Omit<OwnedDrop, 'id' | 'carried' | 'run_level'>>;
@@ -21,7 +22,7 @@ export async function readOwnedDrops(userId: string): Promise<OwnedDrop[]> {
       id: row.id, carried: row.carried === true, run_level: row.run_level ?? null,
       drop_key: type?.drop_key ?? '', name: type?.name ?? 'Unknown',
       description: type?.description ?? null, category: type?.category ?? null,
-      icon_svg: type?.icon_svg ?? null, rarity: type?.rarity ?? null,
+      icon_svg: type?.icon_svg ?? null, rarity: type?.rarity ?? null, effect: type?.effect ?? null,
     };
   });
 }

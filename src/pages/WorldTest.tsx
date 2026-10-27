@@ -15,7 +15,7 @@ import { canAccessMaze, checkSubscriptionStatus, getDaysRemainingInTrial, type S
 import { DOOR_FLAGS, type VillageDoorKind } from '@/lib/villageDoors';
 import { effectiveWorldLevel, worldDoorRefusal } from '@/lib/worldHome';
 import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailySteps';
-import { USER_STEPS_REFRESHED } from '@/lib/mechanics';
+import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED } from '@/lib/mechanics';
 import { refreshDrops } from '@/lib/carriedDrops';
 import { ORB_EVENT, type OrbChange } from '@/lib/orb';
 import GameHud from '@/components/GameHud';
@@ -321,8 +321,14 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       void refreshCompleted();
     };
     const orb = (e: Event) => { const change = (e as CustomEvent<OrbChange>).detail; if (change) setIdentity(row => ({ ...row, ...change })); };
-    window.addEventListener(USER_STEPS_REFRESHED, steps); window.addEventListener(ORB_EVENT, orb);
-    return () => { window.removeEventListener(USER_STEPS_REFRESHED, steps); window.removeEventListener(ORB_EVENT, orb); };
+    const credits = (e: Event) => {
+      const detail = (e as CustomEvent<{ userId: string; credits: number }>).detail;
+      if (detail?.userId !== userId || !Number.isFinite(detail.credits)) return;
+      identityRef.current = { ...identityRef.current, credits: detail.credits };
+      setIdentity(row => ({ ...row, credits: detail.credits }));
+    };
+    window.addEventListener(USER_STEPS_REFRESHED, steps); window.addEventListener(ORB_EVENT, orb); window.addEventListener(USER_CREDITS_REFRESHED, credits);
+    return () => { window.removeEventListener(USER_STEPS_REFRESHED, steps); window.removeEventListener(ORB_EVENT, orb); window.removeEventListener(USER_CREDITS_REFRESHED, credits); };
   }, [userId, refreshCompleted]);
   useEffect(() => {
     const timer = setInterval(() => { setClock(Date.now()); setChunkTick(t => t + 1); }, 1000);
@@ -529,7 +535,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       if (!f) return;
       const isClaimed = claimedRef.current.has(f.id);
       if (findMarked(f, isClaimed) || (!isClaimed && findShows(f, posRef.current, false))) setFindCard({ find: f, reading: false });
-      else if (isClaimed && f.visibility === 'visible' && f.kind === 'landmark') setFindCard({ find: f, reading: true });
+      else if (isClaimed && (f.kind === 'words' || f.kind === 'landmark')) setFindCard({ find: f, reading: true });
     }} />
     {buildings.map(b => { const box = buildingBox(b), id = `${b.x},${b.y}`; return <canvas key={id} ref={el => { if (el) buildingEls.current.set(id, el); else buildingEls.current.delete(id); }} width={b.terrain.sprite_w ?? box.w * 16} height={b.terrain.sprite_h ?? box.h * 16} className="world-building" style={{ width: box.w * WORLD_TILE, height: box.h * WORLD_TILE }} aria-hidden="true" />; })}
     {visitors.map(p => <WorldVisitor key={p.user_id} player={p} at={pos} camera={camera} reduced={reduced} />)}
@@ -541,7 +547,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     <canvas ref={markerCanvas} className="world-markers" aria-hidden="true" /></div>
     <header className="world-hud font-mono">{dev && <div className="world-status"><span>{pos.x},{pos.y} · A {area.x},{area.y} · {era?.name ?? '—'}</span><span>{layer === 1 ? `UNDERGROUND · ABOVE ${surfacePoint.x},${surfacePoint.y}` : 'SURFACE'}</span><span>{terrain?.name ?? (cache.errors.size ? 'Window unavailable' : 'Loading…')} · COST {terrain ? tileCost(terrain, era) : '—'} · SPENT {Number(spent.toFixed(2))}</span>{layer === 0 && <span>{phase.phase.toUpperCase()} · {Math.ceil(phase.minutesLeft)} MIN</span>}</div>}<Button variant="ghost" size="icon" title="MAP" aria-label="MAP" onClick={() => { keys.current.clear(); setMapOpen(true); }}><MapIcon size={18} /></Button>{dev && <Button variant="outline" className="world-jump" onClick={() => { setJumpX(String(pos.x)); setJumpY(String(pos.y)); setJumpOpen(true); }}><Navigation size={14} />JUMP</Button>}</header>
     <GameHud stepsRemaining={stepBalance} stepsExhausted={stepBalance === 0} credits={identity.credits ?? 0} currentLevel={identity.level ?? 1} registrationNumber={identity.registration_number} growthPoints={identity.growth_points ?? 0} subscriptionStatus={subscription} trialDaysRemaining={identity.first_launch_at ? Math.max(0, 14 - Math.floor((Date.now() - new Date(identity.first_launch_at).getTime()) / 86400000)) : identity.trial_end ? getDaysRemainingInTrial(identity.trial_end) : 14} onOpenProfile={() => { keys.current.clear(); setProfileOpen(true); }} onOpenDevMenu={() => { keys.current.clear(); setDevOpen(true); }} />
-    <ProfileOverlay isOpen={profileOpen} onClose={() => { setProfileOpen(false); void refreshCompleted(); }} context="village" growthPoints={identity.growth_points ?? 0} socialStat={identity.social ?? 0} perceptionStat={identity.perception ?? 0} tradeStat={identity.trade ?? 0} />
+    <ProfileOverlay isOpen={profileOpen} onClose={() => { setProfileOpen(false); void refreshCompleted(); }} beforeDropUse={async () => { await stepLedger.current?.flush(); }} context="village" growthPoints={identity.growth_points ?? 0} socialStat={identity.social ?? 0} perceptionStat={identity.perception ?? 0} tradeStat={identity.trade ?? 0} />
     {dev && <DevMenu open={devOpen} onClose={() => setDevOpen(false)} userId={userId} home="world" onChanged={() => void refreshCompleted()} onBeforeStart={async () => { await stepLedger.current?.flush(); await discovery.current?.flush(true); discovery.current?.abandon(); presence.current?.dispose(); stepLedger.current?.discard(); }} />}
     {arrival && <LevelUpCard newLevel={arrival.newLevel} titleUnlocked={arrival.titleUnlocked} auraColor={identity.aura_color} orbDye={identity.orb_dye} registrationNumber={identity.registration_number} avatarBody={identity.avatar_body} home="world" onContinue={async () => {
       if (!userId) return;

@@ -1,7 +1,20 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { cellDistance, emptyRunEffects, inReveal, isStepMechanic, mechanicBlocked, nearestFragment, normalizeRunEffects, restoreChalk } from './mechanics';
+import { cellDistance, emptyRunEffects, inReveal, isStepMechanic, isCreditMechanic, mechanicBlocked, nearestFragment, normalizeRunEffects, restoreChalk } from './mechanics';
 describe('mechanic rules', () => {
   beforeEach(() => sessionStorage.clear());
+  it.each([
+    ['Cloth bundle', 60], ['Tin box', 80], ['Knotted pouch', 100], ['Moss bundle', 120],
+    ['Old pack', 80], ['Satchel', 100], ['High-tied bundle', 150], ['Wax-sealed jar', 100],
+  ])('%s uses its authored steps:+%i effect without a run', (name, amount) => {
+    expect(isStepMechanic({ name, effect: `steps:+${amount}` })).toBe(true);
+    expect(mechanicBlocked(isStepMechanic({ name, effect: `steps:+${amount}` }), 100)).toBe('');
+    expect(isStepMechanic({ name, effect: 'lantern:+1' })).toBe(false);
+  });
+  it.each([['A few old coins', 10], ['Purse', 15]])('%s is usable anywhere even with full steps', (_name, amount) => {
+    expect(isCreditMechanic({ effect: `credits:+${amount}` })).toBe(true);
+    expect(isCreditMechanic({ effect: 'loot:tier_up' })).toBe(false);
+    expect(mechanicBlocked(false, 5000, undefined, true)).toBe('');
+  });
   it.each(['Step Pouch', 'Spare Lace', 'Second Wind'])('%s is usable outside a run', name => {
     expect(isStepMechanic({ name })).toBe(true);
     expect(mechanicBlocked(isStepMechanic({ name }), 4999)).toBe('');

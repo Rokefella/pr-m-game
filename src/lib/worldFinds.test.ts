@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { findButton, findShows, findSprite, findRadius, type WorldFind } from './worldFinds';
+import { findButton, findShows, findSprite, findRadius, normalizeClaim, type WorldFind } from './worldFinds';
 const f = (o: Partial<WorldFind>): WorldFind => ({ id: '1', find_key: 'k', x: 10, y: 10, layer: 0, kind: 'thing', title: 't', visibility: 'glint', glint_radius: 2, ...o });
 describe('world finds', () => {
+  it('recognizes current and legacy successful claims without granting failed claims', () => {
+    expect(normalizeClaim({ ok: true, kind: 'words' }).granted).toBe(true);
+    expect(normalizeClaim({ granted: true }).granted).toBe(true);
+    expect(normalizeClaim({ ok: false, reason: 'too_far' }).granted).toBe(false);
+    expect(normalizeClaim({ ok: true, granted: false }).granted).toBe(false);
+    expect(normalizeClaim(null).granted).toBe(false);
+    expect(normalizeClaim({ ok: false, reason: 'already_claimed' }).reason).toBe('already');
+  });
   it('glint shows within Chebyshev glint radius', () => {
     expect(findShows(f({}), { x: 12, y: 12 }, false)).toBe(true);
     expect(findShows(f({}), { x: 13, y: 10 }, false)).toBe(false);

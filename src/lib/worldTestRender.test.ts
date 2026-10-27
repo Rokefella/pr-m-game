@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { chunkCanvas, drawWorldFireLight, drawWorldHeight, worldFootprintAnchor, type WorldInk } from './worldTestRender';
+import { chunkCanvas, drawWorldFireLight, drawWorldHeight, worldFootprintAnchor, worldObjectGround, type WorldInk } from './worldTestRender';
 import { WorldChunkCache, type Terrain, type WorldChunk } from './worldTest';
 const art = vi.hoisted(() => ({ base: vi.fn(), large: vi.fn((..._args: unknown[]) => true) }));
 vi.mock('./terrainTile', () => ({ drawTerrainBase: art.base, drawTerrainSprite: art.large, drawTerrainMotion: vi.fn(), spriteLight: () => 'warm', isObjectLayer: (t?: Terrain) => t?.render_layer === 'object', hasMovingSprite: (t: Terrain) => t.moves === 'sway' || t.moves === 'flicker', spriteVersion: 0 }));
@@ -13,6 +13,13 @@ function context() {
   return { ctx: ctx as unknown as CanvasRenderingContext2D, rects };
 }
 describe('world visual terrain layers', () => {
+  it.each(['rowboat', 'water_lantern'])('puts water beneath %s even when grass is the first neighbour', key => {
+    const cache = new WorldChunkCache(async () => { throw Error(); });
+    vi.spyOn(cache, 'terrainKey').mockImplementation((x, y) => x === 1 && y === 1 ? key : x === 0 && y === 1 ? 'grass' : x === 1 && y === 0 ? 'lotus_water' : undefined);
+    const water = terrain('lotus_water', { grp: 'water', icon_svg: '<svg />' });
+    const types = new Map([water, terrain('grass', { render_layer: 'ground' })].map(t => [t.key, t]));
+    expect(worldObjectGround(cache, types, 1, 1, types.get('grass'))).toBe(water);
+  });
   it('caches only era ground beneath building anchors and parts', () => {
     const cache = new WorldChunkCache(async () => { throw Error(); });
     const chunk: WorldChunk = { x0: 0, y0: 0, w: 2, h: 1, keys: ['bld_wood_block', 'bld_part'], rows: [[0, 1]] }; cache.chunks.set('0,0', chunk);

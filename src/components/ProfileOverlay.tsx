@@ -34,6 +34,7 @@ type Props = {
   context?: 'village' | 'maze';
   runProgress?: { collected: number; required: number };
   mazeUse?: MazeUseContext;
+  beforeDropUse?: () => Promise<void>;
   growthPoints?: number;
   socialStat?: number;
   perceptionStat?: number;
@@ -71,6 +72,7 @@ const ProfileOverlay = ({
   context = 'village',
   runProgress,
   mazeUse,
+  beforeDropUse,
   growthPoints: growthPointsProp = 0,
   socialStat: socialStatProp = 0,
   perceptionStat: perceptionStatProp = 0,
@@ -789,27 +791,6 @@ const ProfileOverlay = ({
           const cells = Array.from({ length: 20 }, (_, i) => carriedFragments[i] || null);
           return (
             <div style={{ marginTop: 24 }}>
-              <div className="profile-section-label font-mono"><span>FOLDER</span><span>{count} / 20</span></div>
-              <div className="profile-inventory-grid">
-                {cells.map((frag, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${frag ? 'profile-fragment-carried' : 'profile-tile-empty'}`} disabled={!frag} aria-label={frag ? `Prime ${formatPrime(frag.prime_number)}` : `Empty fragment slot ${i + 1}`} onClick={() => frag && setFolderTooltip(folderTooltip === frag.id ? null : frag.id)}>{frag && <span className="font-cinzel">{formatPrime(frag.prime_number)}</span>}</Button>)}
-              </div>
-              <p className="profile-library font-mono">LIBRARY {bankedCount} banked</p>
-              <p className="profile-carry-note font-fell italic">{count > 0 ? 'Carried fragments are lost if you leave the maze without visiting the Shadow Realm.' : 'Nothing carried. Fragments you find in the maze appear here until you bank them.'}</p>
-
-              {/* Tooltip / flavour text */}
-              {(() => {
-                const selected = carriedFragments.find((f) => f.id === folderTooltip);
-                if (!selected) return null;
-                return (
-                  <p
-                    className="font-fell italic"
-                    style={{ textAlign: 'center', fontSize: 13, color: 'var(--plate-label)', marginTop: 16 }}
-                  >
-                    Prime {formatPrime(selected.prime_number)}. You are inside the instrument now.
-                  </p>
-                );
-              })()}
-
               {/* DROPS section */}
               {(() => {
                 const tradeStat = accountRow?.trade ?? 0;
@@ -843,15 +824,15 @@ const ProfileOverlay = ({
                 };
 
                 return (
-                  <div style={{ marginTop: 40 }}>
+                  <div>
                     <div className="profile-section-label font-mono"><span>DROPS</span><span>{owned} / {dropCapacity}</span></div>
                     <div className="profile-inventory-grid">
                       {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? `profile-drop-filled${drop.carried ? ' profile-drop-carried' : ''}` : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="profile-drop-body"><DropIcon svg={drop.icon_svg} category={drop.category} size={40} drop_key={drop.drop_key} />{drop.category === 'key' && <span className="profile-key-badge font-mono">KEY</span>}<span className="font-fell italic">{drop.name}</span>{drop.carried && <span className="profile-carried-label font-mono">CARRIED</span>}</span>}</Button>)}
                     </div>
                     {ownedDrops.some(drop => drop.carried) && <p className="profile-carry-note font-fell italic">Dashed drops are carried. Bank them in the Shadow Realm or lose them if you leave the maze.</p>}
 
-                    {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} maze={context === 'maze' ? mazeUse : undefined} steps={accountRow?.steps_remaining} onRefresh={() => setDropsNonce(n => n + 1)} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); setOwnedDrops(drops => drops.filter(d => d.id !== selectedDrop.id)); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
-                    {dyeWhisper && <p className="font-fell italic dye-whisper">{dyeWhisper}</p>}
+                    {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} beforeUse={beforeDropUse} maze={context === 'maze' ? mazeUse : undefined} steps={accountRow?.steps_remaining} onRefresh={() => setDropsNonce(n => n + 1)} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); setOwnedDrops(drops => drops.filter(d => d.id !== selectedDrop.id)); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
+                    {dyeWhisper && <p role="status" className="font-fell italic dye-whisper">{dyeWhisper}</p>}
                     {ownedDrops.some(d => d.category === 'words') && <div style={{ marginTop: 24 }}><div className="profile-section-label font-mono"><span>CARVED WORDS</span></div>{ownedDrops.filter(d => d.category === 'words').map(d => <div key={d.id} style={{ marginTop: 12 }}><p className="font-cinzel">{d.name}</p>{d.description && <p className="font-fell italic" style={{ whiteSpace: 'pre-line', color: 'var(--plate-label)' }}>{d.description}</p>}</div>)}</div>}
 
                     {/* Status text */}
@@ -890,6 +871,29 @@ const ProfileOverlay = ({
                   </div>
                 );
               })()}
+              <div className="mt-10">
+              <div className="profile-section-label font-mono"><span>FRAGMENTS</span><span>{count} / 20</span></div>
+              <div className="profile-inventory-grid">
+                {cells.map((frag, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${frag ? 'profile-fragment-carried' : 'profile-tile-empty'}`} disabled={!frag} aria-label={frag ? `Prime ${formatPrime(frag.prime_number)}` : `Empty fragment slot ${i + 1}`} onClick={() => frag && setFolderTooltip(folderTooltip === frag.id ? null : frag.id)}>{frag && <span className="font-cinzel">{formatPrime(frag.prime_number)}</span>}</Button>)}
+              </div>
+              <p className="profile-library font-mono">LIBRARY {bankedCount} banked</p>
+              <p className="profile-carry-note font-fell italic">{count > 0 ? 'Carried fragments are lost if you leave the maze without visiting the Shadow Realm.' : 'Nothing carried. Fragments you find in the maze appear here until you bank them.'}</p>
+
+              {/* Tooltip / flavour text */}
+              {(() => {
+                const selected = carriedFragments.find((f) => f.id === folderTooltip);
+                if (!selected) return null;
+                return (
+                  <p
+                    className="font-fell italic"
+                    style={{ textAlign: 'center', fontSize: 13, color: 'var(--plate-label)', marginTop: 16 }}
+                  >
+                    Prime {formatPrime(selected.prime_number)}. You are inside the instrument now.
+                  </p>
+                );
+              })()}
+
+              </div>
             </div>
           );
         })()}

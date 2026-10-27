@@ -4,37 +4,41 @@ import DropIcon from '@/components/DropIcon';
 import { Button } from '@/components/ui/button';
 import { type OrbChange } from '@/lib/orb';
 import { useAuth } from '@/context/AuthContext';
-import { isStepMechanic, mechanicBlocked, mechanicWhisper, MECHANIC_USED, type MazeUseContext, type MechanicResult } from '@/lib/mechanics';
+import { isStepMechanic, isCreditMechanic, mechanicBlocked, mechanicWhisper, MECHANIC_USED, USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED, type MazeUseContext, type MechanicResult } from '@/lib/mechanics';
 
 type Rpc = (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
 const rpc = (fn: string, args: Record<string, unknown>) => (supabase.rpc as unknown as Rpc)(fn, args);
 
-export type DetailDrop = { id: string; name: string; description: string | null; category: string | null; icon_svg: string | null; rarity?: string | null; drop_key?: string };
+export type DetailDrop = { id: string; name: string; description: string | null; category: string | null; icon_svg: string | null; rarity?: string | null; drop_key?: string; effect?: string | null };
 
 /** Drop detail sheet; dyes get a USE button that consumes them server-side. */
-export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh }: { drop: DetailDrop; onClose: () => void; onUsed: (msg: string, change?: OrbChange) => void; maze?: MazeUseContext; steps?: number; onRefresh?: () => void }) {
+export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh, beforeUse }: { drop: DetailDrop; onClose: () => void; onUsed: (msg: string, change?: OrbChange) => void; maze?: MazeUseContext; steps?: number; onRefresh?: () => void; beforeUse?: () => Promise<void> }) {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const isDye = drop.category === 'dye';
   const isMechanic = drop.category === 'mechanic';
   const stepDrop = isStepMechanic(drop);
-  const blocked = isMechanic ? mechanicBlocked(stepDrop, steps, maze) : '';
+  const creditDrop = isCreditMechanic(drop), resourceDrop = stepDrop || creditDrop;
+  const blocked = isMechanic ? mechanicBlocked(stepDrop, steps, maze, creditDrop) : '';
   const useMechanic = async () => {
     if (busy || blocked) return;
     setBusy(true); setMsg('');
     let called = false;
     try {
+      if (beforeUse) await beforeUse();
       await maze?.beforeUse?.();
       const position = maze?.position();
       called = true;
-      const { data, error } = await rpc('use_mechanic', { p_drop_id: drop.id, p_level: stepDrop ? null : maze?.level ?? null, p_col: stepDrop ? null : position?.col ?? null, p_row: stepDrop ? null : position?.row ?? null });
+      const { data, error } = await rpc('use_mechanic', { p_drop_id: drop.id, p_level: resourceDrop ? null : maze?.level ?? null, p_col: resourceDrop ? null : position?.col ?? null, p_row: resourceDrop ? null : position?.row ?? null });
       const result = data as MechanicResult | null;
       if (error || !result?.ok) {
         setMsg(result?.reason === 'already_active' ? 'Already active in this run.' : result?.reason === 'needs_maze_run' || result?.reason === 'needs_position' ? 'Use it inside a maze.' : 'No signal. Try again.');
         return;
       }
       window.dispatchEvent(new CustomEvent(MECHANIC_USED, { detail: { ...result, userId: user?.id, level: maze?.level } }));
+      if (Number.isFinite(result.steps_remaining)) window.dispatchEvent(new CustomEvent(USER_STEPS_REFRESHED, { detail: { userId: user?.id, steps: result.steps_remaining } }));
+      if (Number.isFinite(result.credits)) window.dispatchEvent(new CustomEvent(USER_CREDITS_REFRESHED, { detail: { userId: user?.id, credits: result.credits } }));
       onUsed(mechanicWhisper(result));
     } catch { setMsg('No signal. Try again.'); }
     finally { if (called) { onRefresh?.(); window.dispatchEvent(new CustomEvent(MECHANIC_USED, { detail: { userId: user?.id, level: maze?.level } })); } setBusy(false); }

@@ -1,6 +1,6 @@
 export const WORLD_RETURN_KEY = 'praem.worldReturn';
 export const WORLD_POS_KEY = 'praem.worldPos';
-export const WORLD_LAYOUT_VERSION = 3;
+export const WORLD_LAYOUT_VERSION = 4;
 export const WORLD_LAYOUT_VERSION_KEY = 'praem.worldLayoutVersion';
 export type WorldSpot = { layer: 0 | 1; x: number; y: number };
 

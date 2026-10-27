@@ -14,7 +14,7 @@ vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc, from: (table: string)
   return chain;
 } } }));
 beforeEach(() => {
-  localStorage.clear(); localStorage.setItem('praem.worldLayoutVersion', '3'); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.places = []; f.mutation.mockReset().mockResolvedValue({ error: null });
+  localStorage.clear(); localStorage.setItem('praem.worldLayoutVersion', '4'); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.places = []; f.mutation.mockReset().mockResolvedValue({ error: null });
   f.uid += 'x'; f.granted = 0; f.completed = 0; f.steps = 100; f.credits = 50; f.pending = false; f.newLevel = 2; f.social = 2; f.flags = { sam_stage: '0', bernard_stage: '0' };
   f.presence.mockReset().mockResolvedValue({ error: null });
   f.rpc.mockReset().mockImplementation(async (name, args) => ({ error: null, data: name === 'spend_world_steps' ? (f.steps = Math.max(0, f.steps - args.p_amount)) : name === 'claim_daily_steps' ? f.granted : { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
@@ -72,6 +72,13 @@ describe('world sandbox access and read-only movement', () => {
   });
 });
 describe('World home mechanics', () => {
+  it('updates credits immediately for the active user only', async () => {
+    open(); await screen.findByText(/CREDITS\s+50/);
+    fireEvent(window, new CustomEvent('praem:user-credits-refreshed', { detail: { userId: 'other', credits: 500 } }));
+    expect(screen.getByText(/CREDITS\s+50/)).toBeInTheDocument();
+    fireEvent(window, new CustomEvent('praem:user-credits-refreshed', { detail: { userId: f.uid, credits: 65 } }));
+    expect(screen.getByText(/CREDITS\s+65/)).toBeInTheDocument();
+  });
   it('refreshes the users row on a steps notification and pauses for Profile', async () => {
     open(); await screen.findByText(/STEPS\s+100/);
     f.steps = 150; f.credits = 80;
@@ -142,7 +149,7 @@ describe('world return', () => {
     localStorage.removeItem('praem.worldLayoutVersion');
     localStorage.setItem('praem.worldPos', JSON.stringify({ layer: 0, x: 299, y: 31 }));
     open(); await screen.findByText('25,25 · A 0,0 · Fire');
-    expect(localStorage.getItem('praem.worldLayoutVersion')).toBe('3');
+    expect(localStorage.getItem('praem.worldLayoutVersion')).toBe('4');
     expect(JSON.parse(localStorage.getItem('praem.worldPos') ?? '{}')).toEqual({ layer: 0, x: 25, y: 25 });
   });
   it('recovers a blocked saved position to the nearest walkable cell after loading', async () => {

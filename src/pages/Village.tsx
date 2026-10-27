@@ -1,7 +1,7 @@
 import GameHud from '@/components/GameHud';
 import DevMenu from '@/components/DevMenu';
 import LevelUpCard, { TITLES_BY_LEVEL } from '@/components/LevelUpCard';
-import { USER_STEPS_REFRESHED } from '@/lib/mechanics';
+import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED } from '@/lib/mechanics';
 import { Button } from '@/components/ui/button';
 import { Z } from '@/lib/zIndex';
 import { VILLAGE_AVATAR_SIZE, ghostBodyPx, npcBodyPx } from '@/lib/orbSizes';
@@ -779,7 +779,9 @@ const Village = () => {
       if (detail?.userId === user?.id && Number.isFinite(detail.steps)) setStepsRemaining(detail.steps);
     };
     window.addEventListener(USER_STEPS_REFRESHED, refresh);
-    return () => window.removeEventListener(USER_STEPS_REFRESHED, refresh);
+    const credits = (event: Event) => { const detail = (event as CustomEvent).detail; if (detail?.userId === user?.id && Number.isFinite(detail.credits)) setCredits(detail.credits); };
+    window.addEventListener(USER_CREDITS_REFRESHED, credits);
+    return () => { window.removeEventListener(USER_STEPS_REFRESHED, refresh); window.removeEventListener(USER_CREDITS_REFRESHED, credits); };
   }, [user?.id]);
   const userLoadVersionRef = useRef(0);
   const activeUserIdRef = useRef(user?.id);

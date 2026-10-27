@@ -1,0 +1,2 @@
+.npc-portrait { width: 88px; height: 88px; flex: 0 0 88px; margin: 0 auto 8px; border: 1px solid var(--plate-gold); border-radius: 50%; background: var(--plate-inset); display: flex; align-items: center; justify-content: center; pointer-events: none; image-rendering: pixelated; }
+.npc-portrait .npc-orb { transform: none; }

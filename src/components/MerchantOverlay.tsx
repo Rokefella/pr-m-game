@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { updateUser } from '@/lib/userData';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { npcBodyPx } from '@/lib/orbSizes';
-import { npcSkin } from '@/lib/skins';
+import NpcPortrait from '@/components/NpcPortrait';
 import { useAuth } from '@/context/AuthContext';
 import { NPC_DIALOGUE_CLOSED, useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import { Button } from '@/components/ui/button';
@@ -121,7 +121,7 @@ const MerchantOverlay = ({
         overflowY: 'auto',
       }}
     >
-      <div className="npc-dialogue-orb" style={{ marginTop: 40 }}><NpcOrb npc="merchant" size={npcSkin('merchant') ? 96 : npcBodyPx('village')} quest={questState('merchant')} /></div>
+      <div style={{ marginTop: 40 }}><NpcPortrait npc="merchant" /></div>
       <div
         className="font-cinzel"
         style={{

@@ -20,11 +20,14 @@ type Props = {
   /** Faint glow in the dye colour; pass null for undyed. */
   glow?: string | null;
   silhouette?: boolean;
+  /** Eyes closed this frame (down-facing 'p' pixels show skin colour 'a'). */
+  blink?: boolean;
 };
 
 /** Pixel-crisp skin sprite: one SVG path per colour, 16×14 viewBox. */
-function SkinSprite({ skin, facing = 'down', phase = 'stand', size = 48, colors, prism = false, glow = null, silhouette = false }: Props) {
-  const rows = frameFor(skin, facing, phase);
+function SkinSprite({ skin, facing = 'down', phase = 'stand', size = 48, colors, prism = false, glow = null, silhouette = false, blink = false }: Props) {
+  const base = frameFor(skin, facing, phase);
+  const rows = blink && facing === 'down' ? blinkFrame(base) : base;
   const inner = skinSvg(rows, colors, skin.dye_chars ?? '', { silhouette, glow });
   return (
     <svg viewBox="0 0 16 14" width={size} height={Math.round(size * 14 / 16)} shapeRendering="crispEdges"

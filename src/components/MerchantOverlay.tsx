@@ -10,12 +10,18 @@ import { Button } from '@/components/ui/button';
 
 export type MerchantPalette = 'green' | 'orange';
 
+export type PurchaseOutcome = string | void | { receipt: string; credits?: number } | { failure: string };
+
 export type MerchantItem = {
   key: string;
   label: string;
   cost: number;
+  /** Allow buying several at once (stepper 1..maxQty). */
+  maxQty?: number;
+  /** Server-side purchase: the RPC moves credits and steps; the client never writes them. */
+  serverSide?: boolean;
   /** Complete the purchase effect before saving credits; optionally override the receipt. */
-  onPurchase?: () => string | void | Promise<string | void>;
+  onPurchase?: (qty: number) => PurchaseOutcome | Promise<PurchaseOutcome>;
 };
 
 interface MerchantOverlayProps {

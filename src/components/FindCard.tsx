@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
-import { claimFind, findButton, findReceipt, type WorldFind } from '@/lib/worldFinds';
+import { claimFailure, claimFind, findButton, findReceipt, findWords, type WorldFind } from '@/lib/worldFinds';
 import { isPlayerSkin, skinForDrop, useSkins } from '@/lib/skins';
 import { publishOrb } from '@/lib/orb';
 import SkinCard from '@/components/SkinCard';
@@ -18,28 +18,32 @@ export default function FindCard({ find, reading, at, onClaimed, onRewarded, onC
   const skins = useSkins();
   const [busy, setBusy] = useState(false);
   const [text, setText] = useState<string | null>(reading ? find.text ?? '' : null);
-  const [receipt, setReceipt] = useState('');
+  const [receipt, setReceipt] = useState(reading ? 'Already in your Folder' : '');
   const [note, setNote] = useState('');
   const [skinFound, setSkinFound] = useState<{ description: string | null } | null>(null);
   const skinKey = skinForDrop(find.drop_key);
   const skin = skinKey ? skins.find(s => s.skin_key === skinKey && isPlayerSkin(s)) : undefined;
+  useEffect(() => {
+    if (!reading) return;
+    let off = false;
+    void findWords(find).then(value => { if (!off) setText(value); }).catch(() => undefined);
+    return () => { off = true; };
+  }, [find, reading]);
 
   const press = async () => {
     if (busy) return;
-    setBusy(true);
+    setBusy(true); setNote('');
     try {
       const r = await claimFind(find.id, at());
       if (r.granted) {
         onClaimed(find.id); onRewarded?.();
         if (skin) { setSkinFound({ description: r.text ?? find.text ?? null }); return; }
-        setText(r.text ?? find.text ?? ''); setReceipt(findReceipt(r));
+        setText(r.text || await findWords(find)); setReceipt(findReceipt({ ...r, kind: r.kind ?? find.kind }));
       }
-      else if (r.reason === 'already') { setText(find.text ?? ''); onClaimed(find.id); }
-      else if (r.reason === 'needs') setNote(r.needs === 'sam_coal' ? 'You have nothing to light it with.' : 'Not yet.');
-      else if (r.reason === 'needs_flag') setNote('Not yet.');
-      else if (r.reason === 'too_far') setNote('Too far.');
-      else setNote('Nothing happens.');
-    } finally { setBusy(false); }
+      else if (r.reason === 'already') { setText(r.text || await findWords(find)); setReceipt('Already in your Folder'); onClaimed(find.id); }
+      else setNote(claimFailure(r.reason));
+    } catch { setNote(claimFailure('error')); }
+    finally { setBusy(false); }
   };
 
   if (skinFound && skin) {

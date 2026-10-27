@@ -2,11 +2,12 @@ import { supabase } from '@/lib/supabase';
 
 export const MECHANIC_USED = 'praem:mechanic-used';
 export const USER_STEPS_REFRESHED = 'praem:user-steps-refreshed';
+export const USER_CREDITS_REFRESHED = 'praem:user-credits-refreshed';
 export const STEP_CAP = 5000;
 export type Cell = { col: number; row: number };
 export type MazeUseContext = { level: number; position: () => Cell; beforeUse?: () => Promise<void> };
 export type RunEffects = { lantern_bonus: number; chalk: boolean; compass: boolean; magnet: boolean; lucky: boolean; reveals: Array<Cell & { r: number }> };
-export type MechanicResult = { ok?: boolean; reason?: string; effect?: string; amount?: number; steps_remaining?: number };
+export type MechanicResult = { ok?: boolean; reason?: string; effect?: string; amount?: number; steps_remaining?: number; credits?: number };
 export const emptyRunEffects = (): RunEffects => ({ lantern_bonus: 0, chalk: false, compass: false, magnet: false, lucky: false, reveals: [] });
 export function normalizeRunEffects(value: unknown): RunEffects {
   const row = (value ?? {}) as Partial<RunEffects>;
@@ -17,17 +18,19 @@ export async function readRunEffects(userId: string, level: number): Promise<Run
   const { data, error } = await supabase.from('run_state' as never).select('lantern_bonus, chalk, compass, magnet, lucky, reveals').eq('user_id', userId).eq('level', level).maybeSingle();
   return error ? null : normalizeRunEffects(data);
 }
-export function isStepMechanic(drop: { name: string; drop_key?: string }) {
-  return ['step_pouch', 'spare_lace', 'second_wind'].includes(drop.drop_key ?? '') || ['Step Pouch', 'Spare Lace', 'Second Wind'].includes(drop.name);
+export function isStepMechanic(drop: { name: string; drop_key?: string; effect?: string | null }) {
+  return drop.effect?.startsWith('steps:+') === true || ['step_pouch', 'spare_lace', 'second_wind'].includes(drop.drop_key ?? '') || ['Step Pouch', 'Spare Lace', 'Second Wind'].includes(drop.name);
 }
-export function mechanicBlocked(stepDrop: boolean, steps: number | undefined, maze?: MazeUseContext) {
+export const isCreditMechanic = (drop: { effect?: string | null }) => drop.effect?.startsWith('credits:+') === true;
+export function mechanicBlocked(stepDrop: boolean, steps: number | undefined, maze?: MazeUseContext, creditDrop = false) {
   if (stepDrop && steps !== undefined && steps >= STEP_CAP) return 'Your steps are full.';
-  if (!stepDrop && !maze) return 'Use it inside a maze.';
+  if (!stepDrop && !creditDrop && !maze) return 'Use it inside a maze.';
   return '';
 }
 export function mechanicWhisper(result: MechanicResult) {
   switch (result.effect) {
     case 'steps': return `+${result.amount ?? 0} steps.`;
+    case 'credits': return `+${result.amount ?? 0} credits.`;
     case 'lantern': return 'Your light widens for this run.';
     case 'chalk': return 'Chalk dust marks your path.';
     case 'compass': return 'The shard points to the golden door.';

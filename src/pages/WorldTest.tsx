@@ -439,7 +439,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     const spot = layerPlaces.find(p => !p.npc_key && p.x === next.x && p.y === next.y) ?? adjacentConversation(layerPlaces.filter(p => !p.npc_key), next);
     const layerFinds = findsOn(findsRef.current, l);
     for (const id of [...approached.current]) { const f = layerFinds.find(x => x.id === id); if (!f || chebyshev(f, next) > 1) approached.current.delete(id); }
-    if (spot) { setEntryMessage(''); setPlaceCard(spot); return; }
+    if (spot) { if (isSignpost(spot)) keys.current.clear(); setEntryMessage(''); setPlaceCard(spot); return; }
     const near = approachedFind(layerFinds, claimedRef.current, approached.current, next, walkable);
     if (near) { approached.current.add(near.id); setFindCard({ find: near, reading: false }); }
   }, [userId]);

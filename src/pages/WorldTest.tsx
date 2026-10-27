@@ -397,6 +397,14 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
         ctx.beginPath(); ctx.ellipse(width / 2, height / 2 + 5, 10 + pulse * 4, 4 + pulse * 2, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
       }
       if (avatar.current) avatar.current.style.transform = `translate(${width / 2 - WORLD_AVATAR_SIZE / 2 + (time < bumpUntil.current ? Math.sin(time * .1) * 3 : 0)}px, ${height / 2 - WORLD_AVATAR_SIZE / 2}px)`;
+      for (const p of layerPlaces[l]) {
+        if (!p.npc_key || !skinnedRef.current.has(p.npc_key)) continue;
+        const key = `${p.npc_key}:${p.x}:${p.y}`;
+        const el = npcEls.current.get(key);
+        if (el) el.style.transform = `translate(${p.x * WORLD_TILE - camera.current.x + (WORLD_TILE - WORLD_NPC_SIZE) / 2}px, ${p.y * WORLD_TILE - camera.current.y + WORLD_TILE - Math.round(WORLD_NPC_SIZE * 14 / 16)}px)`;
+        const f = npcFacingToward(p, point);
+        if (npcFacingsRef.current[key] !== f) { npcFacingsRef.current[key] = f; setNpcFacings({ ...npcFacingsRef.current }); }
+      }
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);

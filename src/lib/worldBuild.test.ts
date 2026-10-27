@@ -9,6 +9,10 @@ import { claimDailyStepsOnce } from './dailySteps';
 const terrain = (key: string, extra = {}) => ({ key, walkable: true, enabled: true, ...extra } as Terrain);
 afterEach(() => vi.useRealTimers());
 describe('authored world buildings', () => {
+  it('uses the ship’s rectangular 3×2 footprint beneath its 48×48 sprite', () => {
+    const ship = { x: 10, y: 10, terrain: terrain('bld_lake_ship', { footprint: 3, footprint_w: 3, footprint_h: 2, sprite_w: 48, sprite_h: 48 }) };
+    expect(buildingBox(ship)).toEqual({ x: 10, y: 9, w: 3, h: 3, bottom: 12, footprintW: 3 });
+  });
   const b = { x: 10, y: 10, terrain: terrain('bld_wood_tower', { footprint_w: 2, footprint_h: 2, sprite_w: 32, sprite_h: 48 }) };
   it('bottom aligns native art above a two-cell footprint', () => expect(buildingBox(b)).toEqual({ x: 10, y: 9, w: 2, h: 3, bottom: 12, footprintW: 2 }));
   it('fades only when the player is in the above-footprint sprite', () => { expect(buildingOpacity(b, { x: 11, y: 9 })).toBe(.45); expect(buildingOpacity(b, { x: 11, y: 12 })).toBe(1); expect(buildingOpacity(b, { x: 9, y: 9 })).toBe(1); });

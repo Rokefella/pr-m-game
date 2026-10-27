@@ -60,6 +60,20 @@ describe('consumable dyes', () => {
 describe('mechanic consumption', () => {
   const maze = { level: 2, position: () => ({ col: 11, row: 12 }) };
   const mechanic = (name: string) => ({ ...dye, name, category: 'mechanic' });
+  it.each([['Cloth bundle', 'steps', 60, 160], ['Purse', 'credits', 15, 65]])('uses %s outside a maze and publishes its saved balance', async (name, effect, amount, balance) => {
+    const event = vi.fn(), eventName = effect === 'steps' ? 'praem:user-steps-refreshed' : 'praem:user-credits-refreshed';
+    window.addEventListener(eventName, event);
+    const field = effect === 'steps' ? 'steps_remaining' : 'credits';
+    f.rpc.mockResolvedValue({ data: { ok: true, effect, amount, [field]: balance }, error: null });
+    const onUsed = vi.fn();
+    try {
+      render(<DropDetail drop={{ ...mechanic(name), effect: `${effect}:+${amount}` }} onClose={() => {}} onUsed={onUsed} />);
+      fireEvent.click(screen.getByRole('button', { name: 'USE' }));
+      await waitFor(() => expect(onUsed).toHaveBeenCalledTimes(1));
+      expect(f.rpc).toHaveBeenCalledWith('use_mechanic', { p_drop_id: 'first', p_level: null, p_col: null, p_row: null });
+      expect(event.mock.calls[0][0].detail).toEqual({ userId: 'player', [effect]: balance });
+    } finally { window.removeEventListener(eventName, event); }
+  });
   it.each([
     ['Step Pouch', 'steps'], ['Spare Lace', 'steps'], ['Second Wind', 'steps'],
     ['Lantern Oil', 'lantern'], ['Trail Chalk', 'chalk'], ['Echo Pebble', 'pulse'],

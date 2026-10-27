@@ -2429,11 +2429,15 @@ const Village = () => {
           userId={user.id}
           credits={credits}
           onCreditsChange={(n) => setCredits(n)}
-          items={merchantItems(currentLevel, 'village', () => {
-            if (!stepsReadyRef.current) return;
-            const next = stepsRemaining + 500;
-            setStepsRemaining(next);
-            void updateUser(user.id, { steps_remaining: next });
+          items={merchantItems(currentLevel, 'village', async (qty = 1) => {
+            const { data, error } = await supabase.rpc('buy_steps', { p_packs: qty });
+            if (error) throw error;
+            const r = data as { ok?: boolean; reason?: string; packs?: number; cost?: number; credits?: number; steps_remaining?: number } | null;
+            if (!r?.ok) return { failure: r?.reason === 'steps_full' ? 'Your steps are full.' : 'Not enough credits.' };
+            const steps = Number(r.steps_remaining) || 0;
+            const nextCredits = Number(r.credits) || 0;
+            setStepsRemaining(steps);
+            return { receipt: `+${(Number(r.packs) || qty) * 500} steps · −${Number(r.cost) || qty * 5} credits`, credits: nextCredits };
           })}
         />
       )}

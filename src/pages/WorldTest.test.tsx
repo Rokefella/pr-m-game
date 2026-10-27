@@ -17,7 +17,7 @@ beforeEach(() => {
   localStorage.clear(); localStorage.setItem('praem.worldLayoutVersion', '5'); sessionStorage.clear(); f.registration = 1; f.level = 1; f.signedIn = true; f.reads = []; f.places = []; f.mutation.mockReset().mockResolvedValue({ error: null });
   f.uid += 'x'; f.granted = 0; f.completed = 0; f.steps = 100; f.credits = 50; f.pending = false; f.newLevel = 2; f.social = 2; f.flags = { sam_stage: '0', bernard_stage: '0' };
   f.presence.mockReset().mockResolvedValue({ error: null });
-  f.rpc.mockReset().mockImplementation(async (name, args) => ({ error: null, data: name === 'spend_world_steps' ? (f.steps = Math.max(0, f.steps - args.p_amount)) : name === 'claim_daily_steps' ? f.granted : { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
+  f.rpc.mockReset().mockImplementation(async (name, args) => ({ error: null, data: name === 'spend_world_steps' ? (f.steps = Math.max(0, f.steps - args.p_amount)) : name === 'claim_daily_steps' ? f.granted : name === 'buy_steps' ? (f.credits -= args.p_packs * 5, f.steps += args.p_packs * 500, { ok: true, packs: args.p_packs, cost: args.p_packs * 5, credits: f.credits, steps_remaining: f.steps }) : { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
   vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -108,16 +108,38 @@ describe('World home mechanics', () => {
     await screen.findByText(/STEPS\s+148/);
     expect(f.rpc.mock.calls.filter(([name]) => name === 'spend_world_steps')).toHaveLength(0);
   });
-  it('buys 500 steps for 5 credits and updates the world HUD', async () => {
+  it('buys 500 steps for 5 credits through the server and updates the world HUD', async () => {
     f.places = [{ kind: 'town', action: 'merchant', name: 'Merchant', x: 27, y: 25 }];
     open(); await screen.findByText('25,25 · A 0,0 · Fire');
     await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
     fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
     fireEvent.click(await screen.findByRole('button', { name: 'BUY' }));
-    await waitFor(() => expect(f.mutation).toHaveBeenCalledWith({ steps_remaining: 599 }));
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('buy_steps', { p_packs: 1 }));
+    await screen.findByText('+500 steps · −5 credits');
     await screen.findByText(/STEPS\s+598/);
     expect(screen.getByText(/CREDITS\s+45/)).toBeInTheDocument();
-    expect(f.mutation).toHaveBeenCalledWith({ credits: 45 });
+    expect(f.mutation.mock.calls.every(([payload]) => payload.steps_remaining === undefined && payload.credits === undefined)).toBe(true);
+  });
+  it('buys steps at zero steps and fifty credits', async () => {
+    f.steps = 0; f.places = [{ kind: 'town', action: 'merchant', name: 'Merchant', x: 27, y: 25 }];
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'BUY' }));
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('buy_steps', { p_packs: 1 }));
+    await screen.findByText('+500 steps · −5 credits');
+    await screen.findByText(/STEPS\s+500/);
+    expect(screen.getByText(/CREDITS\s+45/)).toBeInTheDocument();
+  });
+  it('shows the server reason when buying steps fails', async () => {
+    f.places = [{ kind: 'town', action: 'merchant', name: 'Merchant', x: 27, y: 25 }];
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    f.rpc.mockImplementation(async (name, args) => ({ error: null, data: name === 'buy_steps' ? { ok: false, reason: 'not_enough_credits' } : name === 'spend_world_steps' ? (f.steps = Math.max(0, f.steps - args.p_amount)) : { x0: args.p_x0, y0: args.p_y0, w: 64, h: 64, keys: ['path'], rows: Array.from({ length: 64 }, () => Array(64).fill(0)) } }));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'BUY' }));
+    await screen.findByText('Not enough credits.');
+    expect(screen.getByText(/CREDITS\s+50/)).toBeInTheDocument();
   });
   it('claims and announces the daily gift once across World remounts', async () => {
     f.granted = 250; const view = open(); await screen.findByText('The day gives you 250 steps.');

@@ -10,12 +10,18 @@ import { Button } from '@/components/ui/button';
 
 export type MerchantPalette = 'green' | 'orange';
 
+export type PurchaseOutcome = string | void | { receipt: string; credits?: number } | { failure: string };
+
 export type MerchantItem = {
   key: string;
   label: string;
   cost: number;
+  /** Allow buying several at once (stepper 1..maxQty). */
+  maxQty?: number;
+  /** Server-side purchase: the RPC moves credits and steps; the client never writes them. */
+  serverSide?: boolean;
   /** Complete the purchase effect before saving credits; optionally override the receipt. */
-  onPurchase?: () => string | void | Promise<string | void>;
+  onPurchase?: (qty: number) => PurchaseOutcome | Promise<PurchaseOutcome>;
 };
 
 interface MerchantOverlayProps {
@@ -55,6 +61,7 @@ const MerchantOverlay = ({
   const feedbackTimers = useRef<Record<string, number>>({});
   const buying = useRef(false);
   const [busy, setBusy] = useState(false);
+  const [qty, setQty] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (open) {
@@ -73,37 +80,49 @@ const MerchantOverlay = ({
 
   if (!open) return null;
 
+  const showFeedback = (key: string, text: string, ok: boolean) => {
+    setFeedback((f) => ({ ...f, [key]: { text, ok } }));
+    if (feedbackTimers.current[key]) window.clearTimeout(feedbackTimers.current[key]);
+    feedbackTimers.current[key] = window.setTimeout(
+      () => setFeedback((f) => ({ ...f, [key]: undefined })),
+      1500,
+    );
+  };
+
   const buy = async (item: MerchantItem) => {
     if (buying.current) return;
-    if (credits < item.cost) {
-      setFeedback((f) => ({ ...f, [item.key]: { text: 'Insufficient credits.', ok: false } }));
-      if (feedbackTimers.current[item.key]) window.clearTimeout(feedbackTimers.current[item.key]);
-      feedbackTimers.current[item.key] = window.setTimeout(
-        () => setFeedback((f) => ({ ...f, [item.key]: undefined })),
-        1500,
-      );
+    const count = Math.max(1, Math.min(item.maxQty ?? 1, qty[item.key] ?? 1));
+    if (credits < item.cost * count) {
+      showFeedback(item.key, 'Not enough credits.', false);
       return;
     }
-    const next = credits - item.cost;
     buying.current = true; setBusy(true);
-    let override: string | void;
+    let receipt: string | undefined;
     try {
-      override = await item.onPurchase?.();
-      onCreditsChange(next);
-      await updateUser(userId, { credits: next });
+      const result = await item.onPurchase?.(count);
+      if (result && typeof result === 'object') {
+        if ('failure' in result) {
+          showFeedback(item.key, result.failure, false);
+          return;
+        }
+        receipt = result.receipt;
+        if (typeof result.credits === 'number') onCreditsChange(result.credits);
+      } else {
+        receipt = typeof result === 'string' ? result : undefined;
+      }
+      if (!item.serverSide) {
+        const next = credits - item.cost * count;
+        onCreditsChange(next);
+        await updateUser(userId, { credits: next });
+      }
     } catch (e) {
-      console.error('[Merchant] failed to update credits', e);
-      setFeedback(f => ({ ...f, [item.key]: { text: 'Not right now.', ok: false } }));
+      console.error('[Merchant] purchase failed', e);
+      showFeedback(item.key, 'Not right now.', false);
       return;
     } finally {
       buying.current = false; setBusy(false);
     }
-    setFeedback((f) => ({ ...f, [item.key]: { text: override || 'Acquired.', ok: true } }));
-    if (feedbackTimers.current[item.key]) window.clearTimeout(feedbackTimers.current[item.key]);
-    feedbackTimers.current[item.key] = window.setTimeout(
-      () => setFeedback((f) => ({ ...f, [item.key]: undefined })),
-      1500,
-    );
+    showFeedback(item.key, receipt || 'Acquired.', true);
   };
 
   return (
@@ -176,7 +195,7 @@ const MerchantOverlay = ({
                 {item.label}
               </div>
               <div className="font-mono" style={{ fontSize: 12, color: '#c8963a' }}>
-                {item.cost}c
+                {item.cost * Math.max(1, Math.min(item.maxQty ?? 1, qty[item.key] ?? 1))}c
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8 }}>
@@ -198,6 +217,26 @@ const MerchantOverlay = ({
               >
                 BUY
               </Button>
+              {item.maxQty ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Button variant="ghost" aria-label={`Fewer ${item.label}`} disabled={busy}
+                    onClick={() => setQty((q) => ({ ...q, [item.key]: Math.max(1, (q[item.key] ?? 1) - 1) }))}
+                    style={{ fontSize: 12, color: `rgba(${rgb},0.8)`, border: `0.5px solid rgba(${rgb},0.4)`, background: 'transparent', padding: '4px 10px', height: 'auto', borderRadius: 0, cursor: 'pointer' }}
+                  >−</Button>
+                  <span className="font-mono" style={{ fontSize: 12, color: `rgba(${rgb},0.8)`, minWidth: 18, textAlign: 'center' }}>
+                    {Math.max(1, Math.min(item.maxQty, qty[item.key] ?? 1))}
+                  </span>
+                  <Button variant="ghost" aria-label={`More ${item.label}`} disabled={busy}
+                    onClick={() => setQty((q) => ({ ...q, [item.key]: Math.min(item.maxQty, (q[item.key] ?? 1) + 1) }))}
+                    style={{ fontSize: 12, color: `rgba(${rgb},0.8)`, border: `0.5px solid rgba(${rgb},0.4)`, background: 'transparent', padding: '4px 10px', height: 'auto', borderRadius: 0, cursor: 'pointer' }}
+                  >+</Button>
+                  <Button variant="ghost" aria-label={`Max ${item.label}`} disabled={busy}
+                    onClick={() => setQty((q) => ({ ...q, [item.key]: item.maxQty }))}
+                    className="font-cinzel"
+                    style={{ fontSize: 9, letterSpacing: '0.2em', color: `rgba(${rgb},0.8)`, border: `0.5px solid rgba(${rgb},0.4)`, background: 'transparent', padding: '4px 10px', height: 'auto', borderRadius: 0, cursor: 'pointer' }}
+                  >MAX</Button>
+                </div>
+              ) : null}
               {feedback[item.key] && (
                 <span
                   className="font-fell italic"

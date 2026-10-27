@@ -1249,7 +1249,7 @@ const Maze = () => {
       }
     }
 
-    // Console visits use the same exact-cell room-return marker as Bernard.
+    // Console visits use the exact-cell room-return marker.
     if (cfg.visualCells?.some(cell => cell.type === 'CONSOLE_DOOR' && cell.col === nc && cell.row === nr)) {
       window.sessionStorage.setItem('praem_maze_return_col', String(nc));
       window.sessionStorage.setItem('praem_maze_return_row', String(nr));
@@ -1257,16 +1257,9 @@ const Maze = () => {
       return;
     }
 
-    // blue door — Bernard's room (Level 1) / credit game (other levels)
-    if (cfg.creditDoors.some((d) => d.col === nc && d.row === nr)) {
-      if (currentLevelRef.current === 1) {
-        // Preserve the exact maze position so re-entering the maze restores it.
-        window.sessionStorage.setItem('praem_maze_return_col', String(nc));
-        window.sessionStorage.setItem('praem_maze_return_row', String(nr));
-        navigate(`/room/${currentLevelRef.current}/bernard_room?from=maze`);
-      } else {
-        showWhisper('A game exists here. Not yet open.', 'rgba(59,130,246,0.8)', 2500);
-      }
+    // blue door — Sam never appears in a maze; level 1 shows nothing, other levels keep the credit-game whisper.
+    if (cfg.creditDoors.some((d) => d.col === nc && d.row === nr) && currentLevelRef.current !== 1) {
+      showWhisper('A game exists here. Not yet open.', 'rgba(59,130,246,0.8)', 2500);
     }
 
     // ROOM_DOOR cells — newly-placed colored doors leading to generic rooms.

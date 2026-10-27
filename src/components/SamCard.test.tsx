@@ -5,7 +5,7 @@ const f = vi.hoisted(() => ({ flag: 0, run: vi.fn(), load: vi.fn() }));
 vi.mock('@/components/NpcPortrait', () => ({ default: () => null }));
 vi.mock('@/lib/worldSam', async original => {
   const actual = await original<typeof import('@/lib/worldSam')>();
-  return { ...actual, loadSam: f.load, samStageFlag: async () => f.flag, currentStage: async () => ({ id: `stage-${f.flag}`, text: `Stage ${f.flag}`, button_label: f.flag === 0 ? 'Thank you' : "I'll go" }), runStage: f.run, dropNames: async () => ({ map_scrap: 'Map Scrap' }) };
+  return { ...actual, loadSam: f.load, samFlags: async () => ({ sam_stage: String(f.flag) }), currentStage: async () => ({ id: `stage-${f.flag}`, text: `Stage ${f.flag}`, button_label: f.flag === 0 ? 'Thank you' : "I'll go" }), runStage: f.run, dropNames: async () => ({ map_scrap: 'Map Scrap' }) };
 });
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 const props = { userId: 'self', npcKey: 'bernard', playerName: 'Rob', fallbackName: 'Sam' };

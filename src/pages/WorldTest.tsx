@@ -35,11 +35,13 @@ import SamCard from '@/components/SamCard';
 import FindCard from '@/components/FindCard';
 import { currentStage, loadSam, visiblePlaces } from '@/lib/worldSam';
 import { approachedFind, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, findMarked, findShows, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
-import { setCurrentSkin, type Facing } from '@/lib/skins';
+import { npcFacingToward, npcSkin, setCurrentSkin, useSkins, type Facing } from '@/lib/skins';
+import NpcOrb from '@/components/theme/objects/NpcOrb';
 import './world-test.css';
 
 /** The suited figure stands ~90% of a tile wide, feet on the tile. */
 const WORLD_AVATAR_SIZE = Math.round(WORLD_TILE * 0.9);
+const WORLD_NPC_SIZE = WORLD_AVATAR_SIZE;
 
 type WorldData = Awaited<ReturnType<typeof readWorldData>>;
 export type Identity = { registration_number: number | null; aura_color: string | null; orb_dye?: string | null; avatar_body?: string | null; level?: number | null; username?: string | null; maze_completed_level?: number | null; steps_remaining?: number; credits?: number; growth_points?: number; social?: number; perception?: number; trade?: number; title?: string; levelup_pending?: boolean; levelup_newlevel?: number | null; subscription_status?: string; trial_end?: string; first_launch_at?: string };
@@ -151,6 +153,11 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const approached = useRef(new Set<string>());
   const samLineRef = useRef<Set<string>>(new Set());
   const [samTick, setSamTick] = useState(0);
+  const skins = useSkins(); // loading the catalogue re-renders so NPC sprites appear
+  const skinnedRef = useRef<Set<string>>(new Set());
+  const npcEls = useRef(new Map<string, HTMLDivElement | null>());
+  const npcFacingsRef = useRef<Record<string, Facing>>({});
+  const [npcFacings, setNpcFacings] = useState<Record<string, Facing>>({});
   const [findCard, setFindCard] = useState<{ find: WorldFind; reading: boolean } | null>(null);
   useEffect(() => {
     if (!userId) return;
@@ -372,7 +379,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       }
       if (time - lastDraw < terrainDrawInterval(moving, gust)) { frame = requestAnimationFrame(tick); return; }
       lastDraw = time;
-      drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l, clock);
+      drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l, clock, skinnedRef.current);
       const layerFinds = findsOn(findsRef.current, l);
       drawFinds(ctx, layerFinds, claimedRef.current, point, types, camera.current, width, height, time, ink, reduced);
       const phase = worldPhase(clock, data.cycle);
@@ -390,6 +397,14 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
         ctx.beginPath(); ctx.ellipse(width / 2, height / 2 + 5, 10 + pulse * 4, 4 + pulse * 2, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
       }
       if (avatar.current) avatar.current.style.transform = `translate(${width / 2 - WORLD_AVATAR_SIZE / 2 + (time < bumpUntil.current ? Math.sin(time * .1) * 3 : 0)}px, ${height / 2 - WORLD_AVATAR_SIZE / 2}px)`;
+      for (const p of layerPlaces[l]) {
+        if (!p.npc_key || !skinnedRef.current.has(p.npc_key)) continue;
+        const key = `${p.npc_key}:${p.x}:${p.y}`;
+        const el = npcEls.current.get(key);
+        if (el) el.style.transform = `translate(${p.x * WORLD_TILE - camera.current.x + (WORLD_TILE - WORLD_NPC_SIZE) / 2}px, ${p.y * WORLD_TILE - camera.current.y + WORLD_TILE - Math.round(WORLD_NPC_SIZE * 14 / 16)}px)`;
+        const f = npcFacingToward(p, point);
+        if (npcFacingsRef.current[key] !== f) { npcFacingsRef.current[key] = f; setNpcFacings({ ...npcFacingsRef.current }); }
+      }
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
@@ -431,6 +446,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const terrain = data.terrain.find(t => t.key === cache.terrainKey(pos.x, pos.y));
   const surfacePoint = layer === 1 ? { x: pos.x * 4, y: pos.y * 4 } : pos;
   const era = eraAt(eraPointFor(pos, layer), data.eras), area = worldArea(surfacePoint), phase = worldPhase(clock, data.cycle);
+  const skinned = new Set(skins.filter(s => s.kind === 'npc' && s.enabled !== false && s.npc_key).map(s => s.npc_key as string));
+  skinnedRef.current = skinned;
   const cardAction = placeCard ? placeAction(placeCard) : null;
   const outcome = placeCard && cardAction === 'maze' ? mazeOutcome(placeCard.maze_level, level) : null;
   const button = (label: string, onClick: () => void) => <Button className="world-jump" disabled={busy} onClick={onClick}>{busy ? '…' : label}</Button>;
@@ -452,6 +469,10 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       else if (isClaimed && f.visibility === 'visible' && f.kind === 'landmark') setFindCard({ find: f, reading: true });
     }} />
     <div ref={avatar} className="world-avatar"><PlayerAvatar size={WORLD_AVATAR_SIZE} palette={orbLook(identity.aura_color, identity.orb_dye, identity.registration_number)} walking={walking} skin={identity.avatar_body} facing={facing} registrationNumber={identity.registration_number} auraColor={identity.aura_color} orbDye={identity.orb_dye} /></div>
+    {placesOn(data.places, layer).filter(p => p.npc_key && skinned.has(p.npc_key)).map(p => {
+      const key = `${p.npc_key}:${p.x}:${p.y}`;
+      return <div key={key} ref={el => { if (el) npcEls.current.set(key, el); else npcEls.current.delete(key); }} className="world-avatar" style={{ pointerEvents: 'none' }}><NpcOrb npc={p.npc_key as string} size={WORLD_NPC_SIZE} facing={npcFacings[key] ?? 'down'} /></div>;
+    })}
     <header className="world-hud font-mono">{dev && <div className="world-status"><span>{pos.x},{pos.y} · A {area.x},{area.y} · {era?.name ?? '—'}</span><span>{layer === 1 ? `UNDERGROUND · ABOVE ${surfacePoint.x},${surfacePoint.y}` : 'SURFACE'}</span><span>{terrain?.name ?? (cache.errors.size ? 'Window unavailable' : 'Loading…')} · COST {terrain ? tileCost(terrain, era) : '—'} · SPENT {Number(spent.toFixed(2))}</span>{layer === 0 && <span>{phase.phase.toUpperCase()} · {Math.ceil(phase.minutesLeft)} MIN</span>}</div>}<Button variant="ghost" size="icon" title="MAP" aria-label="MAP" onClick={() => { keys.current.clear(); setMapOpen(true); }}><MapIcon size={18} /></Button>{dev && <Button variant="outline" className="world-jump" onClick={() => { setJumpX(String(pos.x)); setJumpY(String(pos.y)); setJumpOpen(true); }}><Navigation size={14} />JUMP</Button>}</header>
     <GameHud stepsRemaining={stepBalance} stepsExhausted={stepBalance === 0} credits={identity.credits ?? 0} currentLevel={identity.level ?? 1} registrationNumber={identity.registration_number} growthPoints={identity.growth_points ?? 0} subscriptionStatus={subscription} trialDaysRemaining={identity.first_launch_at ? Math.max(0, 14 - Math.floor((Date.now() - new Date(identity.first_launch_at).getTime()) / 86400000)) : identity.trial_end ? getDaysRemainingInTrial(identity.trial_end) : 14} onOpenProfile={() => { keys.current.clear(); setProfileOpen(true); }} onOpenDevMenu={() => { keys.current.clear(); setDevOpen(true); }} />
     <ProfileOverlay isOpen={profileOpen} onClose={() => { setProfileOpen(false); void refreshCompleted(); }} context="village" growthPoints={identity.growth_points ?? 0} socialStat={identity.social ?? 0} perceptionStat={identity.perception ?? 0} tradeStat={identity.trade ?? 0} />

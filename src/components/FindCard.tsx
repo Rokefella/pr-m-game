@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { claimFind, findButton, findReceipt, type WorldFind } from '@/lib/worldFinds';
-import { skinForDrop, useSkins } from '@/lib/skins';
+import { isPlayerSkin, skinForDrop, useSkins } from '@/lib/skins';
 import { publishOrb } from '@/lib/orb';
 import SkinCard from '@/components/SkinCard';
 import type { WorldPoint } from '@/lib/worldTest';
@@ -22,7 +22,7 @@ export default function FindCard({ find, reading, at, onClaimed, onRewarded, onC
   const [note, setNote] = useState('');
   const [skinFound, setSkinFound] = useState<{ description: string | null } | null>(null);
   const skinKey = skinForDrop(find.drop_key);
-  const skin = skinKey ? skins.find(s => s.skin_key === skinKey) : undefined;
+  const skin = skinKey ? skins.find(s => s.skin_key === skinKey && isPlayerSkin(s)) : undefined;
 
   const press = async () => {
     if (busy) return;

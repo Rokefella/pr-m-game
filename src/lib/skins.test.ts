@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dyeRamp, frameFor, getCurrentSkin, liftBoot, mirrorFrame, mirrorLegs, normalizeSkinKey, resolveColors, setCurrentSkin, skinBaseColor, skinForDrop, skinPublic, type Skin } from './skins';
+import { _primeSkins, blinkFrame, dyeRamp, frameFor, getCurrentSkin, isPlayerSkin, liftBoot, mirrorFrame, mirrorLegs, normalizeSkinKey, npcColors, npcFacingToward, npcSkin, resolveColors, setCurrentSkin, skinBaseColor, skinForDrop, skinPublic, type Skin } from './skins';
 import { publishOrb } from './orb';
 
 const row = (chars: string) => chars.padEnd(16, '.').slice(0, 16);
@@ -99,6 +99,45 @@ describe('wardrobe privacy', () => {
     const skin = makeSkin({ skin_key: 'diver', name: 'The Brass Diver', rarity: 'rare' });
     expect(skinPublic(skin, false)).toEqual({ name: 'Not yet found', rarity: '' });
     expect(skinPublic(skin, true).name).toBe('The Brass Diver');
+  });
+});
+
+describe('NPC skins', () => {
+  const npcRow = (over: Partial<Skin> = {}) => makeSkin({ skin_key: 'npc_sam', name: 'Sam', kind: 'npc', npc_key: 'bernard', ...over });
+  it('the wardrobe lists only player skins; a null kind counts as player', () => {
+    const rows = [makeSkin(), npcRow(), makeSkin({ skin_key: 'scout', kind: null }), makeSkin({ skin_key: 'diver', kind: 'player' })];
+    expect(rows.filter(isPlayerSkin).map(s => s.skin_key)).toEqual(['visitor', 'scout', 'diver']);
+  });
+  it('npcSkin returns the enabled NPC row for its npc_key', () => {
+    _primeSkins([makeSkin(), npcRow()]);
+    expect(npcSkin('bernard')?.skin_key).toBe('npc_sam');
+    expect(npcSkin('merchant')).toBeNull();
+    expect(npcSkin(null)).toBeNull();
+    _primeSkins(null);
+  });
+  it('npcSkin falls back to the orb when the row is missing or disabled', () => {
+    _primeSkins([npcRow({ enabled: false })]);
+    expect(npcSkin('bernard')).toBeNull();
+    _primeSkins(null);
+    expect(npcSkin('bernard')).toBeNull();
+  });
+  it('NPC colours come from their own undyed hex, never a dye', () => {
+    const skin = npcRow({ undyed_hex: '#4a7bd8' });
+    expect(npcColors(skin).M).toBe('#4a7bd8');
+  });
+  it('an NPC faces an adjacent player and looks down otherwise', () => {
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 6, y: 5 })).toBe('right');
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 4, y: 6 })).toBe('left');
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 5, y: 4 })).toBe('up');
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 5, y: 6 })).toBe('down');
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 5, y: 5 })).toBe('down');
+    expect(npcFacingToward({ x: 5, y: 5 }, { x: 7, y: 5 })).toBe('down');
+  });
+  it('the blink frame swaps only p pixels', () => {
+    const out = blinkFrame(['..pp..Ma..', 'p.......p.', '........']);
+    expect(out[0]).toBe('..aa..Ma..');
+    expect(out[1]).toBe('a.......a.');
+    expect(out[2]).toBe('........');
   });
 });
 

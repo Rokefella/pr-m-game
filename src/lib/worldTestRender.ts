@@ -142,7 +142,7 @@ function drawBuildingGroup(ctx: CanvasRenderingContext2D, cache: WorldChunkCache
   }
   return true;
 }
-export function drawWorld(ctx: CanvasRenderingContext2D, cache: WorldChunkCache, types: Map<string, Terrain>, eras: Era[], places: Place[], camera: WorldPoint, width: number, height: number, time: number, ink: WorldInk, reduced: boolean, layer: WorldLayer = 0, clock = time) {
+export function drawWorld(ctx: CanvasRenderingContext2D, cache: WorldChunkCache, types: Map<string, Terrain>, eras: Era[], places: Place[], camera: WorldPoint, width: number, height: number, time: number, ink: WorldInk, reduced: boolean, layer: WorldLayer = 0, clock = time, skinnedNpcs?: Set<string>) {
   ctx.fillStyle = ink.background; ctx.fillRect(0, 0, width, height); ctx.imageSmoothingEnabled = false;
   const size = cache.size;
   const x0 = Math.max(0, Math.floor(camera.x / WORLD_TILE)), y0 = Math.max(0, Math.floor(camera.y / WORLD_TILE));
@@ -162,7 +162,7 @@ export function drawWorld(ctx: CanvasRenderingContext2D, cache: WorldChunkCache,
     else { ctx.strokeStyle = ink.grid; ctx.globalAlpha = .2; ctx.strokeRect(px, py, WORLD_TILE, WORLD_TILE); ctx.globalAlpha = 1; }
   }
   if (layer === 1) { ctx.fillStyle = ink.shadow; ctx.globalAlpha = .4; ctx.fillRect(0, 0, width, height); ctx.globalAlpha = 1; }
-  for (const place of places) if (place.action !== 'signpost' && place.x >= x0 && place.x <= x1 && place.y >= y0 && place.y <= y1) drawPlace(ctx, place, place.x * WORLD_TILE - camera.x, place.y * WORLD_TILE - camera.y, ink);
+  for (const place of places) if (place.action !== 'signpost' && !(place.npc_key && skinnedNpcs?.has(place.npc_key)) && place.x >= x0 && place.x <= x1 && place.y >= y0 && place.y <= y1) drawPlace(ctx, place, place.x * WORLD_TILE - camera.x, place.y * WORLD_TILE - camera.y, ink);
 }
 
 /** Decorative fire light is applied after the world's tint, never to gameplay vision. */

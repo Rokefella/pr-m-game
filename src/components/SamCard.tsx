@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import NpcOrb from '@/components/theme/objects/NpcOrb';
+import { npcBodyPx } from '@/lib/orbSizes';
+import { npcSkin } from '@/lib/skins';
 import { currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samStageFlag, samTopics, topicRoot, type BookNode, type SamStage } from '@/lib/worldSam';
 
 type Props = { userId: string; npcKey: string; playerName: string; fallbackName: string; onRewarded?: () => void };
@@ -28,6 +31,7 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
   };
   const go = (target: string | null | undefined) => setNode(target && sam ? pickNode(sam.book, target) : null);
   return <>
+    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}><NpcOrb npc={npcKey} size={npcSkin(npcKey) ? 96 : npcBodyPx('village')} /></div>
     <h2 className="font-cinzel">{sam?.npc.name ?? fallbackName}</h2>
     {!checked ? <p className="font-fell">…</p> : node ? <>
       <p className="font-fell">{name(node.text)}</p>

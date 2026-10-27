@@ -23,6 +23,9 @@ export type Skin = {
   frames: SkinFrames;
   walk_rule: string;
   enabled: boolean;
+  /** 'player' (or null) skins live in the wardrobe; 'npc' skins dress a named NPC. */
+  kind?: string | null;
+  npc_key?: string | null;
 };
 
 export const START_SKIN = 'visitor';
@@ -192,6 +195,30 @@ export function skinSvg(rows: string[], colors: Record<string, string>, dyeChars
   const shadow = '<ellipse cx="8" cy="13.3" rx="5" ry="1" fill="#000" opacity=".35"/>';
   const glow = opts.glow ? `<circle cx="8" cy="7" r="9" fill="${opts.glow}" opacity=".14"/>` : '';
   return glow + shadow + body;
+}
+
+// ---------- NPC skins ----------
+
+/** Wardrobe/found-card/grant lists only player skins; a null kind counts as player. */
+export const isPlayerSkin = (skin: Skin) => skin.kind == null || skin.kind === 'player';
+
+/** The enabled NPC skin for an npc_key, or null when the row is missing/disabled (callers keep the orb). */
+export function npcSkin(npcKey: string | null | undefined): Skin | null {
+  if (!npcKey || !cache) return null;
+  return cache.find(s => s.kind === 'npc' && s.npc_key === npcKey && s.enabled !== false) ?? null;
+}
+
+/** NPCs never take dyes: fixed palette plus the ramp from their own undyed colour. */
+export const npcColors = (skin: Skin) => resolveColors(skin, skin.undyed_hex);
+
+/** Blink: only the 'p' eye pixels close (show skin colour 'a'). */
+export const blinkFrame = (rows: string[]) => rows.map(r => r.replace(/p/g, 'a'));
+
+/** NPCs face an adjacent player (Chebyshev ≤ 1) and look down otherwise. */
+export function npcFacingToward(npc: { x: number; y: number }, player: { x: number; y: number }): Facing {
+  const dx = player.x - npc.x, dy = player.y - npc.y;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) > 1 || (dx === 0 && dy === 0)) return 'down';
+  return Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up');
 }
 
 // ---------- wardrobe privacy ----------

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { updateUser } from '@/lib/userData';
 import { getFlag } from '@/lib/questFlags';
+import { samLandLine } from '@/lib/worldSam';
 import { BETA_MODE } from '@/lib/config';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
@@ -279,7 +280,7 @@ const ProfileOverlay = ({
       ? `${runProgress.collected}/${runProgress.required}`
       : `${fragmentCount}`;
 
-  const stage = parseInt(getFlag('bernard_stage') ?? '0', 10);
+  const samStage = parseInt(getFlag('sam_stage') ?? '0', 10) || 0;
   const alexandraActive = getFlag('alexandra_quest') === 'active';
   const subscribed = BETA_MODE || (accountRow ? ['active','lifetime','dev','beta'].includes(accountRow.subscription_status) : false);
   const subType = accountRow?.subscription_tier ?? '';
@@ -310,19 +311,9 @@ const ProfileOverlay = ({
 
   const activeQuests: Quest[] = [];
   if (alexandraActive) activeQuests.push({ key: 'a-alexandra', name: 'The One Who Was Here Before', giver: 'Sam', status: 'Someone was here before. Follow it far enough and you will find them.', gold: true });
-  if (stage === 0) activeQuests.push({ key: 'a-find-bernard', name: 'Find Sam', giver: 'Sam', status: 'Seek out Sam in the Village square.' });
-  if (stage === 1) activeQuests.push({ key: 'a-blue', name: 'Find the Blue Door', giver: 'Sam', status: 'Find the blue door inside the Instrument.' });
-  if (stage === 2) activeQuests.push({ key: 'a-frag', name: 'Find a fragment', giver: 'Sam', status: 'Collect one fragment and return to Sam.' });
-  if (stage === 3) activeQuests.push({ key: 'a-gold', name: 'Find the golden door', giver: 'Sam', status: 'Collect all 5 fragments and find the golden door.' });
-  if (stage === 4) activeQuests.push({ key: 'a-return', name: 'Return to Sam', giver: 'Sam', status: 'Return to Sam in the Village square.' });
+  activeQuests.push({ key: 'a-sam-land', name: "Sam's land", giver: 'Sam', status: samLandLine(samStage) });
 
   const completedQuests: Quest[] = [];
-  if (stage >= 1) completedQuests.push({ key: 'c-welcome', name: 'Welcome to the Village', giver: 'Sam', status: 'Sam welcomed you to the Village.' });
-  if (stage >= 2) completedQuests.push({ key: 'c-blue', name: 'Find the Blue Door', giver: 'Sam', status: "You found Sam's room." });
-  if (stage >= 3) completedQuests.push({ key: 'c-frag', name: 'Find a fragment', giver: 'Sam', status: 'Fragment collected. The instrument spoke.' });
-  if (stage >= 4) completedQuests.push({ key: 'c-gold', name: 'Find the golden door and Shadow Realm', giver: 'Sam', status: 'You found the golden door.' });
-  if (stage >= 5) completedQuests.push({ key: 'c-return', name: 'The return', giver: 'Sam', status: 'You returned to Sam. Wanderer title granted.' });
-
 
   const cardStyle: React.CSSProperties = {
     position: 'relative',

@@ -30,6 +30,15 @@ export const visiblePlaces = <T extends { show_when?: ShowWhen; npc_key?: string
   });
 };
 
+/** Quest-log line for "Sam's land": where Sam waits, without numbers or game words. */
+export const samLandLine = (samStage: number | null | undefined) => {
+  const s = Number(samStage) || 0;
+  if (s <= 2) return 'Sam is waiting by the fire where you woke.';
+  if (s <= 4) return 'Sam is waiting outside Cinder Hollow.';
+  if (s === 5) return 'Sam is waiting at The First Spark.';
+  return 'Sam is waiting in Lumen.';
+};
+
 export type SamStage = { id: string; text: string; button_label: string | null; condition: unknown; order_index: number };
 export const firstMatchingStage = <T,>(stages: T[], matches: boolean[]) => stages.find((_, i) => matches[i]) ?? null;
 export const fillName = (text: string, name: string) => text.replace(/\{name\}/g, name);

@@ -83,7 +83,7 @@ export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh, befo
     <p className="font-fell italic drop-detail-desc">{drop.description ?? 'Its purpose is not yet clear.'}</p>
     {isDye || isMechanic
       ? <><Button type="button" className="font-cinzel drop-detail-use" disabled={busy || Boolean(blocked)} onClick={isDye ? use : () => { if (stackUse && !choosing) setChoosing(true); else void useMechanic(); }}>USE</Button>{choosing && <div className="flex items-center justify-center gap-2 py-2"><span className="font-fell">How many?</span><Button variant="ghost" size="icon" aria-label="Decrease quantity" disabled={busy || quantity <= 1} onClick={() => setQuantity(n => Math.max(1, n - 1))}><Minus size={16} /></Button><output className="font-mono" aria-label="Quantity">{quantity}</output><Button variant="ghost" size="icon" aria-label="Increase quantity" disabled={busy || quantity >= count} onClick={() => setQuantity(n => Math.min(count, n + 1))}><Plus size={16} /></Button><Button variant="outline" disabled={busy} onClick={() => setQuantity(count)}>MAX</Button></div>}{blocked && <p className="font-fell italic drop-detail-msg">{blocked}</p>}</>
-      : <p className="font-fell italic drop-detail-msg">Not usable yet.</p>}
+      : drop.category === 'tool' ? null : <p className="font-fell italic drop-detail-msg">Not usable yet.</p>}
     {msg && <p className="font-fell italic drop-detail-msg">{msg}</p>}
   </div>;
 }

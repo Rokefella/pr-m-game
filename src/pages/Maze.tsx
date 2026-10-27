@@ -31,6 +31,7 @@ import { waitForDailySteps } from '@/lib/dailySteps';
 import { abandonRunDrops, endRun, forfeitUnbanked, getActiveRun, markRunComplete, startRun, STRICT_FORFEIT } from '@/lib/runState';
 import { carriedDropCount, refreshDrops, exitCarryWarning, DROPS_REFRESHED, type DropsRefresh } from '@/lib/carriedDrops';
 import PlateFrame, { PlateCorners } from '@/components/theme/PlateFrame';
+import SkinCard from '@/components/SkinCard';
 import PixelEye from '@/components/theme/PixelEye';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -415,6 +416,8 @@ const Maze = () => {
   const [orbDye, setOrbDye] = useState<string | null>(null);
   const [avatarBody, setAvatarBody] = useState<string | null>(null);
   useOrbSync(setAuraColor, setOrbDye, setAvatarBody);
+  const skins = useSkins();
+  const [skinFound, setSkinFound] = useState<Skin | null>(null);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
   const registrationNumberRef = useRef(0);
   const [doorConfirmOpen, setDoorConfirmOpen] = useState(false);
@@ -996,7 +999,9 @@ const Maze = () => {
           const uid = userIdRef.current;
           if (uid) void refreshDrops(uid);
           void refreshRunEffects();
-          showWhisper(`You found: ${result.drop_name ?? 'something'}. (carried)`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
+          const skin = result.drop_name ? skins.find(s => s.name === result.drop_name) : undefined;
+          if (skin) setSkinFound(skin);
+          else showWhisper(`You found: ${result.drop_name ?? 'something'}. (carried)`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
         }
       } catch { /* silent — a failed claim must not interrupt movement */ }
       finally {
@@ -1590,11 +1595,17 @@ const Maze = () => {
         );
       })()}
 
+      {skinFound && (
+        <MazeDialog glow={DIMENSION_GLOW[glow]} zIndex={Z.OVERLAY}>
+          <SkinCard skin={skinFound} description={skinFound.blurb} carried auraColor={auraColor} orbDye={orbDye} registrationNumber={registrationNumber} onClose={() => setSkinFound(null)} />
+        </MazeDialog>
+      )}
+
       <Thumbstick
         onMove={(dc, dr) => tryMove(dc, dr)}
         disabled={
           profileOpenDisplay || exchangeOpen || doorConfirmOpen || insufficientFragmentsOpen ||
-          paywallOpen || activeFragment !== null
+          paywallOpen || activeFragment !== null || skinFound !== null
         }
       />
 

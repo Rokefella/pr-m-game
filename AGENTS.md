@@ -34,3 +34,4 @@
 - World object underlays resolve neighbouring ground in worldTestRender only, preserving maze skin fallback; worldTest owns terrain-paced movement and safe arrivals, while worldReturn versions local positions to discard obsolete layouts without data writes.
 - worldDiscovery owns per-user OR-merged local/server bits and throttled saves; WorldMap uses cached worldOverview art and library zoom/pan, with reveal strictly presentation-only.
 - worldSam owns show_when, Sam stage/topic rules and RPCs; worldFinds owns find visibility/claim rules; cards draw.
+- skins.ts owns the avatar_skins catalogue cache, lift_boot_v1 frame derivation and dye ramps; PlayerAvatar renders SkinSprite and falls back to LegacyOrb without catalogue data, with the equipped skin shared through the orb event and module store so rooms need no prop threading. Unfound skins never render names or where_note.

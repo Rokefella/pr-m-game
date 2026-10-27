@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Player skins: Visitor default suit, dye zones, walk frames, wardrobe with hidden unfound skins, skin-found cards for world finds and maze pickups, dev grant; frame/colour/privacy/orb-event tests pass.
+- [ ] Verify skin equip, finds and maze skin drops against a real signed-in player — the avatar_skins table and skin RPCs were not visible through the backend tools, and external game authentication remains unavailable.
+
 - [x] World home build 2: fractional step spending, bounded serialized lifecycle flushes, zero-step slow walking and shared real merchant; spending/refetch/leave and purchase tests pass, preview compilation passes.
 - [ ] Verify build 2 walking deductions and merchant purchases against a real signed-in player — the game's external authentication session is unavailable; automated mocked flows pass but do not verify live persistence.
 

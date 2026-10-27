@@ -52,3 +52,28 @@ export function TurningSkinSprite({ skin, colors, size = 96, glow = null, prism 
   const facings: Facing[] = ['down', 'right', 'up', 'left'];
   return <SkinSprite skin={skin} facing={facings[turn % 4]} size={size} colors={colors} glow={glow} prism={prism} />;
 }
+
+/** NPC idle life: a blink every 3–6 s (random per mount) and now and then a 1 px bob. Static with reduced motion. */
+export function NpcSkinSprite({ skin, facing = 'down', size = 48, colors }: { skin: Skin; facing?: Facing; size?: number; colors: Record<string, string> }) {
+  const [blink, setBlink] = useState(false);
+  const [bob, setBob] = useState(false);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches return;
+    let off = false, t1 = 0, t2 = 0;
+    const cycle = () => {
+      t1 = window.setTimeout(() => {
+        if (off) return;
+        setBlink(true);
+        if (Math.random() < 0.35) setBob(true);
+        t2 = window.setTimeout(() => { if (!off) { setBlink(false); setBob(false); } cycle(); }, 150);
+      }, 3000 + Math.random() * 3000);
+    };
+    cycle();
+    return () => { off = true; window.clearTimeout(t1); window.clearTimeout(t2); };
+  }, []);
+  return (
+    <span style={{ display: 'inline-block', transform: bob ? 'translateY(-1px)' : undefined }}>
+      <SkinSprite skin={skin} facing={facing} size={size} colors={colors} blink={blink} />
+    </span>
+  );
+}

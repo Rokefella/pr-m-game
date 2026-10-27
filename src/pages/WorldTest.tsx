@@ -498,6 +498,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ level, ts: Date.now() }));
     try { await leave('/shadow'); } catch { setEntryMessage('The door will not open right now.'); }
   };
+  useDevNoteContext(() => ({ x: posRef.current.x, y: posRef.current.y, layer: layerRef.current, era: data ? eraAt(eraPointFor(posRef.current, layerRef.current), data.eras)?.name : undefined, level, maze_completed_level: completed, steps_remaining: stepLedger.current?.balance, credits: identity.credits, facing, avatar_body: identity.avatar_body, open_card: placeCard?.name ?? findCard?.find.title ?? (profileOpen ? 'Profile' : mapOpen ? 'Map' : null), phase: data ? worldPhase(clock, data.cycle).phase : undefined }));
   if (!data) return error ? <div className="world-error"><p className="font-fell">{error}</p><Button onClick={() => setRetry(n => n + 1)}>RETRY</Button></div> : <LoadingScreen />;
   const cache = cacheOf(layer);
   const terrain = data.terrain.find(t => t.key === cache.terrainKey(pos.x, pos.y));

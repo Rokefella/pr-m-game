@@ -20,8 +20,9 @@ import { X } from 'lucide-react';
 import { fragmentInventory, type FolderFragment } from '@/lib/carriedFragments';
 import DropIcon from '@/components/DropIcon';
 import Wardrobe from '@/components/Wardrobe';
-import { USER_STEPS_REFRESHED, type MazeUseContext } from '@/lib/mechanics';
-import { readOwnedDrops, DROPS_REFRESHED, type DropsRefresh, type OwnedDrop } from '@/lib/carriedDrops';
+import { INVENTORY_CHANGED } from '@/lib/inventoryEvents';
+import { USER_STEPS_REFRESHED, type WorldUseContext, type MazeUseContext } from '@/lib/mechanics';
+import { readOwnedDrops, stackDrops, DROPS_REFRESHED, type DropsRefresh, type OwnedDrop } from '@/lib/carriedDrops';
 
 
 
@@ -34,6 +35,7 @@ type Props = {
   context?: 'village' | 'maze';
   runProgress?: { collected: number; required: number };
   mazeUse?: MazeUseContext;
+  worldUse?: WorldUseContext;
   beforeDropUse?: () => Promise<void>;
   growthPoints?: number;
   socialStat?: number;
@@ -72,6 +74,7 @@ const ProfileOverlay = ({
   context = 'village',
   runProgress,
   mazeUse,
+  worldUse,
   beforeDropUse,
   growthPoints: growthPointsProp = 0,
   socialStat: socialStatProp = 0,
@@ -103,6 +106,7 @@ const ProfileOverlay = ({
   const [ownedDrops, setOwnedDrops] = useState<OwnedDrop[]>([]);
   const [dropTooltip, setDropTooltip] = useState<string | null>(null);
   const [dropsNonce, setDropsNonce] = useState(0);
+  useEffect(() => { const refresh = () => setDropsNonce(n => n + 1); window.addEventListener(INVENTORY_CHANGED, refresh); return () => window.removeEventListener(INVENTORY_CHANGED, refresh); }, []);
   const [dyeWhisper, setDyeWhisper] = useState('');
   const applyOrb = (c: OrbChange) => {
     setAccountRow(prev => prev ? { ...prev, aura_color: c.aura_color ?? prev.aura_color, orb_dye: c.orb_dye } : prev);
@@ -250,7 +254,7 @@ const ProfileOverlay = ({
       })
       .catch((e) => console.error('[Folder] fetch error', e));
     return () => { cancelled = true; };
-  }, [isOpen, user]);
+  }, [isOpen, user, dropsNonce]);
 
   
 
@@ -795,12 +799,13 @@ const ProfileOverlay = ({
               {(() => {
                 const tradeStat = accountRow?.trade ?? 0;
                 const dropCapacity = 10 + tradeStat * 2 + extraDropCapacity;
-                const owned = ownedDrops.length;
-                const dropCells = Array.from({ length: dropCapacity }, (_, i) => ownedDrops[i] || null);
+                const stacks = stackDrops(ownedDrops);
+                const owned = stacks.length;
+                const dropCells = Array.from({ length: dropCapacity }, (_, i) => stacks[i] || null);
                 const creditsNum = accountRow?.credits ?? 0;
                 const SLOT_COST = 100;
                 const canAfford = creditsNum >= SLOT_COST;
-                const selectedDrop = ownedDrops.find((d) => d.id === dropTooltip) || null;
+                const selectedDrop = stacks.find((d) => d.id === dropTooltip) || null;
 
                 const buySlot = async () => {
                   if (!user || !canAfford || buyingSlot) return;
@@ -827,13 +832,13 @@ const ProfileOverlay = ({
                   <div>
                     <div className="profile-section-label font-mono"><span>DROPS</span><span>{owned} / {dropCapacity}</span></div>
                     <div className="profile-inventory-grid">
-                      {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? `profile-drop-filled${drop.carried ? ' profile-drop-carried' : ''}` : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? drop.name : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="profile-drop-body"><DropIcon svg={drop.icon_svg} category={drop.category} size={40} drop_key={drop.drop_key} />{drop.category === 'key' && <span className="profile-key-badge font-mono">KEY</span>}<span className="font-fell italic">{drop.name}</span>{drop.carried && <span className="profile-carried-label font-mono">CARRIED</span>}</span>}</Button>)}
+                      {dropCells.map((drop, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${drop ? `profile-drop-filled${drop.carried ? ' profile-drop-carried' : ''}` : 'profile-tile-empty'}`} disabled={!drop} aria-label={drop ? `${drop.name} ×${drop.count}` : `Empty drop slot ${i + 1}`} onClick={() => drop && setDropTooltip(dropTooltip === drop.id ? null : drop.id)}>{drop && <span className="profile-drop-body"><DropIcon svg={drop.icon_svg} category={drop.category} size={40} drop_key={drop.drop_key} />{drop.category === 'key' && <span className="profile-key-badge font-mono">KEY</span>}<span className="font-fell italic">{drop.name} ×{drop.count}</span>{drop.carried && <span className="profile-carried-label font-mono">CARRIED</span>}</span>}</Button>)}
                     </div>
                     {ownedDrops.some(drop => drop.carried) && <p className="profile-carry-note font-fell italic">Dashed drops are carried. Bank them in the Shadow Realm or lose them if you leave the maze.</p>}
 
-                    {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} beforeUse={beforeDropUse} maze={context === 'maze' ? mazeUse : undefined} steps={accountRow?.steps_remaining} onRefresh={() => setDropsNonce(n => n + 1)} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); setOwnedDrops(drops => drops.filter(d => d.id !== selectedDrop.id)); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
+                    {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} world={worldUse} beforeUse={beforeDropUse} maze={context === 'maze' ? mazeUse : undefined} steps={accountRow?.steps_remaining} onRefresh={() => setDropsNonce(n => n + 1)} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
                     {dyeWhisper && <p role="status" className="font-fell italic dye-whisper">{dyeWhisper}</p>}
-                    {ownedDrops.some(d => d.category === 'words') && <div style={{ marginTop: 24 }}><div className="profile-section-label font-mono"><span>CARVED WORDS</span></div>{ownedDrops.filter(d => d.category === 'words').map(d => <div key={d.id} style={{ marginTop: 12 }}><p className="font-cinzel">{d.name}</p>{d.description && <p className="font-fell italic" style={{ whiteSpace: 'pre-line', color: 'var(--plate-label)' }}>{d.description}</p>}</div>)}</div>}
+                    {ownedDrops.some(d => d.category === 'words') && <div style={{ marginTop: 24 }}><div className="profile-section-label font-mono"><span>CARVED WORDS</span></div>{stacks.filter(d => d.category === 'words').map(d => <div key={d.id} style={{ marginTop: 12 }}><p className="font-cinzel">{d.name}</p>{d.description && <p className="font-fell italic" style={{ whiteSpace: 'pre-line', color: 'var(--plate-label)' }}>{d.description}</p>}</div>)}</div>}
 
                     {/* Status text */}
                     {owned === 0 && (

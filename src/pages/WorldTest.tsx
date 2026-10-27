@@ -34,7 +34,7 @@ import WorldMap from '@/components/WorldMap';
 import { WorldDiscovery } from '@/lib/worldDiscovery';
 import SamCard from '@/components/SamCard';
 import FindCard from '@/components/FindCard';
-import { currentStage, loadSam, visiblePlaces } from '@/lib/worldSam';
+import { currentStage, loadSam, shouldMarkMerchantMet, visiblePlaces } from '@/lib/worldSam';
 import { approachedFind, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, findMarked, findShows, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
 import { npcFacingToward, npcSkin, setCurrentSkin, useSkins, type Facing } from '@/lib/skins';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
@@ -118,7 +118,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const [data, setData] = useState<WorldData | null>(null);
   const rawWorld = useRef<WorldData | null>(null);
   const [completed, setCompleted] = useState(Number(identity.maze_completed_level) || 0);
-  const [samStage, setSamStage] = useState(0);
+  const [flags, setFlags] = useState<Record<string, string>>({});
+  const samStage = parseInt(flags.sam_stage ?? '0', 10) || 0;
   const convoOpen = useRef(false);
   const dataRef = useRef<WorldData | null>(null);
   const [error, setError] = useState('');
@@ -253,7 +254,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     void readWorldData().then(world => {
       if (cancelled) return;
       rawWorld.current = world;
-      const shown = { ...world, places: visiblePlaces(world.places, completed, samStage) };
+      const shown = { ...world, places: visiblePlaces(world.places, completed, samStage, flags) };
       dataRef.current = shown; setData(shown);
       const opening = takeWorldOpening();
       if (opening) { place(opening, opening.layer); pendingArrival.current = posRef.current; } else place(startPoint(world), 0);
@@ -262,9 +263,9 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   }, [retry, place]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const world = rawWorld.current; if (!world) return;
-    const shown = { ...world, places: visiblePlaces(world.places, completed, samStage) };
+    const shown = { ...world, places: visiblePlaces(world.places, completed, samStage, flags) };
     dataRef.current = shown; setData(shown);
-  }, [completed, samStage]);
+  }, [completed, flags]);
   const npcKeys = (data?.places ?? []).filter(p => p.action === 'npc' && p.npc_key).map(p => p.npc_key as string).join(',');
   useEffect(() => {
     if (!userId || !npcKeys) { samLineRef.current = new Set(); return; }
@@ -287,7 +288,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       setCompleted(Number(next.maze_completed_level) || 0);
     }
     const flags = await getAllFlags(userId).catch(() => null);
-    if (flags) setSamStage(parseInt(flags.sam_stage ?? '0', 10) || 0);
+    if (flags) setFlags({ ...flags });
   }, [userId]);
   const refreshReward = useCallback(async () => {
     await refreshCompleted();
@@ -457,7 +458,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       }
       if (time - lastDraw < terrainDrawInterval(moving, gust)) { frame = requestAnimationFrame(tick); return; }
       lastDraw = time;
-      drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l, clock, skinnedRef.current);
+      drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l, clock, skinnedRef.current, posRef.current);
       const layerFinds = findsOn(findsRef.current, l);
       drawFinds(ctx, layerFinds, claimedRef.current, point, types, camera.current, width, height, time, ink, reduced);
       const phase = worldPhase(clock, data.cycle);

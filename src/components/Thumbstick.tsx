@@ -23,7 +23,7 @@ const BOTTOM_EXCLUSION = 64; // status bar height
 const LOWER_FRACTION = 0.6; // only the lower 40% of the viewport activates
 const WATCHDOG_MS = 800;
 
-const INTERACTIVE = 'button, a, input, textarea, select, label, [role="button"], [data-no-thumbstick]';
+const INTERACTIVE = 'button, a, input, textarea, select, label, [role="button"], [role="dialog"], [data-no-thumbstick]';
 
 type Dir = -1 | 0 | 1;
 
@@ -203,6 +203,7 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
     };
 
     const onPointerDown = (e: PointerEvent) => {
+      if (e.target instanceof Element && e.target.closest(INTERACTIVE)) { stop(); return; }
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       // No pointer capture: capturing to an element that later unmounts strands the release.
       start(e.clientX, e.clientY, e.pointerId, e.target);
@@ -221,6 +222,7 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
     // Touch fallback: some engines (and iOS gesture cancellation) do not deliver
     // a usable pointer stream once touchstart's default is prevented.
     const onTouchStart = (e: TouchEvent) => {
+      if (e.target instanceof Element && e.target.closest(INTERACTIVE)) { stop(); return; }
       const t = e.touches[0];
       if (!t) return;
       if (disabledRef.current) return;

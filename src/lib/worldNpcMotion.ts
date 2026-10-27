@@ -1,16 +1,18 @@
-import { npcFacingToward, type Facing, type WalkPhase } from './skins';
+import { type Facing, type WalkPhase } from './skins';
 import type { Place, WorldPoint } from './worldTest';
 export const npcId = (p: Place) => `${p.npc_key}:${p.x}:${p.y}`;
 const hash = (key: string, slot: number) => { let h = slot | 0; for (const c of key) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return h >>> 0; };
-/** Paths are home-rooted, so independent clients need no prior slot history. */
+export const NPC_TILE_MS = 600;
+export const npcPauseMs = (key: string, slot: number) => 6000 + hash(key, slot) % 8001;
+const distance = (a: WorldPoint, b: WorldPoint) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 export function npcPath(home: WorldPoint, key: string, slot: number, safe: (p: WorldPoint) => boolean): WorldPoint[] {
   if (!safe(home)) return [home];
   const cells: WorldPoint[] = [], queue = [home], parents = new Map<string, WorldPoint | null>([[`${home.x},${home.y}`, null]]);
   for (let i = 0; i < queue.length; i++) {
-    const p = queue[i]; if (safe(p)) cells.push(p);
+    const p = queue[i]; if (i > 0) cells.push(p);
     for (const [dx, dy] of [[0, 1], [1, 0], [0, -1], [-1, 0]]) {
       const n = { x: p.x + dx, y: p.y + dy }, id = `${n.x},${n.y}`;
-      if (Math.max(Math.abs(n.x - home.x), Math.abs(n.y - home.y)) > 4 || parents.has(id) || !safe(n)) continue;
+      if (distance(n, home) > 3 || parents.has(id) || !safe(n)) continue;
       parents.set(id, p); queue.push(n);
     }
   }
@@ -20,31 +22,35 @@ export function npcPath(home: WorldPoint, key: string, slot: number, safe: (p: W
   return path;
 }
 export type NpcPose = WorldPoint & { cell: WorldPoint; facing: Facing; phase: WalkPhase };
+const face = (a: WorldPoint, b: WorldPoint): Facing => Math.abs(b.x - a.x) >= Math.abs(b.y - a.y) && b.x !== a.x ? b.x > a.x ? 'right' : 'left' : b.y !== a.y ? b.y > a.y ? 'down' : 'up' : 'down';
+/** A closed home-rooted route repeats on the shared clock; each edge has its own calm pause. */
 export class NpcWander {
-  private slot = -Infinity;
-  private path: WorldPoint[] = [];
+  private route: WorldPoint[] = [];
+  private durations: number[] = [];
+  private total = 0;
   private frozen: NpcPose | null = null;
   private last: NpcPose | null = null;
-  sample(home: WorldPoint, key: string, now: number, player: WorldPoint, safe: (p: WorldPoint) => boolean, reduced = false): NpcPose {
-    if (reduced) return { ...home, cell: home, facing: npcFacingToward(home, player), phase: 'stand' };
-    const slot = Math.floor(now / 8000);
-    if (slot !== this.slot) {
-      const old = npcPath(home, key, slot - 1, safe);
-      const previous = old[old.length - 1] ?? home;
-      const next = npcPath(home, key, slot, safe);
-      const back = npcPath(home, key, slot - 1, safe).slice().reverse();
-      this.path = [previous, ...back.slice(1), ...next.slice(1)]; this.slot = slot;
+  sample(home: WorldPoint, key: string, now: number, player: WorldPoint, safe: (p: WorldPoint) => boolean, reduced = false, talking = false): NpcPose {
+    if (!this.route.length || (this.route.length === 1 && safe(home))) {
+      const out = npcPath(home, key, 0, safe);
+      this.route = [...out, ...out.slice(0, -1).reverse()];
+      this.durations = this.route.slice(1).map((_, i) => NPC_TILE_MS + npcPauseMs(key, i));
+      this.total = this.durations.reduce((a, b) => a + b, 0);
     }
-    const near = (p: WorldPoint) => Math.max(Math.abs(p.x - player.x), Math.abs(p.y - player.y)) <= 1;
-    if (this.frozen && !near(this.frozen.cell)) this.frozen = null;
-    if (!this.frozen && this.last && near(this.last.cell)) this.frozen = this.last;
-    if (this.frozen) return { ...this.frozen, facing: npcFacingToward(this.frozen.cell, player), phase: 'stand' };
-    const steps = Math.max(0, this.path.length - 1), progress = Math.min(steps, (now % 8000) / 2500 * steps), index = Math.floor(progress);
-    const a = this.path[index] ?? home, b = this.path[index + 1] ?? a, t = progress - index;
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const pose: NpcPose = { x: a.x + dx * t, y: a.y + dy * t, cell: t < .5 ? a : b, facing: dx ? dx > 0 ? 'right' : 'left' : dy ? dy > 0 ? 'down' : 'up' : 'down', phase: reduced || progress >= steps ? 'stand' : index % 2 ? 'a' : 'b' };
+    if (reduced || !this.total) return { ...home, cell: home, facing: distance(home, player) <= 3 ? face(home, player) : 'down', phase: 'stand' };
+    if (!this.frozen && this.last && (talking || distance(this.last.cell, player) <= 3)) this.frozen = { ...this.last, phase: 'stand' };
+    let time = ((now % this.total) + this.total) % this.total, index = 0;
+    while (index < this.durations.length - 1 && time >= this.durations[index]) { time -= this.durations[index]; index++; }
+    const a = this.route[index], b = this.route[index + 1] ?? a;
+    const t = Math.min(1, time / NPC_TILE_MS);
+    const pose: NpcPose = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, cell: t < .5 ? a : b, facing: face(a, b), phase: t >= 1 ? 'stand' : Math.floor(time / 150) % 2 ? 'a' : 'b' };
+    if (this.frozen) {
+      // Rejoin only when the shared path passes the frozen position: never teleport on release.
+      if (!talking && distance(this.frozen.cell, player) > 3 && Math.hypot(pose.x - this.frozen.x, pose.y - this.frozen.y) < .06) this.frozen = null;
+      else return { ...this.frozen, facing: face(this.frozen.cell, player), phase: 'stand' };
+    }
     this.last = pose;
-    if (near(pose.cell)) { this.frozen = pose; return { ...pose, facing: npcFacingToward(pose.cell, player), phase: 'stand' }; }
+    if (talking || distance(pose.cell, player) <= 3) { this.frozen = pose; return { ...pose, facing: face(pose.cell, player), phase: 'stand' }; }
     return pose;
   }
 }

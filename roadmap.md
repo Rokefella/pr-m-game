@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Repair NPC card taps and portraits; calm deterministic one-tile wandering, three-tile proximity stops and talking freeze; verify Sam topics and stage advancement.
+
 - [x] Add registration-one dev notepad, screenshot capture, live context, Dev Menu controls and focus-safe walking; existing RPCs only. Real canvas/HUD JPEG capture and isolated desktop/phone save/edit/drop checked; all 479 tests pass.
 - [ ] Verify dev-note persistence as Rob in the real game — the game uses external authentication without a available signed-in session; isolated RPC checks do not establish live saving.
 

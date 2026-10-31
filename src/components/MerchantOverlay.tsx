@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { readOwnedDrops, stackDrops, type DropStack } from '@/lib/carriedDrops';
 import { canSell, clampCount, discardDrops, discardFailure, saleReceipt } from '@/lib/letGo';
 import { INVENTORY_CHANGED } from '@/lib/inventoryEvents';
+import { loadTraderItems } from '@/lib/merchantItems';
 
 export const SELL_LINE = 'Show me what you carry. I pay fair for what keeps.';
 export const SELL_EMPTY = 'Nothing I would take today. Come back with fuller pockets.';
@@ -33,6 +34,7 @@ export type MerchantItem = {
 };
 
 interface MerchantOverlayProps {
+  home?: 'world' | 'village';
   open: boolean;
   onClose: () => void;
   palette: MerchantPalette;
@@ -65,6 +67,7 @@ const MerchantOverlay = ({
   onCreditsChange,
   footer,
   dismissible = false,
+  home = 'village',
 }: MerchantOverlayProps) => {
   const questState = useNpcQuestStates(userId);
   const { rgb } = PALETTE[palette];
@@ -79,6 +82,17 @@ const MerchantOverlay = ({
   const [tab, setTab] = useState<'buy' | 'sell'>('buy');
   const [sellable, setSellable] = useState<DropStack[] | null>(null);
   const [sellQty, setSellQty] = useState<Record<string, number>>({});
+  const [traderItems, setTraderItems] = useState<MerchantItem[]>([]);
+  useEffect(() => {
+    setTraderItems([]);
+    if (!open || home !== 'world') return;
+    let off = false;
+    void loadTraderItems(userId).then(stock => { if (!off) setTraderItems(stock); })
+      .catch(error => { if (!off) notifySaveFailed('trader stock', error); });
+    return () => { off = true; };
+  }, [open, home, userId]);
+  const buyItems = [...items];
+  if (home === 'world') buyItems.splice(Math.max(0, items.findIndex(i => i.key === 'steps') + 1), 0, ...traderItems);
   useEffect(() => {
     if (!open || tab !== 'sell') return;
     let off = false;
@@ -244,7 +258,7 @@ const MerchantOverlay = ({
           flexDirection: 'column',
         }}
       >
-        {tab === 'sell' ? (sellable === null ? <p className="font-fell italic" style={{ textAlign: 'center', color: 'rgba(160,140,200,0.6)' }}>…</p> : sellRows.length ? sellRows : <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 14, color: 'rgba(160,140,200,0.6)' }}>{SELL_EMPTY}</p>) : items.map((item, i) => (
+        {tab === 'sell' ? (sellable === null ? <p className="font-fell italic" style={{ textAlign: 'center', color: 'rgba(160,140,200,0.6)' }}>…</p> : sellRows.length ? sellRows : <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 14, color: 'rgba(160,140,200,0.6)' }}>{SELL_EMPTY}</p>) : buyItems.map((item, i) => (
           <div
             key={item.key}
             style={{

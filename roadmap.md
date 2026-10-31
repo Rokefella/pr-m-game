@@ -1,3 +1,4 @@
+- [ ] Chef follow-up: world trader stock and purchases, generic NPC card, Chef figure/data check, all tests and dev-player walkthrough (no sample data).
 - [x] Step B: specified saves use server functions; all tests pass; audit leaves only users insert {id}, own discovery/presence saves, and unused generic REST helpers. No schema/data changes.
 - [ ] Step B live fragment pickup → Shadow bank, Folder slot, growth point and dev level walkthrough — external game session unavailable; /world redirects to /login, managed auth has no mintable users. No sample account created.
 # Roadmap

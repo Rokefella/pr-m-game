@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Rob notes: above-avatar labels, idle trader figures, has_drop/take hand-ins, Seven fires/rest and complete public_players privacy conversion; run regression tests, no database/sample-data changes.
+
 - [x] Rob-only remembered SHOW ALL dev-menu switch, raw-place/enabled-find labeled map and tappable coordinates; all 569 tests pass. Public live-data trader tap checked; no database/sample data.
 - [ ] Verify SHOW ALL through Rob's signed-in five-tap menu — no mintable session for Rob is available; public-data rendering and registration-gating tests passed.
 

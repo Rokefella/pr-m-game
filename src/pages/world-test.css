@@ -5,7 +5,7 @@
 .world-scene canvas.world-building { position: fixed; top: 0; left: 0; pointer-events: none; image-rendering: pixelated; }
 .world-markers { position: fixed; inset: 0; pointer-events: none; z-index: 50000; }
 .world-visitor { opacity: .65; }
-.world-player-label { position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; max-width: min(200px, 80vw); margin-top: 2px; text-align: center; line-height: 1.4; letter-spacing: 0; pointer-events: none; text-shadow: -1px -1px 0 var(--instrument-shadow), 1px -1px 0 var(--instrument-shadow), -1px 1px 0 var(--instrument-shadow), 1px 1px 0 var(--instrument-shadow), 0 2px 3px var(--instrument-shadow); }
+.world-player-label { position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: max-content; max-width: min(200px, 80vw); margin-bottom: 2px; text-align: center; line-height: 1.4; letter-spacing: 0; pointer-events: none; text-shadow: -1px -1px 0 var(--instrument-shadow), 1px -1px 0 var(--instrument-shadow), -1px 1px 0 var(--instrument-shadow), 1px 1px 0 var(--instrument-shadow), 0 2px 3px var(--instrument-shadow); }
 .world-player-name, .world-player-title { display: block; overflow-wrap: anywhere; }
 .world-player-name { font-size: 10px; color: var(--auth-text); }
 .world-player-title { font-size: 9px; color: var(--plate-gold); }

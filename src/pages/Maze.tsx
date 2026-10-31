@@ -491,7 +491,7 @@ const Maze = () => {
   useEffect(() => {
     const handler = () => {
       if (BETA_MODE) return;
-      const bernard06 = Number(getFlag('bernard_stage') ?? 0) >= 6;
+      const bernard06 = flagNumber({ v: getFlag('bernard_stage') }, 'v') >= 6;
       if (bernard06 && !SUBBED.includes(subStatusRef.current)) {
         setPaywallOpen(true);
       }
@@ -751,7 +751,7 @@ const Maze = () => {
       subStatusRef.current = BETA_MODE ? 'active' : row.subscription_status ?? 'trial';
       await getAllFlags(user.id);
       if (cancelled) return;
-      if (!BETA_MODE && Number(getFlag('bernard_stage') ?? 0) >= 6 && !SUBBED.includes(subStatusRef.current)) {
+      if (!BETA_MODE && flagNumber({ v: getFlag('bernard_stage') }, 'v') >= 6 && !SUBBED.includes(subStatusRef.current)) {
         window.dispatchEvent(new Event('praem:open-paywall'));
       }
       setPosition({ level: row.level, dimension: 'purple' });

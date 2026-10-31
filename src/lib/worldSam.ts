@@ -1,3 +1,4 @@
+import { compareFlag, flagNumber } from './questFlags';
 import { supabase } from '@/lib/supabase';
 import { inventoryChanged } from './inventoryEvents';
 import { readOwnedDrops, refreshDrops } from './carriedDrops';
@@ -59,7 +60,7 @@ export const requiredStageDrop = (condition: unknown) => {
   return typeof c?.has_drop === 'string' ? c.has_drop : null;
 };
 export const stageHasDrop = (condition: unknown, keys: ReadonlySet<string>) => { const key = requiredStageDrop(condition); return !key || keys.has(key); };
-export const sevenFiresProgress = (flags: Record<string, string>) => ({ done: flags.seven_fires === 'done', count: Math.max(0, Math.min(7, Number(flags.fires_lit) || 0)) });
+export const sevenFiresProgress = (flags: Record<string, string>) => ({ done: flags.seven_fires === 'done', count: Math.max(0, Math.min(7, flagNumber(flags, 'fires_lit'))) });
 export const sevenFiresLine = (flags: Record<string, string>) => { const progress = sevenFiresProgress(flags); return progress.done ? 'All seven fires burn again.' : `${progress.count} of the 7 fires burn again`; };
 export const firstMatchingStage = <T,>(stages: T[], matches: boolean[]) => stages.find((_, i) => matches[i]) ?? null;
 export const fillName = (text: string, name: string) => text.replace(/\{name\}/g, name);
@@ -92,11 +93,7 @@ export const isRetired = (value: string | null | undefined) => typeof value === 
 export const entryVisible = (e: { requires_flags?: Record<string, unknown> | null; flags_equal?: boolean | null }, flags: Record<string, string>) =>
   Object.entries(e.requires_flags ?? {}).every(([k, v]) => {
     if (k === 'flags_equal') return true;
-    const required = String(v), actual = flags[k] ?? '';
-    if (e.flags_equal === false && required.trim() !== '' && Number.isFinite(Number(required))) {
-      return actual.trim() !== '' && Number.isFinite(Number(actual)) && Number(actual) >= Number(required);
-    }
-    return actual === required;
+    return compareFlag(flags[k], v, e.flags_equal === false);
   });
 export type BookNode = { node_key: string; text: string; topic?: string | null; requires_flags?: Record<string, unknown> | null; flags_equal?: boolean | null; option_a_label?: string | null; option_a_target?: string | null; option_b_label?: string | null; option_b_target?: string | null };
 /** Picks a random _a/_b variant (or the plain node) for a node key. */
@@ -161,5 +158,5 @@ export async function samFlags(userId: string) {
 }
 export async function samStageFlag(userId: string) {
   const { data } = await db.from('quest_flags').select('flag_value').eq('user_id', userId).eq('flag_key', 'sam_stage').maybeSingle();
-  return parseInt(data?.flag_value ?? '0', 10) || 0;
+  return Math.trunc(flagNumber({ v: data?.flag_value }, 'v'));
 }

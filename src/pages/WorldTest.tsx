@@ -122,7 +122,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const rawWorld = useRef<WorldData | null>(null);
   const [completed, setCompleted] = useState(Number(identity.maze_completed_level) || 0);
   const [flags, setFlags] = useState<Record<string, string>>({});
-  const samStage = parseInt(flags.sam_stage ?? '0', 10) || 0;
+  const samStage = Math.trunc(flagNumber(flags, 'sam_stage'));
   const convoOpen = useRef(false);
   const dataRef = useRef<WorldData | null>(null);
   const [error, setError] = useState('');

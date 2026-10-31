@@ -1,3 +1,4 @@
+import { compareFlag, flagNumber } from './questFlags';
 import { entryVisible } from './worldSam';
 export type NpcQuestState = 'available' | 'active' | 'ready' | 'none';
 export type QuestContext = {
@@ -23,7 +24,7 @@ export function npcConditionsMet(condition: QuestCondition, context: QuestContex
       (context.perception ?? 0) < (condition.min_perception ?? 0) || (context.trade ?? 0) < (condition.min_trade ?? 0)) return false;
   const required = condition.requires_flags;
   if (required && Object.keys(required).length) {
-    const all = Object.keys(required).every(k => context.flags[k] === required[k]);
+    const all = Object.keys(required).every(k => compareFlag(context.flags[k], required[k]));
     if (condition.flags_equal === false ? all : !all) return false;
   }
   if (condition.has_drop && !context.drops.has(condition.has_drop)) return false;
@@ -35,7 +36,7 @@ export function npcStageMet(stage: number, condition: QuestCondition | null, con
   if (condition.has_drop && !context.drops.has(condition.has_drop)) return false;
   if (!npcConditionsMet({ min_level: condition.min_level, min_social: condition.min_social }, context)) return false;
   if (!condition.requires_flags) return true;
-  const all = Object.keys(condition.requires_flags).every(k => context.flags[k] === condition.requires_flags?.[k]);
+  const all = Object.keys(condition.requires_flags).every(k => compareFlag(context.flags[k], condition.requires_flags?.[k]));
   return condition.flags_equal === false ? !all : all;
 }
 
@@ -53,7 +54,7 @@ export function getNpcQuestState(npcKey: string, context: QuestContext): NpcQues
   const key = npcKey.toLowerCase().replace(/^the\s+/, '');
   // Sam's old village quest is retired; his world card shows its own marker.
   if (key === 'bernard' || key === 'sam') return 'none';
-  const stage = Number(context.flags[`${key}_stage`] ?? 0);
+  const stage = flagNumber(context.flags, `${key}_stage`);
   // Maze rescue is started on Alexandra contact; Claire is recruitable only after that contact.
   if (context.rescue && key === 'alexandra') return context.rescue.alexandraFound ? 'active' : 'available';
   if (context.rescue && key === 'claire') return !context.rescue.alexandraFound ? 'none' : context.rescue.claireFound ? 'active' : 'available';

@@ -485,12 +485,7 @@ const ShadowRealm = () => {
         }
       }
 
-      await updateUser(user.id, {
-        maze_completed_level: currentLevelRef.current,
-        level: currentLevelRef.current + 1,
-        levelup_pending: true,
-        levelup_newlevel: currentLevelRef.current + 1,
-      });
+      // Maze completion and the pending level-up are recorded by complete_maze at the golden door.
       endRun();
       sessionStorage.removeItem('visited_shadow_this_run');
       sessionStorage.removeItem(SHADOW_ENTRY_KEY);

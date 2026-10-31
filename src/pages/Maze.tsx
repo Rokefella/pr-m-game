@@ -48,7 +48,7 @@ import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/levelLoader';
 import Thumbstick from '@/components/Thumbstick';
-import { enqueueSave, movementDebug } from '@/lib/netQueue';
+import { movementDebug } from '@/lib/netQueue';
 import { bindWorldStepFlush, WorldSteps } from '@/lib/worldSteps';
 import { completeMaze } from '@/lib/serverGame';
 import { startResilientLoop } from '@/lib/resilientLoop';

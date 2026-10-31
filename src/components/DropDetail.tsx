@@ -18,6 +18,7 @@ export type DetailDrop = { id: string; name: string; description: string | null;
 export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh, beforeUse, world }: { drop: DetailDrop; onClose: () => void; onUsed: (msg: string, change?: OrbChange) => void; maze?: MazeUseContext; steps?: number; onRefresh?: () => void; beforeUse?: () => Promise<void>; world?: WorldUseContext }) {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
+  const flight = useRef(false);
   const [msg, setMsg] = useState('');
   const [choosing, setChoosing] = useState(false);
   const [quantity, setQuantity] = useState(1);
@@ -26,15 +27,15 @@ export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh, befo
   const [letCount, setLetCount] = useState(1);
   const [asking, setAsking] = useState(false);
   const letGo = async () => {
-    if (busy || !drop.drop_key) return;
-    setBusy(true); setMsg('');
+    if (flight.current || !drop.drop_key) return;
+    flight.current = true; setBusy(true); setMsg('');
     try {
       const res = await discardDrops(user?.id, drop.drop_key, letCount, false);
       if (!res.ok) { setMsg(discardFailure(res.reason)); return; }
       onRefresh?.();
       onUsed(`Left behind: ${res.removed ?? letCount} × ${drop.name}.`);
     } catch { setMsg('No signal. Try again.'); }
-    finally { setBusy(false); setAsking(false); }
+    finally { flight.current = false; setBusy(false); setAsking(false); }
   };
   const isDye = drop.category === 'dye';
   const isMechanic = drop.category === 'mechanic';
@@ -44,8 +45,8 @@ export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh, befo
   const stackUse = resourceDrop && Boolean(drop.drop_key);
   const blocked = mapScrap ? maze ? 'This belongs to the open world.' : !world || world.layer !== 0 ? 'Use it in the open world.' : '' : isMechanic ? mechanicBlocked(stepDrop, steps, maze, creditDrop) : '';
   const useMechanic = async () => {
-    if (busy || blocked) return;
-    setBusy(true); setMsg('');
+    if (flight.current || blocked) return;
+    flight.current = true; setBusy(true); setMsg('');
     let called = false;
     try {
       if (beforeUse) await beforeUse();
@@ -68,11 +69,11 @@ export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh, befo
       if (result.effect === 'world_reveal') window.dispatchEvent(new CustomEvent(WORLD_REVEALED, { detail: { ...result, userId: user?.id } }));
       onUsed(stackUse ? stackReceipt(result, drop.effect, result.used ?? quantity) : mechanicWhisper(result));
     } catch { setMsg('No signal. Try again.'); }
-    finally { if (called) { onRefresh?.(); window.dispatchEvent(new CustomEvent(MECHANIC_USED, { detail: { userId: user?.id, level: maze?.level } })); } setBusy(false); }
+    finally { if (called) { onRefresh?.(); window.dispatchEvent(new CustomEvent(MECHANIC_USED, { detail: { userId: user?.id, level: maze?.level } })); } flight.current = false; setBusy(false); }
   };
   const use = async () => {
-    if (busy) return;
-    setBusy(true); setMsg('');
+    if (flight.current) return;
+    flight.current = true; setBusy(true); setMsg('');
     try {
       const { data, error } = await rpc('use_dye', { p_drop_id: drop.id });
       const res = data as { ok?: boolean; name?: string; color?: string; dye_key?: string } | null;
@@ -88,7 +89,7 @@ export function DropDetail({ drop, onClose, onUsed, maze, steps, onRefresh, befo
       inventoryChanged();
       onUsed(`Your orb turns ${res.name ?? drop.name}.`, change);
     } catch { setMsg('No signal. Try again.'); }
-    finally { setBusy(false); }
+    finally { flight.current = false; setBusy(false); }
   };
   return <div className="drop-detail" role="dialog" aria-label={drop.name}>
     <Button type="button" variant="ghost" className="drop-detail-close font-mono" aria-label="Close" onClick={onClose}>×</Button>

@@ -130,6 +130,7 @@ const ExchangeRoom = () => {
   const [myFragments, setMyFragments] = useState<OwnedFragment[]>([]);
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketBusy, setMarketBusy] = useState(false);
+  const marketFlight = useRef(false);
   const [marketError, setMarketError] = useState<string | null>(null);
   const [marketNotice, setMarketNotice] = useState<string | null>(null);
   const [sellFragmentId, setSellFragmentId] = useState('');
@@ -198,8 +199,8 @@ const ExchangeRoom = () => {
   }, [marketOpen, user]);
 
   const buyListing = async (listing: Listing) => {
-    if (!user || marketBusy) return;
-    setMarketBusy(true);
+    if (!user || marketFlight.current) return;
+    marketFlight.current = true; setMarketBusy(true);
     setMarketError(null);
     setMarketNotice(null);
     const { error } = await supabase.rpc('purchase_fragment_listing' as never, {
@@ -212,16 +213,16 @@ const ExchangeRoom = () => {
       setMarketNotice(`Acquired Prime ${listing.prime_number == null ? '?' : formatPrime(listing.prime_number)}.`);
       await loadMarket();
     }
-    setMarketBusy(false);
+    marketFlight.current = false; setMarketBusy(false);
   };
 
   const createListing = async () => {
-    if (!user || marketBusy) return;
+    if (!user || marketFlight.current) return;
     const frag = myFragments.find((f) => f.id === sellFragmentId);
     const price = Number(sellPrice);
     if (!frag) { setMarketError('Choose a fragment to list.'); return; }
     if (!Number.isFinite(price) || price <= 0) { setMarketError('Set a price above zero.'); return; }
-    setMarketBusy(true);
+    marketFlight.current = true; setMarketBusy(true);
     setMarketError(null);
     setMarketNotice(null);
     const { error } = await supabase.from('exchange_listings' as never).insert({
@@ -239,12 +240,12 @@ const ExchangeRoom = () => {
       setSellPrice('');
       await loadMarket();
     }
-    setMarketBusy(false);
+    marketFlight.current = false; setMarketBusy(false);
   };
 
   const cancelListing = async (listing: Listing) => {
-    if (!user || marketBusy) return;
-    setMarketBusy(true);
+    if (!user || marketFlight.current) return;
+    marketFlight.current = true; setMarketBusy(true);
     setMarketError(null);
     setMarketNotice(null);
     const { error } = await supabase
@@ -258,7 +259,7 @@ const ExchangeRoom = () => {
       setMarketNotice('Listing withdrawn.');
       await loadMarket();
     }
-    setMarketBusy(false);
+    marketFlight.current = false; setMarketBusy(false);
   };
 
   useEffect(() => { roomRef.current = room; }, [room]);

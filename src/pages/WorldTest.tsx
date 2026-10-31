@@ -242,6 +242,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   blocked.current = suppliesOpen || profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || Boolean(placeCard) || Boolean(findCard);
   convoOpen.current = !npcCardOpen && !suppliesOpen && !profileOpen && !devOpen && !arrival && !jumpOpen && !mapOpen && (Boolean(findCard) || Boolean(placeCard && (isWorldConversation(placeCard) || isSignpost(placeCard))));
   const [busy, setBusy] = useState(false);
+  const flight = useRef(false);
   const [entryMessage, setEntryMessage] = useState('');
   const [chunkTick, setChunkTick] = useState(0);
   const pendingArrival = useRef<WorldPoint | null>(null);
@@ -544,8 +545,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   };
   /** World door trigger: the maze waits for Sam; library and exchange are always open. */
   const openDoor = async (kind: WorldDoorKind) => {
-    if (busy || !userId) return;
-    setBusy(true); setEntryMessage('');
+    if (flight.current || !userId) return;
+    flight.current = true; setBusy(true); setEntryMessage('');
     try {
       const flags = await getAllFlags(userId);
       const refusal = worldDoorRefusal(kind, level, flags.sam_stage);
@@ -558,7 +559,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       }
       await leave(target);
     } catch { setEntryMessage('The door will not open right now.'); }
-    finally { setBusy(false); }
+    finally { flight.current = false; setBusy(false); }
   };
   const openShadow = async () => {
     sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ level, ts: Date.now() }));

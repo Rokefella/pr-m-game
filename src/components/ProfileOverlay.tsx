@@ -116,6 +116,7 @@ const ProfileOverlay = ({
   const [extraDropCapacity, setExtraDropCapacity] = useState(0);
   const [dropSlotMsg, setDropSlotMsg] = useState('');
   const [buyingSlot, setBuyingSlot] = useState(false);
+  const slotFlight = useRef(false);
   const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
 
@@ -804,8 +805,8 @@ const ProfileOverlay = ({
                 const selectedDrop = stacks.find((d) => d.id === dropTooltip) || null;
 
                 const buySlot = async () => {
-                  if (!user || !canAfford || buyingSlot) return;
-                  setBuyingSlot(true);
+                  if (!user || !canAfford || slotFlight.current) return;
+                  slotFlight.current = true; setBuyingSlot(true);
                   setDropSlotMsg('');
                   const nextCredits = creditsNum - SLOT_COST;
                   const nextExtra = extraDropCapacity + 1;
@@ -821,7 +822,7 @@ const ProfileOverlay = ({
                     setAccountRow((r) => (r ? { ...r, credits: nextCredits, extra_drop_capacity: nextExtra } : r));
                     setDropSlotMsg('The folder widens. One more slot.');
                   }
-                  setBuyingSlot(false);
+                  slotFlight.current = false; setBuyingSlot(false);
                 };
 
                 return (

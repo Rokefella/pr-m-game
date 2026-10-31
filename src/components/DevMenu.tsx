@@ -25,6 +25,7 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
   const [fullResetArmed, setFullResetArmed] = useState(false);
   const [startArmed, setStartArmed] = useState(false);
   const [starting, setStarting] = useState(false);
+  const startFlight = useRef(false);
   const [noteButtons, setNoteButtons] = useState(noteButtonsOn);
   const [topupBusy, setTopupBusy] = useState(false);
   const topupFlight = useRef(false);
@@ -46,11 +47,11 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
   const fullResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (fullResetTimerRef.current) clearTimeout(fullResetTimerRef.current); }, []);
   const handleDevReset = useCallback(async () => {
-    if (!userId || starting) return;
-    setStarting(true);
+    if (!userId || startFlight.current) return;
+    startFlight.current = true; setStarting(true);
     try { await onBeforeStart?.(); await goBackToStart(userId); close(); navigate('/intro'); }
     catch (e) { setDevStageNote(e instanceof Error ? e.message : 'Could not start over.'); }
-    finally { setStarting(false); }
+    finally { startFlight.current = false; setStarting(false); }
   }, [userId, navigate, close, starting, onBeforeStart]);
   return open ? (
         <div

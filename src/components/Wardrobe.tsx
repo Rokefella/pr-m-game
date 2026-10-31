@@ -17,9 +17,16 @@ type Props = {
   onEquipped: (skin: string, name: string) => void;
 };
 
+export const comingSoonSkins = (owned: Set<string>, catalogue: Pick<Skin, 'skin_key'>[]) => {
+  const known = new Set(catalogue.map(s => s.skin_key));
+  return [...owned].filter(k => k !== START_SKIN && !known.has(k)).sort();
+};
+export const skinTitle = (key: string) => key.replace(/^skin_/, '').split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
 /** WARDROBE: owned skins can be worn; unfound skins stay nameless silhouettes. */
 export default function Wardrobe({ auraColor, orbDye, registrationNumber, avatarBody, onEquipped }: Props) {
-  const skins = useSkins().filter(isPlayerSkin);
+  const allSkins = useSkins();
+  const skins = allSkins.filter(isPlayerSkin);
   const [owned, setOwned] = useState<Set<string>>(new Set([START_SKIN]));
   const [facings, setFacings] = useState<Record<string, Facing>>({});
   const [busy, setBusy] = useState(false);
@@ -42,6 +49,8 @@ export default function Wardrobe({ auraColor, orbDye, registrationNumber, avatar
   }, [nonce]);
 
   const equipped = normalizeSkinKey(avatarBody);
+  // Owned skins without a catalogue row (no sprite yet) show as "Coming soon" and cannot be worn.
+  const comingSoon = comingSoonSkins(owned, allSkins);
   const ownedCount = skins.filter(s => owned.has(s.skin_key)).length;
 
   const equip = async (skin: Skin) => {
@@ -58,7 +67,7 @@ export default function Wardrobe({ auraColor, orbDye, registrationNumber, avatar
     finally { flight.current = false; setBusy(false); }
   };
 
-  if (!skins.length) return null;
+  if (!skins.length && !comingSoon.length) return null;
   return (
     <div style={{ marginTop: 24 }}>
       <div className="profile-section-label font-mono"><span>WARDROBE</span><span>{ownedCount} of {skins.length} found</span></div>
@@ -88,6 +97,14 @@ export default function Wardrobe({ auraColor, orbDye, registrationNumber, avatar
             </button>
           );
         })}
+        {comingSoon.map(key => (
+          <button key={key} type="button" disabled aria-label={`${skinTitle(key)}, coming soon`} className="profile-inventory-tile profile-drop-filled" style={{ cursor: 'default' }}>
+            <span className="profile-drop-body">
+              <span className="font-fell italic">{skinTitle(key)}</span>
+              <span className="profile-carried-label font-mono">COMING SOON</span>
+            </span>
+          </button>
+        ))}
       </div>
       {note && <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'var(--plate-label)', marginTop: 10 }}>{note}</p>}
     </div>

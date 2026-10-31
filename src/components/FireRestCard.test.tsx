@@ -16,4 +16,14 @@ it('does not grant a second daily rest at the same fire', async () => {
   rpc.mockResolvedValue({ data: { ok: false, reason: 'rested_today' }, error: null });
   const steps = vi.fn(); render(<FireRestCard findKey="fire_1" beforeRest={async () => {}} onSteps={steps} />);
   fireEvent.click(screen.getByRole('button')); await screen.findByRole('status'); expect(steps).not.toHaveBeenCalled();
+});it('ignores a second tap while the rest request is in flight', async () => {
+  let release: (v: unknown) => void = () => undefined;
+  rpc.mockImplementation(() => new Promise(r => { release = r; }));
+  render(<FireRestCard findKey="fire_1" beforeRest={async () => {}} onSteps={vi.fn()} />);
+  const button = screen.getByRole('button');
+  fireEvent.click(button); fireEvent.click(button);
+  await waitFor(() => expect(rpc).toHaveBeenCalledTimes(1));
+  release({ data: { ok: true, steps_remaining: 10 }, error: null });
+  await screen.findByRole('status');
+  expect(rpc).toHaveBeenCalledTimes(1);
 });

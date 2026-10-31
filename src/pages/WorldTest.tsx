@@ -290,6 +290,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       .then(keys => { if (!off) samLineRef.current = new Set(keys.filter((k): k is string => Boolean(k))); }).catch(() => undefined);
     return () => { off = true; };
   }, [userId, npcKeys, samTick]);
+  const titleFlight = useRef(false);
   const refreshCompleted = useCallback(async () => {
     if (!userId) return;
     const ledger = stepLedger.current;
@@ -308,8 +309,9 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       setFlags({ ...flags });
       if (!error && row) {
         const patch = firstTitlePatch(flags, row as unknown as Identity);
-        if (patch) {
-          const result = await setTitle(patch.title);
+        if (patch && !titleFlight.current) {
+          titleFlight.current = true;
+          const result = await setTitle(patch.title).finally(() => { titleFlight.current = false; });
           if (!result.ok) throw new Error(result.reason ?? 'set_title refused');
           const saved = { title: result.title ?? patch.title, unlocked_titles: patch.unlocked_titles };
           identityRef.current = { ...identityRef.current, ...saved };

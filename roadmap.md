@@ -1,5 +1,8 @@
 # Roadmap
 
+- [x] Era-specific maze veil/door/Instrument art, accent pulses, blue arch and legacy fallback; 595 tests pass. Real Fire maze 1/2 terrain and decoded sprites inspected read-only; maze 2 currently has no authored Instrument point. No database changes.
+- [ ] Signed-in maze 1/2 interaction check — the game uses separate external authentication unavailable to the checker; real artwork was inspected, not live unlocking/return behaviour.
+
 - [x] Rob notes: above-avatar labels, idle trader figures, has_drop/take hand-ins, Seven fires/rest and public_players-only presence/Exchange identities; all 582 tests and preview compilation pass. Isolated desktop/phone rest and labels checked; no database/sample-data changes.
 - [ ] Verify these five changes with Rob's real account — external game authentication is unavailable; isolated rest responses and regression tests do not establish live hand-in/rest persistence.
 

@@ -1,11 +1,32 @@
 import { supabase } from '@/lib/supabase';
 import type { Terrain } from './worldTest';
 import { worldHash } from './worldHash';
-import { loadTerrainSprites } from './terrainTile';
+import { loadTerrainSprites, terrainSprite } from './terrainTile';
 export type MazeSkin = { era_order: number; name: string; wall_keys: string[]; floor_keys: string[]; edge: { key: string; p: number }[]; junction_key: string | null; straight_key: string | null; darkness: number; accent: string; enabled: boolean };
 export type LevelSkin = { place_name: string; era_name: string; skin: MazeSkin; terrain: Map<string, Terrain> };
 export const skinHash = worldHash;
 export const skinDarkness = (darkness: number) => Math.min(.35, Math.max(0, .05 * (darkness - 1)));
+export type MazeObjectKind = 'veil' | 'gold_door' | 'instrument_point';
+const ERA_NAMES = ['Fire', 'Gods', 'Atoms', 'Stars', 'Quantum', 'Swerve', 'PRÆM', 'Instrument'];
+export function mazeEra(level: Pick<LevelSkin, 'skin' | 'era_name'>): number | undefined {
+  const order = level.skin.era_order;
+  if (Number.isInteger(order) && order >= 1 && order <= 8) return order;
+  const index = ERA_NAMES.findIndex(name => name.toLowerCase() === level.era_name?.trim().toLowerCase());
+  return index < 0 ? undefined : index + 1;
+}
+export function mazeObjectSprite(level: LevelSkin | null, kind: MazeObjectKind) {
+  if (!level) return undefined;
+  const era = mazeEra(level), key = `${kind}_${era}`;
+  return era && level.terrain.has(key) ? terrainSprite(key) : undefined;
+}
+/** Only successfully decoded object art changes its underlay; collision stays untouched. */
+export function mazeObjectFloorWalls(walls: Set<string>, level: LevelSkin | null, veils: ReadonlySet<string> | undefined, doors: readonly { col: number; row: number }[], cells: readonly { col: number; row: number; type: string }[]) {
+  const visual = new Set(walls);
+  if (mazeObjectSprite(level, 'veil')) for (const key of veils ?? []) visual.delete(key);
+  if (mazeObjectSprite(level, 'gold_door')) for (const door of doors) visual.delete(`${door.col},${door.row}`);
+  if (mazeObjectSprite(level, 'instrument_point')) for (const cell of cells) if (cell.type === 'CONSOLE_DOOR') visual.delete(`${cell.col},${cell.row}`);
+  return visual;
+}
 /** Presentation-only: crate cells use normal floor without opening collision cells. */
 export function crateFloorWalls(walls: Set<string>, cells: readonly { col: number; row: number; type: string }[]) {
   const visual = new Set(walls);
@@ -27,13 +48,14 @@ export function skinTile(x: number, y: number, skin: MazeSkin, open: ReadonlySet
 /** Read-only metadata; failure falls back to the original maze artwork. */
 export async function readMazeSkin(level: number, override?: number, onMetadata?: (accent: string, label: string) => void): Promise<LevelSkin | null> {
   try {
-    const { data: view } = await supabase.from('maze_level_skins' as never).select('place_name, era_name, skin').eq('level_number', level).maybeSingle();
-    const row = view as unknown as { place_name?: string; era_name?: string; skin?: MazeSkin } | null;
+    const { data: view } = await supabase.from('maze_level_skins' as never).select('*').eq('level_number', level).maybeSingle();
+    const row = view as unknown as { place_name?: string; era_name?: string; era_order?: number; skin?: MazeSkin } | null;
     let skin = row?.skin;
     if (override !== undefined) {
       const { data } = await supabase.from('maze_skins' as never).select('*').eq('era_order', override).maybeSingle();
       skin = data as unknown as MazeSkin | undefined;
     }
+    if (skin && override === undefined && row?.era_order !== undefined) skin = { ...skin, era_order: row.era_order };
     if (!skin || skin.enabled === false || !Array.isArray(skin.wall_keys) || !skin.wall_keys.length || !Array.isArray(skin.floor_keys) || !skin.floor_keys.length) return null;
     onMetadata?.(skin.accent, `${row?.place_name ?? ''} · ${override !== undefined ? skin.name : row?.era_name ?? skin.name}`);
     const { data, error } = await supabase.from('world_terrain_types' as never).select('*');

@@ -74,7 +74,7 @@ describe('console server interaction rules', () => {
     const view = render(<ConsolePanel open level={2} onClose={onClose} onRift={onRift} />);
     await waitFor(() => expect(screen.getByRole('button', { name: '2' })).not.toBeDisabled());
     digit(); enter();
-    fireEvent.click(screen.getByRole('button', { name: 'Close console' })); expect(onClose).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Close Instrument' })); expect(onClose).toHaveBeenCalledTimes(1);
     view.rerender(<ConsolePanel open={false} level={2} onClose={onClose} onRift={onRift} />);
     await act(async () => { resolve({ data: { ok: true, rift: 'purple' }, error: null }); });
     expect(onRift).not.toHaveBeenCalled();

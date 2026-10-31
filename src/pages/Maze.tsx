@@ -34,6 +34,7 @@ import { BETA_MODE } from '@/lib/config';
 import { CONSOLE_ROOM_KEY, CONSOLE_ROOM_LEVEL } from '@/lib/console';
 import { getAllFlags, getFlag } from '@/lib/questFlags';
 import { flagNumber } from '@/lib/flagValues';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { waitForDailySteps } from '@/lib/dailySteps';
@@ -1584,7 +1585,9 @@ const Maze = () => {
           <DialogButtons>
             <button className="font-cinzel" style={PRIMARY_BTN} onClick={async () => {
                 if (user) {
-                  await supabase.from('users').update({ maze_completed_level: currentLevelRef.current }).eq('id', user.id);
+                  const { error } = await supabase.from('users').update({ maze_completed_level: currentLevelRef.current }).eq('id', user.id);
+                  // Stay in the maze on failure so the completed level is not lost behind the door.
+                  if (error) { notifySaveFailed('maze completion', error); return; }
                 }
                 if (user) markRunComplete(user.id, currentLevelRef.current);
                 sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ level: currentLevelRef.current, ts: Date.now() }));

@@ -1,4 +1,5 @@
 import { exitDestination } from '@/lib/worldReturn';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import { Z } from '@/lib/zIndex';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
@@ -139,11 +140,13 @@ const ExchangeRoom = () => {
   const [fragmentCount, setFragmentCount] = useState(0);
 
   const refreshOwnCounts = async (uid: string) => {
-    const { data: userRow } = await supabase
+    const { data: userRow, error: userError } = await supabase
       .from('users')
       .select('credits, growth_points, username')
       .eq('id', uid)
       .maybeSingle();
+    // Keep the last known balances on failure, but say so.
+    if (userError) notifySaveFailed('exchange balances', userError);
     if (userRow) {
       setCredits(Number(userRow.credits ?? 0));
       setGrowthPoints(Number(userRow.growth_points ?? 0));

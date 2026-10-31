@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { notifySaveFailed } from './saveNotice';
 
 type FlagMap = Record<string, string>;
 
@@ -80,7 +81,7 @@ export async function setFlag(userId: string, key: string, value: string): Promi
       { onConflict: 'user_id,flag_key' },
     );
   if (error) {
-    console.error('[questFlags] setFlag error:', error, { key, value });
+    notifySaveFailed(`flag ${key}`, error);
   }
 }
 

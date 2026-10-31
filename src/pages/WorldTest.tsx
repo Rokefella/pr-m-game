@@ -13,6 +13,7 @@ import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { BETA_MODE } from '@/lib/config';
 import { getAllFlags, getFlag, reconcileBernardAfterShadow, setFlag } from '@/lib/questFlags';
 import { flagNumber } from '@/lib/flagValues';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import { canAccessMaze, checkSubscriptionStatus, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { effectiveWorldLevel, worldDoorRefusal, type WorldDoorKind } from '@/lib/worldHome';
 import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailySteps';
@@ -210,7 +211,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     if (!userId || !placeCard || !shouldMarkMerchantMet(placeCard, flags)) return;
     void (async () => {
       const { error } = await (supabase.rpc as unknown as (f: string) => Promise<{ error: unknown }>)('merchant_met');
-      if (error) return;
+      if (error) { notifySaveFailed('merchant_met', error); return; }
       const next = await getAllFlags(userId).catch(() => null);
       if (next) setFlags({ ...next });
     })();

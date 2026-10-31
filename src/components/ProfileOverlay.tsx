@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { flagNumber } from '@/lib/flagValues';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import { createPortal } from 'react-dom';
 import { Z } from '@/lib/zIndex';
 import { useNavigate } from 'react-router-dom';
@@ -546,7 +547,8 @@ const ProfileOverlay = ({
                                 className="font-cinzel"
                                 onClick={async () => {
                                   if (!user) return;
-                                  await supabase.from('users').update({ title: t }).eq('id', user.id);
+                                  const { error } = await supabase.from('users').update({ title: t }).eq('id', user.id);
+                                  if (error) { notifySaveFailed('title', error); return; }
                                   setAccountRow((prev) => prev ? { ...prev, title: t } : prev);
                                   setTitleDropdownOpen(false);
                                 }}

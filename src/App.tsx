@@ -30,6 +30,7 @@ const TilePreview = lazy(() => import("./pages/TilePreview.tsx"));
 const GardenPreview = lazy(() => import("./pages/GardenPreview.tsx"));
 const WorldTest = lazy(preloadWorld);
 import DevNotepad from '@/components/DevNotepad';
+import SaveFailedNotice from '@/components/SaveFailedNotice';
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ const App = () => (
         <MovementDebugOverlay />
         <BrowserRouter>
           <DevNotepad />
+          <SaveFailedNotice />
           <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/" element={<Index />} />

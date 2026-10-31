@@ -551,6 +551,7 @@ const Maze = () => {
   }, [config]);
 
   // Refs so the rAF movement loop (registered once with empty deps) always reads current values
+  const objectFloorWalls = useMemo(() => config ? mazeObjectFloorWalls(wallSet, eraSkin, config.veilSet, [config.door, ...config.creditDoors], config.visualCells ?? []) : wallSet, [config, wallSet, eraSkin]);
   // instead of stale closure values captured when config was still null.
   const configRef = useRef<LevelConfig | null>(null);
   const wallSetRef = useRef<Set<string>>(new Set());
@@ -1389,7 +1390,7 @@ const Maze = () => {
 
   return (
     <div className="maze-theme" style={{ position: 'fixed', inset: 0, background: 'hsl(var(--background))', overflow: 'hidden', '--maze-light-core': `${DIMENSION_GLOW[glow]}14` } as CSSProperties}>
-      {eraSkin && <MazeSkinCanvas ref={skinCanvasRef} skin={eraSkin} grid={config} walls={mazeObjectFloorWalls(wallSet, eraSkin, config.veilSet, [config.door, ...config.creditDoors], config.visualCells ?? [])} />}
+      {eraSkin && <MazeSkinCanvas ref={skinCanvasRef} skin={eraSkin} grid={config} walls={objectFloorWalls} />}
       <div
         data-game-world ref={worldRef}
         data-maze-world="true"

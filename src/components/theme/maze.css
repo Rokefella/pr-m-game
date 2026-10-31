@@ -1,7 +1,7 @@
 .maze-theme {
   --maze-wall-shadow: 0 0% 0%;
 }
-:root { --maze-era-blue: var(--orb-blue); }
+:root { --maze-era-blue: #739eff; }
 .maze-era-object { position: relative; display: block; pointer-events: none; }
 .maze-era-object canvas { position: relative; display: block; width: 100%; height: 100%; image-rendering: pixelated; }
 .maze-era-object-glow { position: absolute; inset: -45%; background: radial-gradient(circle, var(--maze-object-accent), transparent 70%); opacity: .24; animation: maze-era-glow 5s ease-in-out infinite; }

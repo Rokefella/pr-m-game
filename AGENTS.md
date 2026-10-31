@@ -9,7 +9,7 @@
 - Format primes only at presentation boundaries via format.ts; decode the padded string; persist and compare numbers.
 - Derive carried counts via `fragmentInventory`, excluding the current prime for reveal pre-counts. Shadow progress uses only its transfer snapshot; query Library rows after persistence independently of level-gate timing to keep presentation from altering saving.
 
-- Legacy themes cache SVGs; maze skins share terrainTile and viewport drawing. mazeSkins removes crate wall art only, never collision. Skin metadata never changes geometry or lighting; missing skins retain legacy art.
+- MazeEraObject and maze skins share terrainTile's cache. Memoized decoded-object/crate underlays never change collision or lantern lighting; missing sprites retain legacy art.
 - Maze camera transforms are written through a DOM ref; memoize visible themed cells by logical player cell and viewport size, retaining the existing culling margin to avoid per-frame grid scans.
 - Published theme/object metadata stays presentation-only except explicitly authored CONSOLE_DOOR interaction geometry, which the loader marks walkable; do not infer collision or pickups from decorative cells.
 

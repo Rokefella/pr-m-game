@@ -62,6 +62,15 @@ describe('cardTopics', () => {
 });
 
 import { samLandLine } from './worldSam';
+import { figureNpc, merchantFigure, sevenFiresProgress } from './worldSam';
+it('the two merchant places use the standing merchant identity', () => {
+  for (const name of ['Wandering trader', 'Lumen: merchant']) { const p = { name, action: 'merchant' }; expect(merchantFigure(p)).toBe(true); expect(figureNpc(p)).toBe('merchant'); }
+  expect(merchantFigure({ name: 'Sam', action: 'npc' })).toBe(false);
+});
+it('Seven fires derives exact progress and completion from persisted flags', () => {
+  expect(sevenFiresProgress({ fires_lit: '4', seven_fires: 'active' })).toEqual({ count: 4, done: false });
+  expect(sevenFiresProgress({ fires_lit: '7', seven_fires: 'done' })).toEqual({ count: 7, done: true });
+});
 import { entryVisible } from './worldSam';
 describe('book flag matching', () => {
   it('false means numeric minimum, including Sam stage four and later', () => {

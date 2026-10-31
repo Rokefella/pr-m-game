@@ -39,7 +39,14 @@ describe('world finds', () => {
     expect(findButton('tool')).toBe('Take it');
   });
 });
-import { approachedFind, bumpedFind, findMarked } from './worldFinds';
+import { approachedFind, bumpedFind, findMarked, fireAt, litFire } from './worldFinds';
+it('only a personally claimed cold quest fire opens resting on its exact cell', () => {
+  const fire = f({ kind: 'quest_object', sprite_key: 'campfire_cold' });
+  expect(litFire(fire, true)).toBe(true); expect(litFire(fire, false)).toBe(false);
+  expect(fireAt([fire], new Set(['1']), { x: 10, y: 10 })).toBe(fire);
+  expect(fireAt([fire], new Set(['1']), { x: 11, y: 10 })).toBeNull();
+  expect(fireAt([fire], new Set(), { x: 10, y: 10 })).toBeNull();
+});
 import { signpostLines } from './worldTest';
 describe('find markers, bumps and signposts', () => {
   it('marks unclaimed glint/hidden finds at any distance, not claimed or visible ones', () => {

@@ -41,6 +41,7 @@ export type BernardStageRow = {
     flags_equal?: boolean;
     min_level?: number;
     min_social?: number;
+    has_drop?: string;
   } | null;
 };
 

@@ -263,8 +263,8 @@ const NpcActor = ({
         const status = await checkSubscriptionStatus(stats.user.id);
         const allowed = status === 'active' || status === 'lifetime' || status === 'dev' || status === 'trial';
         if (allowed) {
-          await setFlag(stats.user.id, 'alexandra_quest', 'active');
-          if (npcKey === 'bernard') await setFlag(stats.user.id, 'bernard_stage', '6');
+          if (!await setFlag(stats.user.id, 'alexandra_quest', 'active')) return;
+          if (npcKey === 'bernard' && !await setFlag(stats.user.id, 'bernard_stage', '6')) return;
           bumpFlags();
         } else {
           window.dispatchEvent(new Event('praem:open-paywall'));

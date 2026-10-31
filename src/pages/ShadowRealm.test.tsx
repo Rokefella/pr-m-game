@@ -19,7 +19,7 @@ vi.mock('@/lib/questFlags', () => ({ getAllFlags: async () => ({}), setFlag: vi.
 vi.mock('@/lib/runState', () => ({ endRun: vi.fn() }));
 vi.mock('@/components/Thumbstick', () => ({ default: () => null }));
 vi.mock('@/components/theme/FolderSlots', () => ({ default: (props: { total: number; filled: number; revealed: boolean }) => { state.slots.push(props); return null; } }));
-vi.mock('@/lib/supabase', () => ({ supabase: { from: (table: string) => {
+vi.mock('@/lib/supabase', () => ({ supabase: { rpc: async (fn: string) => { state.calls.push({ table: fn, method: 'rpc', args: [] }); return { data: { ok: !state.failLibrary, banked: state.size, primes: Array.from({length:state.size}, (_, i) => i + 2), library_count: state.library }, error: null }; }, from: (table: string) => {
   let countQuery = false;
   const chain: Record<string, unknown> = {};
   for (const method of ['select', 'eq', 'order', 'update', 'upsert', 'delete', 'in', 'not', 'maybeSingle']) {
@@ -56,11 +56,11 @@ describe('Shadow transfer counts', () => {
     const { DROPS_REFRESHED } = await import('@/lib/carriedDrops');
     const refreshed = vi.fn(); window.addEventListener(DROPS_REFRESHED, refreshed);
     await beginTransfer();
-    const bank = state.calls.findIndex(c => c.table === 'fragments' && c.method === 'update');
+    const bank = state.calls.findIndex(c => c.table === 'bank_fragments' && c.method === 'rpc');
     const reads = state.calls.map((c, i) => c.table === 'drops' && c.method === 'select' ? i : -1).filter(i => i >= 0);
     expect(reads).toHaveLength(2);
     expect(reads[0]).toBeLessThan(bank);
-    expect(reads[1]).toBeGreaterThan(state.calls.findIndex(c => c.table === 'users' && c.method === 'save'));
+    expect(reads[1]).toBeGreaterThan(bank);
     expect(refreshed).toHaveBeenCalledTimes(1);
     const { carriedDropCount } = await import('@/lib/carriedDrops');
     expect(carriedDropCount(refreshed.mock.calls[0][0].detail.drops, 1)).toBe(2);
@@ -84,11 +84,10 @@ describe('Shadow transfer counts', () => {
     await beginTransfer();
     expect(state.calls.some(c => c.method === 'update' || c.method === 'upsert' || c.method === 'save')).toBe(false);
   });
-  it('repairs Bernard only after banking and level-up have been saved', async () => {
+  it('delegates banking and story repair in one server call with no direct mutations', async () => {
     await beginTransfer();
-    const recovery = state.calls.findIndex(c => c.table === 'bernard');
-    expect(recovery).toBeGreaterThan(state.calls.findIndex(c => c.table === 'users' && c.method === 'save'));
-    expect(state.calls[recovery].args).toEqual(['player', true]);
+    expect(state.calls.filter(c => c.table === 'bank_fragments')).toHaveLength(1);
+    expect(state.calls.some(c => ['update', 'upsert', 'delete', 'save', 'recover'].includes(c.method))).toBe(false);
   });
   it('fills only five current-transfer slots, never earlier banked rows', async () => {
     await beginTransfer();
@@ -98,12 +97,11 @@ describe('Shadow transfer counts', () => {
     expect(state.slots.every(p => p.total === 5)).toBe(true);
     expect(state.calls.some(c => c.table === 'fragments' && c.method === 'select' && c.args[1])).toBe(false);
   });
-  it('queries the exact player Library row count only after persistence', async () => {
+  it('uses the returned Library total without another count read', async () => {
     await beginTransfer();
-    const countIndex = state.calls.findIndex(c => c.table === 'library' && c.method === 'select');
-    expect(countIndex).toBeGreaterThan(state.calls.findIndex(c => c.table === 'users' && c.method === 'save'));
-    expect(state.calls[countIndex].args).toEqual(['id', { count: 'exact', head: true }]);
-    expect(state.calls[countIndex + 1]).toEqual({ table: 'library', method: 'eq', args: ['user_id', 'player'] });
+    expect(state.calls.some(c => c.table === 'library')).toBe(false);
+    for (let i = 0; i < 140; i++) await act(async () => { await vi.advanceTimersByTimeAsync(100); });
+    expect(document.body.textContent).toContain('Library 12');
   });
   it('keeps a minimum of five slots for a smaller transfer', async () => {
     state.size = 2;

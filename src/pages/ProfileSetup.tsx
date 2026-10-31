@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { fetchOrCreateUser, upsertUser } from '@/lib/userData';
+import { fetchOrCreateUser } from '@/lib/userData';
+import { setupProfile } from '@/lib/serverGame';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import PlateFrame from '@/components/theme/PlateFrame';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import { useOrbSync } from '@/lib/orb';
@@ -18,6 +20,7 @@ export function nameError(raw: string): string | null {
 const ProfileSetup = () => {
   const [username, setUsername] = useState('');
   const [saving, setSaving] = useState(false);
+  const saveFlight = useRef(false);
   const [focused, setFocused] = useState(false);
   const [auraColor, setAuraColor] = useState('#5b4fd4');
   const [orbDye, setOrbDye] = useState<string | null>(null);
@@ -49,16 +52,17 @@ const ProfileSetup = () => {
   const valid = error === null;
 
   const handleEnter = async () => {
-    if (saving || !valid) return;
+    if (saveFlight.current || !valid) return;
     if (loading || !user) return;
-    setSaving(true);
+    saveFlight.current = true; setSaving(true);
     try {
-      await upsertUser(user.id, { username: username.trim(), aura_color: auraColor });
+      const result = await setupProfile(username.trim(), auraColor);
+      if (!result.ok) throw new Error(result.reason ?? 'Profile setup refused');
       navigate('/world');
     } catch (e) {
-      console.error('[ProfileSetup] save failed', e);
+      notifySaveFailed('profile setup', e);
       setSaving(false);
-    }
+    } finally { saveFlight.current = false; }
   };
 
   const isFirst = registration === 1;

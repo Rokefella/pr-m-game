@@ -1,4 +1,3 @@
-import { notifySaveFailed } from './saveNotice'
 import { supabase } from '@/lib/supabase'
 
 export type UserRow = {
@@ -77,33 +76,6 @@ export async function fetchOrCreateUser(userId: string): Promise<UserRow> {
 
   console.log('[fetchOrCreateUser] inserted row:', inserted)
   return inserted as UserRow
-}
-
-export async function updateUser(
-  userId: string,
-  patch: Partial<Omit<UserRow, 'id'>>,
-): Promise<void> {
-  console.log('[updateUser] called with userId:', userId, 'patch:', patch)
-  const { data, error } = await supabase.from('users').update(patch).eq('id', userId).select()
-  console.log('[updateUser] result data:', data, 'error:', error)
-  if (error) {
-    notifySaveFailed('updateUser', error)
-  }
-}
-
-export async function upsertUser(
-  userId: string,
-  patch: Partial<Omit<UserRow, 'id'>>,
-): Promise<void> {
-  console.log('[upsertUser] called with userId:', userId, 'patch:', patch)
-  const { data, error } = await supabase
-    .from('users')
-    .upsert({ id: userId, ...patch }, { onConflict: 'id' })
-    .select()
-  console.log('[upsertUser] result data:', data, 'error:', error)
-  if (error) {
-    notifySaveFailed('upsertUser', error)
-  }
 }
 
 export { DEFAULTS as USER_DEFAULTS }

@@ -36,7 +36,7 @@ import { getAllFlags, getFlag } from '@/lib/questFlags';
 import { flagNumber } from '@/lib/flagValues';
 import { notifySaveFailed } from '@/lib/saveNotice';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
-import { fetchOrCreateUser, updateUser } from '@/lib/userData';
+import { fetchOrCreateUser } from '@/lib/userData';
 import { waitForDailySteps } from '@/lib/dailySteps';
 import { abandonRunDrops, endRun, forfeitUnbanked, getActiveRun, markRunComplete, startRun, STRICT_FORFEIT } from '@/lib/runState';
 import { carriedDropCount, refreshDrops, exitCarryWarning, DROPS_REFRESHED, type DropsRefresh } from '@/lib/carriedDrops';
@@ -50,7 +50,7 @@ import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/le
 import Thumbstick from '@/components/Thumbstick';
 import { movementDebug } from '@/lib/netQueue';
 import { bindWorldStepFlush, WorldSteps } from '@/lib/worldSteps';
-import { completeMaze } from '@/lib/serverGame';
+import { claimFragment, mazeHelperReward, completeMaze } from '@/lib/serverGame';
 import { startResilientLoop } from '@/lib/resilientLoop';
 import WallTile from '@/components/theme/WallTile';
 import FloorLayer from '@/components/theme/FloorLayer';
@@ -728,24 +728,16 @@ const Maze = () => {
     setActiveFragment({ prime: frag.prime, index: fragIdx });
     if (user) {
       const write = (async () => {
-        const { data: existing } = await supabase
-          .from('fragments')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('prime_number', frag.prime)
-          .eq('level', currentLevelRef.current)
-          .eq('banked', false)
-          .limit(1);
-        if (leavingRef.current || (existing && existing.length > 0)) return;
-        const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
-        const { error } = await supabase.from('fragments').insert({
-          user_id: user.id,
-          prime_number: frag.prime,
-          level: currentLevelRef.current,
-          image_data: imageData,
-          banked: false,
-        });
-        if (error) console.error('Failed to save fragment', error);
+        try {
+          const result = await claimFragment(currentLevelRef.current, frag.prime, frag.col, frag.row, generateFragmentImage(frag.prime, registrationNumberRef.current));
+          if (!result.ok) throw new Error(result.reason ?? 'Fragment claim refused');
+          window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
+        } catch (error) {
+          notifySaveFailed('fragment pickup', error);
+          const remaining = new Set(collectedRef.current);
+          remaining.delete(frag.prime);
+          collectedRef.current = remaining; setCollected(remaining); setActiveFragment(null);
+        }
       })();
       fragmentWritesRef.current.add(write);
       void write.finally(() => fragmentWritesRef.current.delete(write));
@@ -1078,9 +1070,14 @@ const Maze = () => {
     if (reunionDoneRef.current) return;
     reunionDoneRef.current = true;
     showWhisper('She came back.', '#c8963a', 3000);
-    const newCredits = credits + 50;
-    setCredits(newCredits);
-    if (user) updateUser(user.id, { credits: newCredits });
+    if (user) void (async () => {
+      try {
+        const result = await mazeHelperReward(currentLevelRef.current);
+        if (!result.ok) { if (result.reason !== 'already') throw new Error(result.reason); return; }
+        setCredits(result.credits);
+        if (!result.already) showWhisper('Credits received.', '#c8963a', 3000);
+      } catch (error) { notifySaveFailed('maze helper reward', error); reunionDoneRef.current = false; }
+    })();
     setAlexandraVisible(false);
     setClaireVisible(false);
     alexandraFoundRef.current = false;
@@ -1200,24 +1197,16 @@ const Maze = () => {
         const uidFrag = userIdRef.current;
         if (uidFrag) {
           const write = (async () => {
-            const { data: existing } = await supabase
-              .from('fragments')
-              .select('id')
-              .eq('user_id', uidFrag)
-              .eq('prime_number', frag.prime)
-              .eq('level', currentLevelRef.current)
-              .eq('banked', false)
-              .limit(1);
-            if (leavingRef.current || (existing && existing.length > 0)) return;
-            const imageData = generateFragmentImage(frag.prime, registrationNumberRef.current);
-            const { error } = await supabase.from('fragments').insert({
-              user_id: uidFrag,
-              prime_number: frag.prime,
-              level: currentLevelRef.current,
-              image_data: imageData,
-              banked: false,
-            });
-            if (error) console.error('Failed to save fragment', error);
+            try {
+              const result = await claimFragment(currentLevelRef.current, frag.prime, nc, nr, generateFragmentImage(frag.prime, registrationNumberRef.current));
+              if (!result.ok) throw new Error(result.reason ?? 'Fragment claim refused');
+              window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
+            } catch (error) {
+              notifySaveFailed('fragment pickup', error);
+              const remaining = new Set(collectedRef.current);
+              remaining.delete(frag.prime);
+              collectedRef.current = remaining; setCollected(remaining); setActiveFragment(null);
+            }
           })();
           fragmentWritesRef.current.add(write);
           void write.finally(() => fragmentWritesRef.current.delete(write));

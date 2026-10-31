@@ -67,26 +67,19 @@ describe('maze run lifecycle', () => {
     localStorage.setItem('praem_run', JSON.stringify({ userId: 'player', level: 1, startedAt: Date.now() + 1 }));
     expect(getActiveRun('player', 1)).toBeNull();
   });
-  it('forfeits only the specified user’s banked=false fragments', async () => {
-    api.eq.mockReturnValueOnce({ eq: api.eq }).mockResolvedValueOnce({ error: null });
+  it('forfeits unbanked fragments only through the server', async () => {
+    api.rpc.mockResolvedValue({ data: { ok: true }, error: null });
     expect(await forfeitUnbanked('player')).toBe(true);
-    expect(api.from).toHaveBeenCalledWith('fragments');
-    expect(api.delete).toHaveBeenCalledTimes(1);
-    expect(api.eq.mock.calls).toEqual([['user_id', 'player'], ['banked', false]]);
+    expect(api.rpc).toHaveBeenCalledWith('forfeit_unbanked_fragments', {});
+    expect(api.from).not.toHaveBeenCalled();
   });
-  it('reports a database error and returns failure', async () => {
-    const error = { message: 'delete denied' };
-    api.eq.mockReturnValueOnce({ eq: api.eq }).mockResolvedValueOnce({ error });
-    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('keeps the run on a refused forfeiture', async () => {
+    api.rpc.mockResolvedValue({ data: { ok: false, reason: 'denied' }, error: null });
     expect(await forfeitUnbanked('player')).toBe(false);
-    expect(log).toHaveBeenCalledWith('[Maze] fragment forfeiture failed', error);
   });
-  it('reports a network failure and returns failure', async () => {
-    const error = new Error('offline');
-    api.eq.mockReturnValueOnce({ eq: api.eq }).mockRejectedValueOnce(error);
-    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('reports network failure', async () => {
+    api.rpc.mockRejectedValue(new Error('offline'));
     expect(await forfeitUnbanked('player')).toBe(false);
-    expect(log).toHaveBeenCalledWith('[Maze] fragment forfeiture failed', error);
   });
 });
 import { markRunComplete } from './runState';

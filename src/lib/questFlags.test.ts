@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { _resetQuestFlagCache, getFlag, reconcileBernardAfterShadow, subscribeQuestFlags } from './questFlags';
+import { _resetQuestFlagCache, getFlag, reconcileBernardAfterShadow, subscribeQuestFlags, setFlag } from './questFlags';
 
 const state = vi.hoisted(() => ({
   flags: {} as Record<string, string>, library: [] as { id: string }[],
   calls: [] as { table: string; method: string; args: unknown[] }[], failWrite: false,
 }));
-vi.mock('@/lib/supabase', () => ({ supabase: { from: (table: string) => {
+vi.mock('@/lib/supabase', () => ({ supabase: { rpc: async (fn: string, args: { p_key: string; p_value: string }) => { state.calls.push({ table: fn, method: 'rpc', args: [args] }); if (!state.failWrite) state.flags[args.p_key] = args.p_value; return { data: { ok: !state.failWrite }, error: null }; }, from: (table: string) => {
   let write: { flag_key: string; flag_value: string } | undefined;
   const chain: Record<string, unknown> = {};
   for (const method of ['select', 'eq', 'limit', 'upsert']) chain[method] = (...args: unknown[]) => {
@@ -67,4 +67,12 @@ describe('Bernard persisted Shadow recovery', () => {
     expect(await reconcileBernardAfterShadow('player')).toBe(true);
     expect(state.flags.bernard_stage).toBe('4'); log.mockRestore();
   });
+});
+it('routes UI flags to set_ui_flag without table writes', async () => {
+  expect(await setFlag('player', 'ui_panel', 'open')).toBe(true);
+  expect(state.calls).toEqual([{ table: 'set_ui_flag', method: 'rpc', args: [{ p_key: 'ui_panel', p_value: 'open' }] }]);
+});
+it('refuses arbitrary gameplay flags without optimistic changes', async () => {
+  expect(await setFlag('player', 'sam_stage', '8')).toBe(false);
+  expect(getFlag('sam_stage')).toBeNull(); expect(state.calls).toEqual([]);
 });

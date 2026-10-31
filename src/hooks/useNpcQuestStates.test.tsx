@@ -1,16 +1,17 @@
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useNpcQuestStates, useNpcDisplayName, NPC_DIALOGUE_CLOSED, NPC_INVENTORY_CHANGED } from './useNpcQuestStates';
-import { setFlag, _resetQuestFlagCache } from '@/lib/questFlags';
-const fixture = vi.hoisted(() => ({ drops: [] as string[], channels: 0 }));
+import { setFlag, getAllFlags, _resetQuestFlagCache } from '@/lib/questFlags';
+const fixture = vi.hoisted(() => ({ drops: [] as string[], channels: 0, flags: {} as Record<string,string> }));
 vi.mock('@/lib/supabase', () => ({ supabase: {
+  rpc: async (_fn: string, args: { p_key: string; p_value: string }) => { fixture.flags[args.p_key] = args.p_value; return { data: { ok: true }, error: null }; },
   channel: () => { fixture.channels++; const channel = { on: () => channel, subscribe: () => channel }; return channel; },
   removeChannel: vi.fn(),
   from: (table: string) => {
     const chain = {
       select: () => chain, eq: () => chain, order: () => chain, maybeSingle: () => chain, upsert: () => chain,
       then: (resolve: (r: unknown) => unknown) => Promise.resolve({ error: null, data:
-        table === 'quest_flags' ? [] : table === 'npcs' ? [{ id: 'b', npc_key: 'priest' }, { id: 'c', npc_key: 'chef' }] :
+        table === 'quest_flags' ? Object.entries(fixture.flags).map(([flag_key,flag_value]) => ({flag_key,flag_value})) : table === 'npcs' ? [{ id: 'b', npc_key: 'priest' }, { id: 'c', npc_key: 'chef' }] :
         table === 'npc_dialogue_stages' ? [{ npc_id: 'b', stage_key: 'stage_0', condition: { stage: 0 }, on_show_action_key: 'accept_alexandra_quest' }] :
         table === 'npc_book_entries' ? [{ npc_id: 'c', bucket_key: 'temper_root', requires_drops: ['herb'], option_a_action_key: 'complete_chef_recipe' }] :
         table === 'drops' ? fixture.drops.map(drop_key => ({ drop_types: { drop_key } })) : { level: 1 },
@@ -18,7 +19,7 @@ vi.mock('@/lib/supabase', () => ({ supabase: {
     }; return chain;
   },
 } }));
-afterEach(() => { cleanup(); _resetQuestFlagCache(); fixture.drops = []; });
+afterEach(() => { cleanup(); _resetQuestFlagCache(); fixture.drops = []; fixture.flags = {}; });
 describe('Event-driven NPC quest snapshot', () => {
   it('uses Sam as the visible name without changing the internal NPC key', () => { const hook = renderHook(() => useNpcDisplayName('bernard')); expect(hook.result.current).toBe('Sam'); });
   it('shares one subscription and updates immediately when acceptance changes flags', async () => {
@@ -39,7 +40,7 @@ describe('Event-driven NPC quest snapshot', () => {
     fixture.drops = ['herb'];
     act(() => { window.dispatchEvent(new Event(NPC_DIALOGUE_CLOSED)); });
     await waitFor(() => expect(hook.result.current('chef')).toBe('ready'));
-    await act(async () => { await setFlag('player-2', 'chef_recipe_complete', 'true'); });
+    await act(async () => { fixture.flags.chef_recipe_complete = 'true'; await getAllFlags('player-2'); });
     expect(hook.result.current('chef')).toBe('none');
   });
   it('refreshes quest readiness after a carried-drop pickup', async () => {

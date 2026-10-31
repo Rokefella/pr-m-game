@@ -3,9 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { MOVEMENT_DEBUG_EVENT } from '@/components/MovementDebugOverlay';
 import { supabase } from '@/lib/supabase';
-import { updateUser } from '@/lib/userData';
 import { _resetQuestFlagCache, getAllFlags } from '@/lib/questFlags';
-import { devSetFlag } from '@/lib/serverGame';
+import { devSetLevel, devSetFlag } from '@/lib/serverGame';
 import { notifySaveFailed } from '@/lib/saveNotice';
 import { Z } from '@/lib/zIndex';
 import './game-home.css';
@@ -45,6 +44,18 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
       setTopupNote(`Credits ${data.credits.toLocaleString('en-US')} · Steps ${data.steps_remaining.toLocaleString('en-US')}`);
     } catch (error) { setTopupNote(error instanceof Error ? error.message : 'Top-up failed. Try again.'); }
     finally { topupFlight.current = false; setTopupBusy(false); }
+  };
+  const [levelBusy, setLevelBusy] = useState(false);
+  const jumpLevel = async (level: number, destination: string) => {
+    if (!userId || devFlight.current) return;
+    devFlight.current = true; setLevelBusy(true);
+    try {
+      await onBeforeTopup?.();
+      const result = await devSetLevel(level);
+      if (!result.ok) throw new Error(result.reason ?? 'Level refused');
+      onClose(); navigate(destination);
+    } catch (error) { notifySaveFailed('dev level', error); }
+    finally { devFlight.current = false; setLevelBusy(false); }
   };
   useEffect(() => { const update = () => setNoteButtons(noteButtonsOn()); window.addEventListener(NOTE_BUTTONS, update); return () => window.removeEventListener(NOTE_BUTTONS, update); }, []);
   const fullResetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -146,11 +157,9 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
                 onChange={(e) => setDevVillageLevel(e.target.value)}
                 style={{ background: 'var(--instrument-shadow)', border: '1px solid var(--game-dev-border)', color: 'var(--game-dev-text)', padding: '6px 8px', width: 64, fontFamily: 'inherit', fontSize: 13 }}
               />
-              <Button variant="ghost" type="button" onClick={async () => {
+              <Button variant="ghost" type="button" disabled={levelBusy} onClick={async () => {
                 const n = Math.min(30, Math.max(1, parseInt(devVillageLevel, 10) || 1));
-                onClose();
-                if (user) await updateUser(user.id, { level: n });
-                navigate('/world');
+                await jumpLevel(n, '/world');
               }} style={{ flex: 1, background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → WORLD L#</Button>
             </div>
 
@@ -160,11 +169,9 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
                 onChange={(e) => setDevMazeLevel(e.target.value)}
                 style={{ background: 'var(--instrument-shadow)', border: '1px solid var(--game-dev-border)', color: 'var(--game-dev-text)', padding: '6px 8px', width: 64, fontFamily: 'inherit', fontSize: 13 }}
               />
-              <Button variant="ghost" type="button" onClick={async () => {
+              <Button variant="ghost" type="button" disabled={levelBusy} onClick={async () => {
                 const n = Math.min(30, Math.max(1, parseInt(devMazeLevel, 10) || 1));
-                onClose();
-                if (user) await updateUser(user.id, { level: n });
-                navigate('/maze');
+                await jumpLevel(n, '/maze');
               }} style={{ flex: 1, background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L#</Button>
             </div>
 
@@ -192,8 +199,8 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
             <div style={{ opacity: 0.7, fontSize: 11 }}>NAVIGATION</div>
             <Button variant="ghost" type="button" onClick={() => { onClose(); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Maze</Button>
             <Button variant="ghost" type="button" onClick={() => { onClose(); navigate('/door'); }} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>Skip to Door</Button>
-            <Button variant="ghost" type="button" onClick={async () => { onClose(); if (user) await updateUser(user.id, { level: 1 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L1</Button>
-            <Button variant="ghost" type="button" onClick={async () => { onClose(); if (user) await updateUser(user.id, { level: 2 }); navigate('/maze'); }} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L2</Button>
+            <Button variant="ghost" type="button" disabled={levelBusy} onClick={() => void jumpLevel(1, '/maze')} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L1</Button>
+            <Button variant="ghost" type="button" disabled={levelBusy} onClick={() => void jumpLevel(2, '/maze')} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → MAZE L2</Button>
             <Button variant="ghost" type="button" onClick={() => { onClose(); navigate('/shadow'); }} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>JUMP → SHADOW</Button>
 
 

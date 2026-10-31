@@ -1,5 +1,6 @@
 import { getOffering, purchasePackage, restorePurchases } from '@/lib/revenuecat';
-import { supabase } from '@/lib/supabase';
+import { recordPurchase, redeemCode } from '@/lib/serverGame';
+import { notifySaveFailed } from '@/lib/saveNotice';
 
 export type PurchaseTier = 'monthly' | 'annual' | 'founding';
 
@@ -22,32 +23,25 @@ export async function purchaseTier(userId: string, tier: PurchaseTier): Promise<
 
   await purchasePackage(pkg);
 
-  const { error } = await supabase
-    .from('users')
-    .update({ subscription_status: 'active', subscription_tier: tier })
-    .eq('id', userId);
-  if (error) throw new Error(error.message);
+  const result = await recordPurchase(tier);
+  if (!result.ok) { notifySaveFailed('purchase', result.reason); throw new Error("That didn't save. Try again."); }
 }
 
 /** Restore an existing purchase. Returns true when an active entitlement was found. */
 export async function restoreForUser(userId: string): Promise<boolean> {
   const ci: any = await restorePurchases();
   if (!ci?.entitlements?.active?.['praem_access']) return false;
-  const { error } = await supabase
-    .from('users')
-    .update({ subscription_status: 'active' })
-    .eq('id', userId);
-  if (error) throw new Error(error.message);
+  const result = await recordPurchase(null);
+  if (!result.ok) { notifySaveFailed('restore', result.reason); throw new Error("That didn't save. Try again."); }
   return true;
 }
 
 /** Redeem the beta access code. Returns true when the code was valid. */
 export async function redeemBetaCode(userId: string, code: string): Promise<boolean> {
-  if (code.trim().toUpperCase() !== 'PRAEM2026') return false;
-  const { error } = await supabase
-    .from('users')
-    .update({ subscription_status: 'beta' })
-    .eq('id', userId);
-  if (error) throw new Error(error.message);
-  return true;
+  const result = await redeemCode(code.trim());
+  if (!result.ok) {
+    if (result.reason !== 'bad_code' && result.reason !== 'invalid_code') notifySaveFailed('beta code', result.reason);
+    return false;
+  }
+  return result.ok;
 }

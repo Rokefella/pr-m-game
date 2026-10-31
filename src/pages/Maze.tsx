@@ -16,7 +16,8 @@ import { corridorCell } from '@/lib/ghostMotion';
 import { placedGhosts, nearbyGhostLine } from '@/lib/placedGhosts';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 import MazeSkinCanvas, { type MazeSkinHandle } from '@/components/theme/MazeSkinCanvas';
-import { crateFloorWalls, readMazeSkin, skinDarkness, type LevelSkin } from '@/lib/mazeSkins';
+import { crateFloorWalls, mazeObjectFloorWalls, mazeObjectSprite, readMazeSkin, skinDarkness, type LevelSkin } from '@/lib/mazeSkins';
+import MazeEraObject from '@/components/theme/objects/MazeEraObject';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import PlayerAvatar, { orbLook } from '@/components/PlayerAvatar';
 import type { Facing } from '@/lib/skins';
@@ -1388,7 +1389,7 @@ const Maze = () => {
 
   return (
     <div className="maze-theme" style={{ position: 'fixed', inset: 0, background: 'hsl(var(--background))', overflow: 'hidden', '--maze-light-core': `${DIMENSION_GLOW[glow]}14` } as CSSProperties}>
-      {eraSkin && <MazeSkinCanvas ref={skinCanvasRef} skin={eraSkin} grid={config} walls={wallSet} />}
+      {eraSkin && <MazeSkinCanvas ref={skinCanvasRef} skin={eraSkin} grid={config} walls={mazeObjectFloorWalls(wallSet, eraSkin, config.veilSet, [config.door, ...config.creditDoors], config.visualCells ?? [])} />}
       <div
         data-game-world ref={worldRef}
         data-maze-world="true"
@@ -1400,15 +1401,15 @@ const Maze = () => {
         {visibleWalls.filter(({ col, row }) => !eraSkin || pylons.has(`${col},${row}`) || config.veilSet?.has(`${col},${row}`)).map(({ col, row }) => (
           <div key={`w-${col},${row}`} data-wall-cell={`${col},${row}`} style={{ position: 'absolute', left: col * CELL, top: row * CELL, width: CELL, height: CELL, zIndex: 2, pointerEvents: 'none' }}>
             {!eraSkin && <><div className="maze-wall-shadow" /><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /></>}
-            {pylons.has(`${col},${row}`) && <div className="absolute inset-0"><Pylon dimension={glow} size={CELL} /></div>}
-            {config.veilSet?.has(`${col},${row}`) && <div className="absolute inset-0"><Veil dimension={glow} size={CELL} /></div>}
+            {pylons.has(`${col},${row}`) && !(config.veilSet?.has(`${col},${row}`) && mazeObjectSprite(eraSkin, 'veil')) && <div className="absolute inset-0"><Pylon dimension={glow} size={CELL} /></div>}
+            {config.veilSet?.has(`${col},${row}`) && <div className="absolute inset-0"><MazeEraObject skin={eraSkin} kind="veil" size={CELL}><Veil dimension={glow} size={CELL} /></MazeEraObject></div>}
           </div>
         ))}
         {inView(config.spawn) && <div data-object="start" style={{ position: 'absolute', left: config.spawn.col * CELL, top: config.spawn.row * CELL, zIndex: 3 }}><StartPad dimension={glow} size={CELL} /></div>}
         {visibleObjects.map((cell, index) => (
           <div key={`object-${cell.type}-${cell.col},${cell.row}-${index}`} data-object={cell.type} style={{ position: 'absolute', left: cell.col * CELL, top: cell.row * CELL, width: CELL, height: CELL, zIndex: 9, pointerEvents: 'none' }}>
             {cell.type === 'ROOM_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><RoomDoorTile dimension={glow} color={cell.color} size={CELL} /></div></>}
-            {cell.type === 'CONSOLE_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><ConsoleDoorTile dimension={glow} size={CELL} /></div></>}
+            {cell.type === 'CONSOLE_DOOR' && <>{!mazeObjectSprite(eraSkin, 'instrument_point') && <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />}<div className="absolute inset-0"><MazeEraObject skin={eraSkin} kind="instrument_point" size={CELL}><ConsoleDoorTile dimension={glow} size={CELL} /></MazeEraObject></div></>}
             {(cell.type === 'DROP_SPAWN' || cell.type === 'DROP') && <DropCrate dimension={glow} size={CELL} lit={runDrops.has(`${cell.col},${cell.row}`)} tone={runDrops.get(`${cell.col},${cell.row}`)?.kind} />}
             {cell.type === 'NPC' && <div className="npc-orb-cell"><NpcOrb npc={cell.npc_key || cell.npc_name || cell.name || ''} size={npcBodyPx('maze')} quest={questState(cell.npc_key || cell.npc_name || cell.name || '')} /></div>}
           </div>
@@ -1436,13 +1437,13 @@ const Maze = () => {
           </div>
         ))}
         {inView(config.door) && <div data-object="golden-gate" style={{ position: 'absolute', left: config.door.col * CELL, top: config.door.row * CELL, width: CELL, height: CELL, zIndex: Z.OBJECTS, pointerEvents: 'none' }}>
-          <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />
-          <div className="absolute inset-0"><Gate variant="golden" dimension={glow} size={CELL} /></div>
+          {!mazeObjectSprite(eraSkin, 'gold_door') && <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />}
+          <div className="absolute inset-0"><MazeEraObject skin={eraSkin} kind="gold_door" size={CELL}><Gate variant="golden" dimension={glow} size={CELL} /></MazeEraObject></div>
         </div>}
         {config.creditDoors.filter(inView).map((d, i) => (
           <div key={`cd-${i}`} data-object="blue-gate" style={{ position: 'absolute', left: d.col * CELL, top: d.row * CELL, width: CELL, height: CELL, zIndex: Z.OBJECTS, pointerEvents: 'none' }}>
-            <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />
-            <div className="absolute inset-0"><Gate variant="blue" dimension={glow} size={CELL} /></div>
+            {!mazeObjectSprite(eraSkin, 'gold_door') && <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />}
+            <div className="absolute inset-0"><MazeEraObject skin={eraSkin} kind="gold_door" size={CELL} blue><Gate variant="blue" dimension={glow} size={CELL} /></MazeEraObject></div>
           </div>
         ))}
         {config.doorsToRoom?.filter(inView).map((d, i) => (

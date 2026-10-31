@@ -179,7 +179,7 @@ const ROOM_TITLES: Record<string, string> = {
   library: 'THE LIBRARY',
   exchange: 'THE EXCHANGE',
   bernard_room: "SAM'S ROOM",
-  console_room: 'THE CONSOLE ROOM',
+  console_room: 'THE INSTRUMENT',
 };
 
 const dialogueButtonStyle = {

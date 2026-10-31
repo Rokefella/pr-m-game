@@ -1,6 +1,15 @@
 .maze-theme {
   --maze-wall-shadow: 0 0% 0%;
 }
+:root { --maze-era-blue: var(--orb-blue); }
+.maze-era-object { position: relative; display: block; pointer-events: none; }
+.maze-era-object canvas { position: relative; display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+.maze-era-object-glow { position: absolute; inset: -45%; background: radial-gradient(circle, var(--maze-object-accent), transparent 70%); opacity: .24; animation: maze-era-glow 5s ease-in-out infinite; }
+.maze-era-blue { --maze-object-accent: var(--maze-era-blue) !important; }
+.maze-era-veil canvas { animation: maze-era-shimmer 6s ease-in-out infinite; }
+@keyframes maze-era-shimmer { 0%, 100% { opacity: .7; } 50% { opacity: 1; } }
+@keyframes maze-era-glow { 0%, 100% { opacity: .16; } 50% { opacity: .32; } }
+@media (prefers-reduced-motion: reduce) { .maze-era-object-glow, .maze-era-veil canvas { animation: none; } }
 .maze-skin-canvas { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; image-rendering: pixelated; }
 .maze-skin-tint { position: fixed; inset: 0; pointer-events: none; background: var(--instrument-shadow); }
 .loading-era { --snake-gold: var(--skin-accent); --loading-glow: radial-gradient(var(--skin-accent), transparent 70%); }

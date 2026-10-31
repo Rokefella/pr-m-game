@@ -125,7 +125,7 @@ export default memo(function ConsolePanel({ open, level, onClose, onRift }: Prop
       setTone('error');
       switch (result.reason) {
         case 'wrong': setMessage('The Instrument does not answer.'); setTries(result.attempts_left); setDigits(''); break;
-        case 'locked': setMessage('The console is locked.'); setSeconds(result.retry_in_seconds); setDeadline(Date.now() + result.retry_in_seconds * 1000); break;
+        case 'locked': setMessage('The Instrument is locked.'); setSeconds(result.retry_in_seconds); setDeadline(Date.now() + result.retry_in_seconds * 1000); break;
         case 'wrong_key': setMessage('That key does not fit.'); setSelectedDrop(null); break;
         case 'no_key': setMessage('Insert a key first.'); setTone('gold'); break;
         case 'silent': setMessage('The Instrument is silent.'); setTone(''); break;
@@ -140,7 +140,7 @@ export default memo(function ConsolePanel({ open, level, onClose, onRift }: Prop
     <div className="console-backdrop" onClick={onClose} aria-hidden="true" />
     <PlateFrame width="min(100vw, 420px)" className="console-sheet" glow={DIMENSION_GLOW.teal}>
       <span className="console-rivets" aria-hidden="true">{['tl', 'tr', 'bl', 'br'].map(corner => <i key={corner} className={`console-rivet-${corner}`} />)}</span>
-      <div ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-label="The console" onKeyDown={event => {
+      <div ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-label="The Instrument" onKeyDown={event => {
         event.stopPropagation();
         if (event.key === 'Escape') onClose();
         if (event.key === 'Tab') {
@@ -151,7 +151,7 @@ export default memo(function ConsolePanel({ open, level, onClose, onRift }: Prop
           }
         }
       }} className="console-stack">
-        <header><h2 className="font-cinzel">THE CONSOLE</h2><p className="font-mono">Level {level}</p><Button variant="ghost" className="console-close" aria-label="Close console" onClick={onClose}><X /></Button></header>
+        <header><h2 className="font-cinzel">THE INSTRUMENT</h2><p className="font-mono">Level {level}</p><Button variant="ghost" className="console-close" aria-label="Close Instrument" onClick={onClose}><X /></Button></header>
         <div className="console-display font-cinzel" aria-label={`Code: ${digits || 'empty'}`}>
           {Array.from({ length: 8 }, (_, i) => <span key={i} className={digits[i] ? 'console-typed' : `console-empty ${i === digits.length && !unlocked ? 'console-next' : ''}`}>{digits[i] ?? ''}</span>)}
         </div>

@@ -21,6 +21,7 @@ describe('conditional trader stock', () => {
     expect(await loadTraderItems('player')).toEqual([]);
   });
   it('buys stock by key, uses returned credits and refreshes Folder', async () => {
+    api.refresh.mockResolvedValue(undefined);
     api.stock.mockResolvedValue([{ key: 'traded_spice', label: "Trader's spice", cost: 40 }]);
     api.buy.mockResolvedValue({ ok: true, credits: 83, name: "Trader's spice" });
     const items = await loadTraderItems('player');

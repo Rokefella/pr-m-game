@@ -48,7 +48,9 @@ import { supabase } from '@/lib/supabase';
 import { generateFragmentImage } from '@/lib/fragmentImage';
 import { loadLevelFromSupabase, type Dimension, type DoorToRoom } from '@/lib/levelLoader';
 import Thumbstick from '@/components/Thumbstick';
-import { enqueueSave, settleSaves, movementDebug } from '@/lib/netQueue';
+import { enqueueSave, movementDebug } from '@/lib/netQueue';
+import { bindWorldStepFlush, WorldSteps } from '@/lib/worldSteps';
+import { completeMaze } from '@/lib/serverGame';
 import { startResilientLoop } from '@/lib/resilientLoop';
 import WallTile from '@/components/theme/WallTile';
 import FloorLayer from '@/components/theme/FloorLayer';
@@ -586,6 +588,20 @@ const Maze = () => {
 
   const [stepsRemaining, setStepsRemaining] = useState(INITIAL_STEPS);
   const stepsRemainingRef = useRef(INITIAL_STEPS);
+  // One step ledger with /world: only spent amounts reach the server, never an absolute balance.
+  const stepLedgerRef = useRef<WorldSteps | null>(null);
+  if (!stepLedgerRef.current) stepLedgerRef.current = new WorldSteps(INITIAL_STEPS, async amount => {
+    const { data, error } = await supabase.rpc('spend_world_steps', { p_amount: amount });
+    if (error || typeof data !== 'number') { notifySaveFailed('maze steps', error ?? data); throw error ?? new Error('Missing step balance'); }
+    return data;
+  }, () => {
+    const ledger = stepLedgerRef.current;
+    if (ledger) { stepsRemainingRef.current = ledger.balance; setStepsRemaining(ledger.balance); }
+  });
+  const setLedgerSteps = (steps: number) => { stepLedgerRef.current?.refresh(steps); };
+  const flushSteps = () => stepLedgerRef.current?.flush().catch(() => undefined) ?? Promise.resolve();
+  useEffect(() => { const ledger = stepLedgerRef.current; return ledger ? bindWorldStepFlush(ledger) : undefined; }, []);
+  const runStartedAtRef = useRef(Date.now());
   const stepsReadyRef = useRef(false);
 
   const [whisper, setWhisper] = useState<string | null>(null);
@@ -767,12 +783,8 @@ const Maze = () => {
       setRegistrationNumber(row.registration_number);
       setPerception(Number((row as unknown as { perception?: number | null }).perception ?? 0));
       registrationNumberRef.current = row.registration_number;
-      const startSteps = row.steps_remaining > 0 ? row.steps_remaining : INITIAL_STEPS;
-      stepsRemainingRef.current = startSteps;
-      setStepsRemaining(startSteps);
-      if (row.steps_remaining <= 0) {
-        updateUser(user.id, { steps_remaining: INITIAL_STEPS });
-      }
+      setLedgerSteps(Math.max(0, row.steps_remaining ?? 0));
+      runStartedAtRef.current = Date.now();
 
       // Load ALL the user's fragments (no level filter) so the Folder reflects everything.
       // Split into banked (permanent, all levels) and unfinished run fragments for this level.
@@ -829,7 +841,7 @@ const Maze = () => {
       const detail = (event as CustomEvent).detail;
       if (detail?.userId !== userIdRef.current) return;
       if (detail.effect === 'steps' && Number.isFinite(detail.steps_remaining)) {
-        stepsRemainingRef.current = detail.steps_remaining; setStepsRemaining(detail.steps_remaining);
+        setLedgerSteps(detail.steps_remaining);
       }
       if (detail.effect === 'credits' && Number.isFinite(detail.credits)) setCredits(detail.credits);
       if (detail.effect === 'pulse') { mechanicEffectsRef.current?.pulse(); closeProfile(); showWhisper('The pebble hums.', 'var(--console-teal)', 4000); }
@@ -838,7 +850,7 @@ const Maze = () => {
     const refreshed = (event: Event) => {
       const detail = (event as CustomEvent).detail;
       if (detail?.userId !== userIdRef.current || !Number.isFinite(detail.steps)) return;
-      stepsRemainingRef.current = detail.steps; setStepsRemaining(detail.steps);
+      setLedgerSteps(detail.steps);
     };
     window.addEventListener(MECHANIC_USED, used);
     window.addEventListener(USER_STEPS_REFRESHED, refreshed);
@@ -1114,14 +1126,8 @@ const Maze = () => {
       try { sessionStorage.setItem(`praem_chalk_${currentLevelRef.current}`, JSON.stringify([...chalkCellsRef.current])); } catch { /* quota */ }
       setChalkVersion(v => v + 1);
     }
-    stepsRemainingRef.current -= 1;
-    setStepsRemaining(stepsRemainingRef.current);
-    const uidStep = userIdRef.current;
-    if (uidStep) {
-      const remaining = stepsRemainingRef.current;
-      // Background, coalesced, never awaited: movement must not wait for the network.
-      enqueueSave('steps', signal => supabase.from('users').update({ steps_remaining: remaining }).eq('id', uidStep).abortSignal(signal));
-    }
+    // Background, batched, never awaited: movement must not wait for the network.
+    stepLedgerRef.current?.move(1);
 
     moveCountRef.current += 1;
 
@@ -1585,9 +1591,11 @@ const Maze = () => {
           <DialogButtons>
             <button className="font-cinzel" style={PRIMARY_BTN} onClick={async () => {
                 if (user) {
-                  const { error } = await supabase.from('users').update({ maze_completed_level: currentLevelRef.current }).eq('id', user.id);
+                  await flushSteps();
+                  const seconds = (Date.now() - runStartedAtRef.current) / 1000;
+                  const result = await completeMaze(currentLevelRef.current, stepLedgerRef.current?.total ?? 0, seconds).catch((err: unknown) => ({ ok: false, reason: String(err) }));
                   // Stay in the maze on failure so the completed level is not lost behind the door.
-                  if (error) { notifySaveFailed('maze completion', error); return; }
+                  if (!result.ok) { notifySaveFailed('maze completion', result); return; }
                 }
                 if (user) markRunComplete(user.id, currentLevelRef.current);
                 sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ level: currentLevelRef.current, ts: Date.now() }));
@@ -1676,9 +1684,9 @@ const Maze = () => {
       </div>
 
       {user && <SuppliesCard open={exchangeOpen} onClose={() => { setExchangeOpen(false); setExchangeError(false); }} userId={user.id} steps={stepsRemaining} credits={credits}
-        beforeBuy={() => settleSaves('steps')}
-        onBalances={(s, c) => { stepsRemainingRef.current = s; setStepsRemaining(s); setCredits(c); }} />}
-      {registrationNumber === 1 && <DevMenu open={devOpen} onClose={closeDev} userId={user?.id} registrationNumber={registrationNumber} onBeforeTopup={() => settleSaves('steps')} />}
+        beforeBuy={() => flushSteps()}
+        onBalances={(s, c) => { setLedgerSteps(s); setCredits(c); }} />}
+      {registrationNumber === 1 && <DevMenu open={devOpen} onClose={closeDev} userId={user?.id} registrationNumber={registrationNumber} onBeforeTopup={() => flushSteps()} />}
 
       {activeFragment && (
         <FragmentOverlay
@@ -1689,7 +1697,7 @@ const Maze = () => {
         />
       )}
 
-      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} context="maze" mazeUse={{ level: currentLevel, position: () => posRef.current, beforeUse: () => settleSaves('steps') }} runProgress={{ collected: collected.size, required: config.fragmentsRequired }} />
+      <ProfileOverlay isOpen={profileOpenDisplay} onClose={closeProfile} context="maze" mazeUse={{ level: currentLevel, position: () => posRef.current, beforeUse: () => flushSteps() }} runProgress={{ collected: collected.size, required: config.fragmentsRequired }} />
 
       {!BETA_MODE && paywallOpen && (
         <PaywallOverlay

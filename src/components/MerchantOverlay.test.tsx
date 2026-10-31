@@ -2,7 +2,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import MerchantOverlay, { type MerchantItem } from './MerchantOverlay';
 
-const f = vi.hoisted(() => ({ spendCredits: vi.fn(async () => ({ ok: true, credits: 30 })) }));
+const f = vi.hoisted(() => ({ stock: vi.fn(), spendCredits: vi.fn(async () => ({ ok: true, credits: 30 })) }));
+vi.mock('@/lib/merchantItems', () => ({ loadTraderItems: f.stock }));
 vi.mock('@/lib/serverGame', () => ({ spendCredits: f.spendCredits }));
 vi.mock('@/components/NpcPortrait', () => ({ default: () => null }));
 vi.mock('@/components/theme/objects/NpcOrb', () => ({ default: () => null }));
@@ -64,4 +65,16 @@ it('saves legacy item credits through spend_credits', async () => {
   expect(await screen.findByText('Acquired.')).toBeInTheDocument();
   expect(onCreditsChange).toHaveBeenCalledWith(30);
   expect(f.spendCredits).toHaveBeenCalledWith(20, 'visibility');
+});
+it('reloads conditional stock on each world merchant opening but not in village', async () => {
+  f.stock.mockResolvedValue([{ key: 'spice', label: 'Spice', cost: 40, serverSide: true, onPurchase: async () => ({ receipt: 'Wrapped.', credits: 10 }) }]);
+  const view = render(<MerchantOverlay {...base} home="world" credits={50} onCreditsChange={() => {}} items={[stepsItem(() => {})]} />);
+  await screen.findByText('Spice');
+  expect(f.stock).toHaveBeenCalledExactlyOnceWith('u1');
+  view.rerender(<MerchantOverlay {...base} open={false} home="world" credits={50} onCreditsChange={() => {}} items={[]} />);
+  f.stock.mockResolvedValue([]);
+  view.rerender(<MerchantOverlay {...base} home="world" credits={50} onCreditsChange={() => {}} items={[stepsItem(() => {})]} />);
+  expect(f.stock).toHaveBeenCalledTimes(2);
+  view.rerender(<MerchantOverlay {...base} home="village" credits={50} onCreditsChange={() => {}} items={[]} />);
+  expect(f.stock).toHaveBeenCalledTimes(2);
 });

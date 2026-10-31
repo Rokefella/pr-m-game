@@ -56,3 +56,6 @@ export const devSetLevel = (level: number) => call<SaveResult>('dev_set_level', 
 export const redeemCode = (code: string) => call<SaveResult>('redeem_beta_code', { p_code: code });
 export const checkTrial = () => call<SaveResult & { status?: string; subscription_status?: string }>('check_trial', {});
 export const recordPurchase = (tier: string | null) => call<SaveResult>('record_purchase', { p_tier: tier });
+export type TraderStock = { key: string; label: string; cost: number };
+export const traderStock = () => call<TraderStock[]>('trader_stock', {});
+export const buyTraderItem = (key: string) => call<BalanceResult & { name: string }>('buy_trader_item', { p_key: key });

@@ -81,8 +81,10 @@ export const samTopics = (samStage: number): SamTopic[] => {
 const GATED = new Set(['instrument', 'sam_02', 'whistle', 'stones', 'words']);
 const topicLabel = (key: string) => TOPIC_LABELS[key] ?? key.replace(/^sam_/, '').replace(/_/g, ' ').replace(/^./, c => c.toUpperCase());
 /** Stage-gated topics plus every other topic the book has a root for, so ungated topics are never dropped. */
-export const cardTopics = (samStage: number, allEntries: BookNode[], flags: Record<string, string> = {}): SamTopic[] => {
+export const cardTopics = (samStage: number, allEntries: BookNode[], flags: Record<string, string> = {}, npcKey = 'bernard'): SamTopic[] => {
   const entries = allEntries.filter(e => !isRetired(e.topic) && entryVisible(e, flags));
+  if (!SAM_KEYS.has(npcKey)) return [...new Set(entries.map(e => e.topic).filter((t): t is string => !!t))]
+    .filter(key => topicRoot(entries, key)).map(key => ({ key, label: key.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()) }));
   const listed = samTopics(samStage);
   const known = new Set([...GATED, ...listed.map(t => t.key)]);
   const extra = [...new Set(entries.map(e => e.topic).filter((t): t is string => !!t && !known.has(t)))].map(key => ({ key, label: topicLabel(key) }));

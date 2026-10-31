@@ -1,4 +1,26 @@
 import type { MerchantItem } from '@/components/MerchantOverlay';
+import { buyTraderItem, traderStock } from './serverGame';
+import { refreshDrops } from './carriedDrops';
+import { inventoryChanged } from './inventoryEvents';
+import { notifySaveFailed, SAVE_FAILED_TEXT } from './saveNotice';
+
+export async function loadTraderItems(userId: string): Promise<MerchantItem[]> {
+  const stock = await traderStock();
+  if (!Array.isArray(stock)) throw new Error('Trader stock unavailable');
+  return stock.map(item => ({ ...item, serverSide: true, onPurchase: async () => {
+    const result = await buyTraderItem(item.key);
+    if (!result.ok) {
+      const lines: Record<string, string> = { not_sold: 'Not today.', not_now: 'Not today.', already_have: 'You have one already.', not_enough_credits: 'Not enough credits.' };
+      const failure = result.reason && lines[result.reason];
+      if (failure) return { failure };
+      notifySaveFailed('trader purchase', result.reason);
+      return { failure: SAVE_FAILED_TEXT };
+    }
+    inventoryChanged();
+    await refreshDrops(userId).catch(error => notifySaveFailed('trader inventory refresh', error));
+    return { receipt: `${result.name}. He wraps it in paper.`, credits: result.credits };
+  } }));
+}
 export const MERCHANT_LINES = [
   'You need more steps. I have them.',
   "The fragments don't find themselves.",

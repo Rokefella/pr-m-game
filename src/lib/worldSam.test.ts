@@ -59,6 +59,11 @@ describe('cardTopics', () => {
   const book = ['background', 'instrument', 'sam_lantern'].map(t => ({ node_key: `${t}_root`, text: 'x', topic: t }));
   it('shows ungated book topics that have a root', () => expect(cardTopics(0, book).map(t => t.key)).toEqual(['background', 'sam_lantern']));
   it('keeps the Instrument gated until stage two', () => expect(cardTopics(2, book).map(t => t.key)).toContain('instrument'));
+  it('Chef topics follow only his visible book roots, not Sam stage gates', () => {
+    const chefBook = [{ node_key: 'chef_words_root', topic: 'words', text: 'Recipe words' }, { node_key: 'chef_recipe_root', topic: 'recipe', text: 'Recipe', requires_flags: { chef_met: '1' } }];
+    expect(cardTopics(0, chefBook, {}, 'chef').map(t => t.key)).toEqual(['words']);
+    expect(cardTopics(0, chefBook, { chef_met: '1' }, 'chef').map(t => t.key)).toEqual(['words', 'recipe']);
+  });
 });
 
 import { samLandLine } from './worldSam';
@@ -66,6 +71,11 @@ import { figureNpc, merchantFigure, sevenFiresProgress } from './worldSam';
 it('the two merchant places use the standing merchant identity', () => {
   for (const name of ['Wandering trader', 'Lumen: merchant']) { const p = { name, action: 'merchant' }; expect(merchantFigure(p)).toBe(true); expect(figureNpc(p)).toBe('merchant'); }
   expect(merchantFigure({ name: 'Sam', action: 'npc' })).toBe(false);
+});
+it('Chef stays at his Lumen home with his own figure regardless of Sam stage', () => {
+  const chef = { x: 967, y: 201, npc_key: 'chef', action: 'npc', show_when: null };
+  for (const stage of [0, 3, 8]) expect(visiblePlaces([...sam, chef], 0, stage)).toContain(chef);
+  expect(figureNpc(chef)).toBe('chef');
 });
 it('Seven fires derives exact progress and completion from persisted flags', () => {
   expect(sevenFiresProgress({ fires_lit: '4', seven_fires: 'active' })).toEqual({ count: 4, done: false });

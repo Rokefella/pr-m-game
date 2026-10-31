@@ -2,7 +2,7 @@ import { flagNumber } from '@/lib/flagValues';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import NpcPortrait from '@/components/NpcPortrait';
-import { currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samFlags, cardTopics, topicRoot, entryVisible, type BookNode, type SamStage } from '@/lib/worldSam';
+import { SAM_KEYS, currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samFlags, cardTopics, topicRoot, entryVisible, type BookNode, type SamStage } from '@/lib/worldSam';
 
 export const NOTE_ERROR = 'That didn\'t work. Try again in a moment.';
 
@@ -53,12 +53,12 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
       {node.option_b_label && <Button variant="outline" className="world-jump" onClick={() => go(node.option_b_target)}>{node.option_b_label}</Button>}
       {!node.option_a_label && !node.option_b_label && <Button variant="outline" className="world-jump" onClick={() => setNode(null)}>Back</Button>}
     </> : <>
-      <p className="font-fell">{stage ? name(stage.text) : 'Sam pokes the fire.'}</p>
+      {(stage || SAM_KEYS.has(npcKey)) && <p className="font-fell">{stage ? name(stage.text) : 'Sam pokes the fire.'}</p>}
       {stage?.button_label && <Button className="world-jump" disabled={busy} onClick={() => void press()}>{busy ? '…' : stage.button_label}</Button>}
       {error && <p className="font-mono world-card-error">{error}</p>}
       {receipt && <p className="font-mono world-receipt">{receipt}</p>}
       <h3 className="font-mono world-topics-title">Ask about…</h3>
-      <div className="world-topics">{(sam ? cardTopics(samStage, sam.book, flags) : []).map(t => <Button key={t.key} variant="ghost" className="font-fell" onClick={() => go(sam ? topicRoot(sam.book.filter(e => entryVisible(e, flags)), t.key) : null)}>{t.label}</Button>)}</div>
+      <div className="world-topics">{(sam ? cardTopics(samStage, sam.book, flags, npcKey) : []).map(t => <Button key={t.key} variant="ghost" className="font-fell" onClick={() => go(sam ? topicRoot(sam.book.filter(e => entryVisible(e, flags)), t.key) : null)}>{t.label}</Button>)}</div>
     </>}
   </>;
 }

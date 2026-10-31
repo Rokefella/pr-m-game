@@ -64,10 +64,10 @@ export async function reconcileBernardAfterShadow(userId: string, transferSaved 
   }
 }
 
-export async function setFlag(userId: string, key: string, value: string): Promise<void> {
+export async function setFlag(userId: string, key: string, value: string): Promise<boolean> {
   if (!UI_FLAG.test(key) && !STORY_FLAGS.has(key)) {
     console.warn('[questFlags] Refused non-UI/non-story flag:', key);
-    return;
+    return false;
   }
   const previous = cache[key];
   cache = { ...cache, [key]: value };
@@ -76,6 +76,7 @@ export async function setFlag(userId: string, key: string, value: string): Promi
   try {
     const result = await (UI_FLAG.test(key) ? setUiFlag(key, value) : setStoryFlag(key, value));
     if (!result.ok) throw new Error(result.reason ?? 'Flag save refused');
+    return true;
   } catch (error) {
     notifySaveFailed(`flag ${key}`, error);
     // Roll the optimistic value back so the screen matches what was saved.
@@ -85,6 +86,7 @@ export async function setFlag(userId: string, key: string, value: string): Promi
       cache = next;
       publishFlags();
     }
+    return false;
   }
 }
 

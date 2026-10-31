@@ -1096,7 +1096,7 @@ const ProfileOverlay = ({
                         <Button variant="ghost"
                           type="button"
                           onClick={() => commitGrowthPoint(a.key)}
-                          disabled={stats[a.key] >= 5}
+                          disabled={growthBusy || stats[a.key] >= 5}
                           className="font-cinzel"
                           style={{
                             display: 'block',

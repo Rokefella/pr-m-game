@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { notifySaveFailed } from '@/lib/saveNotice';
 
 /** Typed wrappers for server-owned game state. The client never writes these values itself. */
 type Rpc = (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
@@ -6,7 +7,7 @@ const rpc: Rpc = (fn, args) => (supabase.rpc as unknown as Rpc)(fn, args);
 
 async function call<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   const { data, error } = await rpc(fn, args);
-  if (error) throw new Error(error.message);
+  if (error) { notifySaveFailed(fn, error); throw new Error(error.message); }
   return (data ?? { ok: false }) as T;
 }
 

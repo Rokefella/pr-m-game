@@ -287,7 +287,7 @@ const ExchangeRoom = () => {
         const status = await checkSubscriptionStatus(user.id);
         const allowed = status === 'active' || status === 'lifetime' || status === 'dev' || status === 'trial';
         if (allowed) {
-          await setFlag(user.id, 'alexandra_quest', 'active');
+          if (!await setFlag(user.id, 'alexandra_quest', 'active')) return;
           bumpFlags();
         } else {
           window.dispatchEvent(new Event('praem:open-paywall'));

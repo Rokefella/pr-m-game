@@ -47,7 +47,7 @@ const PaywallOverlay = ({ userId, onContinue, onDismiss }: Props) => {
     try {
       await purchaseTier(userId, tier);
       // Mark Find Alexandra quest as pending — Bernard triggers on next contact
-      await setFlag(userId, 'quest_alexandra_pending', 'true');
+      if (!await setFlag(userId, 'quest_alexandra_pending', 'true')) return;
       onContinue();
     } catch (e: any) {
       console.error('[PaywallOverlay] purchase error', e);
@@ -177,7 +177,7 @@ const PaywallOverlay = ({ userId, onContinue, onDismiss }: Props) => {
               <button
                 type="button"
                 onClick={async () => {
-                  await setFlag(userId, 'quest_alexandra_pending', 'true');
+                  if (!await setFlag(userId, 'quest_alexandra_pending', 'true')) return;
                   onContinue();
                 }}
                 className="font-cinzel"

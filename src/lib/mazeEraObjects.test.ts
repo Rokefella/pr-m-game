@@ -7,14 +7,17 @@ vi.mock('@/lib/supabase', () => ({ supabase: { from: (table: string) => {
   const chain = { select: () => chain, eq: () => chain, maybeSingle: async () => ({ data: { era_name: 'Fire', skin } }), then: (resolve: (value: unknown) => unknown) => Promise.resolve({ data: [{ key: 'rock' }, { key: 'ash' }] }).then(resolve) };
   return chain;
 } } }));
-const level: LevelSkin = { skin, era_name: 'Fire', place_name: '', terrain: new Map(['veil_1', 'gold_door_1', 'instrument_point_1'].map(key => [key, { key }])) };
+const level: LevelSkin = { skin, era_name: 'Fire', place_name: '', terrain: new Map(['veil_1', 'gold_door_1', 'instrument_point_1'].map(key => [key, { key, name: key, grp: 'structure', walkable: false, steps: null, sight: null, sight_delta: null, light_radius: null, moves: null, color: null, enabled: true }])) };
 describe('era object selection and unchanged geometry', () => {
   it.each(['Fire', 'Gods', 'Atoms', 'Stars', 'Quantum', 'Swerve', 'PRÆM', 'Instrument'])('maps %s by era name when order is absent', name => {
     expect(mazeEra({ ...level, skin: { ...skin, era_order: 0 }, era_name: name })).toBe(['Fire', 'Gods', 'Atoms', 'Stars', 'Quantum', 'Swerve', 'PRÆM', 'Instrument'].indexOf(name) + 1);
   });
   it('uses skin order ahead of era name, never level number', () => expect(mazeEra({ ...level, skin: { ...skin, era_order: 4 } })).toBe(4));
   it.each([1, 2])('maze %i uses Fire era 1 for all three objects', async maze => {
-    expect(mazeEra((await readMazeSkin(maze)) ?? level)).toBe(1);
+    const loaded = await readMazeSkin(maze);
+    expect(loaded).not.toBeNull();
+    if (!loaded) throw new Error('Missing maze metadata');
+    expect(mazeEra(loaded)).toBe(1);
     for (const kind of ['veil', 'gold_door', 'instrument_point'] as MazeObjectKind[]) {
       const canvas = document.createElement('canvas'); cache.sprites.set(`${kind}_1`, canvas);
       expect(mazeObjectSprite(level, kind)).toBe(canvas);

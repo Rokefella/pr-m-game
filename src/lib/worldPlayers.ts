@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { publicPlayers } from './publicPlayers';
 import { normalizeSkinKey, type Facing } from './skins';
 import type { WorldLayer, WorldPoint } from './worldTest';
 export type WorldPlayer = WorldPoint & { user_id: string; layer: number; village_level?: number; facing?: Facing; avatar_body?: string | null; orb_dye?: string | null; aura_color?: string | null; username?: string | null; title?: string | null; last_seen: string };
@@ -28,10 +29,8 @@ export async function readWorldPlayers(): Promise<WorldPlayer[]> {
     if (error) return [];
     const players = (data ?? []) as unknown as WorldPlayer[];
     if (!players.length) return players;
-    const { data: identities, error: labelError } = await supabase.rpc('public_players', { p_ids: players.map(p => p.user_id) });
-    if (labelError) return [];
-    type PublicPlayer = Pick<WorldPlayer, 'username' | 'title' | 'avatar_body' | 'orb_dye' | 'aura_color'> & { id: string; registration_number?: number; avatar_head?: string | null; avatar_hat?: string | null; level?: number };
-    const labels = new Map(((identities ?? []) as PublicPlayer[]).map(p => [p.id, p]));
+    const identities = await publicPlayers(players.map(p => p.user_id));
+    const labels = new Map(identities.map(p => [p.id, p]));
     return players.flatMap(p => { const publicRow = labels.get(p.user_id); return publicRow ? [{ ...p, ...publicRow }] : []; });
   } catch { return []; }
 }

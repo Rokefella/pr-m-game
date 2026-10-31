@@ -138,7 +138,7 @@ export async function currentStage(userId: string, stages: SamStage[]) {
   }));
   return firstMatchingStage(stages, matches);
 }
-export async function runStage(stageId: string, stage?: SamStage, userId?: string) {
+export async function runStage(stageId: string, stage?: SamStage, userId?: string): Promise<{ ok: boolean; given?: unknown; reason?: string; handInFailed?: boolean }> {
   const takes = (stage?.button_action_key ?? '').split(';').map(s => s.trim()).filter(s => s.startsWith('take:')).map(s => s.slice(5));
   for (const key of takes) {
     const result = await discardDrops(userId, key, 1, false);

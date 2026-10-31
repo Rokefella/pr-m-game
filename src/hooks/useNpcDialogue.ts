@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { getFlag, getAllFlags, questFlagSnapshot, subscribeQuestFlags } from '@/lib/questFlags';
 import { npcLegacyAction } from '@/lib/serverGame';
 import { notifySaveFailed } from '@/lib/saveNotice';
+import { inventoryChanged } from '@/lib/inventoryEvents';
 import { npcBookConditionsMet, npcStageMet, npcEntryBucket } from '@/lib/npcQuestState';
 import { NPC_DIALOGUE_CLOSED, NPC_INVENTORY_CHANGED } from '@/hooks/useNpcQuestStates';
 import { runStage } from '@/lib/worldSam';
@@ -353,6 +354,7 @@ function useNpcDialogueImpl({
       await getAllFlags(user.id);
       bumpFlags();
       window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
+      inventoryChanged();
       if (key === 'grant_wanderer_title') {
         onTitleGranted?.(result.title ?? 'Wanderer', result.unlocked_titles ?? ['Wanderer']);
         onMessage?.('You are a Wanderer.');

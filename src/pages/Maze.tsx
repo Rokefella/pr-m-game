@@ -1075,6 +1075,7 @@ const Maze = () => {
         const result = await mazeHelperReward(currentLevelRef.current);
         if (!result.ok) { if (result.reason !== 'already') throw new Error(result.reason); return; }
         setCredits(result.credits);
+        if (!result.already) showWhisper('Credits received.', '#c8963a', 3000);
       } catch (error) { notifySaveFailed('maze helper reward', error); reunionDoneRef.current = false; }
     })();
     setAlexandraVisible(false);

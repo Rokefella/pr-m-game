@@ -1,4 +1,3 @@
-import { notifySaveFailed } from './saveNotice'
 import { supabase } from '@/lib/supabase'
 
 export type UserRow = {

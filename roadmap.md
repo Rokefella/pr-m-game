@@ -1,4 +1,5 @@
-- [ ] Step B: replace specified direct saves with live functions; run all tests, requested preview checks, and final direct-write report.
+- [x] Step B: specified saves use server functions; all tests pass; audit leaves only users insert {id}, own discovery/presence saves, and unused generic REST helpers. No schema/data changes.
+- [ ] Step B live fragment pickup → Shadow bank, Folder slot, growth point and dev level walkthrough — external game session unavailable; /world redirects to /login, managed auth has no mintable users. No sample account created.
 # Roadmap
 
 - [x] Audit quick wins: lazy pages, tap locks, failed-save line, flag helper, server-dated garden door, hidden-page pauses; 612 tests pass, /world and maze 1 walked.

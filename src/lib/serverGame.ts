@@ -43,7 +43,7 @@ export const renamePlayer = (username: string) => call<BalanceResult & { usernam
 export const buyFolderSlot = () => call<BalanceResult & { extra_drop_capacity: number }>('buy_folder_slot', {});
 export const setupProfile = (username: string, auraColor: string) => call<SaveResult>('setup_profile', { p_username: username, p_aura_color: auraColor });
 export const spendCredits = (amount: number, reason: string) => call<BalanceResult>('spend_credits', { p_amount: amount, p_reason: reason });
-export const mazeHelperReward = (level: number) => call<BalanceResult>('maze_helper_reward', { p_level: level });
+export const mazeHelperReward = (level: number) => call<BalanceResult & { already?: boolean }>('maze_helper_reward', { p_level: level });
 export const npcLegacyAction = (npcKey: string, action: string) =>
   call<BalanceResult & { growth_points?: number; title?: string; unlocked_titles?: string[]; stage?: number }>('npc_legacy_action', { p_npc_key: npcKey, p_action: action });
 export const STORY_FLAGS = new Set(['shadow_visited', 'bernard_stage', 'alexandra_quest', 'quest_alexandra_pending']);
@@ -54,5 +54,5 @@ export const createFragmentListing = (fragment: string, price: number) => call<S
 export const cancelFragmentListing = (listing: string) => call<SaveResult>('cancel_listing', { p_listing: listing });
 export const devSetLevel = (level: number) => call<SaveResult>('dev_set_level', { p_level: level });
 export const redeemCode = (code: string) => call<SaveResult>('redeem_beta_code', { p_code: code });
-export const checkTrial = () => call<SaveResult & { status: string }>('check_trial', {});
+export const checkTrial = () => call<SaveResult & { status?: string; subscription_status?: string }>('check_trial', {});
 export const recordPurchase = (tier: string | null) => call<SaveResult>('record_purchase', { p_tier: tier });

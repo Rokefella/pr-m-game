@@ -10,7 +10,7 @@ export async function checkSubscriptionStatus(userId: string): Promise<Subscript
   try {
     const result = await checkTrial();
     if (!result.ok) throw new Error(result.reason ?? 'Trial check refused');
-    return result.status as SubscriptionStatus;
+    return (result.status ?? result.subscription_status ?? 'expired') as SubscriptionStatus;
   } catch (error) {
     notifySaveFailed('trial check', error);
     return 'expired';

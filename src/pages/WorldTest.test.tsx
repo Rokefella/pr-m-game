@@ -72,6 +72,25 @@ describe('world sandbox access and read-only movement', () => {
   });
 });
 describe('World home mechanics', () => {
+  it('walking into a lit fire opens resting, flushes spending, and updates HUD from server balance', async () => {
+    const fire = { id: 'fire', find_key: 'fire_1', x: 26, y: 25, layer: 0, kind: 'quest_object', sprite_key: 'campfire_cold', visibility: 'visible', title: 'Fire' };
+    const original = f.rpc.getMockImplementation();
+    f.rpc.mockImplementation(async (name, args) => {
+      if (name === 'rest_at_fire') { f.steps = 149; return { data: { ok: true, steps: 50, steps_remaining: 149 }, error: null }; }
+      return original?.(name, args);
+    });
+    // Inject existing find query responses into this test only.
+    const module = await import('@/lib/worldFinds');
+    const load = vi.spyOn(module, 'loadFinds').mockResolvedValue({ finds: [fire], claimed: new Set(['fire']) });
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(load).toHaveBeenCalled());
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Rest by the fire' }));
+    await screen.findByText(/STEPS\s+148/);
+    expect(f.rpc).toHaveBeenCalledWith('rest_at_fire', { p_find_key: 'fire_1' });
+    expect(f.rpc.mock.calls.map(([name]) => name).indexOf('spend_world_steps')).toBeLessThan(f.rpc.mock.calls.map(([name]) => name).indexOf('rest_at_fire'));
+  });
   it('persists the first current-level title when sam_03_back reaches stage three', async () => {
     f.title = ''; f.level = 2; f.flags.sam_stage = '2'; f.unlocked = ['Wanderer'];
     f.places = [{ kind: 'npc_home', action: 'npc', npc_key: 'sam', name: 'Sam', x: 27, y: 25 }];

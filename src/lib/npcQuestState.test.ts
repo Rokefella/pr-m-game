@@ -8,6 +8,11 @@ const stages = [
   { stage_key: 'stage_5_offer', condition: { stage: 5, requires_flags: { alexandra_quest: 'active' }, flags_equal: false }, on_show_action_key: null, button_action_key: 'accept_alexandra_quest' },
 ];
 describe('NPC quest rules shared with dialogue', () => {
+  it('has_drop stage requires a carried whistle before the dialogue can show', () => {
+    const condition = { stage: 0, has_drop: 'curio_tin_whistle' };
+    expect(npcStageMet(0, condition, base)).toBe(false);
+    expect(npcStageMet(0, condition, { ...base, drops: new Set(['curio_tin_whistle']) })).toBe(true);
+  });
   it('book numeric minimums differ from unchanged stage flag conditions', () => {
     const book = { requires_flags: { sam_stage: '4' }, flags_equal: false };
     expect(npcBookConditionsMet(book, { ...base, flags: { sam_stage: '3' } })).toBe(false);

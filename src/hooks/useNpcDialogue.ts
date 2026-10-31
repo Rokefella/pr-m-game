@@ -4,6 +4,7 @@ import { getFlag, setFlag, questFlagSnapshot, subscribeQuestFlags } from '@/lib/
 import { updateUser } from '@/lib/userData';
 import { npcBookConditionsMet, npcStageMet, npcEntryBucket } from '@/lib/npcQuestState';
 import { NPC_DIALOGUE_CLOSED, NPC_INVENTORY_CHANGED } from '@/hooks/useNpcQuestStates';
+import { runStage } from '@/lib/worldSam';
 
 export type BernardOption = {
   label: string;
@@ -29,6 +30,7 @@ export type BernardDialogueData = {
 };
 
 export type BernardStageRow = {
+  id?: string;
   stage_key: string;
   text: string;
   button_label: string | null;
@@ -288,7 +290,7 @@ function useNpcDialogueImpl({
       }
       const { data, error } = await supabase
         .from('npc_dialogue_stages')
-        .select('stage_key, text, button_label, button_action_key, on_show_action_key, order_index, condition')
+        .select('id, stage_key, text, button_label, button_action_key, on_show_action_key, order_index, condition')
         .eq('npc_id', (npcRow as { id: string }).id)
         .order('order_index', { ascending: true });
       if (error) {
@@ -473,11 +475,23 @@ function useNpcDialogueImpl({
     }
 
 
+    const stageAction = (key: string | null) => {
+      if (!key) return undefined;
+      if (!key.split(';').some(action => action.trim().startsWith('take:'))) return bernardActions[key];
+      return async () => {
+        if (!user || !match.id) return;
+        try {
+          const result = await runStage(match.id, { ...match, id: match.id }, user.id);
+          if (!result.ok) { onMessage?.(result.reason ?? 'That did not work. Try again.'); return; }
+          bumpFlags(); window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
+        } catch { onMessage?.('That did not work. Try again.'); }
+      };
+    };
     return {
       text: match.text,
       buttonLabel: match.button_label,
-      buttonAction: match.button_action_key ? bernardActions[match.button_action_key] : undefined,
-      onShow: match.on_show_action_key ? bernardActions[match.on_show_action_key] : undefined,
+      buttonAction: stageAction(match.button_action_key),
+      onShow: stageAction(match.on_show_action_key),
     };
   };
 

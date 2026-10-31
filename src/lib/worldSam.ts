@@ -1,4 +1,4 @@
-import { compareFlag, flagNumber } from './questFlags';
+import { compareFlag, flagNumber } from './flagValues';
 import { supabase } from '@/lib/supabase';
 import { inventoryChanged } from './inventoryEvents';
 import { readOwnedDrops, refreshDrops } from './carriedDrops';

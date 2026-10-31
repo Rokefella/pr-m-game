@@ -1,4 +1,4 @@
-import { compareFlag, flagNumber } from './questFlags';
+import { compareFlag, flagNumber } from './flagValues';
 import { entryVisible } from './worldSam';
 export type NpcQuestState = 'available' | 'active' | 'ready' | 'none';
 export type QuestContext = {

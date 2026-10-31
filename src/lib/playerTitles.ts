@@ -1,4 +1,4 @@
-import { flagNumber } from './questFlags';
+import { flagNumber } from './flagValues';
 export const TITLES_BY_LEVEL: Record<number, string> = {
   1: 'Wanderer',
   2: 'Fragment Seeker',

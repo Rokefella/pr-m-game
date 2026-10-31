@@ -1,6 +1,7 @@
 # Roadmap
 
-- [ ] Rob notes: above-avatar labels, idle trader figures, has_drop/take hand-ins, Seven fires/rest and complete public_players privacy conversion; run regression tests, no database/sample-data changes.
+- [x] Rob notes: above-avatar labels, idle trader figures, has_drop/take hand-ins, Seven fires/rest and public_players-only presence/Exchange identities; all 582 tests and preview compilation pass. Isolated desktop/phone rest and labels checked; no database/sample-data changes.
+- [ ] Verify these five changes with Rob's real account — external game authentication is unavailable; isolated rest responses and regression tests do not establish live hand-in/rest persistence.
 
 - [x] Rob-only remembered SHOW ALL dev-menu switch, raw-place/enabled-find labeled map and tappable coordinates; all 569 tests pass. Public live-data trader tap checked; no database/sample data.
 - [ ] Verify SHOW ALL through Rob's signed-in five-tap menu — no mintable session for Rob is available; public-data rendering and registration-gating tests passed.

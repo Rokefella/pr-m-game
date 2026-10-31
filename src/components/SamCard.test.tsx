@@ -1,13 +1,13 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import SamCard, { NOTE_ERROR } from './SamCard';
-const f = vi.hoisted(() => ({ flag: 0, run: vi.fn(), load: vi.fn() }));
+const f = vi.hoisted(() => ({ flag: 0, run: vi.fn(), load: vi.fn(), noStage: false }));
 vi.mock('@/components/NpcPortrait', () => ({ default: () => null }));
 vi.mock('@/lib/worldSam', async original => {
   const actual = await original<typeof import('@/lib/worldSam')>();
-  return { ...actual, loadSam: f.load, samFlags: async () => ({ sam_stage: String(f.flag) }), currentStage: async () => ({ id: `stage-${f.flag}`, text: `Stage ${f.flag}`, button_label: f.flag === 0 ? 'Thank you' : "I'll go" }), runStage: f.run, dropNames: async () => ({ map_scrap: 'Map Scrap' }) };
+  return { ...actual, loadSam: f.load, samFlags: async () => ({ sam_stage: String(f.flag) }), currentStage: async () => f.noStage ? null : ({ id: `stage-${f.flag}`, text: `Stage ${f.flag}`, button_label: f.flag === 0 ? 'Thank you' : "I'll go" }), runStage: f.run, dropNames: async () => ({ map_scrap: 'Map Scrap', recipe_scrap: 'Recipe scrap' }) };
 });
-afterEach(() => { cleanup(); vi.clearAllMocks(); });
+afterEach(() => { cleanup(); vi.clearAllMocks(); f.noStage = false; });
 const props = { userId: 'self', npcKey: 'bernard', playerName: 'Rob', fallbackName: 'Sam' };
 const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 afterEach(() => errorSpy.mockClear());
@@ -22,6 +22,17 @@ it('topics respond and actions advance through stage zero without remounting on 
   fireEvent.click(screen.getByRole('button', { name: 'Back' })); fireEvent.click(screen.getByRole('button', { name: 'Thank you' }));
   fireEvent.click(await screen.findByRole('button', { name: "I'll go" })); await screen.findByText('Stage 2');
   expect(f.run.mock.calls).toEqual([['stage-0', 'self'], ['stage-1', 'self']]); expect(f.flag).toBe(2);
+});
+it('runs Chef conversations twice and presents the server recipe receipt', async () => {
+  f.flag = 0;
+  f.load.mockResolvedValue({ npc: { name: 'The Chef' }, stages: [], book: [] });
+  f.run.mockImplementation(async () => { f.flag++; return { ok: true, given: f.flag === 2 ? [{ drop: 'recipe_scrap' }] : [] }; });
+  render(<SamCard {...props} npcKey="chef" fallbackName="The Chef" />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Thank you' }));
+  fireEvent.click(await screen.findByRole('button', { name: "I'll go" }));
+  expect(await screen.findByText('Kept: Recipe scrap')).toBeInTheDocument();
+  expect(f.load).toHaveBeenCalledWith('chef');
+  expect(f.run.mock.calls).toEqual([['stage-0', 'self'], ['stage-1', 'self']]);
 });
 
 it('shows the error line and logs the stage id when the stage rpc fails', async () => {

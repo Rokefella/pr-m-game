@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { refreshDrops } from '@/lib/carriedDrops';
+import { forfeitUnbankedFragments } from '@/lib/serverGame';
+import { notifySaveFailed } from '@/lib/saveNotice';
 
 export const RUN_MAX_AGE_MS = 12 * 60 * 60 * 1000;
 export const STRICT_FORFEIT = false;
@@ -53,14 +55,11 @@ export async function abandonRunDrops(userId: string, level: number): Promise<bo
 
 export async function forfeitUnbanked(userId: string): Promise<boolean> {
   try {
-    const { error } = await supabase.from('fragments').delete().eq('user_id', userId).eq('banked', false);
-    if (error) {
-      console.error('[Maze] fragment forfeiture failed', error);
-      return false;
-    }
+    const result = await forfeitUnbankedFragments();
+    if (!result.ok) throw new Error(result.reason ?? 'Fragment forfeiture refused');
     return true;
   } catch (error) {
-    console.error('[Maze] fragment forfeiture failed', error);
+    notifySaveFailed('fragment forfeiture', error);
     return false;
   }
 }

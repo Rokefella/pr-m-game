@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { notifySaveFailed } from './saveNotice';
+import { setUiFlag, setStoryFlag, STORY_FLAGS, UI_FLAG } from './serverGame';
 
 type FlagMap = Record<string, string>;
 
@@ -53,15 +54,8 @@ export async function reconcileBernardAfterShadow(userId: string, transferSaved 
       completed = (data ?? []).length > 0;
     }
     if (!completed) return false;
-    const { error } = await supabase.from('quest_flags').upsert(
-      { user_id: userId, flag_key: 'bernard_stage', flag_value: '4', updated_at: new Date().toISOString() },
-      { onConflict: 'user_id,flag_key' },
-    );
-    if (error) throw error;
-    if (loadedForUser === userId) {
-      cache = { ...cache, bernard_stage: '4' };
-      publishFlags();
-    }
+    await setFlag(userId, 'bernard_stage', '4');
+    if (cache.bernard_stage !== '4') return false;
     return true;
   } catch (error) {
     // Quest repair is retryable on the next village visit and cannot fail a saved transfer.
@@ -71,17 +65,18 @@ export async function reconcileBernardAfterShadow(userId: string, transferSaved 
 }
 
 export async function setFlag(userId: string, key: string, value: string): Promise<void> {
+  if (!UI_FLAG.test(key) && !STORY_FLAGS.has(key)) {
+    console.warn('[questFlags] Refused non-UI/non-story flag:', key);
+    return;
+  }
   const previous = cache[key];
   cache = { ...cache, [key]: value };
   loadedForUser = userId;
   publishFlags();
-  const { error } = await supabase
-    .from('quest_flags')
-    .upsert(
-      { user_id: userId, flag_key: key, flag_value: value, updated_at: new Date().toISOString() },
-      { onConflict: 'user_id,flag_key' },
-    );
-  if (error) {
+  try {
+    const result = await (UI_FLAG.test(key) ? setUiFlag(key, value) : setStoryFlag(key, value));
+    if (!result.ok) throw new Error(result.reason ?? 'Flag save refused');
+  } catch (error) {
     notifySaveFailed(`flag ${key}`, error);
     // Roll the optimistic value back so the screen matches what was saved.
     if (cache[key] === value) {

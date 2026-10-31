@@ -26,6 +26,7 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
   const [startArmed, setStartArmed] = useState(false);
   const [starting, setStarting] = useState(false);
   const startFlight = useRef(false);
+  const devFlight = useRef(false);
   const [noteButtons, setNoteButtons] = useState(noteButtonsOn);
   const [topupBusy, setTopupBusy] = useState(false);
   const topupFlight = useRef(false);
@@ -90,9 +91,13 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
             <Button variant="outline" onClick={() => setStartArmed(true)}>GO BACK TO START</Button>
             {startArmed && <section role="alertdialog" aria-label="Go back to start" className="max-w-[320px] text-foreground"><p className="font-fell leading-relaxed">{START_CONFIRMATION}</p><div className="flex gap-2 mt-3"><Button variant="outline" disabled={starting} onClick={() => void handleDevReset()}>{starting ? '…' : 'CONFIRM'}</Button><Button variant="ghost" disabled={starting} onClick={() => setStartArmed(false)}>CANCEL</Button></div></section>}
             <Button variant="ghost" type="button" onClick={async () => {
-              const { data, error } = await (supabase.rpc as unknown as (fn: string) => Promise<{ data: unknown; error: { message: string } | null }>)('dev_grant_skins');
-              setDevStageNote(error ? error.message : `GRANTED ${typeof data === 'number' ? data : 0} SKINS`);
-              onChanged?.();
+              if (devFlight.current) return;
+              devFlight.current = true;
+              try {
+                const { data, error } = await (supabase.rpc as unknown as (fn: string) => Promise<{ data: unknown; error: { message: string } | null }>)('dev_grant_skins');
+                setDevStageNote(error ? error.message : `GRANTED ${typeof data === 'number' ? data : 0} SKINS`);
+                onChanged?.();
+              } finally { devFlight.current = false; }
             }} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>GRANT ALL SKINS</Button>
             <Button variant="ghost" type="button" onClick={async () => {
               if (!fullResetArmed) {
@@ -103,7 +108,10 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
               }
               if (fullResetTimerRef.current) clearTimeout(fullResetTimerRef.current);
               setFullResetArmed(false);
+              if (devFlight.current) return;
+              devFlight.current = true;
               const { error } = await (supabase.rpc as unknown as (fn: string) => Promise<{ error: { message: string } | null }>)('dev_reset_progress');
+              devFlight.current = false;
               if (error) {
                 setDevStageNote(error.message);
                 return;

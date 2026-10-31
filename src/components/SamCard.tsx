@@ -1,5 +1,5 @@
 import { flagNumber } from '@/lib/flagValues';
-import { useCallback, useEffect, useState , useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import NpcPortrait from '@/components/NpcPortrait';
 import { currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samFlags, cardTopics, topicRoot, entryVisible, type BookNode, type SamStage } from '@/lib/worldSam';

@@ -1,4 +1,4 @@
-import { useEffect, useState , useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { publishOrb } from '@/lib/orb';
 import { INVENTORY_CHANGED } from '@/lib/inventoryEvents';

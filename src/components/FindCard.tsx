@@ -1,4 +1,4 @@
-import { useEffect, useState , useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { claimFailure, claimFind, findButton, findReceipt, findWords, type WorldFind } from '@/lib/worldFinds';

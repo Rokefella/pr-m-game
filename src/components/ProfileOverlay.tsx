@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { flagNumber } from '@/lib/flagValues';
 import { createPortal } from 'react-dom';
 import { Z } from '@/lib/zIndex';
 import { useNavigate } from 'react-router-dom';
@@ -281,7 +282,7 @@ const ProfileOverlay = ({
       ? `${runProgress.collected}/${runProgress.required}`
       : `${fragmentCount}`;
 
-  const samStage = parseInt(getFlag('sam_stage') ?? '0', 10) || 0;
+  const samStage = Math.trunc(flagNumber({ v: getFlag('sam_stage') }, 'v'));
   const alexandraActive = getFlag('alexandra_quest') === 'active';
   const subscribed = BETA_MODE || (accountRow ? ['active','lifetime','dev','beta'].includes(accountRow.subscription_status) : false);
   const subType = accountRow?.subscription_tier ?? '';

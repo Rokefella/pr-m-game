@@ -4,7 +4,9 @@ import { Button } from '@/components/ui/button';
 import { MOVEMENT_DEBUG_EVENT } from '@/components/MovementDebugOverlay';
 import { supabase } from '@/lib/supabase';
 import { updateUser } from '@/lib/userData';
-import { _resetQuestFlagCache, setFlag } from '@/lib/questFlags';
+import { _resetQuestFlagCache, getAllFlags } from '@/lib/questFlags';
+import { devSetFlag } from '@/lib/serverGame';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import { Z } from '@/lib/zIndex';
 import './game-home.css';
 import { goBackToStart, START_CONFIRMATION } from '@/lib/goBackToStart';
@@ -175,7 +177,8 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
                 type="button"
                 onClick={async () => {
                   if (!user) return;
-                  await setFlag(user.id, 'sam_stage', String(n));
+                  try { await devSetFlag('sam_stage', String(n)); } catch (err) { notifySaveFailed('dev sam_stage', err); return; }
+                  await getAllFlags(user.id);
                   setDevStageNote(`SET → stage_${n}`);
                   onClose();
                 }}

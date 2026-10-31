@@ -19,3 +19,9 @@ describe('Sam title eligibility', () => {
     expect(firstTitlePatch({ sam_stage: '2' }, { level: 2, title: '' })).toBeNull();
   });
 });
+describe('levelupTitle', () => {
+  it('sends the new level title only once titles are unlocked', () => {
+    expect(levelupTitle(2, true)).toBe('Fragment Seeker');
+    expect(levelupTitle(2, false)).toBeNull();
+  });
+});

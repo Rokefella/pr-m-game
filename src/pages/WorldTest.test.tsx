@@ -97,7 +97,8 @@ describe('World home mechanics', () => {
     const originalRpc = f.rpc.getMockImplementation();
     f.rpc.mockImplementation(async (name, args) => {
       if (name === 'npc_stage_matches') return { error: null, data: f.flags.sam_stage === '2' };
-      if (name === 'run_npc_stage') { f.flags.sam_stage = '3'; return { error: null, data: { ok: true } }; }
+      if (name === 'run_npc_stage2') { f.flags.sam_stage = '3'; return { error: null, data: { ok: true } }; }
+      if (name === 'set_title') { f.title = args.p_title; f.unlocked = [...f.unlocked, args.p_title]; return { error: null, data: { ok: true, title: args.p_title } }; }
       return originalRpc?.(name, args);
     });
     f.mutation.mockImplementation(async patch => {
@@ -109,8 +110,9 @@ describe('World home mechanics', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
     fireEvent.click(screen.getByLabelText('Open world terrain'), { clientX: 1100, clientY: 1020 });
     fireEvent.click(await screen.findByRole('button', { name: 'I am back.' }));
-    await waitFor(() => expect(f.mutation).toHaveBeenCalledWith({ title: 'Fragment Seeker', unlocked_titles: ['Wanderer', 'Fragment Seeker'] }));
-    expect(f.rpc).toHaveBeenCalledWith('run_npc_stage', { p_stage: 'sam_03_back' });
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('set_title', { p_title: 'Fragment Seeker' }));
+    expect(f.mutation).not.toHaveBeenCalledWith(expect.objectContaining({ title: expect.anything() }));
+    expect(f.rpc).toHaveBeenCalledWith('run_npc_stage2', { p_stage: 'sam_03_back' });
     expect(f.flags.sam_stage).toBe('3'); expect(f.title).toBe('Fragment Seeker');
   });
   it('updates credits immediately for the active user only', async () => {

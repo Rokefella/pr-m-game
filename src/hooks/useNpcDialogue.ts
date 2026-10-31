@@ -490,7 +490,7 @@ function useNpcDialogueImpl({
       return async () => {
         if (!user || !match.id) return;
         try {
-          const result = await runStage(match.id, { ...match, id: match.id }, user.id);
+          const result = await runStage(match.id, user.id);
           if (!result.ok) { onMessage?.(result.reason ?? 'That did not work. Try again.'); return; }
           bumpFlags(); window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
         } catch { onMessage?.('That did not work. Try again.'); }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { firstTitlePatch, titlesUnlocked } from './playerTitles';
+import { firstTitlePatch, levelupTitle, titlesUnlocked } from './playerTitles';
 
 describe('Sam title eligibility', () => {
   it('unlocks at Sam stage three, not retired Bernard stage five', () => {
@@ -17,5 +17,11 @@ describe('Sam title eligibility', () => {
   it('preserves an existing title and leaves locked players untouched', () => {
     expect(firstTitlePatch({ sam_stage: '3' }, { level: 2, title: 'Wanderer' })).toBeNull();
     expect(firstTitlePatch({ sam_stage: '2' }, { level: 2, title: '' })).toBeNull();
+  });
+});
+describe('levelupTitle', () => {
+  it('sends the new level title only once titles are unlocked', () => {
+    expect(levelupTitle(2, true)).toBe('Fragment Seeker');
+    expect(levelupTitle(2, false)).toBeNull();
   });
 });

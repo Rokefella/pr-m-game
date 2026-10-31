@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { updateUser } from '@/lib/userData';
+import { setTitle } from '@/lib/serverGame';
 import { getFlag } from '@/lib/questFlags';
 import { samLandLine, sevenFiresLine } from '@/lib/worldSam';
 import { BETA_MODE } from '@/lib/config';
@@ -547,9 +548,10 @@ const ProfileOverlay = ({
                                 className="font-cinzel"
                                 onClick={async () => {
                                   if (!user) return;
-                                  const { error } = await supabase.from('users').update({ title: t }).eq('id', user.id);
-                                  if (error) { notifySaveFailed('title', error); return; }
-                                  setAccountRow((prev) => prev ? { ...prev, title: t } : prev);
+                                  const result = await setTitle(t).catch((err: unknown) => ({ ok: false, reason: String(err) }));
+                                  if (!result.ok) { notifySaveFailed('title', result); return; }
+                                  const saved = ('title' in result && result.title) || t;
+                                  setAccountRow((prev) => prev ? { ...prev, title: saved } : prev);
                                   setTitleDropdownOpen(false);
                                 }}
                                 style={{

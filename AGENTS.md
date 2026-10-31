@@ -16,7 +16,7 @@
 
 - Keep the reversible beta subscription bypass in `src/lib/config.ts`; gate subscription access and paywall entry points without modifying stored entitlement data so disabling it restores the original behavior.
 
-- Daily claims share one per-user session promise; home pages refresh balances and Maze waits before step writes to avoid overwriting grants.
+- Server owns game state: serverGame wraps stage/maze/level/title/flag RPCs; Maze and World share WorldSteps (spend deltas only). Daily claims share one session promise.
 - Render ACCOUNT feedback through a portaled modal sized against the visual viewport; keyboard resize must keep the message and submission controls visible.
 - Keep fragment plate primitives presentation-only; coordinate eye, voice and digit readiness in FragmentOverlay, deriving pre-collection counts by excluding the current prime from the Folder query so asynchronous pickup persistence cannot skew the count.
 - Ghosts use caller walkability; Echoes BFS/rAF; labels portals; roomConfig sizes NPCs before zoom.

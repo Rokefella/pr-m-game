@@ -20,3 +20,5 @@ export function firstTitlePatch(flags: Record<string, string>, player: { title?:
   const title = TITLES_BY_LEVEL[player.level ?? 1] ?? TITLES_BY_LEVEL[1];
   return { title, unlocked_titles: [...new Set([...(player.unlocked_titles ?? []), title])] };
 }
+/** The title sent with apply_levelup: the new level's title once titles are unlocked, otherwise none. */
+export const levelupTitle = (newLevel: number, unlocked: boolean) => unlocked ? TITLES_BY_LEVEL[newLevel] ?? null : null;

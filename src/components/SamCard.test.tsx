@@ -21,7 +21,7 @@ it('topics respond and actions advance through stage zero without remounting on 
   view.rerender(<SamCard {...props} onRewarded={() => {}} />); expect(screen.getByText('My story')).toBeInTheDocument(); expect(f.load).toHaveBeenCalledOnce();
   fireEvent.click(screen.getByRole('button', { name: 'Back' })); fireEvent.click(screen.getByRole('button', { name: 'Thank you' }));
   fireEvent.click(await screen.findByRole('button', { name: "I'll go" })); await screen.findByText('Stage 2');
-  expect(f.run.mock.calls).toEqual([['stage-0'], ['stage-1']]); expect(f.flag).toBe(2);
+  expect(f.run.mock.calls).toEqual([['stage-0', 'self'], ['stage-1', 'self']]); expect(f.flag).toBe(2);
 });
 
 it('shows the error line and logs the stage id when the stage rpc fails', async () => {

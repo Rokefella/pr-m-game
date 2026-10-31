@@ -27,7 +27,8 @@ import { MERCHANT_LINES, merchantItems } from '@/lib/merchantItems';
 import { bindWorldStepFlush, HEAVY_LEGS, stepWalkDuration, WorldSteps } from '@/lib/worldSteps';
 import DevMenu from '@/components/DevMenu';
 import LevelUpCard, { TITLES_BY_LEVEL } from '@/components/LevelUpCard';
-import { firstTitlePatch, titlesUnlocked } from '@/lib/playerTitles';
+import { firstTitlePatch, levelupTitle, titlesUnlocked } from '@/lib/playerTitles';
+import { applyLevelup, setTitle } from '@/lib/serverGame';
 import WorldPlayerLabel from '@/components/WorldPlayerLabel';
 import ProfileOverlay from '@/components/ProfileOverlay';
 import { saveWorldPos, saveWorldReturn, takeWorldOpening } from '@/lib/worldReturn';
@@ -289,6 +290,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       .then(keys => { if (!off) samLineRef.current = new Set(keys.filter((k): k is string => Boolean(k))); }).catch(() => undefined);
     return () => { off = true; };
   }, [userId, npcKeys, samTick]);
+  const titleFlight = useRef(false);
   const refreshCompleted = useCallback(async () => {
     if (!userId) return;
     const ledger = stepLedger.current;
@@ -307,11 +309,13 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       setFlags({ ...flags });
       if (!error && row) {
         const patch = firstTitlePatch(flags, row as unknown as Identity);
-        if (patch) {
-          const { error: titleError } = await supabase.from('users').update(patch).eq('id', userId);
-          if (titleError) throw titleError;
-          identityRef.current = { ...identityRef.current, ...patch };
-          setIdentity(current => ({ ...current, ...patch }));
+        if (patch && !titleFlight.current) {
+          titleFlight.current = true;
+          const result = await setTitle(patch.title).finally(() => { titleFlight.current = false; });
+          if (!result.ok) throw new Error(result.reason ?? 'set_title refused');
+          const saved = { title: result.title ?? patch.title, unlocked_titles: patch.unlocked_titles };
+          identityRef.current = { ...identityRef.current, ...saved };
+          setIdentity(current => ({ ...current, ...saved }));
         }
       }
     }
@@ -614,8 +618,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     {dev && <DevMenu open={devOpen} onClose={() => setDevOpen(false)} userId={userId} registrationNumber={identity.registration_number} home="world" onBeforeTopup={() => stepLedger.current?.flush()} onChanged={() => void refreshCompleted()} onBeforeStart={async () => { await stepLedger.current?.flush(); await discovery.current?.flush(true); discovery.current?.abandon(); presence.current?.dispose(); stepLedger.current?.discard(); }} />}
     {arrival && <LevelUpCard newLevel={arrival.newLevel} titleUnlocked={arrival.titleUnlocked} auraColor={identity.aura_color} orbDye={identity.orb_dye} registrationNumber={identity.registration_number} avatarBody={identity.avatar_body} home="world" onContinue={async () => {
       if (!userId) return;
-      const { error } = await supabase.from('users').update({ title: arrival.title, levelup_pending: false, levelup_newlevel: 0, level: arrival.newLevel, social: (identityRef.current.social ?? 0) + 1 } as never).eq('id', userId);
-      if (error) throw error;
+      const result = await applyLevelup(levelupTitle(arrival.newLevel, arrival.titleUnlocked));
+      if (!result.ok) throw new Error(result.reason ?? 'apply_levelup refused');
       setArrival(null); await refreshCompleted();
     }} />}
     {heavyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[25%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{HEAVY_LEGS}</p>}

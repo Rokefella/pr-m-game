@@ -75,7 +75,8 @@ describe('Shadow transfer counts', () => {
     fireEvent.click(document.querySelector('button') as HTMLButtonElement);
     await act(async () => {});
     expect(state.calls.filter(c => c.table === 'drops' && c.method === 'select')).toHaveLength(2);
-    expect(state.calls.filter(c => c.table === 'users' && c.method === 'save')).toHaveLength(1);
+    // Level and completion are server-owned (complete_maze); banking never writes the player row.
+    expect(state.calls.filter(c => c.table === 'users' && c.method === 'save')).toHaveLength(0);
     log.mockRestore();
   });
   it('does not bank drops or advance levels when no fragments are transferred', async () => {

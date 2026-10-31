@@ -12,7 +12,7 @@ import { corridorCell } from '@/lib/ghostMotion';
 import { nearbyGhostLine, type GhostCell } from '@/lib/placedGhosts';
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fetchOrCreateUser, updateUser } from '@/lib/userData';
+import { fetchOrCreateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
 import { getAllFlags, setFlag, reconcileBernardAfterShadow } from '@/lib/questFlags';
 import { supabase } from '@/lib/supabase';

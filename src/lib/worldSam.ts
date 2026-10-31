@@ -2,7 +2,8 @@ import { compareFlag, flagNumber } from './flagValues';
 import { supabase } from '@/lib/supabase';
 import { inventoryChanged } from './inventoryEvents';
 import { readOwnedDrops, refreshDrops } from './carriedDrops';
-import { discardDrops, discardFailure } from './letGo';
+import { runNpcStage2, type NpcStageResult } from './serverGame';
+import { USER_CREDITS_REFRESHED, USER_STEPS_REFRESHED } from './mechanics';
 
 /** Optional world_places visibility rule compared against users.maze_completed_level. */
 export type ShowWhen = { min_completed_level?: number | null; max_completed_level?: number | null; flag?: string | null; flag_absent?: string | null } | null | undefined;

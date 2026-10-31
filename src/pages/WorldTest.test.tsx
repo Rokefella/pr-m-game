@@ -195,7 +195,8 @@ describe('World home mechanics', () => {
     f.pending = true; f.flags.sam_stage = '3'; open();
     await screen.findByRole('dialog', { name: 'Level arrival' }, { timeout: 3000 });
     fireEvent.click(screen.getByRole('button', { name: 'CONTINUE' }));
-    await waitFor(() => expect(f.mutation).toHaveBeenCalledWith({ title: 'Fragment Seeker', levelup_pending: false, levelup_newlevel: 0, level: 2, social: 3 }));
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('apply_levelup', { p_title: 'Fragment Seeker' }));
+    expect(f.mutation).not.toHaveBeenCalledWith(expect.objectContaining({ level: 2 }));
   });
   it('does not show an arrival card for level one', async () => {
     f.pending = true; f.newLevel = 1; open(); await screen.findByRole('button', { name: 'MAP' });
@@ -206,7 +207,7 @@ describe('World home mechanics', () => {
     f.pending = true; f.flags.sam_stage = '2'; f.flags.bernard_stage = '5'; open();
     await screen.findByRole('dialog', { name: 'Level arrival' }, { timeout: 3000 });
     fireEvent.click(screen.getByRole('button', { name: 'CONTINUE' }));
-    await waitFor(() => expect(f.mutation).toHaveBeenCalledWith({ title: 'Wanderer', levelup_pending: false, levelup_newlevel: 0, level: 2, social: 3 }));
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('apply_levelup', { p_title: null }));
   });
   it('opens the World dev menu after five taps without an Old Village shortcut', async () => {
     open(); const plate = await screen.findByRole('button', { name: 'Registration number' });

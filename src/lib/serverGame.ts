@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabase';
 
 /** Typed wrappers for server-owned game state. The client never writes these values itself. */
 type Rpc = (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
-const rpc = supabase.rpc.bind(supabase) as unknown as Rpc;
+const rpc: Rpc = (fn, args) => (supabase.rpc as unknown as Rpc)(fn, args);
 
 async function call<T>(fn: string, args: Record<string, unknown>): Promise<T> {
   const { data, error } = await rpc(fn, args);

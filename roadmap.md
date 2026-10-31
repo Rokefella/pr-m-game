@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Era-specific maze veil/door/Instrument art, accent pulses, blue arch and legacy fallback; run tests and inspect real Fire maze 1/2 art without database writes.
+
 - [x] Rob notes: above-avatar labels, idle trader figures, has_drop/take hand-ins, Seven fires/rest and public_players-only presence/Exchange identities; all 582 tests and preview compilation pass. Isolated desktop/phone rest and labels checked; no database/sample-data changes.
 - [ ] Verify these five changes with Rob's real account — external game authentication is unavailable; isolated rest responses and regression tests do not establish live hand-in/rest persistence.
 

@@ -152,6 +152,25 @@ function drawBuildingGroup(ctx: CanvasRenderingContext2D, cache: WorldChunkCache
   }
   return true;
 }
+type MotionView = { key: string; fieldCells: number; moves: boolean; gaps: boolean };
+const motionViews = new WeakMap<WorldChunkCache, MotionView>();
+/** Cached per view rectangle and loaded-chunk count, so idle frames never rescan the grid. */
+export function motionView(cache: WorldChunkCache, types: Map<string, Terrain>, x0: number, y0: number, x1: number, y1: number): MotionView {
+  const key = `${x0},${y0},${x1},${y1}:${cache.chunks.size}:${types.size}`;
+  const hit = motionViews.get(cache);
+  if (hit && hit.key === key) return hit;
+  let fieldCells = 0, moves = false, gaps = false;
+  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+    const t = types.get(cache.terrainKey(x, y) ?? '');
+    if (!t) { gaps = true; continue; }
+    if (t.moves) moves = true;
+    if (isGroundSway(t)) fieldCells++;
+  }
+  const view = { key, fieldCells, moves, gaps };
+  motionViews.set(cache, view);
+  return view;
+}
+
 export function drawWorld(ctx: CanvasRenderingContext2D, cache: WorldChunkCache, types: Map<string, Terrain>, eras: Era[], places: Place[], camera: WorldPoint, width: number, height: number, time: number, ink: WorldInk, reduced: boolean, layer: WorldLayer = 0, clock = time, skinnedNpcs?: Set<string>, player?: WorldPoint) {
   ctx.fillStyle = ink.background; ctx.fillRect(0, 0, width, height); ctx.imageSmoothingEnabled = false;
   const size = cache.size;
@@ -162,10 +181,11 @@ export function drawWorld(ctx: CanvasRenderingContext2D, cache: WorldChunkCache,
     if (!chunk) { void cache.load(cx, cy); continue; }
     ctx.drawImage(chunkCanvas(cache, chunk, types, eras, ink, layer), chunk.x0 * WORLD_TILE - camera.x, chunk.y0 * WORLD_TILE - camera.y, chunk.w * WORLD_TILE, chunk.h * WORLD_TILE);
   }
-  let fieldCells = 0;
-  for (let y = y0; y <= y1 && fieldCells <= WAVE_BAND_CELL_LIMIT; y++) for (let x = x0; x <= x1; x++) { const t = types.get(cache.terrainKey(x, y) ?? ''); if (t && isGroundSway(t)) fieldCells++; }
-  const band = fieldCells <= WAVE_BAND_CELL_LIMIT;
-  for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+  // One scan per view rectangle: counts sway cells and whether any moving or missing tile is visible.
+  const view = motionView(cache, types, x0, y0, x1, y1);
+  const band = view.fieldCells <= WAVE_BAND_CELL_LIMIT;
+  // Battery: skip the per-cell motion pass entirely when nothing on screen moves.
+  if (view.moves || view.gaps) for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     const px = x * WORLD_TILE - camera.x, py = y * WORLD_TILE - camera.y;
     const key = cache.terrainKey(x, y), terrain = key ? types.get(key) : undefined;
     if (terrain) { if (terrain.moves) drawTerrainMotion(ctx, terrain, x, y, px, py, time, ink, reduced, (nx, ny) => types.get(cache.terrainKey(nx, ny) ?? ''), clock, WORLD_TILE, true, band); }

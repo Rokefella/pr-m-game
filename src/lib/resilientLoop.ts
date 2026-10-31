@@ -15,16 +15,18 @@ export function startResilientLoop(frame: (time: number) => void, track = false)
     if (track) { movementDebug.frameMs = Math.round(now - last); movementDebug.lastTickAt = Date.now(); }
     last = now;
     frame(time);
+    // Battery: stop scheduling while the page is hidden; becoming visible restarts the loop.
+    if (document.visibilityState === 'hidden') { raf = 0; return; }
     raf = requestAnimationFrame(tick);
   };
   const restart = () => {
-    if (stopped) return;
+    if (stopped || document.visibilityState === 'hidden') return;
     cancelAnimationFrame(raf);
     last = performance.now();
     if (track) movementDebug.loopRestarts++;
     raf = requestAnimationFrame(tick);
   };
-  const onVisible = () => { if (document.visibilityState === 'visible') restart(); };
+  const onVisible = () => { if (document.visibilityState === 'visible') restart(); else { cancelAnimationFrame(raf); raf = 0; } };
   const watchdog = window.setInterval(() => {
     if (document.visibilityState === 'visible' && performance.now() - last > 500) restart();
   }, 1000);

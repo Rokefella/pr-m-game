@@ -29,7 +29,7 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
     if (!stage || flight.current) return;
     flight.current = true; setBusy(true); setError('');
     try {
-      const res = stage.button_action_key?.split(';').some(a => a.trim().startsWith('take:')) ? await runStage(stage.id, stage, userId) : await runStage(stage.id);
+      const res = await runStage(stage.id, userId);
       if (res.ok) {
         setReceipt(receiptLine(res.given, await dropNames()));
         await onRewarded?.();

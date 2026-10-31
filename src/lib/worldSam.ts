@@ -135,17 +135,18 @@ export async function currentStage(userId: string, stages: SamStage[]) {
   }));
   return firstMatchingStage(stages, matches);
 }
-export async function runStage(stageId: string, stage?: SamStage, userId?: string): Promise<{ ok: boolean; given?: unknown; reason?: string; handInFailed?: boolean }> {
-  const takes = (stage?.button_action_key ?? '').split(';').map(s => s.trim()).filter(s => s.startsWith('take:')).map(s => s.slice(5));
-  for (const key of takes) {
-    const result = await discardDrops(userId, key, 1, false);
-    if (userId) await refreshDrops(userId);
-    if (!result.ok) return { ok: false, reason: discardFailure(result.reason), handInFailed: true };
+export const MISSING_ITEM_LINE = "You don't seem to have it on you.";
+/** The server checks has_drop and performs take: itself, all or nothing. */
+export async function runStage(stageId: string, userId?: string): Promise<{ ok: boolean; given?: unknown; reason?: string; handInFailed?: boolean; steps_remaining?: number; credits?: number }> {
+  let result: NpcStageResult;
+  try { result = await runNpcStage2(stageId); } catch (err) { return { ok: false, reason: (err as Error).message }; }
+  if (!result.ok) return result.reason === 'missing_item' ? { ok: false, reason: MISSING_ITEM_LINE, handInFailed: true } : { ok: false, reason: result.reason };
+  if (userId) {
+    if (Number.isFinite(result.steps_remaining)) window.dispatchEvent(new CustomEvent(USER_STEPS_REFRESHED, { detail: { userId, steps: result.steps_remaining } }));
+    if (Number.isFinite(result.credits)) window.dispatchEvent(new CustomEvent(USER_CREDITS_REFRESHED, { detail: { userId, credits: result.credits } }));
+    await refreshDrops(userId).catch(() => undefined);
   }
-  const { data, error } = await db.rpc('run_npc_stage', { p_stage: stageId });
-  if (error) return { ok: false, reason: error.message } as { ok: boolean; given?: unknown; reason?: string };
-  const result = (data ?? { ok: false }) as { ok: boolean; given?: unknown; reason?: string };
-  if (result.ok) inventoryChanged();
+  inventoryChanged();
   return result;
 }
 export async function dropNames() {

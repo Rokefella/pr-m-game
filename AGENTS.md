@@ -8,7 +8,7 @@
 - LoadingScreen owns timing. DevMenu publishes top-ups after callers settle step saves.
 
 - Format primes only at presentation boundaries via format.ts; decode the padded string; persist and compare numbers.
-- Derive carried counts via `fragmentInventory`, excluding the current prime for reveal pre-counts. Shadow progress uses only its transfer snapshot; query Library rows after persistence independently of level-gate timing to keep presentation from altering saving.
+- Derive carried counts via fragmentInventory, excluding the current prime for reveal pre-counts. Shadow progress uses its pre-bank snapshot and Library total from bank_fragments.
 
 - MazeEraObject and maze skins share terrainTile's cache. Memoized decoded-object/crate underlays never change collision or lantern lighting; missing sprites retain legacy art.
 - Maze camera transforms are written through a DOM ref; memoize visible themed cells by logical player cell and viewport size, retaining the existing culling margin to avoid per-frame grid scans.
@@ -16,7 +16,7 @@
 
 - Keep the reversible beta subscription bypass in `src/lib/config.ts`; gate subscription access and paywall entry points without modifying stored entitlement data so disabling it restores the original behavior.
 
-- Server owns game state: serverGame wraps stage/maze/level/title/flag RPCs; Maze and World share WorldSteps (spend deltas only). Daily claims share one session promise.
+- serverGame wraps all game-state saves; callers use returned balances and fail notices, flags route only to UI/story RPCs. Maze/World share WorldSteps deltas; daily claims share one promise.
 - Render ACCOUNT feedback through a portaled modal sized against the visual viewport; keyboard resize must keep the message and submission controls visible.
 - Keep fragment plate primitives presentation-only; coordinate eye, voice and digit readiness in FragmentOverlay, deriving pre-collection counts by excluding the current prime from the Folder query so asynchronous pickup persistence cannot skew the count.
 - Ghosts use caller walkability; Echoes BFS/rAF; labels portals; roomConfig sizes NPCs before zoom.
@@ -35,6 +35,6 @@
 - worldDiscovery owns OR-merged discovery and throttled saves; WorldMap uses cached overview art and zoom/pan. devWorldMap gates local SHOW ALL and raw-data markers by registration, never changing discovery or normal visibility; radius discovery stays server-authorized.
 - worldSam/worldFinds keep grants server-owned; playerTitles shares title rules; World refreshes Sam rewards and persists empty first titles before card readiness. inventoryEvents refreshes open Profile/Folder/Wardrobe after mutations. carriedDrops groups type IDs; World flushes before grants.
 - worldBuildings owns anchor art/depth/fade; scene isolation keeps depth below the HUD. worldNpcMotion owns closed deterministic home-rooted edge schedules and proximity/talking freezes with continuous rejoin. World holds the open NPC identity in a ref, keys cards by identity and disables walking through NPC cards; Thumbstick excludes complete dialogs and releases active gestures on controls. NpcPortrait draws unanchored down frames or legacy fallback. worldPlayers owns presence/visitor filtering; WorldVisitor never subscribes to local outfit events. goBackToStart clears game-only state after its RPC; callers settle/stop lifecycle saves first.
-- worldSam owns stage homes, topic/place gates and Lumen-only merchant_met; maze loaders exclude retired Sam. worldHome gates only mazes. letGo wraps discard_drops and inventory events; worldSam checks has_drop and discards take before server rewards. publicPlayers supplies other-player identity/appearance to presence and Exchange lists, failing closed for privacy. WorldPlayerLabel is shared. Merchant figures stand idle; FireRestCard waits for World spending before rest_at_fire and uses returned balances.
+- worldSam owns stage homes/topics/Lumen merchant_met; loaders exclude retired Sam. worldHome gates mazes. letGo wraps discards/events; run_npc_stage2 owns atomic hand-ins/rewards. publicPlayers supplies other-player identity/appearance, failing closed; WorldPlayerLabel is shared. Merchants stand idle; FireRestCard settles spending before rest and uses returned balances.
 - Routes are lazy behind LoadingScreen; routePreload owns the /world loader for sign-in prefetch. Server buttons guard with a ref plus busy state; failed saves raise saveNotice's in-world line.
 - flagValues owns DB-free numeric flag comparisons (missing/empty = "0"); serverClock reads server time from a refreshed token's iat and date gates fail closed. Loops stop while hidden; the world skips its motion pass when nothing moving is visible.

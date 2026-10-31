@@ -541,18 +541,6 @@ const ShadowRealm = () => {
     if (!ok) { setError(true); return; }
     if (user) void refreshDrops(user.id);
     if (runFragsRef.current.length > 0) setBankedDrops(carriedDropsSnapshotRef.current ?? 0);
-    // Presentation-only read after saving; count failures cannot fail the transfer.
-    if (user && runFragsRef.current.length > 0) {
-      void (async () => {
-        try {
-          const { count, error: countError } = await supabase
-            .from('library')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', user.id);
-          if (!countError && count !== null) setLibraryCount(count);
-        } catch { /* Hide unknown totals without interrupting the level gate. */ }
-      })();
-    }
     playAfterBank();
   }, [bankFirst, playAfterBank, user]);
 

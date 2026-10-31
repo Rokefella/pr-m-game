@@ -1,4 +1,5 @@
 import { exitDestination } from '@/lib/worldReturn';
+import { createFragmentListing, cancelFragmentListing } from '@/lib/serverGame';
 import { notifySaveFailed } from '@/lib/saveNotice';
 import { Z } from '@/lib/zIndex';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
@@ -228,41 +229,29 @@ const ExchangeRoom = () => {
     marketFlight.current = true; setMarketBusy(true);
     setMarketError(null);
     setMarketNotice(null);
-    const { error } = await supabase.from('exchange_listings' as never).insert({
-      fragment_id: frag.id,
-      seller_id: user.id,
-      price: Math.floor(price),
-      prime_number: frag.prime_number,
-      level: frag.level,
-      seller_username: username,
-    } as never);
-    if (error) {
-      setMarketError(error.message || 'The listing was refused.');
-    } else {
+    try {
+      const result = await createFragmentListing(frag.id, Math.floor(price));
+      if (!result.ok) {
+        const messages: Record<string, string> = { not_yours: 'This fragment is not yours.', already_listed: 'This fragment is already offered.', bad_price: 'Set a price above zero.' };
+        if (result.reason && messages[result.reason]) { setMarketError(messages[result.reason]); return; }
+        throw new Error(result.reason ?? 'Listing refused');
+      }
       setMarketNotice(`Prime ${formatPrime(frag.prime_number)} offered for ${Math.floor(price)} credits.`);
-      setSellPrice('');
-      await loadMarket();
-    }
-    marketFlight.current = false; setMarketBusy(false);
+      setSellPrice(''); await loadMarket();
+    } catch (error) { notifySaveFailed('create listing', error); }
+    finally { marketFlight.current = false; setMarketBusy(false); }
   };
 
   const cancelListing = async (listing: Listing) => {
     if (!user || marketFlight.current) return;
     marketFlight.current = true; setMarketBusy(true);
-    setMarketError(null);
-    setMarketNotice(null);
-    const { error } = await supabase
-      .from('exchange_listings' as never)
-      .update({ status: 'cancelled' } as never)
-      .eq('id', listing.id)
-      .eq('seller_id', user.id);
-    if (error) {
-      setMarketError(error.message || 'The listing could not be withdrawn.');
-    } else {
-      setMarketNotice('Listing withdrawn.');
-      await loadMarket();
-    }
-    marketFlight.current = false; setMarketBusy(false);
+    setMarketError(null); setMarketNotice(null);
+    try {
+      const result = await cancelFragmentListing(listing.id);
+      if (!result.ok) throw new Error(result.reason ?? 'Withdrawal refused');
+      setMarketNotice('Listing withdrawn.'); await loadMarket();
+    } catch (error) { notifySaveFailed('cancel listing', error); }
+    finally { marketFlight.current = false; setMarketBusy(false); }
   };
 
   useEffect(() => { roomRef.current = room; }, [room]);

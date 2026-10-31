@@ -1,7 +1,8 @@
 import { Z } from '@/lib/zIndex';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
-import { updateUser } from '@/lib/userData';
+import { spendCredits } from '@/lib/serverGame';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { npcBodyPx } from '@/lib/orbSizes';
 import NpcPortrait from '@/components/NpcPortrait';
@@ -168,12 +169,15 @@ const MerchantOverlay = ({
         receipt = typeof result === 'string' ? result : undefined;
       }
       if (!item.serverSide) {
-        const next = credits - item.cost * count;
-        onCreditsChange(next);
-        await updateUser(userId, { credits: next });
+        const saved = await spendCredits(item.cost * count, item.key);
+        if (!saved.ok) {
+          if (saved.reason === 'not_enough_credits') { showFeedback(item.key, 'Not enough credits.', false); return; }
+          throw new Error(saved.reason ?? 'Credit save refused');
+        }
+        onCreditsChange(saved.credits);
       }
     } catch (e) {
-      console.error('[Merchant] purchase failed', e);
+      notifySaveFailed('merchant purchase', e);
       showFeedback(item.key, 'Not right now.', false);
       return;
     } finally {

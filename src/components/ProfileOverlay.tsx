@@ -6,8 +6,7 @@ import { Z } from '@/lib/zIndex';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
-import { updateUser } from '@/lib/userData';
-import { setTitle } from '@/lib/serverGame';
+import { spendGrowthPoint, renamePlayer, buyFolderSlot, setTitle } from '@/lib/serverGame';
 import { getFlag } from '@/lib/questFlags';
 import { samLandLine, sevenFiresLine } from '@/lib/worldSam';
 import { BETA_MODE } from '@/lib/config';
@@ -25,7 +24,7 @@ import { fragmentInventory, type FolderFragment } from '@/lib/carriedFragments';
 import DropIcon from '@/components/DropIcon';
 import Wardrobe from '@/components/Wardrobe';
 import { INVENTORY_CHANGED } from '@/lib/inventoryEvents';
-import { USER_STEPS_REFRESHED, type WorldUseContext, type MazeUseContext } from '@/lib/mechanics';
+import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED, type WorldUseContext, type MazeUseContext } from '@/lib/mechanics';
 import { readOwnedDrops, stackDrops, DROPS_REFRESHED, type DropsRefresh, type OwnedDrop } from '@/lib/carriedDrops';
 
 
@@ -95,14 +94,24 @@ const ProfileOverlay = ({
   // database wins and stale parent props must not overwrite the numbers.
   // (Effects live below the accountRow state declaration.)
 
-  const commitGrowthPoint = (key: 'social' | 'perception' | 'trade') => {
-    if (!user) return;
-    if (growthPoints <= 0 || stats[key] >= 5) return;
-    const nextGp = growthPoints - 1;
-    const nextVal = stats[key] + 1;
-    setGrowthPoints(nextGp);
-    setStats((s) => ({ ...s, [key]: nextVal }));
-    updateUser(user.id, { growth_points: nextGp, [key]: nextVal } as never);
+  const growthFlight = useRef(false);
+  const [growthBusy, setGrowthBusy] = useState(false);
+  const nameFlight = useRef(false);
+  const [nameBusy, setNameBusy] = useState(false);
+  const publishCredits = (credits: number) => {
+    if (user) window.dispatchEvent(new CustomEvent(USER_CREDITS_REFRESHED, { detail: { userId: user.id, credits } }));
+  };
+  const commitGrowthPoint = async (key: 'social' | 'perception' | 'trade') => {
+    if (!user || growthFlight.current || growthPoints <= 0 || stats[key] >= 5) return;
+    growthFlight.current = true; setGrowthBusy(true);
+    try {
+      const result = await spendGrowthPoint(key);
+      if (!result.ok) throw new Error(result.reason ?? 'Growth refused');
+      setGrowthPoints(result.growth_points);
+      setStats({ social: result.social, perception: result.perception, trade: result.trade });
+      setAccountRow(r => r ? { ...r, ...result } : r);
+    } catch (error) { notifySaveFailed('growth point', error); }
+    finally { growthFlight.current = false; setGrowthBusy(false); }
   };
 
   const [folderFragments, setFolderFragments] = useState<FolderFragment[]>([]);
@@ -411,23 +420,23 @@ const ProfileOverlay = ({
   };
 
   const handleConfirmName = async () => {
-    if (!user || !accountRow) return;
-    if ((accountRow.credits ?? 0) < 10000) {
-      setNameMsg('Insufficient credits.');
-      setNameMsgColor('var(--auth-error)');
-      return;
-    }
-    await updateUser(user.id, {
-      credits: accountRow.credits - 10000,
-      username: newName,
-    });
-    setAccountRow({ ...accountRow, credits: accountRow.credits - 10000, username: newName });
-    await updateUser(user.id, { username: newName });
-    setNameMsg('Name changed.');
-    setNameMsgColor('var(--plate-label)');
-    setNameStep('input');
-    setNewName('');
-    setNameForm(false);
+    if (!user || !accountRow || nameFlight.current) return;
+    nameFlight.current = true; setNameBusy(true);
+    try {
+      const result = await renamePlayer(newName);
+      if (!result.ok) {
+        if (result.reason === 'not_enough_credits' || result.reason === 'bad_name') {
+          setNameMsg(result.reason === 'bad_name' ? 'Choose another name.' : 'Insufficient credits.');
+          setNameMsgColor('var(--auth-error)'); return;
+        }
+        throw new Error(result.reason ?? 'Rename refused');
+      }
+      setAccountRow(r => r ? { ...r, credits: result.credits, username: result.username } : r);
+      publishCredits(result.credits);
+      setNameMsg('Name changed.'); setNameMsgColor('var(--plate-label)');
+      setNameStep('input'); setNewName(''); setNameForm(false);
+    } catch (error) { notifySaveFailed('rename', error); }
+    finally { nameFlight.current = false; setNameBusy(false); }
   };
 
   const handleSignOut = async () => {
@@ -813,21 +822,19 @@ const ProfileOverlay = ({
                   if (!user || !canAfford || slotFlight.current) return;
                   slotFlight.current = true; setBuyingSlot(true);
                   setDropSlotMsg('');
-                  const nextCredits = creditsNum - SLOT_COST;
-                  const nextExtra = extraDropCapacity + 1;
-                  const { error } = await supabase
-                    .from('users')
-                    .update({ credits: nextCredits, extra_drop_capacity: nextExtra } as never)
-                    .eq('id', user.id);
-                  if (error) {
-                    console.error('[Folder] buy slot failed', error);
-                    setDropSlotMsg('The exchange refused you. Try again.');
-                  } else {
-                    setExtraDropCapacity(nextExtra);
-                    setAccountRow((r) => (r ? { ...r, credits: nextCredits, extra_drop_capacity: nextExtra } : r));
+                  try {
+                    const result = await buyFolderSlot();
+                    if (!result.ok) {
+                      if (result.reason === 'not_enough_credits') { setDropSlotMsg('Not enough credits.'); return; }
+                      throw new Error(result.reason ?? 'Slot purchase refused');
+                    }
+                    setExtraDropCapacity(result.extra_drop_capacity);
+                    setAccountRow(r => r ? { ...r, credits: result.credits, extra_drop_capacity: result.extra_drop_capacity } : r);
+                    publishCredits(result.credits);
                     setDropSlotMsg('The folder widens. One more slot.');
-                  }
-                  slotFlight.current = false; setBuyingSlot(false);
+                  } catch (error) { notifySaveFailed('folder slot', error); }
+                  finally { slotFlight.current = false; setBuyingSlot(false); }
+
                 };
 
                 return (
@@ -966,7 +973,7 @@ const ProfileOverlay = ({
                     Changing your name costs 10,000 credits. This cannot be undone.
                   </p>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={handleConfirmName}>CONFIRM</Button>
+                    <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} disabled={nameBusy} onClick={handleConfirmName}>CONFIRM</Button>
                     <Button variant="ghost" type="button" className="font-cinzel" style={ghostBtn} onClick={() => { setNameForm(false); setNameStep('input'); setNewName(''); }}>CANCEL</Button>
                   </div>
                 </div>

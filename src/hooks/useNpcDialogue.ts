@@ -1,8 +1,9 @@
 import { flagNumber } from '@/lib/flagValues';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getFlag, setFlag, questFlagSnapshot, subscribeQuestFlags } from '@/lib/questFlags';
-import { updateUser } from '@/lib/userData';
+import { getFlag, getAllFlags, questFlagSnapshot, subscribeQuestFlags } from '@/lib/questFlags';
+import { npcLegacyAction } from '@/lib/serverGame';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import { npcBookConditionsMet, npcStageMet, npcEntryBucket } from '@/lib/npcQuestState';
 import { NPC_DIALOGUE_CLOSED, NPC_INVENTORY_CHANGED } from '@/hooks/useNpcQuestStates';
 import { runStage } from '@/lib/worldSam';
@@ -177,14 +178,6 @@ function useNpcDialogueImpl({
     setCurrentBucket(defaultBucket());
   }, [defaultBucket]);
 
-  const advanceBernardStage = useCallback(
-    async (stage: number) => {
-      if (!user) return;
-      await setFlag(user.id, stageFlagKey, String(stage));
-      bumpFlags();
-    },
-    [user, bumpFlags, stageFlagKey],
-  );
 
   useEffect(() => {
     let cancelled = false;
@@ -346,79 +339,35 @@ function useNpcDialogueImpl({
     return npcStageMet(stage, condition, { level: currentLevel, social: socialStat, flags: values, drops: ownedDropKeys });
   };
 
-  // Maps action keys from the database to concrete handlers.
-  const bernardActions: Record<string, () => void> = {
-    advance_to_1: () => { advanceBernardStage(1); },
-    grant_credits_30_advance_2: () => {
-      if (!user) return;
-      const next = credits + 30;
-      onCreditsChange?.(next);
-      updateUser(user.id, { credits: next });
-      advanceBernardStage(2);
-    },
-    grant_growth_point_1: () => {
-      if (!user) return;
-      const nextGp = growthPoints + 1;
-      onGrowthPointsChange?.(nextGp);
-      updateUser(user.id, { growth_points: nextGp } as never);
-      advanceBernardStage(3);
-    },
-    grant_wanderer_title: async () => {
-      if (!user) return;
-      const credNum = credits + 100;
-      onCreditsChange?.(credNum);
-      await updateUser(user.id, {
-        credits: credNum,
-        title: 'Wanderer',
-        unlocked_titles: ['Wanderer'],
-      });
-      onTitleGranted?.('Wanderer', ['Wanderer']);
-      await advanceBernardStage(5);
-      onMessage?.('You are a Wanderer.');
-    },
-    accept_alexandra_quest: () => { onAcceptAlexandraQuest?.(); },
-    open_marketplace_browse: () => {
-      onOpenMarketplace?.();
-      onCloseDialogue?.();
-    },
-    buy_chef_spice: async () => {
-      if (!user) return;
-      const price = 40;
-      if (credits < price) {
-        onMessage?.(`You need ${price} credits for the Traded Spice.`);
+  const legacyAction = async (key: string) => {
+    if (!user) return;
+    try {
+      const result = await npcLegacyAction(npcKey, key);
+      if (!result.ok) {
+        if (result.reason === 'not_enough_credits' && key === 'buy_chef_spice') onMessage?.('You need 40 credits for the Traded Spice.');
+        else notifySaveFailed('NPC action', result.reason);
         return;
       }
-      const { data: dt } = await supabase
-        .from('drop_types' as never)
-        .select('id, name')
-        .eq('drop_key', 'chef_spice_traded' as never)
-        .maybeSingle();
-      const dropType = dt as { id?: string; name?: string } | null;
-      if (!dropType?.id) {
-        onMessage?.('The spice is not available right now.');
-        return;
-      }
-      const nextCredits = credits - price;
-      onCreditsChange?.(nextCredits);
-      await updateUser(user.id, { credits: nextCredits });
-      const { error } = await supabase
-        .from('drops' as never)
-        .insert({ user_id: user.id, drop_type_id: dropType.id, source: 'merchant_purchase' } as never);
-      if (error) {
-        console.error('[buy_chef_spice] drop insert failed', error);
-        onMessage?.('The spice slipped through your fingers. Try again.');
-        return;
-      }
-      onMessage?.(`You purchased ${dropType.name ?? 'Traded Spice'} for ${price} credits.`);
+      if (typeof result.credits === 'number') onCreditsChange?.(result.credits);
+      if (typeof result.growth_points === 'number') onGrowthPointsChange?.(result.growth_points);
+      await getAllFlags(user.id);
+      bumpFlags();
       window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
-    },
-    complete_chef_recipe: async () => {
-      if (!user) return;
-      const nextGp = growthPoints + 1;
-      onGrowthPointsChange?.(nextGp);
-      await updateUser(user.id, { growth_points: nextGp } as never);
-      await setFlag(user.id, 'chef_recipe_complete', 'true');
-    },
+      if (key === 'grant_wanderer_title') {
+        onTitleGranted?.(result.title ?? 'Wanderer', result.unlocked_titles ?? ['Wanderer']);
+        onMessage?.('You are a Wanderer.');
+      }
+      if (key === 'buy_chef_spice') onMessage?.('You purchased Traded Spice for 40 credits.');
+    } catch (error) { notifySaveFailed('NPC action', error); }
+  };
+  const advanceBernardStage = async (stage: number) => {
+    const key = { 1: 'advance_to_1', 2: 'grant_credits_30_advance_2', 3: 'grant_growth_point_1', 5: 'grant_wanderer_title' }[stage];
+    if (key) await legacyAction(key);
+  };
+  const bernardActions: Record<string, () => unknown> = {
+    ...Object.fromEntries(['advance_to_1', 'grant_credits_30_advance_2', 'grant_growth_point_1', 'grant_wanderer_title', 'buy_chef_spice', 'complete_chef_recipe'].map(key => [key, () => legacyAction(key)])),
+    accept_alexandra_quest: () => { onAcceptAlexandraQuest?.(); },
+    open_marketplace_browse: () => { onOpenMarketplace?.(); onCloseDialogue?.(); },
   };
 
 

@@ -1,3 +1,4 @@
+- [ ] Step B: replace specified direct saves with live functions; run all tests, requested preview checks, and final direct-write report.
 # Roadmap
 
 - [x] Audit quick wins: lazy pages, tap locks, failed-save line, flag helper, server-dated garden door, hidden-page pauses; 612 tests pass, /world and maze 1 walked.

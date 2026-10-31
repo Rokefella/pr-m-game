@@ -14,9 +14,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { useNavigate } from 'react-router-dom';
 import { fetchOrCreateUser } from '@/lib/userData';
 import { useAuth } from '@/context/AuthContext';
-import { getAllFlags, setFlag, reconcileBernardAfterShadow } from '@/lib/questFlags';
+import { getAllFlags } from '@/lib/questFlags';
 import { supabase } from '@/lib/supabase';
 import { formatPrime } from '@/lib/format';
+import { bankFragments } from '@/lib/serverGame';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import { endRun } from '@/lib/runState';
 import { carriedDropCount, readOwnedDrops, refreshDrops } from '@/lib/carriedDrops';
 import Thumbstick from '@/components/Thumbstick';
@@ -418,7 +420,7 @@ const ShadowRealm = () => {
       setOrbDye((row as { orb_dye?: string | null }).orb_dye ?? null);
       setAvatarBody((row as { avatar_body?: string | null }).avatar_body ?? null);
       setCurrentSkin((row as { avatar_body?: string | null }).avatar_body ?? null);
-      setFlag(user.id, 'shadow_visited', 'true');
+
 
       const { data } = await supabase
         .from('fragments')
@@ -450,49 +452,18 @@ const ShadowRealm = () => {
     // Level-up guard: with nothing to bank, nothing is written and no level is gained.
     if (frags.length === 0) return true;
     try {
-      const { error: updErr } = await supabase
-        .from('fragments')
-        .update({ banked: true })
-        .eq('user_id', user.id)
-        .eq('banked', false);
-      if (updErr) throw updErr;
-
-      if (frags.length > 0) {
-        const rows = frags.map((f) => ({
-          user_id: user.id,
-          prime_number: f.prime_number,
-          level: f.level,
-          transferred_at: new Date().toISOString(),
-          image_data: f.image_data,
-        }));
-        const { error: insErr } = await supabase
-          .from('library')
-          .upsert(rows, { onConflict: 'user_id,prime_number' });
-        if (insErr) throw insErr;
-
-        // Cleanup: keep one Folder row per prime by removing older banked duplicates.
-        try {
-          const { error: cleanErr } = await supabase
-            .from('fragments')
-            .delete()
-            .eq('user_id', user.id)
-            .eq('banked', true)
-            .in('prime_number', frags.map((f) => f.prime_number))
-            .not('id', 'in', `(${frags.map((f) => f.id).join(',')})`);
-          if (cleanErr) console.error('[ShadowRealm] duplicate cleanup failed', cleanErr);
-        } catch (cleanErr) {
-          console.error('[ShadowRealm] duplicate cleanup failed', cleanErr);
-        }
-      }
-
+      const result = await bankFragments();
+      if (!result.ok) throw new Error(result.reason ?? 'Banking refused');
+      setLibraryCount(result.library_count);
+      await getAllFlags(user.id);
       // Maze completion and the pending level-up are recorded by complete_maze at the golden door.
       endRun();
       sessionStorage.removeItem('visited_shadow_this_run');
       sessionStorage.removeItem(SHADOW_ENTRY_KEY);
-      await reconcileBernardAfterShadow(user.id, true);
+
       return true;
     } catch (e) {
-      console.error('[ShadowRealm] transfer failed', e);
+      notifySaveFailed('fragment banking', e);
       return false;
     }
   }, [user]);

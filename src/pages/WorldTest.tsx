@@ -29,6 +29,8 @@ import DevMenu from '@/components/DevMenu';
 import LevelUpCard, { TITLES_BY_LEVEL } from '@/components/LevelUpCard';
 import { firstTitlePatch, levelupTitle, titlesUnlocked } from '@/lib/playerTitles';
 import { applyLevelup, setTitle } from '@/lib/serverGame';
+import GrandExplorerCard from '@/components/GrandExplorerCard';
+import { isGrandExplorerSign } from '@/lib/grandExplorer';
 import WorldPlayerLabel from '@/components/WorldPlayerLabel';
 import ProfileOverlay from '@/components/ProfileOverlay';
 import { saveWorldPos, saveWorldReturn, takeWorldOpening } from '@/lib/worldReturn';
@@ -643,7 +645,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       setIdentity(row => ({ ...row, steps_remaining: steps, credits }));
       return { receipt: `+${(Number(r.packs) || qty) * 500} steps · −${Number(r.cost) || qty * 5} credits`, credits };
     })} />}
-    {placeCard && cardAction !== 'merchant' && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={placeCard.name}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close place" onClick={() => setPlaceCard(null)}><X size={18} /></Button>{placeCard.action === 'npc' && placeCard.npc_key && userId ? <SamCard key={placeCard.npc_key} userId={userId} npcKey={placeCard.npc_key} playerName={identity.username || 'Wanderer'} fallbackName={placeCard.name} onRewarded={refreshReward} /> : isSignpost(placeCard) ? <><h2 className="font-cinzel">Signpost</h2>{signpostLines(placeCard.notes).map((line, i) => <p key={i} className="font-fell">{line.dir === 'onward' ? '▶ ' : line.dir === 'back' ? '◀ ' : ''}{line.text}</p>)}</> : <><h2 className="font-cinzel">{placeCard.name}</h2>{placeCard.notes && placeCard.kind !== 'maze_entrance' && cardAction !== 'maze' && cardAction !== 'door_maze' && <p className="font-fell">{placeCard.notes}</p>}
+    {placeCard && cardAction !== 'merchant' && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={placeCard.name}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close place" onClick={() => setPlaceCard(null)}><X size={18} /></Button>{placeCard.action === 'npc' && placeCard.npc_key && userId ? <SamCard key={placeCard.npc_key} userId={userId} npcKey={placeCard.npc_key} playerName={identity.username || 'Wanderer'} fallbackName={placeCard.name} onRewarded={refreshReward} /> : isGrandExplorerSign(placeCard) ? <GrandExplorerCard beforeProgress={async () => { await discovery.current?.flush(true); }} onClaimed={refreshReward} /> : isSignpost(placeCard) ? <><h2 className="font-cinzel">Signpost</h2>{signpostLines(placeCard.notes).map((line, i) => <p key={i} className="font-fell">{line.dir === 'onward' ? '▶ ' : line.dir === 'back' ? '◀ ' : ''}{line.text}</p>)}</> : <><h2 className="font-cinzel">{placeCard.name}</h2>{placeCard.notes && placeCard.kind !== 'maze_entrance' && cardAction !== 'maze' && cardAction !== 'door_maze' && <p className="font-fell">{placeCard.notes}</p>}
       {outcome === 'completed' && <p className="font-mono">Completed</p>}
       {outcome === 'locked' && <p className="font-mono">Locked: reach Level {placeCard.maze_level} first</p>}
       {entryMessage && <p className="font-fell">{entryMessage}</p>}

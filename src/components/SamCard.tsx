@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { flagNumber } from '@/lib/flagValues';
+import { useCallback, useEffect, useState , useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import NpcPortrait from '@/components/NpcPortrait';
 import { currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samFlags, cardTopics, topicRoot, entryVisible, type BookNode, type SamStage } from '@/lib/worldSam';
@@ -20,7 +21,7 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
   const refresh = useCallback(async (data = sam) => {
     if (!data) return;
     const [next, all] = await Promise.all([currentStage(userId, data.stages), samFlags(userId)]);
-    setStage(next); setFlags(all); setSamStage(parseInt(all.sam_stage ?? '0', 10) || 0); setChecked(true);
+    setStage(next); setFlags(all); setSamStage(Math.trunc(flagNumber(all, 'sam_stage'))); setChecked(true);
   }, [sam, userId]);
   useEffect(() => { let off = false; void loadSam(npcKey).then(d => { if (off) return; setSam(d); if (d) void refresh(d); else setChecked(true); }); return () => { off = true; }; }, [npcKey, userId]); // eslint-disable-line react-hooks/exhaustive-deps
   const name = (t: string) => fillName(t, playerName);

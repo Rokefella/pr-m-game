@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState , useRef } from 'react';
 import { inventoryChanged } from '@/lib/inventoryEvents';
 import { Minus, Plus } from 'lucide-react';
 import { supabase } from '@/lib/supabase';

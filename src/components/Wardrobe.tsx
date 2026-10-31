@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { publishOrb } from '@/lib/orb';
 import { INVENTORY_CHANGED } from '@/lib/inventoryEvents';
@@ -23,6 +23,7 @@ export default function Wardrobe({ auraColor, orbDye, registrationNumber, avatar
   const [owned, setOwned] = useState<Set<string>>(new Set([START_SKIN]));
   const [facings, setFacings] = useState<Record<string, Facing>>({});
   const [busy, setBusy] = useState(false);
+  const flight = useRef(false);
   const [note, setNote] = useState('');
   const [nonce, setNonce] = useState(0);
   useEffect(() => {
@@ -44,8 +45,8 @@ export default function Wardrobe({ auraColor, orbDye, registrationNumber, avatar
   const ownedCount = skins.filter(s => owned.has(s.skin_key)).length;
 
   const equip = async (skin: Skin) => {
-    if (busy || skin.skin_key === equipped) return;
-    setBusy(true); setNote('');
+    if (flight.current || skin.skin_key === equipped) return;
+    flight.current = true; setBusy(true); setNote('');
     try {
       const { data, error } = await rpc('equip_skin', { p_skin: skin.skin_key });
       const res = data as { ok?: boolean; skin?: string; name?: string } | null;
@@ -54,7 +55,7 @@ export default function Wardrobe({ auraColor, orbDye, registrationNumber, avatar
       onEquipped(res.skin ?? skin.skin_key, res.name ?? skin.name);
       setNote(`Now wearing ${res.name ?? skin.name}.`);
     } catch { setNote('The suit refuses you.'); }
-    finally { setBusy(false); }
+    finally { flight.current = false; setBusy(false); }
   };
 
   if (!skins.length) return null;

@@ -1,4 +1,5 @@
 import PraemSnake from '@/components/PraemSnake';
+import { preloadWorld } from '@/lib/routePreload';
 import LoadingScreen, { useMinLoading } from '@/components/LoadingScreen';
 const SIGIL_PATTERN: ('filled' | 'dim' | 'empty')[][] = [
   ['empty', 'filled', 'empty', 'filled', 'empty'],
@@ -40,6 +41,8 @@ const Index = () => {
       navigate('/login', { replace: true });
       return;
     }
+    // Signed in: start fetching /world while the profile check runs.
+    void preloadWorld().catch(() => undefined);
     const { data } = await supabase
       .from('users')
       .select('entity_answer, username')

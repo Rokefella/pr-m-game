@@ -4,6 +4,8 @@
  * per kind (latest payload wins), 6 s timeout, up to 3 retries with backoff,
  * one session refresh on 401/403. Failures are only logged.
  */
+import { notifySaveFailed } from './saveNotice';
+
 export const REQUEST_TIMEOUT_MS = 6000;
 const MAX_RETRIES = 3;
 const BACKOFF_MS = [500, 1500, 4000];
@@ -38,10 +40,12 @@ export function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {
   const outer = init.signal;
   if (outer) {
     if (outer.aborted) controller.abort();
-    else outer.addEventListener('abort', () => controller.abort(), { once: true });
+    else outer.addEventListener('abort', onOuterAbort, { once: true });
   }
+  function onOuterAbort() { controller.abort(); }
   const timer = setTimeout(() => controller.abort(), ms);
-  return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
+  // Remove the caller-signal listener once settled so long-lived signals do not collect listeners.
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => { clearTimeout(timer); outer?.removeEventListener('abort', onOuterAbort); });
 }
 
 let refresher: (() => Promise<unknown>) | null = null;
@@ -93,7 +97,7 @@ async function drain(kind: string) {
           i--; continue;
         }
         if (latest.has(kind)) break; // a newer payload supersedes this one
-        if (i === MAX_RETRIES) { if (!latest.has(kind)) parked.set(kind, job); break; }
+        if (i === MAX_RETRIES) { if (!latest.has(kind)) { parked.set(kind, job); notifySaveFailed(`save:${kind}`, status); } break; }
         await sleep(BACKOFF_MS[i] ?? 4000);
       }
     }

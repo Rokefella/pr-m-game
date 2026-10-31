@@ -1,3 +1,6 @@
+import { lazy, Suspense } from "react";
+import LoadingScreen from "@/components/LoadingScreen";
+import { preloadWorld } from "@/lib/routePreload";
 import MovementDebugOverlay from "@/components/MovementDebugOverlay";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
@@ -8,25 +11,26 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index.tsx";
 
-import ProfileSetup from "./pages/ProfileSetup.tsx";
-import Door from "./pages/Door.tsx";
-import LibraryDoor from "./pages/LibraryDoor.tsx";
-import LibraryRoom from "./pages/LibraryRoom.tsx";
-import ExchangeDoor from "./pages/ExchangeDoor.tsx";
-import ExchangeRoom from "./pages/ExchangeRoom.tsx";
-import Maze from "./pages/Maze.tsx";
-import ShadowRealm from "./pages/ShadowRealm.tsx";
-import Paywall from "./pages/Paywall.tsx";
-import NotFound from "./pages/NotFound.tsx";
+const ProfileSetup = lazy(() => import("./pages/ProfileSetup.tsx"));
+const Door = lazy(() => import("./pages/Door.tsx"));
+const LibraryDoor = lazy(() => import("./pages/LibraryDoor.tsx"));
+const LibraryRoom = lazy(() => import("./pages/LibraryRoom.tsx"));
+const ExchangeDoor = lazy(() => import("./pages/ExchangeDoor.tsx"));
+const ExchangeRoom = lazy(() => import("./pages/ExchangeRoom.tsx"));
+const Maze = lazy(() => import("./pages/Maze.tsx"));
+const ShadowRealm = lazy(() => import("./pages/ShadowRealm.tsx"));
+const Paywall = lazy(() => import("./pages/Paywall.tsx"));
+const NotFound = lazy(() => import("./pages/NotFound.tsx"));
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
-import AvatarPreview from "./pages/AvatarPreview.tsx";
-import Intro from "./pages/Intro.tsx";
-import DynamicRoom from "./pages/DynamicRoom.tsx";
-import TilePreview from "./pages/TilePreview.tsx";
-import GardenPreview from "./pages/GardenPreview.tsx";
-import WorldTest from "./pages/WorldTest.tsx";
+const AvatarPreview = lazy(() => import("./pages/AvatarPreview.tsx"));
+const Intro = lazy(() => import("./pages/Intro.tsx"));
+const DynamicRoom = lazy(() => import("./pages/DynamicRoom.tsx"));
+const TilePreview = lazy(() => import("./pages/TilePreview.tsx"));
+const GardenPreview = lazy(() => import("./pages/GardenPreview.tsx"));
+const WorldTest = lazy(preloadWorld);
 import DevNotepad from '@/components/DevNotepad';
+import SaveFailedNotice from '@/components/SaveFailedNotice';
 
 const queryClient = new QueryClient();
 
@@ -39,6 +43,8 @@ const App = () => (
         <MovementDebugOverlay />
         <BrowserRouter>
           <DevNotepad />
+          <SaveFailedNotice />
+          <Suspense fallback={<LoadingScreen />}>
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
@@ -67,6 +73,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

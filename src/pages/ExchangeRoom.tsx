@@ -1,4 +1,5 @@
 import { exitDestination } from '@/lib/worldReturn';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import { Z } from '@/lib/zIndex';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import { RoomGhosts, useRoomGhostWhisper } from '@/components/theme/objects/RoomGhosts';
@@ -130,6 +131,7 @@ const ExchangeRoom = () => {
   const [myFragments, setMyFragments] = useState<OwnedFragment[]>([]);
   const [marketLoading, setMarketLoading] = useState(false);
   const [marketBusy, setMarketBusy] = useState(false);
+  const marketFlight = useRef(false);
   const [marketError, setMarketError] = useState<string | null>(null);
   const [marketNotice, setMarketNotice] = useState<string | null>(null);
   const [sellFragmentId, setSellFragmentId] = useState('');
@@ -138,11 +140,13 @@ const ExchangeRoom = () => {
   const [fragmentCount, setFragmentCount] = useState(0);
 
   const refreshOwnCounts = async (uid: string) => {
-    const { data: userRow } = await supabase
+    const { data: userRow, error: userError } = await supabase
       .from('users')
       .select('credits, growth_points, username')
       .eq('id', uid)
       .maybeSingle();
+    // Keep the last known balances on failure, but say so.
+    if (userError) notifySaveFailed('exchange balances', userError);
     if (userRow) {
       setCredits(Number(userRow.credits ?? 0));
       setGrowthPoints(Number(userRow.growth_points ?? 0));
@@ -198,8 +202,8 @@ const ExchangeRoom = () => {
   }, [marketOpen, user]);
 
   const buyListing = async (listing: Listing) => {
-    if (!user || marketBusy) return;
-    setMarketBusy(true);
+    if (!user || marketFlight.current) return;
+    marketFlight.current = true; setMarketBusy(true);
     setMarketError(null);
     setMarketNotice(null);
     const { error } = await supabase.rpc('purchase_fragment_listing' as never, {
@@ -212,16 +216,16 @@ const ExchangeRoom = () => {
       setMarketNotice(`Acquired Prime ${listing.prime_number == null ? '?' : formatPrime(listing.prime_number)}.`);
       await loadMarket();
     }
-    setMarketBusy(false);
+    marketFlight.current = false; setMarketBusy(false);
   };
 
   const createListing = async () => {
-    if (!user || marketBusy) return;
+    if (!user || marketFlight.current) return;
     const frag = myFragments.find((f) => f.id === sellFragmentId);
     const price = Number(sellPrice);
     if (!frag) { setMarketError('Choose a fragment to list.'); return; }
     if (!Number.isFinite(price) || price <= 0) { setMarketError('Set a price above zero.'); return; }
-    setMarketBusy(true);
+    marketFlight.current = true; setMarketBusy(true);
     setMarketError(null);
     setMarketNotice(null);
     const { error } = await supabase.from('exchange_listings' as never).insert({
@@ -239,12 +243,12 @@ const ExchangeRoom = () => {
       setSellPrice('');
       await loadMarket();
     }
-    setMarketBusy(false);
+    marketFlight.current = false; setMarketBusy(false);
   };
 
   const cancelListing = async (listing: Listing) => {
-    if (!user || marketBusy) return;
-    setMarketBusy(true);
+    if (!user || marketFlight.current) return;
+    marketFlight.current = true; setMarketBusy(true);
     setMarketError(null);
     setMarketNotice(null);
     const { error } = await supabase
@@ -258,7 +262,7 @@ const ExchangeRoom = () => {
       setMarketNotice('Listing withdrawn.');
       await loadMarket();
     }
-    setMarketBusy(false);
+    marketFlight.current = false; setMarketBusy(false);
   };
 
   useEffect(() => { roomRef.current = room; }, [room]);

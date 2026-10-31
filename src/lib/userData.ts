@@ -1,3 +1,4 @@
+import { notifySaveFailed } from './saveNotice'
 import { supabase } from '@/lib/supabase'
 
 export type UserRow = {
@@ -86,7 +87,7 @@ export async function updateUser(
   const { data, error } = await supabase.from('users').update(patch).eq('id', userId).select()
   console.log('[updateUser] result data:', data, 'error:', error)
   if (error) {
-    console.error('updateUser failed', error, patch)
+    notifySaveFailed('updateUser', error)
   }
 }
 
@@ -101,7 +102,7 @@ export async function upsertUser(
     .select()
   console.log('[upsertUser] result data:', data, 'error:', error)
   if (error) {
-    console.error('upsertUser failed', error, patch)
+    notifySaveFailed('upsertUser', error)
   }
 }
 

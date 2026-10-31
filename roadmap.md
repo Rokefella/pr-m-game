@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Audit quick wins: lazy pages, tap locks, failed-save line, flag helper, server-dated garden door, hidden-page pauses; 612 tests pass, /world and maze 1 walked.
+
 - [x] Era-specific maze veil/door/Instrument art, accent pulses, blue arch and legacy fallback; 595 tests pass. Real Fire maze 1/2 terrain and decoded sprites inspected read-only; maze 2 currently has no authored Instrument point. No database changes.
 - [ ] Signed-in maze 1/2 interaction check — the game uses separate external authentication unavailable to the checker; real artwork was inspected, not live unlocking/return behaviour.
 

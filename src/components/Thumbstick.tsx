@@ -168,6 +168,8 @@ const Thumbstick = ({ onMove, onDirectionChange, disabled = false }: ThumbstickP
       // is removed from the DOM (culled maze cells), so they never bubble to
       // window. Listen on the target itself as well.
       const el = target as Element | null;
+      // A new gesture always releases the previous target's listeners first.
+      detachRef.current?.(); detachRef.current = null;
       targetRef.current = el;
       if (el && typeof el.addEventListener === 'function') {
         const pairs: [string, EventListener][] = [

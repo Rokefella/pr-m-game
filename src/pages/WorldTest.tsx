@@ -12,6 +12,8 @@ import LoadingScreen from '@/components/LoadingScreen';
 import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { BETA_MODE } from '@/lib/config';
 import { getAllFlags, getFlag, reconcileBernardAfterShadow, setFlag } from '@/lib/questFlags';
+import { flagNumber } from '@/lib/flagValues';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import { canAccessMaze, checkSubscriptionStatus, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { effectiveWorldLevel, worldDoorRefusal, type WorldDoorKind } from '@/lib/worldHome';
 import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailySteps';
@@ -122,7 +124,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const rawWorld = useRef<WorldData | null>(null);
   const [completed, setCompleted] = useState(Number(identity.maze_completed_level) || 0);
   const [flags, setFlags] = useState<Record<string, string>>({});
-  const samStage = parseInt(flags.sam_stage ?? '0', 10) || 0;
+  const samStage = Math.trunc(flagNumber(flags, 'sam_stage'));
   const convoOpen = useRef(false);
   const dataRef = useRef<WorldData | null>(null);
   const [error, setError] = useState('');
@@ -165,7 +167,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     if (!userId) return;
     const publisher = new WorldPresence(writeWorldPlayer); presence.current = publisher;
     let off = false;
-    const read = () => { void readWorldPlayers().then(rows => { if (!off) setPlayers(rows); }); };
+    const read = () => { if (document.visibilityState === 'hidden') return; void readWorldPlayers().then(rows => { if (!off) setPlayers(rows); }); };
     read(); const timer = setInterval(read, 3000);
     return () => { off = true; clearInterval(timer); publisher.dispose(); presence.current = null; };
   }, [userId]);
@@ -175,7 +177,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   }, [userId, pos, layer, facing, identity.avatar_body, identity.orb_dye, identity.aura_color]);
   useEffect(() => {
     if (!userId) return;
-    const timer = setInterval(() => { const row = identityRef.current; presence.current?.publish({ user_id: userId, ...posRef.current, layer: layerRef.current, facing, village_level: 0, avatar_body: row.avatar_body, orb_dye: row.orb_dye, aura_color: row.aura_color, last_seen: new Date().toISOString() }); }, 30000);
+    const timer = setInterval(() => { if (document.visibilityState === 'hidden') return; const row = identityRef.current; presence.current?.publish({ user_id: userId, ...posRef.current, layer: layerRef.current, facing, village_level: 0, avatar_body: row.avatar_body, orb_dye: row.orb_dye, aura_color: row.aura_color, last_seen: new Date().toISOString() }); }, 30000);
     return () => clearInterval(timer);
   }, [userId, facing]);
   const [jumpOpen, setJumpOpen] = useState(false);
@@ -209,7 +211,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     if (!userId || !placeCard || !shouldMarkMerchantMet(placeCard, flags)) return;
     void (async () => {
       const { error } = await (supabase.rpc as unknown as (f: string) => Promise<{ error: unknown }>)('merchant_met');
-      if (error) return;
+      if (error) { notifySaveFailed('merchant_met', error); return; }
       const next = await getAllFlags(userId).catch(() => null);
       if (next) setFlags({ ...next });
     })();
@@ -241,6 +243,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   blocked.current = suppliesOpen || profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || Boolean(placeCard) || Boolean(findCard);
   convoOpen.current = !npcCardOpen && !suppliesOpen && !profileOpen && !devOpen && !arrival && !jumpOpen && !mapOpen && (Boolean(findCard) || Boolean(placeCard && (isWorldConversation(placeCard) || isSignpost(placeCard))));
   const [busy, setBusy] = useState(false);
+  const flight = useRef(false);
   const [entryMessage, setEntryMessage] = useState('');
   const [chunkTick, setChunkTick] = useState(0);
   const pendingArrival = useRef<WorldPoint | null>(null);
@@ -378,7 +381,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     return () => { window.removeEventListener(USER_STEPS_REFRESHED, steps); window.removeEventListener(ORB_EVENT, orb); window.removeEventListener(USER_CREDITS_REFRESHED, credits); };
   }, [userId, refreshCompleted]);
   useEffect(() => {
-    const timer = setInterval(() => { setClock(Date.now()); setChunkTick(t => t + 1); }, 1000);
+    const timer = setInterval(() => { if (document.visibilityState === 'hidden') return; setClock(Date.now()); setChunkTick(t => t + 1); }, 1000);
     return () => clearInterval(timer);
   }, []);
   useEffect(() => {
@@ -528,10 +531,13 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
         if (chebyshev(pose.cell, point) > 1) npcApproached.current.delete(key);
         if (!blocked.current && !npcApproached.current.has(key) && chebyshev(pose.cell, point) <= 1) { npcApproached.current.add(key); keys.current.clear(); setPlaceCard({ ...p, ...pose.cell }); }
       }
-      frame = requestAnimationFrame(tick);
+      // Battery: no frames while hidden; the visibility listener resumes the loop.
+      frame = document.visibilityState === 'hidden' ? 0 : requestAnimationFrame(tick);
     };
+    const onVisibility = () => { cancelAnimationFrame(frame); frame = document.visibilityState === 'hidden' ? 0 : requestAnimationFrame(tick); };
+    document.addEventListener('visibilitychange', onVisibility);
     frame = requestAnimationFrame(tick);
-    return () => { cancelAnimationFrame(frame); window.removeEventListener('resize', resize); };
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('resize', resize); document.removeEventListener('visibilitychange', onVisibility); };
   }, [data, reduced, move]);
   useEffect(() => { if (!walking) return; const timer = setTimeout(() => setWalking(false), moveDuration.current); return () => clearTimeout(timer); }, [walking, pos]);
 
@@ -543,8 +549,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   };
   /** World door trigger: the maze waits for Sam; library and exchange are always open. */
   const openDoor = async (kind: WorldDoorKind) => {
-    if (busy || !userId) return;
-    setBusy(true); setEntryMessage('');
+    if (flight.current || !userId) return;
+    flight.current = true; setBusy(true); setEntryMessage('');
     try {
       const flags = await getAllFlags(userId);
       const refusal = worldDoorRefusal(kind, level, flags.sam_stage);
@@ -557,7 +563,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       }
       await leave(target);
     } catch { setEntryMessage('The door will not open right now.'); }
-    finally { setBusy(false); }
+    finally { flight.current = false; setBusy(false); }
   };
   const openShadow = async () => {
     sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ level, ts: Date.now() }));

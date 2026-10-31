@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { flagNumber } from '@/lib/flagValues';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import { createPortal } from 'react-dom';
 import { Z } from '@/lib/zIndex';
 import { useNavigate } from 'react-router-dom';
@@ -116,6 +118,7 @@ const ProfileOverlay = ({
   const [extraDropCapacity, setExtraDropCapacity] = useState(0);
   const [dropSlotMsg, setDropSlotMsg] = useState('');
   const [buyingSlot, setBuyingSlot] = useState(false);
+  const slotFlight = useRef(false);
   const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
 
@@ -280,7 +283,7 @@ const ProfileOverlay = ({
       ? `${runProgress.collected}/${runProgress.required}`
       : `${fragmentCount}`;
 
-  const samStage = parseInt(getFlag('sam_stage') ?? '0', 10) || 0;
+  const samStage = Math.trunc(flagNumber({ v: getFlag('sam_stage') }, 'v'));
   const alexandraActive = getFlag('alexandra_quest') === 'active';
   const subscribed = BETA_MODE || (accountRow ? ['active','lifetime','dev','beta'].includes(accountRow.subscription_status) : false);
   const subType = accountRow?.subscription_tier ?? '';
@@ -544,7 +547,8 @@ const ProfileOverlay = ({
                                 className="font-cinzel"
                                 onClick={async () => {
                                   if (!user) return;
-                                  await supabase.from('users').update({ title: t }).eq('id', user.id);
+                                  const { error } = await supabase.from('users').update({ title: t }).eq('id', user.id);
+                                  if (error) { notifySaveFailed('title', error); return; }
                                   setAccountRow((prev) => prev ? { ...prev, title: t } : prev);
                                   setTitleDropdownOpen(false);
                                 }}
@@ -804,8 +808,8 @@ const ProfileOverlay = ({
                 const selectedDrop = stacks.find((d) => d.id === dropTooltip) || null;
 
                 const buySlot = async () => {
-                  if (!user || !canAfford || buyingSlot) return;
-                  setBuyingSlot(true);
+                  if (!user || !canAfford || slotFlight.current) return;
+                  slotFlight.current = true; setBuyingSlot(true);
                   setDropSlotMsg('');
                   const nextCredits = creditsNum - SLOT_COST;
                   const nextExtra = extraDropCapacity + 1;
@@ -821,7 +825,7 @@ const ProfileOverlay = ({
                     setAccountRow((r) => (r ? { ...r, credits: nextCredits, extra_drop_capacity: nextExtra } : r));
                     setDropSlotMsg('The folder widens. One more slot.');
                   }
-                  setBuyingSlot(false);
+                  slotFlight.current = false; setBuyingSlot(false);
                 };
 
                 return (

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { AuthPlate, AuthField, authErrorMessage } from '@/components/AuthPlate';
 import { Button } from '@/components/ui/button';
+import { preloadWorld } from '@/lib/routePreload';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const Login = () => {
     e.preventDefault();
     setError('');
     setSubmitting(true);
+    void preloadWorld().catch(() => undefined);
     const { error: err } = await supabase.auth.signInWithPassword({ email, password });
     setSubmitting(false);
     if (err) {

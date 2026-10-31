@@ -1,4 +1,5 @@
 import { exitDestination } from '@/lib/worldReturn';
+import { serverNow } from '@/lib/serverClock';
 import { useDevNoteContext } from '@/hooks/useDevNoteContext';
 import { notepadFocused } from '@/lib/devNotes';
 import { Z } from '@/lib/zIndex';
@@ -80,16 +81,16 @@ const MONTH_NAMES = [
 
 import { GARDEN_LEVEL } from '@/lib/garden/gardenConfig';
 
-const gardenRoomKey = (): string => {
-  const month = new Date().getMonth();
+const gardenRoomKey = (today: Date): string => {
+  const month = today.getUTCMonth();
   const season = month <= 1 || month === 11 ? 'winter' : month <= 4 ? 'spring' : month <= 7 ? 'summer' : 'autumn';
   return `garden${season}${MONTH_NAMES[month]}`;
 };
 
-/** Garden door opens on the 23rd; registration 1 can force it with localStorage praem_force_garden_open = '1'. */
-export const isGardenOpen = (registrationNumber?: number | null): boolean => {
+/** Garden door opens on the server's UTC 23rd; registration 1 can force it with localStorage praem_force_garden_open = '1'. */
+export const isGardenOpen = (registrationNumber: number | null | undefined, serverToday: Date | null): boolean => {
   if (registrationNumber === 1 && typeof window !== 'undefined' && window.localStorage.getItem('praem_force_garden_open') === '1') return true;
-  return new Date().getDate() === 23;
+  return serverToday !== null && serverToday.getUTCDate() === 23;
 };
 
 const hasValidEntry = (): boolean => {
@@ -179,6 +180,15 @@ const ShadowRealm = () => {
   const currentLevelRef = useRef(1);
   const [entryOk] = useState(hasValidEntry);
   const [registrationNumber, setRegistrationNumber] = useState<number | null>(null);
+  // The garden door follows the server's date, never the device clock.
+  const [serverToday, setServerToday] = useState<Date | null>(null);
+  const serverTodayRef = useRef<Date | null>(null);
+  serverTodayRef.current = serverToday;
+  useEffect(() => {
+    let live = true;
+    void serverNow().then(d => { if (live) setServerToday(d); }).catch(() => undefined);
+    return () => { live = false; };
+  }, []);
   const registrationRef = useRef<number | null>(null);
   const [auraColor, setAuraColor] = useState<string | null>(null);
   const [avatarBody, setAvatarBody] = useState<string | null>(null);
@@ -626,8 +636,8 @@ const ShadowRealm = () => {
       // derived from the real current month.
       const door = roomDoorsRef.current.find((d) => d.x === next.x && d.y === next.y);
       if (door) {
-        if (isGardenOpen(registrationRef.current)) {
-          navigate(`/room/${GARDEN_LEVEL}/${gardenRoomKey()}`);
+        if (isGardenOpen(registrationRef.current, serverTodayRef.current)) {
+          navigate(`/room/${GARDEN_LEVEL}/${gardenRoomKey(serverTodayRef.current ?? new Date())}`);
         } else {
           showGateMsg('This does not open yet.');
         }
@@ -648,7 +658,7 @@ const ShadowRealm = () => {
     return () => window.removeEventListener('keydown', onKey);
   }, [move]);
 
-  const gardenOpen = isGardenOpen(registrationNumber);
+  const gardenOpen = isGardenOpen(registrationNumber, serverToday);
   const gardenOpenRef = useRef(gardenOpen);
   gardenOpenRef.current = gardenOpen;
 

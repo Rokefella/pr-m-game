@@ -33,6 +33,8 @@ import PaywallOverlay from '@/components/PaywallOverlay';
 import { BETA_MODE } from '@/lib/config';
 import { CONSOLE_ROOM_KEY, CONSOLE_ROOM_LEVEL } from '@/lib/console';
 import { getAllFlags, getFlag } from '@/lib/questFlags';
+import { flagNumber } from '@/lib/flagValues';
+import { notifySaveFailed } from '@/lib/saveNotice';
 import ProfileOverlay, { ProfileButton } from '@/components/ProfileOverlay';
 import { fetchOrCreateUser, updateUser } from '@/lib/userData';
 import { waitForDailySteps } from '@/lib/dailySteps';
@@ -491,7 +493,7 @@ const Maze = () => {
   useEffect(() => {
     const handler = () => {
       if (BETA_MODE) return;
-      const bernard06 = Number(getFlag('bernard_stage') ?? 0) >= 6;
+      const bernard06 = flagNumber({ v: getFlag('bernard_stage') }, 'v') >= 6;
       if (bernard06 && !SUBBED.includes(subStatusRef.current)) {
         setPaywallOpen(true);
       }
@@ -751,7 +753,7 @@ const Maze = () => {
       subStatusRef.current = BETA_MODE ? 'active' : row.subscription_status ?? 'trial';
       await getAllFlags(user.id);
       if (cancelled) return;
-      if (!BETA_MODE && Number(getFlag('bernard_stage') ?? 0) >= 6 && !SUBBED.includes(subStatusRef.current)) {
+      if (!BETA_MODE && flagNumber({ v: getFlag('bernard_stage') }, 'v') >= 6 && !SUBBED.includes(subStatusRef.current)) {
         window.dispatchEvent(new Event('praem:open-paywall'));
       }
       setPosition({ level: row.level, dimension: 'purple' });
@@ -1583,7 +1585,9 @@ const Maze = () => {
           <DialogButtons>
             <button className="font-cinzel" style={PRIMARY_BTN} onClick={async () => {
                 if (user) {
-                  await supabase.from('users').update({ maze_completed_level: currentLevelRef.current }).eq('id', user.id);
+                  const { error } = await supabase.from('users').update({ maze_completed_level: currentLevelRef.current }).eq('id', user.id);
+                  // Stay in the maze on failure so the completed level is not lost behind the door.
+                  if (error) { notifySaveFailed('maze completion', error); return; }
                 }
                 if (user) markRunComplete(user.id, currentLevelRef.current);
                 sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ level: currentLevelRef.current, ts: Date.now() }));

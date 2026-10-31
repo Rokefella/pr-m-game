@@ -1,3 +1,4 @@
+import { flagNumber } from './flagValues';
 export const TITLES_BY_LEVEL: Record<number, string> = {
   1: 'Wanderer',
   2: 'Fragment Seeker',
@@ -11,7 +12,7 @@ export const TITLES_BY_LEVEL: Record<number, string> = {
   10: 'First One Through',
 };
 
-export const titlesUnlocked = (flags: Record<string, string>) => Number(flags.sam_stage ?? 0) >= 3;
+export const titlesUnlocked = (flags: Record<string, string>) => flagNumber(flags, 'sam_stage') >= 3;
 
 /** Only fill an empty title; preserve and deduplicate existing unlocks. */
 export function firstTitlePatch(flags: Record<string, string>, player: { title?: string | null; level?: number | null; unlocked_titles?: string[] | null }) {

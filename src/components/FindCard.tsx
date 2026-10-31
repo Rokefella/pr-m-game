@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { claimFailure, claimFind, findButton, findReceipt, findWords, type WorldFind } from '@/lib/worldFinds';
@@ -17,6 +17,7 @@ type Props = {
 export default function FindCard({ find, reading, at, onClaimed, onRewarded, onClose, auraColor, orbDye, registrationNumber }: Props) {
   const skins = useSkins();
   const [busy, setBusy] = useState(false);
+  const flight = useRef(false);
   const [text, setText] = useState<string | null>(reading ? find.text ?? '' : null);
   const [receipt, setReceipt] = useState(reading ? 'Already in your Folder' : '');
   const [note, setNote] = useState('');
@@ -31,8 +32,8 @@ export default function FindCard({ find, reading, at, onClaimed, onRewarded, onC
   }, [find, reading]);
 
   const press = async () => {
-    if (busy) return;
-    setBusy(true); setNote('');
+    if (flight.current) return;
+    flight.current = true; setBusy(true); setNote('');
     try {
       const r = await claimFind(find.id, at());
       if (r.granted) {
@@ -43,7 +44,7 @@ export default function FindCard({ find, reading, at, onClaimed, onRewarded, onC
       else if (r.reason === 'already') { setText(r.text || await findWords(find)); setReceipt('Already in your Folder'); onClaimed(find.id); }
       else setNote(claimFailure(r.reason));
     } catch { setNote(claimFailure('error')); }
-    finally { setBusy(false); }
+    finally { flight.current = false; setBusy(false); }
   };
 
   if (skinFound && skin) {

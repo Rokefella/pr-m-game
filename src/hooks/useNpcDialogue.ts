@@ -1,3 +1,4 @@
+import { flagNumber } from '@/lib/flagValues';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getFlag, setFlag, questFlagSnapshot, subscribeQuestFlags } from '@/lib/questFlags';
@@ -421,6 +422,14 @@ function useNpcDialogueImpl({
   };
 
 
+  // One NPC server action at a time: repeat taps while a request is in flight are ignored.
+  const actionFlight = useRef(false);
+  const guarded = (fn: (() => unknown) | undefined) => fn && (async () => {
+    if (actionFlight.current) return;
+    actionFlight.current = true;
+    try { await fn(); } finally { actionFlight.current = false; }
+  });
+
   /** Turns a book entry into renderable dialogue data (options resolved to handlers). */
   const buildBookDialogue = (entry: BernardBookEntry, buttonLabel: string | null): BernardDialogueData => {
     const raw: BernardOption[] = [
@@ -435,7 +444,7 @@ function useNpcDialogueImpl({
       label: o.label,
       closes: !o.leads_to && !o.action_key,
       onSelect: () => {
-        if (o.action_key) bernardActions[o.action_key]?.();
+        if (o.action_key) void guarded(bernardActions[o.action_key])?.();
         if (o.leads_to) {
           setCurrentBucket(o.leads_to);
           return;
@@ -451,7 +460,7 @@ function useNpcDialogueImpl({
       return { text: '', buttonLabel: null };
     }
     const f = flagOverride ?? getFlag;
-    const stage = parseInt(f(stageFlagKey) || '0', 10);
+    const stage = Math.trunc(flagNumber({ v: f(stageFlagKey) }, 'v'));
 
     // Book-only NPCs (no spine rows at all) always resolve straight from their book.
     if (bernardStages.length === 0) {
@@ -490,7 +499,7 @@ function useNpcDialogueImpl({
     return {
       text: match.text,
       buttonLabel: match.button_label,
-      buttonAction: stageAction(match.button_action_key),
+      buttonAction: guarded(stageAction(match.button_action_key)),
       onShow: stageAction(match.on_show_action_key),
     };
   };

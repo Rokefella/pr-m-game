@@ -12,6 +12,7 @@ export type QuestCondition = {
   min_perception?: number | null; min_trade?: number | null;
   requires_flags?: Record<string, string> | null; flags_equal?: boolean | null;
   requires_drops?: string[] | null;
+  has_drop?: string | null;
 };
 export type QuestStage = { stage_key: string; condition: QuestCondition | null; button_action_key: string | null; on_show_action_key: string | null };
 export type QuestEntry = QuestCondition & { bucket_key: string | null; option_a_target: string | null; option_b_target: string | null; option_a_action_key: string | null; option_b_action_key: string | null };
@@ -25,11 +26,13 @@ export function npcConditionsMet(condition: QuestCondition, context: QuestContex
     const all = Object.keys(required).every(k => context.flags[k] === required[k]);
     if (condition.flags_equal === false ? all : !all) return false;
   }
+  if (condition.has_drop && !context.drops.has(condition.has_drop)) return false;
   return !condition.requires_drops?.length || condition.requires_drops.every(k => context.drops.has(k));
 }
 
 export function npcStageMet(stage: number, condition: QuestCondition | null, context: QuestContext): boolean {
   if (condition === null || condition.stage !== stage) return false;
+  if (condition.has_drop && !context.drops.has(condition.has_drop)) return false;
   if (!npcConditionsMet({ min_level: condition.min_level, min_social: condition.min_social }, context)) return false;
   if (!condition.requires_flags) return true;
   const all = Object.keys(condition.requires_flags).every(k => context.flags[k] === condition.requires_flags?.[k]);

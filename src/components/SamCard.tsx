@@ -27,13 +27,13 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onRe
     if (!stage || busy) return;
     setBusy(true); setError('');
     try {
-      const res = await runStage(stage.id);
+      const res = stage.button_action_key?.split(';').some(a => a.trim().startsWith('take:')) ? await runStage(stage.id, stage, userId) : await runStage(stage.id);
       if (res.ok) {
         setReceipt(receiptLine(res.given, await dropNames()));
         await onRewarded?.();
         await refresh();
       } else {
-        setError(NOTE_ERROR);
+        setError('handInFailed' in res && res.handInFailed ? res.reason ?? NOTE_ERROR : NOTE_ERROR);
         console.error(`run_npc_stage failed for stage ${stage.id}`, res.reason);
       }
     } catch (err) {

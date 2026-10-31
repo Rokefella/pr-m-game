@@ -21,6 +21,14 @@ export const findShows = (f: WorldFind, player: WorldPoint, claimed: boolean) =>
 };
 /** Sprite to draw for a visible find; a claimed cold quest fire is lit (personal). */
 export const findSprite = (f: WorldFind, claimed: boolean) => f.kind === 'quest_object' && claimed && f.sprite_key === 'campfire_cold' ? 'campfire' : f.sprite_key ?? null;
+export const litFire = (f: WorldFind, claimed: boolean) => claimed && f.kind === 'quest_object' && f.sprite_key === 'campfire_cold';
+export const fireAt = (finds: WorldFind[], claimed: Set<string>, cell: WorldPoint) => finds.find(f => f.x === cell.x && f.y === cell.y && litFire(f, claimed.has(f.id))) ?? null;
+export type FireRestResult = { ok: boolean; steps?: number; steps_remaining?: number; reason?: string };
+export const fireRestFailure = (reason?: string) => reason === 'rested_today' ? 'The fire has given what it can today.' : reason === 'not_lit' ? 'The fire is not lit.' : reason === 'unknown_fire' ? 'This fire is no longer here.' : 'Could not rest. Try again.';
+export async function restAtFire(key: string): Promise<FireRestResult> {
+  const { data, error } = await db.rpc('rest_at_fire', { p_find_key: key });
+  return error || !data ? { ok: false } : data;
+}
 export const findButton = (kind: string) => kind === 'landmark' ? 'Look closer' : kind === 'quest_object' ? 'Light it' : kind === 'words' ? 'Read it' : 'Take it';
 export const findReceipt = (r: ClaimResult) => r.kind === 'words' ? 'Kept in your Folder' : r.kind === 'landmark' ? 'Noted in your Folder' : r.drop_name ? `Kept: ${r.drop_name}` : '';
 export const claimFailure = (reason?: string) => {
@@ -81,7 +89,7 @@ export function drawFinds(ctx: CanvasRenderingContext2D, finds: WorldFind[], cla
     const px = f.x * WORLD_TILE - camera.x, py = f.y * WORLD_TILE - camera.y;
     if (px < -WORLD_TILE || py < -WORLD_TILE || px > width || py > height) continue;
     const isClaimed = claimed.has(f.id);
-    if (f.visibility === 'visible') {
+    if (f.visibility === 'visible' || litFire(f, isClaimed)) {
       const key = findSprite(f, isClaimed), terrain = key ? types.get(key) : undefined;
       if (terrain?.moves === 'flicker') drawTerrainMotion(ctx, terrain, f.x, f.y, px, py, time, ink, reduced, undefined, time, WORLD_TILE);
       else if (!terrain || !drawTerrainSprite(ctx, terrain, f.x, f.y, px, py, WORLD_TILE)) { ctx.fillStyle = ink.muted; ctx.fillRect(px + WORLD_TILE / 2 - 3, py + WORLD_TILE / 2 - 3, 6, 6); }
@@ -109,7 +117,7 @@ export function drawFindLight(ctx: CanvasRenderingContext2D, finds: WorldFind[],
   if (phase !== 'night' && phase !== 'dusk') return;
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .35;
   for (const f of finds) {
-    const terrain = types.get(findSprite(f, claimed.has(f.id)) ?? ''); if (f.visibility !== 'visible' || terrain?.moves !== 'flicker') continue;
+    const terrain = types.get(findSprite(f, claimed.has(f.id)) ?? ''); if ((f.visibility !== 'visible' && !litFire(f, claimed.has(f.id))) || terrain?.moves !== 'flicker') continue;
     const radius = (terrain.light_radius && terrain.light_radius > 0 ? terrain.light_radius : 3) * WORLD_TILE;
     const px = (f.x + .5) * WORLD_TILE - camera.x, py = (f.y + .5) * WORLD_TILE - camera.y;
     const glow = ctx.createRadialGradient(px, py, 0, px, py, radius);

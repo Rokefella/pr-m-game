@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { inventoryChanged } from './inventoryEvents';
+import { readOwnedDrops, refreshDrops } from './carriedDrops';
+import { discardDrops, discardFailure } from './letGo';
 
 /** Optional world_places visibility rule compared against users.maze_completed_level. */
 export type ShowWhen = { min_completed_level?: number | null; max_completed_level?: number | null; flag?: string | null; flag_absent?: string | null } | null | undefined;
@@ -18,6 +20,8 @@ export const HIDDEN_PLACE_NAMES = new Set(['Wandering trader']);
 export const isHiddenPlace = (p: { name?: string | null }) => HIDDEN_PLACE_NAMES.has(String(p.name ?? ''));
 export const HIDDEN_LABEL_RADIUS = 3;
 export const LUMEN_MERCHANT = 'Lumen: merchant';
+export const merchantFigure = (p: { name?: string; action?: string | null }) => p.action === 'merchant' && (p.name === 'Wandering trader' || p.name === LUMEN_MERCHANT);
+export const figureNpc = (p: { name?: string; action?: string | null; npc_key?: string | null }) => merchantFigure(p) ? 'merchant' : p.npc_key ?? null;
 /** Only the Lumen merchant marks the meeting, and only the first time. */
 export const shouldMarkMerchantMet = (p: { name?: string | null; action?: string | null }, flags: Record<string, string>) => p.name === LUMEN_MERCHANT && p.action === 'merchant' && !flagSet(flags, 'met_lumen_merchant');
 export const SAM_KEYS = new Set(['bernard', 'sam']);
@@ -49,7 +53,14 @@ export const samLandLine = (samStage: number | null | undefined) => {
   return 'Sam is waiting in Lumen.';
 };
 
-export type SamStage = { id: string; text: string; button_label: string | null; condition: unknown; order_index: number };
+export type SamStage = { id: string; text: string; button_label: string | null; button_action_key?: string | null; condition: unknown; order_index: number };
+export const requiredStageDrop = (condition: unknown) => {
+  const c = condition as { has_drop?: unknown } | null;
+  return typeof c?.has_drop === 'string' ? c.has_drop : null;
+};
+export const stageHasDrop = (condition: unknown, keys: ReadonlySet<string>) => { const key = requiredStageDrop(condition); return !key || keys.has(key); };
+export const sevenFiresProgress = (flags: Record<string, string>) => ({ done: flags.seven_fires === 'done', count: Math.max(0, Math.min(7, Number(flags.fires_lit) || 0)) });
+export const sevenFiresLine = (flags: Record<string, string>) => { const progress = sevenFiresProgress(flags); return progress.done ? 'All seven fires burn again.' : `${progress.count} of the 7 fires burn again`; };
 export const firstMatchingStage = <T,>(stages: T[], matches: boolean[]) => stages.find((_, i) => matches[i]) ?? null;
 export const fillName = (text: string, name: string) => text.replace(/\{name\}/g, name);
 
@@ -119,13 +130,21 @@ export async function loadSam(npcKey: string) {
   return { npc: npc as { id: string; name: string }, stages: (stages.data ?? []) as SamStage[], book: ((book.data ?? []) as BookNode[]).filter(e => !isRetired(e.topic)) };
 }
 export async function currentStage(userId: string, stages: SamStage[]) {
+  const drops = stages.some(s => requiredStageDrop(s.condition)) ? new Set((await readOwnedDrops(userId)).map(d => d.drop_key)) : new Set<string>();
   const matches = await Promise.all(stages.map(async s => {
+    if (!stageHasDrop(s.condition, drops)) return false;
     const { data, error } = await db.rpc('npc_stage_matches', { p_uid: userId, p_cond: s.condition });
     return !error && data === true;
   }));
   return firstMatchingStage(stages, matches);
 }
-export async function runStage(stageId: string) {
+export async function runStage(stageId: string, stage?: SamStage, userId?: string): Promise<{ ok: boolean; given?: unknown; reason?: string; handInFailed?: boolean }> {
+  const takes = (stage?.button_action_key ?? '').split(';').map(s => s.trim()).filter(s => s.startsWith('take:')).map(s => s.slice(5));
+  for (const key of takes) {
+    const result = await discardDrops(userId, key, 1, false);
+    if (userId) await refreshDrops(userId);
+    if (!result.ok) return { ok: false, reason: discardFailure(result.reason), handInFailed: true };
+  }
   const { data, error } = await db.rpc('run_npc_stage', { p_stage: stageId });
   if (error) return { ok: false, reason: error.message } as { ok: boolean; given?: unknown; reason?: string };
   const result = (data ?? { ok: false }) as { ok: boolean; given?: unknown; reason?: string };

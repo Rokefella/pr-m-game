@@ -36,8 +36,9 @@ import WorldMap from '@/components/WorldMap';
 import { WorldDiscovery } from '@/lib/worldDiscovery';
 import SamCard from '@/components/SamCard';
 import FindCard from '@/components/FindCard';
-import { currentStage, loadSam, shouldMarkMerchantMet, visiblePlaces } from '@/lib/worldSam';
-import { approachedFind, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, findMarked, findShows, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
+import FireRestCard from '@/components/FireRestCard';
+import { currentStage, figureNpc, merchantFigure, loadSam, shouldMarkMerchantMet, visiblePlaces } from '@/lib/worldSam';
+import { approachedFind, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, fireAt, litFire, findMarked, findShows, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
 import { npcFacingToward, npcSkin, setCurrentSkin, useSkins, type Facing } from '@/lib/skins';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { worldWalkable } from '@/lib/worldTest';
@@ -408,8 +409,9 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       return worldWalkable(terrain);
     };
     const bumpOpen = (cell: WorldPoint) => {
-      const f = bumpedFind(findsOn(findsRef.current, l), claimedRef.current, cell);
-      const sign = f ? null : bumpedSignpost(placesOn(world.places, l), cell);
+      const f = fireAt(findsOn(findsRef.current, l), claimedRef.current, cell) ?? bumpedFind(findsOn(findsRef.current, l), claimedRef.current, cell);
+      const merchant = placesOn(world.places, l).find(p => merchantFigure(p) && p.x === cell.x && p.y === cell.y);
+      const sign = f ? null : merchant ?? bumpedSignpost(placesOn(world.places, l), cell);
       if (!f && !sign) return;
       blocked.current = true; keys.current.clear();
       setTimeout(() => { if (f) setFindCard({ find: f, reading: false }); else if (sign) setPlaceCard(sign); }, 160);
@@ -438,6 +440,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     for (const p of layerPlaces) if (p.npc_key && chebyshev(p, next) > 1) npcApproached.current.delete(npcId(placesOn(world.places, l).find(home => home.npc_key === p.npc_key) ?? p));
     const spot = layerPlaces.find(p => !p.npc_key && p.x === next.x && p.y === next.y) ?? adjacentConversation(layerPlaces.filter(p => !p.npc_key), next);
     const layerFinds = findsOn(findsRef.current, l);
+    const fire = fireAt(layerFinds, claimedRef.current, next);
+    if (fire) { keys.current.clear(); setFindCard({ find: fire, reading: false }); return; }
     for (const id of [...approached.current]) { const f = layerFinds.find(x => x.id === id); if (!f || chebyshev(f, next) > 1) approached.current.delete(id); }
     if (spot) { if (isSignpost(spot)) keys.current.clear(); setEntryMessage(''); setPlaceCard(spot); return; }
     const near = approachedFind(layerFinds, claimedRef.current, approached.current, next, walkable);
@@ -508,15 +512,16 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
         const c = el.getContext('2d'); if (c && sprite) { c.clearRect(0, 0, el.width, el.height); c.imageSmoothingEnabled = false; c.save(); c.translate(0, 16); c.drawImage(sprite, 0, 0); drawSpriteAtmosphere(c, b.terrain, sprite, b.x, b.y, clock, ink, reduced); c.restore(); }
       }
       for (const p of layerPlaces[l]) {
-        if (!p.npc_key || !skinnedRef.current.has(p.npc_key)) continue;
-        const key = npcId(p);
+        const npc = figureNpc(p);
+        if (!npc || (!merchantFigure(p) && !skinnedRef.current.has(npc))) continue;
+        const key = merchantFigure(p) ? `merchant:${p.x}:${p.y}` : npcId(p);
         let wander = npcWanders.current.get(key); if (!wander) { wander = new NpcWander(); npcWanders.current.set(key, wander); }
         if (Math.max(Math.abs(p.x - point.x), Math.abs(p.y - point.y)) > Math.max(width, height) / WORLD_TILE + 7) { const el = npcEls.current.get(key); if (el) el.style.display = 'none'; continue; }
-        const pose = wander.sample(p, p.npc_key, clock, point, cell => { const t = types.get(cache.terrainKey(cell.x, cell.y) ?? ''); return npcTerrainSafe(t) && !layerPlaces[l].some(other => other !== p && other.x === cell.x && other.y === cell.y); }, reduced, talkingNpc.current === p.npc_key);
+        const pose: NpcPose = merchantFigure(p) ? { ...p, cell: { x: p.x, y: p.y }, facing: npcFacingToward(p, point), phase: 'stand' } : wander.sample(p, npc, clock, point, cell => { const t = types.get(cache.terrainKey(cell.x, cell.y) ?? ''); return npcTerrainSafe(t) && !layerPlaces[l].some(other => other !== p && other.x === cell.x && other.y === cell.y); }, reduced, talkingNpc.current === npc);
         npcPoses.current.set(key, pose);
         const el = npcEls.current.get(key);
         if (el) { el.style.display = ''; el.style.transform = `translate(${pose.x * WORLD_TILE - camera.current.x + (WORLD_TILE - WORLD_NPC_SIZE) / 2}px, ${pose.y * WORLD_TILE - camera.current.y + WORLD_TILE - Math.round(WORLD_NPC_SIZE * 14 / 16)}px)`; el.style.zIndex = String(Math.round((pose.y + 1) * WORLD_TILE)); }
-        if (markerCtx && samLineRef.current.has(p.npc_key)) drawMarker(markerCtx, pose.x * WORLD_TILE - camera.current.x, pose.y * WORLD_TILE - camera.current.y - 10, time, ink, reduced);
+        if (markerCtx && samLineRef.current.has(npc)) drawMarker(markerCtx, pose.x * WORLD_TILE - camera.current.x, pose.y * WORLD_TILE - camera.current.y - 10, time, ink, reduced);
         const f = pose.facing;
         if (npcFacingsRef.current[key] !== f) { npcFacingsRef.current[key] = f; setNpcFacings({ ...npcFacingsRef.current }); }
         if (npcPhasesRef.current[key] !== pose.phase) { npcPhasesRef.current[key] = pose.phase; setNpcPhases({ ...npcPhasesRef.current }); }
@@ -584,15 +589,16 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       const f = findsOn(findsRef.current, layer).find(f => f.x === x && f.y === y && chebyshev(f, posRef.current) <= 1);
       if (!f) return;
       const isClaimed = claimedRef.current.has(f.id);
-      if (findMarked(f, isClaimed) || (!isClaimed && findShows(f, posRef.current, false))) setFindCard({ find: f, reading: false });
+      if (litFire(f, isClaimed) || findMarked(f, isClaimed) || (!isClaimed && findShows(f, posRef.current, false))) setFindCard({ find: f, reading: false });
       else if (isClaimed && (f.kind === 'words' || f.kind === 'landmark')) setFindCard({ find: f, reading: true });
     }} />
     {buildings.map(b => { const box = buildingBox(b), id = `${b.x},${b.y}`; return <canvas key={id} ref={el => { if (el) buildingEls.current.set(id, el); else buildingEls.current.delete(id); }} width={b.terrain.sprite_w ?? box.w * 16} height={(b.terrain.sprite_h ?? box.h * 16) + 16} className="world-building" style={{ width: box.w * WORLD_TILE, height: (box.h + 1) * WORLD_TILE }} aria-hidden="true" />; })}
     {visitors.map(p => <WorldVisitor key={p.user_id} player={p} at={pos} camera={camera} reduced={reduced} />)}
     <div ref={avatar} className="world-avatar"><PlayerAvatar size={WORLD_AVATAR_SIZE} palette={orbLook(identity.aura_color, identity.orb_dye, identity.registration_number)} walking={walking && !sliding} skin={identity.avatar_body} facing={facing} registrationNumber={identity.registration_number} auraColor={identity.aura_color} orbDye={identity.orb_dye} /><WorldPlayerLabel username={identity.username} title={identity.title} /></div>
-    {placesOn(data.places, layer).filter(p => p.npc_key && skinned.has(p.npc_key)).map(p => {
-      const key = `${p.npc_key}:${p.x}:${p.y}`;
-      return <div key={key} ref={el => { if (el) npcEls.current.set(key, el); else npcEls.current.delete(key); }} className="world-avatar" style={{ pointerEvents: 'none' }}><NpcOrb npc={p.npc_key as string} size={WORLD_NPC_SIZE} facing={npcFacings[key] ?? 'down'} phase={npcPhases[key] ?? 'stand'} /></div>;
+    {placesOn(data.places, layer).filter(p => merchantFigure(p) || (p.npc_key && skinned.has(p.npc_key))).map(p => {
+      const npc = figureNpc(p); if (!npc) return null;
+      const key = `${npc}:${p.x}:${p.y}`;
+      return <div key={key} ref={el => { if (el) npcEls.current.set(key, el); else npcEls.current.delete(key); }} className="world-avatar" style={{ pointerEvents: 'none' }}><NpcOrb npc={npc} size={WORLD_NPC_SIZE} facing={npcFacings[key] ?? 'down'} phase={npcPhases[key] ?? 'stand'} /></div>;
     })}
     <canvas ref={markerCanvas} className="world-markers" aria-hidden="true" /></div>
     <header className="world-hud font-mono">{dev && <div className="world-status"><span>{pos.x},{pos.y} · A {area.x},{area.y} · {era?.name ?? '—'}</span><span>{layer === 1 ? `UNDERGROUND · ABOVE ${surfacePoint.x},${surfacePoint.y}` : 'SURFACE'}</span><span>{terrain?.name ?? (cache.errors.size ? 'Window unavailable' : 'Loading…')} · COST {terrain ? tileCost(terrain, era) : '—'} · SPENT {Number(spent.toFixed(2))}</span>{layer === 0 && <span>{phase.phase.toUpperCase()} · {Math.ceil(phase.minutesLeft)} MIN</span>}</div>}<Button variant="ghost" size="icon" title="MAP" aria-label="MAP" onClick={() => { keys.current.clear(); setMapOpen(true); }}><MapIcon size={18} /></Button>{dev && <Button variant="outline" className="world-jump" onClick={() => { setJumpX(String(pos.x)); setJumpY(String(pos.y)); setJumpOpen(true); }}><Navigation size={14} />JUMP</Button>}</header>
@@ -610,7 +616,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     {dailyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[18%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{dailyMessage}</p>}
     <Thumbstick onMove={move} disabled={suppliesOpen || profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || npcCardOpen || (Boolean(placeCard) && !(placeCard && (isWorldConversation(placeCard) || isSignpost(placeCard))))} />
     {mapOpen && <WorldMap bits={discoveryBits} player={pos} layer={layer} aura={identity.aura_color} dev={identity.registration_number === 1} registrationNumber={identity.registration_number} samStage={samStage} allPlaces={dev ? rawWorld.current?.places : undefined} types={data.terrain} places={data.places} finds={finds} claimed={claimed} players={visitors} target={revealTarget && !finds.some(f => f.x === revealTarget.x && f.y === revealTarget.y && claimed.has(f.id)) ? revealTarget : null} onClose={() => setMapOpen(false)} />}
-    {findCard && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog world-place-card" role="dialog" aria-label={findCard.find.title}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close" onClick={() => setFindCard(null)}><X size={18} /></Button><FindCard key={findCard.find.id + String(findCard.reading)} find={findCard.find} reading={findCard.reading} at={() => posRef.current} onClaimed={markClaimed} onRewarded={() => void refreshReward()} onClose={() => setFindCard(null)} auraColor={identity.aura_color} orbDye={identity.orb_dye ?? null} registrationNumber={identity.registration_number} /></section></div>}
+    {findCard && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={findCard.find.title}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close" onClick={() => setFindCard(null)}><X size={18} /></Button>{litFire(findCard.find, claimed.has(findCard.find.id)) ? <FireRestCard key={findCard.find.id} findKey={findCard.find.find_key} beforeRest={async () => { await stepLedger.current?.flush(); }} onSteps={steps => { stepLedger.current?.refresh(steps); identityRef.current = { ...identityRef.current, steps_remaining: steps }; setIdentity(row => ({ ...row, steps_remaining: steps })); }} /> : <FindCard key={findCard.find.id + String(findCard.reading)} find={findCard.find} reading={findCard.reading} at={() => posRef.current} onClaimed={markClaimed} onRewarded={() => void refreshReward()} onClose={() => setFindCard(null)} auraColor={identity.aura_color} orbDye={identity.orb_dye ?? null} registrationNumber={identity.registration_number} />}</section></div>}
     {jumpOpen && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog" role="dialog" aria-label="Jump to a place"><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close jump menu" onClick={() => setJumpOpen(false)}><X size={18} /></Button><h2 className="font-cinzel">JUMP</h2><form onSubmit={e => { e.preventDefault(); const x = Number(jumpX), y = Number(jumpY); if (Number.isFinite(x) && Number.isFinite(y)) place({ x, y }, layer); }}><label className="font-mono">X<Input aria-label="Jump X" type="number" min={0} max={layerSize(layer) - 1} value={jumpX} onChange={e => setJumpX(e.target.value)} required /></label><label className="font-mono">Y<Input aria-label="Jump Y" type="number" min={0} max={layerSize(layer) - 1} value={jumpY} onChange={e => setJumpY(e.target.value)} required /></label><Button type="submit" className="world-jump">GO</Button></form><Button variant="outline" className="world-jump" onClick={() => place(startPoint(data), 0)}>RESTART AT START</Button>{jumpGroups.map(({ l, kind, items }) => <div key={`${l}-${kind}`} className="world-place-group"><h3 className="font-mono">{l === 1 ? 'UNDERGROUND · ' : 'SURFACE · '}{kind.replace(/_/g, ' ').toUpperCase()}</h3>{items.map((p, i) => <Button key={`${p.name}-${i}`} variant="ghost" onClick={() => place(p, l)}>{p.name}{p.maze_level ? ` · L${p.maze_level}` : ''}<span className="font-mono">{p.x},{p.y}</span></Button>)}</div>)}</section></div>}
     {userId && <MerchantOverlay open={Boolean(placeCard && placeAction(placeCard) === 'merchant')} onClose={() => setPlaceCard(null)} palette="green" title="The Merchant." openingLines={MERCHANT_LINES} userId={userId} credits={identity.credits ?? 0} onCreditsChange={credits => { identityRef.current = { ...identityRef.current, credits }; setIdentity(row => ({ ...row, credits })); }} items={merchantItems(level, 'world', async (qty = 1) => {
       const ledger = stepLedger.current;

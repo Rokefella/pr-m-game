@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { publicPlayers } from './publicPlayers';
 import { normalizeSkinKey, type Facing } from './skins';
 import type { WorldLayer, WorldPoint } from './worldTest';
 export type WorldPlayer = WorldPoint & { user_id: string; layer: number; village_level?: number; facing?: Facing; avatar_body?: string | null; orb_dye?: string | null; aura_color?: string | null; username?: string | null; title?: string | null; last_seen: string };
@@ -28,11 +29,9 @@ export async function readWorldPlayers(): Promise<WorldPlayer[]> {
     if (error) return [];
     const players = (data ?? []) as unknown as WorldPlayer[];
     if (!players.length) return players;
-    // Labels come from existing users fields; never add them to presence writes.
-    const { data: identities, error: labelError } = await supabase.from('users').select('id, username, title').in('id', players.map(p => p.user_id));
-    if (labelError) return players;
-    const labels = new Map((identities ?? []).map(p => [p.id, p]));
-    return players.map(p => ({ ...p, ...(labels.get(p.user_id) ? { username: labels.get(p.user_id)?.username, title: labels.get(p.user_id)?.title } : {}) }));
+    const identities = await publicPlayers(players.map(p => p.user_id));
+    const labels = new Map(identities.map(p => [p.id, p]));
+    return players.flatMap(p => { const publicRow = labels.get(p.user_id); return publicRow ? [{ ...p, ...publicRow }] : []; });
   } catch { return []; }
 }
 export const writeWorldPlayer = async (row: WorldPlayer) => { const { error } = await supabase.from('player_positions').upsert(row as never); if (error) throw error; };

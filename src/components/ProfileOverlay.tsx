@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { updateUser } from '@/lib/userData';
 import { getFlag } from '@/lib/questFlags';
-import { samLandLine } from '@/lib/worldSam';
+import { samLandLine, sevenFiresLine } from '@/lib/worldSam';
 import { BETA_MODE } from '@/lib/config';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
@@ -314,6 +314,11 @@ const ProfileOverlay = ({
   activeQuests.push({ key: 'a-sam-land', name: "Sam's land", giver: 'Sam', status: samLandLine(samStage) });
 
   const completedQuests: Quest[] = [];
+  const sevenFires = getFlag('seven_fires');
+  if (sevenFires === 'active' || sevenFires === 'done') {
+    const quest = { key: 'seven-fires', name: 'Seven fires', giver: 'Sam', status: sevenFiresLine({ seven_fires: sevenFires, fires_lit: getFlag('fires_lit') ?? '0' }) };
+    (sevenFires === 'done' ? completedQuests : activeQuests).push(quest);
+  }
 
   const cardStyle: React.CSSProperties = {
     position: 'relative',

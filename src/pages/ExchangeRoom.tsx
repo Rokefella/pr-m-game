@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { fetchOrCreateUser } from '@/lib/userData';
 import { supabase } from '@/lib/supabase';
+import { publicPlayers } from '@/lib/publicPlayers';
 import { formatPrime } from '@/lib/format';
 import Thumbstick from '@/components/Thumbstick';
 import { setFlag } from '@/lib/questFlags';
@@ -166,7 +167,9 @@ const ExchangeRoom = () => {
         .order('created_at', { ascending: false });
       if (error) throw error;
 
-      const all = ((rows ?? []) as unknown as Listing[]);
+      const raw = ((rows ?? []) as unknown as Listing[]);
+      const sellers = new Map((await publicPlayers(raw.filter(l => l.seller_id !== user.id).map(l => l.seller_id))).map(p => [p.id, p]));
+      const all = raw.map(l => ({ ...l, seller_username: l.seller_id === user.id ? username : sellers.get(l.seller_id)?.username ?? null }));
       setListings(all.filter((l) => l.seller_id !== user.id));
       setMyListings(all.filter((l) => l.seller_id === user.id));
 

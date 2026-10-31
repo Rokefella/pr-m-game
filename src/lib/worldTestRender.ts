@@ -1,4 +1,4 @@
-import { HIDDEN_LABEL_RADIUS, isHiddenPlace } from './worldSam';
+import { HIDDEN_LABEL_RADIUS, isHiddenPlace, merchantFigure } from './worldSam';
 import { isGroundSway, WAVE_BAND_CELL_LIMIT } from './terrainMotion';
 import { chunkOrigin, eraAt, eraPointFor, WORLD_CHUNK, WORLD_TILE, type WorldLayer, type Era, type Place, type Terrain, type WorldChunk, type WorldPoint, type WorldChunkCache } from './worldTest';
 import { drawTerrainBase, drawTerrainMotion, drawTerrainSprite, hasMovingSprite, isObjectLayer, spriteLight, spriteVersion, type TerrainInk } from './terrainTile';
@@ -6,7 +6,7 @@ import { buildingBlockCanvas, buildingVersion } from './theme/buildingCanvas';
 export { drawTerrain, eraColor } from './terrainTile';
 export type WorldInk = TerrainInk & { dusk: string; night: string; dawn: string };
 export function drawPlace(ctx: CanvasRenderingContext2D, place: Place, px: number, py: number, ink: WorldInk, showLabel = true) {
-  if (place.kind === 'start') return;
+  if (place.kind === 'start' || merchantFigure(place)) return;
   ctx.save(); ctx.translate(px + 20, py + 20); ctx.strokeStyle = place.kind === 'maze_entrance' ? ink.gold : ink.text; ctx.fillStyle = ctx.strokeStyle; ctx.lineWidth = 2;
   ctx.beginPath();
   const action = place.action ?? '';

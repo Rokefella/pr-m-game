@@ -2,7 +2,6 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { currentStage, MISSING_ITEM_LINE, runStage, type SamStage } from './worldSam';
 const f = vi.hoisted(() => ({ rpc: vi.fn(), read: vi.fn(), refresh: vi.fn(), events: [] as Event[] }));
 vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc } }));
-vi.mock('@/integrations/supabase/client', () => ({ supabase: { rpc: f.rpc } }));
 vi.mock('./carriedDrops', () => ({ readOwnedDrops: f.read, refreshDrops: f.refresh }));
 const whistle: SamStage = { id: 'whistle', text: '', button_label: '', order_index: 98, condition: { flags: { sam_whistle: '0' }, has_drop: 'curio_tin_whistle' }, button_action_key: 'take:curio_tin_whistle;drop:mech_second_wind;flag:sam_whistle=1' };
 const capture = (e: Event) => { f.events.push(e); };

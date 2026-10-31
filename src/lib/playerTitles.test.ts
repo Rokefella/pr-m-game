@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { firstTitlePatch, titlesUnlocked } from './playerTitles';
+import { firstTitlePatch, levelupTitle, titlesUnlocked } from './playerTitles';
 
 describe('Sam title eligibility', () => {
   it('unlocks at Sam stage three, not retired Bernard stage five', () => {

@@ -71,6 +71,7 @@ export async function reconcileBernardAfterShadow(userId: string, transferSaved 
 }
 
 export async function setFlag(userId: string, key: string, value: string): Promise<void> {
+  const previous = cache[key];
   cache = { ...cache, [key]: value };
   loadedForUser = userId;
   publishFlags();
@@ -82,6 +83,13 @@ export async function setFlag(userId: string, key: string, value: string): Promi
     );
   if (error) {
     notifySaveFailed(`flag ${key}`, error);
+    // Roll the optimistic value back so the screen matches what was saved.
+    if (cache[key] === value) {
+      const next = { ...cache };
+      if (previous === undefined) delete next[key]; else next[key] = previous;
+      cache = next;
+      publishFlags();
+    }
   }
 }
 

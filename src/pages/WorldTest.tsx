@@ -11,7 +11,7 @@ import Thumbstick from '@/components/Thumbstick';
 import LoadingScreen from '@/components/LoadingScreen';
 import { useReducedMotion } from '@/components/theme/useReducedMotion';
 import { BETA_MODE } from '@/lib/config';
-import { getAllFlags, getFlag, reconcileBernardAfterShadow, setFlag } from '@/lib/questFlags';
+import { flagNumber, getAllFlags, getFlag, reconcileBernardAfterShadow, setFlag } from '@/lib/questFlags';
 import { canAccessMaze, checkSubscriptionStatus, getDaysRemainingInTrial, type SubscriptionStatus } from '@/lib/subscriptionStatus';
 import { effectiveWorldLevel, worldDoorRefusal, type WorldDoorKind } from '@/lib/worldHome';
 import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailySteps';

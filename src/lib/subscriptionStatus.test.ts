@@ -40,17 +40,13 @@ describe('reversible beta subscription access', () => {
     expect(canAccessMaze('expired')).toBe(false);
   });
 
-  it('restores trial expiration and the original stored-status update when beta is disabled', async () => {
+  it('delegates trial expiration to the server when beta is disabled', async () => {
     mocks.config.BETA_MODE = false;
     mocks.single.mockResolvedValue({ ok: true, status: 'expired' });
     expect(await checkSubscriptionStatus('trial-user')).toBe('expired');
     expect(mocks.single).toHaveBeenCalledTimes(1);
     expect(mocks.update).not.toHaveBeenCalled();
   });
-    expect(await checkSubscriptionStatus('trial-user')).toBe('expired');
-    expect(mocks.update).toHaveBeenCalledWith({ subscription_status: 'expired' });
-  });
-
   it.each(['trial', 'active', 'lifetime', 'dev', 'beta'] as const)(
     'preserves access for %s when beta is disabled', (status) => {
       mocks.config.BETA_MODE = false;

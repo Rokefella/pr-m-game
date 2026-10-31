@@ -47,7 +47,9 @@ export const mazeHelperReward = (level: number) => call<BalanceResult>('maze_hel
 export const npcLegacyAction = (npcKey: string, action: string) =>
   call<BalanceResult & { growth_points?: number; title?: string; unlocked_titles?: string[]; stage?: number }>('npc_legacy_action', { p_npc_key: npcKey, p_action: action });
 export const STORY_FLAGS = new Set(['shadow_visited', 'bernard_stage', 'alexandra_quest', 'quest_alexandra_pending']);
-export const setStoryFlag = (key: string, value: string) => call<SaveResult>('set_story_flag', { p_key: key, p_value: value });
+export const setStoryFlag = (key: string, value: string) => STORY_FLAGS.has(key)
+  ? call<SaveResult>('set_story_flag', { p_key: key, p_value: value })
+  : Promise.resolve<SaveResult>({ ok: false, reason: 'not_allowed' });
 export const createFragmentListing = (fragment: string, price: number) => call<SaveResult & { id: string }>('create_listing', { p_fragment: fragment, p_price: price });
 export const cancelFragmentListing = (listing: string) => call<SaveResult>('cancel_listing', { p_listing: listing });
 export const devSetLevel = (level: number) => call<SaveResult>('dev_set_level', { p_level: level });

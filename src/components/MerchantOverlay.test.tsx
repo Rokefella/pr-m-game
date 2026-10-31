@@ -2,8 +2,8 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import MerchantOverlay, { type MerchantItem } from './MerchantOverlay';
 
-const f = vi.hoisted(() => ({ updateUser: vi.fn() }));
-vi.mock('@/lib/userData', () => ({ updateUser: f.updateUser }));
+const f = vi.hoisted(() => ({ spendCredits: vi.fn(async () => ({ ok: true, credits: 30 })) }));
+vi.mock('@/lib/serverGame', () => ({ spendCredits: f.spendCredits }));
 vi.mock('@/components/NpcPortrait', () => ({ default: () => null }));
 vi.mock('@/components/theme/objects/NpcOrb', () => ({ default: () => null }));
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: null }) }));
@@ -21,7 +21,7 @@ it('buys steps server-side with a receipt and no client credit write', async () 
   fireEvent.click(screen.getByRole('button', { name: 'BUY' }));
   expect(await screen.findByText('+500 steps · −5 credits')).toBeInTheDocument();
   expect(onCreditsChange).toHaveBeenCalledWith(45);
-  expect(f.updateUser).not.toHaveBeenCalled();
+  expect(f.spendCredits).not.toHaveBeenCalled();
 });
 
 it('shows the server failure reason without touching credits', async () => {
@@ -56,12 +56,12 @@ it('refuses locally when credits cannot cover the quantity', async () => {
   expect(onPurchase).not.toHaveBeenCalled();
 });
 
-it('still writes credits itself for legacy client-side items', async () => {
+it('saves legacy item credits through spend_credits', async () => {
   const onCreditsChange = vi.fn();
   const item: MerchantItem = { key: 'visibility', label: 'Visibility +2 cells (this run)', cost: 20, onPurchase: () => 'Acquired.' };
   render(<MerchantOverlay {...base} credits={50} onCreditsChange={onCreditsChange} items={[item]} />);
   fireEvent.click(screen.getByRole('button', { name: 'BUY' }));
   expect(await screen.findByText('Acquired.')).toBeInTheDocument();
   expect(onCreditsChange).toHaveBeenCalledWith(30);
-  expect(f.updateUser).toHaveBeenCalledWith('u1', { credits: 30 });
+  expect(f.spendCredits).toHaveBeenCalledWith(20, 'visibility');
 });

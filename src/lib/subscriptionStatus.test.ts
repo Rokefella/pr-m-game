@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('@/lib/config', () => mocks.config);
-vi.mock('@/lib/supabase', () => ({ supabase: { from: mocks.from } }));
+vi.mock('@/lib/serverGame', () => ({ checkTrial: mocks.single }));
 
 import { canAccessMaze, checkSubscriptionStatus } from './subscriptionStatus';
 
@@ -24,7 +24,7 @@ describe('reversible beta subscription access', () => {
   });
 
   it('treats every user as active in beta without reading or changing their subscription', async () => {
-    mocks.single.mockResolvedValue({ data: { subscription_status: 'expired' }, error: null });
+    mocks.single.mockResolvedValue({ ok: true, status: 'expired' });
     expect(await checkSubscriptionStatus('expired-user')).toBe('active');
     expect(mocks.from).not.toHaveBeenCalled();
   });
@@ -35,16 +35,18 @@ describe('reversible beta subscription access', () => {
 
   it('restores expired-user restrictions when beta is disabled', async () => {
     mocks.config.BETA_MODE = false;
-    mocks.single.mockResolvedValue({ data: { subscription_status: 'expired' }, error: null });
+    mocks.single.mockResolvedValue({ ok: true, status: 'expired' });
     expect(await checkSubscriptionStatus('expired-user')).toBe('expired');
     expect(canAccessMaze('expired')).toBe(false);
   });
 
   it('restores trial expiration and the original stored-status update when beta is disabled', async () => {
     mocks.config.BETA_MODE = false;
-    mocks.single.mockResolvedValue({
-      data: { subscription_status: 'trial', trial_end: '2000-01-01T00:00:00Z' }, error: null,
-    });
+    mocks.single.mockResolvedValue({ ok: true, status: 'expired' });
+    expect(await checkSubscriptionStatus('trial-user')).toBe('expired');
+    expect(mocks.single).toHaveBeenCalledTimes(1);
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
     expect(await checkSubscriptionStatus('trial-user')).toBe('expired');
     expect(mocks.update).toHaveBeenCalledWith({ subscription_status: 'expired' });
   });

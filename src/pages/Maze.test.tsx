@@ -67,7 +67,10 @@ beforeEach(() => {
   fixture.dropPoints = false;
   fixture.skin = null;
   fixture.placements = [];
-  fixture.rpc.mockReset().mockImplementation(async (name: string) => ({ data: name === 'start_run_drops' ? fixture.placements : { granted: true, drop_name: 'Brass key', kind: 'key' }, error: null }));
+  fixture.rpc.mockReset().mockImplementation(async (name: string) => {
+    if (name === 'forfeit_unbanked_fragments') { fixture.deletes.push([['user_id', 'player'], ['banked', false]]); fixture.rows = fixture.rows.filter(r => r.banked); return { data: { ok: true }, error: null }; }
+    return { data: name === 'start_run_drops' ? fixture.placements : { ok: true, granted: true, drop_name: 'Brass key', kind: 'key' }, error: null };
+  });
   fixture.rows = [
     { prime_number: 23, banked: false, level: 2 },
     { prime_number: 47, banked: false, level: 2 },
@@ -82,12 +85,13 @@ describe('Server-owned maze run drops', () => {
   });
   it('requests a fresh roll only after fresh-run forfeiture', async () => {
     fixture.rpc.mockImplementation(async (name: string) => {
+      if (name === 'forfeit_unbanked_fragments') { fixture.deletes.push([]); fixture.rows = fixture.rows.filter(r => r.banked); return { data: { ok: true }, error: null }; }
       if (name === 'start_run_drops') expect(fixture.deletes).toHaveLength(1);
       return { data: fixture.placements, error: null };
     });
     openMaze(); await ready(0);
     await waitFor(() => expect(fixture.rpc).toHaveBeenCalledWith('start_run_drops', { p_level: 2, p_resume: false }));
-    expect(fixture.rpc).toHaveBeenCalledTimes(1);
+    expect(fixture.rpc).toHaveBeenCalledTimes(2);
   });
   it.each(['stored run', 'room return'])('preserves server placements on %s', async (entry) => {
     if (entry === 'stored run') startRun('player', 2);

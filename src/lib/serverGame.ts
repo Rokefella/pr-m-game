@@ -14,7 +14,7 @@ async function call<T>(fn: string, args: Record<string, unknown>): Promise<T> {
 export type NpcStageResult = { ok: boolean; given?: unknown; taken?: unknown; steps_remaining?: number; credits?: number; reason?: string };
 export const runNpcStage2 = (stageId: string) => call<NpcStageResult>('run_npc_stage2', { p_stage: stageId });
 
-export type CompleteMazeResult = { ok: boolean; replay?: boolean; maze_completed_level?: number; levelup_newlevel?: number | null; reason?: string };
+export type CompleteMazeResult = { ok: boolean; replay?: boolean; maze_completed_level?: number; levelup_newlevel?: number | null; meteor?: boolean; reason?: string };
 export const completeMaze = (level: number, steps: number, seconds: number) =>
   call<CompleteMazeResult>('complete_maze', { p_level: level, p_steps: Math.max(0, Math.round(steps)), p_seconds: Math.max(0, Math.round(seconds)) });
 

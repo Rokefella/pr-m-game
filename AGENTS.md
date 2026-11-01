@@ -38,3 +38,4 @@
 - worldSam owns homes/topics/merchant_met; SamCard uses any NPC identity/book with Sam-only gates scoped to Sam. World traders load server stock on opening; merchantItems wraps purchases/Folder refresh. run_npc_stage2 owns hand-ins/rewards. publicPlayers fails closed; WorldPlayerLabel is shared. Merchants idle; rest settles spending first.
 - Routes are lazy behind LoadingScreen; routePreload owns the /world loader for sign-in prefetch. Server buttons guard with a ref plus busy state; failed saves raise saveNotice's in-world line.
 - flagValues owns DB-free numeric flag comparisons (missing/empty = "0"); serverClock reads server time from a refreshed token's iat and date gates fail closed. Loops stop while hidden; the world skips its motion pass when nothing moving is visible.
+- meteor.ts decides the once-per-player fall; World plays it after level-up arrival, then resets generation-guarded chunks, the per-player M map and finds.

@@ -4,6 +4,11 @@ import type { Terrain } from './worldTest';
 import { latestBuiltAt, isStale, OVERVIEW_BUILT_KEY } from './worldFreshness';
 let overview: Promise<HTMLCanvasElement> | null = null;
 let overviewStamp: number | null = null;
+let overviewOwner: string | null = null;
+/** Forget the cached M map, e.g. after the meteor or when another player signs in on this device. */
+export function resetWorldOverview() { overview = null; }
+/** Players can see different worlds; a new owner never reuses the previous player's map. */
+export function setWorldOverviewOwner(userId: string) { if (overviewOwner !== userId) { overviewOwner = userId; overview = null; } }
 export async function readWorldOverview(types: Terrain[]): Promise<HTMLCanvasElement> {
   const stamp = await latestBuiltAt('world_overview');
   if (isStale(OVERVIEW_BUILT_KEY, stamp) || (stamp !== null && overviewStamp !== null && stamp > overviewStamp)) overview = null;

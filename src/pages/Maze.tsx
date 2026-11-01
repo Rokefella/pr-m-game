@@ -51,6 +51,7 @@ import Thumbstick from '@/components/Thumbstick';
 import { movementDebug } from '@/lib/netQueue';
 import { bindWorldStepFlush, WorldSteps } from '@/lib/worldSteps';
 import { claimFragment, mazeHelperReward, completeMaze } from '@/lib/serverGame';
+import { markMeteorPending } from '@/lib/meteor';
 import { startResilientLoop } from '@/lib/resilientLoop';
 import WallTile from '@/components/theme/WallTile';
 import FloorLayer from '@/components/theme/FloorLayer';
@@ -1585,6 +1586,7 @@ const Maze = () => {
                   const result = await completeMaze(currentLevelRef.current, stepLedgerRef.current?.total ?? 0, seconds).catch((err: unknown) => ({ ok: false, reason: String(err) }));
                   // Stay in the maze on failure so the completed level is not lost behind the door.
                   if (!result.ok) { notifySaveFailed('maze completion', result); return; }
+                  if ((result as { meteor?: boolean }).meteor === true) markMeteorPending(user.id);
                 }
                 if (user) markRunComplete(user.id, currentLevelRef.current);
                 sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ level: currentLevelRef.current, ts: Date.now() }));

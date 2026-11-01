@@ -36,3 +36,18 @@
 .npc-card-actions { display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
 .world-place-card .npc-card-action { width: 100%; }
 .world-find-text { white-space: pre-line; }
+
+/* The meteor fall — presentation only. */
+.meteor-fall { position: fixed; inset: 0; z-index: var(--z-overlay); overflow: hidden; cursor: pointer; animation: meteor-shake 1000ms steps(10) 2600ms both; }
+.meteor-sky { position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 10%, hsl(232 45% 14% / 0.9), hsl(240 50% 3% / 0.96) 70%); animation: meteor-dim 900ms ease-out both; }
+.meteor-streak { position: absolute; top: -10%; right: -10%; width: 220px; height: 6px; transform-origin: right center; background: linear-gradient(90deg, transparent, var(--plate-gold) 60%, hsl(45 100% 92%)); box-shadow: 0 0 18px var(--plate-gold); animation: meteor-streak 1600ms cubic-bezier(.5,0,.9,.6) 900ms both; }
+.meteor-flash { position: absolute; inset: 0; background: hsl(40 30% 96%); opacity: 0; animation: meteor-flash 700ms ease-out 2500ms both; }
+.meteor-line { position: absolute; left: 50%; top: 46%; transform: translateX(-50%); margin: 0; max-width: min(520px, calc(100vw - 32px)); padding: 12px 18px; font-size: 20px; text-align: center; color: var(--auth-text); background: var(--plate-backdrop); border: 1px solid var(--plate-gold); opacity: 0; animation: meteor-line 600ms ease-out 3500ms both; }
+.meteor-reduced { animation: none; }
+.meteor-reduced .meteor-sky { animation: none; }
+.meteor-reduced .meteor-line { animation: none; opacity: 1; }
+@keyframes meteor-dim { from { opacity: 0; } to { opacity: 1; } }
+@keyframes meteor-streak { from { transform: translate(0, 0) rotate(-35deg); opacity: 1; } 90% { opacity: 1; } to { transform: translate(-115vw, 85vh) rotate(-35deg); opacity: 0; } }
+@keyframes meteor-flash { 0% { opacity: 0; } 15% { opacity: .95; } 100% { opacity: 0; } }
+@keyframes meteor-shake { 0%, 100% { transform: none; } 20% { transform: translate(-6px, 3px); } 40% { transform: translate(5px, -4px); } 60% { transform: translate(-4px, -2px); } 80% { transform: translate(3px, 4px); } }
+@keyframes meteor-line { from { opacity: 0; } to { opacity: 1; } }

@@ -10,25 +10,43 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index.tsx";
+import type { ComponentType } from "react";
 
-const ProfileSetup = lazy(() => import("./pages/ProfileSetup.tsx"));
-const Door = lazy(() => import("./pages/Door.tsx"));
-const LibraryDoor = lazy(() => import("./pages/LibraryDoor.tsx"));
-const LibraryRoom = lazy(() => import("./pages/LibraryRoom.tsx"));
-const ExchangeDoor = lazy(() => import("./pages/ExchangeDoor.tsx"));
-const ExchangeRoom = lazy(() => import("./pages/ExchangeRoom.tsx"));
-const Maze = lazy(() => import("./pages/Maze.tsx"));
-const ShadowRealm = lazy(() => import("./pages/ShadowRealm.tsx"));
-const Paywall = lazy(() => import("./pages/Paywall.tsx"));
-const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+// If a page file from an older version is gone, reload once to fetch the new one.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function lazyReload<T extends ComponentType<any>>(load: () => Promise<{ default: T }>) {
+  return lazy(() =>
+    load().catch((err) => {
+      const key = "praem.chunkReloadAt";
+      const last = Number(sessionStorage.getItem(key) || 0);
+      if (Date.now() - last > 10_000) {
+        sessionStorage.setItem(key, String(Date.now()));
+        window.location.reload();
+        return new Promise<{ default: T }>(() => {});
+      }
+      throw err;
+    }),
+  );
+}
+
+const ProfileSetup = lazyReload(() => import("./pages/ProfileSetup.tsx"));
+const Door = lazyReload(() => import("./pages/Door.tsx"));
+const LibraryDoor = lazyReload(() => import("./pages/LibraryDoor.tsx"));
+const LibraryRoom = lazyReload(() => import("./pages/LibraryRoom.tsx"));
+const ExchangeDoor = lazyReload(() => import("./pages/ExchangeDoor.tsx"));
+const ExchangeRoom = lazyReload(() => import("./pages/ExchangeRoom.tsx"));
+const Maze = lazyReload(() => import("./pages/Maze.tsx"));
+const ShadowRealm = lazyReload(() => import("./pages/ShadowRealm.tsx"));
+const Paywall = lazyReload(() => import("./pages/Paywall.tsx"));
+const NotFound = lazyReload(() => import("./pages/NotFound.tsx"));
 import Login from "./pages/Login.tsx";
 import Signup from "./pages/Signup.tsx";
-const AvatarPreview = lazy(() => import("./pages/AvatarPreview.tsx"));
-const Intro = lazy(() => import("./pages/Intro.tsx"));
-const DynamicRoom = lazy(() => import("./pages/DynamicRoom.tsx"));
-const TilePreview = lazy(() => import("./pages/TilePreview.tsx"));
-const GardenPreview = lazy(() => import("./pages/GardenPreview.tsx"));
-const WorldTest = lazy(preloadWorld);
+const AvatarPreview = lazyReload(() => import("./pages/AvatarPreview.tsx"));
+const Intro = lazyReload(() => import("./pages/Intro.tsx"));
+const DynamicRoom = lazyReload(() => import("./pages/DynamicRoom.tsx"));
+const TilePreview = lazyReload(() => import("./pages/TilePreview.tsx"));
+const GardenPreview = lazyReload(() => import("./pages/GardenPreview.tsx"));
+const WorldTest = lazyReload(preloadWorld);
 import DevNotepad from '@/components/DevNotepad';
 import SaveFailedNotice from '@/components/SaveFailedNotice';
 

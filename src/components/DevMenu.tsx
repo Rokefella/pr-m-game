@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { devSetFlag, setUiFlag } from '@/lib/serverGame';
 import { METEOR_PLAY, WORLD_RELOAD, clearMeteorPending } from '@/lib/meteor';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { MOVEMENT_DEBUG_EVENT } from '@/components/MovementDebugOverlay';
 import { supabase } from '@/lib/supabase';
 import { _resetQuestFlagCache, getAllFlags } from '@/lib/questFlags';
-import { devSetLevel, devSetFlag } from '@/lib/serverGame';
+import { devSetLevel, devSetFlag, setUiFlag } from '@/lib/serverGame';
 import { notifySaveFailed } from '@/lib/saveNotice';
 import { Z } from '@/lib/zIndex';
 import './game-home.css';

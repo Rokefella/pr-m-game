@@ -338,7 +338,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   }, [refreshCompleted, userId]);
   /** Throw away every cached chunk, the M map and the finds so a changed world (the meteor) shows at once. */
   const reloadWorld = useCallback(() => {
-    for (const cache of [caches.current[0], caches.current[1]]) { cache.chunks.clear(); cache.pending.clear(); cache.errors.clear(); cache.maintain(cache.center); }
+    caches.current[0].reset(); caches.current[1].reset();
     resetWorldOverview(); setFindsTick(n => n + 1);
   }, []);
   const playMeteor = useCallback(() => { if (meteorShown.current) return; meteorShown.current = true; keys.current.clear(); setMeteorOpen(true); }, []);

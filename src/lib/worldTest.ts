@@ -86,6 +86,7 @@ export class WorldChunkCache {
   pending = new Map<string, Promise<void>>();
   errors = new Map<string, number>();
   center: WorldPoint = { x: 25, y: 25 };
+  private generation = 0;
   constructor(private fetchChunk: (x: number, y: number) => Promise<WorldChunk>, public size = WORLD_SIZE) {}
   key(x: number, y: number) { return `${chunkOrigin(x)},${chunkOrigin(y)}`; }
   terrainKey(x: number, y: number): string | undefined {
@@ -104,12 +105,16 @@ export class WorldChunkCache {
     if (this.chunks.has(key)) return;
     const pending = this.pending.get(key); if (pending) return pending;
     if (Date.now() - (this.errors.get(key) ?? 0) < 4000) return;
+    const gen = this.generation;
     const job = this.fetchChunk(x0, y0).then(chunk => {
+      if (gen !== this.generation) return;
       if (Math.abs(x0 - chunkOrigin(this.center.x)) <= 3 * WORLD_CHUNK && Math.abs(y0 - chunkOrigin(this.center.y)) <= 3 * WORLD_CHUNK) this.chunks.set(key, chunk);
       this.errors.delete(key);
-    }).catch(() => { this.errors.set(key, Date.now()); }).finally(() => this.pending.delete(key));
+    }).catch(() => { if (gen === this.generation) this.errors.set(key, Date.now()); }).finally(() => { if (this.pending.get(key) === job) this.pending.delete(key); });
     this.pending.set(key, job); return job;
   }
+  /** Forget every chunk (and ignore in-flight answers) and fetch the current window again. */
+  reset() { this.generation++; this.chunks.clear(); this.pending.clear(); this.errors.clear(); this.maintain(this.center); }
   maintain(point: WorldPoint) {
     this.center = point;
     for (const [key, chunk] of this.chunks) if (Math.abs(chunk.x0 - chunkOrigin(point.x)) > 3 * WORLD_CHUNK || Math.abs(chunk.y0 - chunkOrigin(point.y)) > 3 * WORLD_CHUNK) this.chunks.delete(key);

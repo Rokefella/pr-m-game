@@ -26,6 +26,10 @@ import SuppliesCard from '@/components/SuppliesCard';
 import { MERCHANT_LINES, merchantItems } from '@/lib/merchantItems';
 import { bindWorldStepFlush, HEAVY_LEGS, stepWalkDuration, WorldSteps } from '@/lib/worldSteps';
 import DevMenu from '@/components/DevMenu';
+import MeteorFall from '@/components/MeteorFall';
+import { METEOR_PLAY, WORLD_RELOAD, clearMeteorPending, meteorPending, shouldPlayMeteor } from '@/lib/meteor';
+import { resetWorldOverview, setWorldOverviewOwner } from '@/lib/worldOverview';
+import { setUiFlag } from '@/lib/serverGame';
 import LevelUpCard, { TITLES_BY_LEVEL } from '@/components/LevelUpCard';
 import { firstTitlePatch, levelupTitle, titlesUnlocked } from '@/lib/playerTitles';
 import { applyLevelup, setTitle } from '@/lib/serverGame';
@@ -97,6 +101,11 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const [suppliesOpen, setSuppliesOpen] = useState(false);
   const [devOpen, setDevOpen] = useState(false);
   const [arrival, setArrival] = useState<{ newLevel: number; title: string; titleUnlocked: boolean } | null>(null);
+  const [arrivalSettled, setArrivalSettled] = useState(false);
+  const [meteorOpen, setMeteorOpen] = useState(false);
+  const meteorShown = useRef(false);
+  const [findsTick, setFindsTick] = useState(0);
+  if (userId) setWorldOverviewOwner(userId);
   const [dailyMessage, setDailyMessage] = useState<string | null>(null);
   const [heavyMessage, setHeavyMessage] = useState(false);
   const [stepBalance, setStepBalance] = useState(initialIdentity.steps_remaining ?? 0);
@@ -240,10 +249,10 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     let off = false;
     void loadFinds(userId).then(r => { if (off) return; findsRef.current = r.finds; setFinds(r.finds); claimedRef.current = r.claimed; setClaimed(r.claimed); }).catch(() => undefined);
     return () => { off = true; };
-  }, [userId]);
+  }, [userId, findsTick]);
   const markClaimed = useCallback((id: string) => { const next = new Set(claimedRef.current); next.add(id); claimedRef.current = next; setClaimed(next); }, []);
   const blocked = useRef(false);
-  blocked.current = suppliesOpen || profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || Boolean(placeCard) || Boolean(findCard);
+  blocked.current = meteorOpen || suppliesOpen || profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || Boolean(placeCard) || Boolean(findCard);
   convoOpen.current = !npcCardOpen && !suppliesOpen && !profileOpen && !devOpen && !arrival && !jumpOpen && !mapOpen && (Boolean(findCard) || Boolean(placeCard && (isWorldConversation(placeCard) || isSignpost(placeCard))));
   const [busy, setBusy] = useState(false);
   const flight = useRef(false);
@@ -327,6 +336,29 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     if (userId) await refreshDrops(userId);
     setSamTick(n => n + 1);
   }, [refreshCompleted, userId]);
+  /** Throw away every cached chunk, the M map and the finds so a changed world (the meteor) shows at once. */
+  const reloadWorld = useCallback(() => {
+    for (const cache of [caches.current[0], caches.current[1]]) { cache.chunks.clear(); cache.pending.clear(); cache.errors.clear(); cache.maintain(cache.center); }
+    resetWorldOverview(); setFindsTick(n => n + 1);
+  }, []);
+  const playMeteor = useCallback(() => { if (meteorShown.current) return; meteorShown.current = true; keys.current.clear(); setMeteorOpen(true); }, []);
+  useEffect(() => {
+    if (!userId || !arrivalSettled || arrival || meteorOpen) return;
+    if (shouldPlayMeteor(flags, meteorPending(userId))) playMeteor();
+  }, [userId, arrivalSettled, arrival, meteorOpen, flags, playMeteor]);
+  useEffect(() => {
+    const play = () => { meteorShown.current = false; playMeteor(); };
+    window.addEventListener(METEOR_PLAY, play); window.addEventListener(WORLD_RELOAD, reloadWorld);
+    return () => { window.removeEventListener(METEOR_PLAY, play); window.removeEventListener(WORLD_RELOAD, reloadWorld); };
+  }, [playMeteor, reloadWorld]);
+  const finishMeteor = useCallback(() => {
+    setMeteorOpen(false);
+    if (!userId) return;
+    clearMeteorPending(userId);
+    setFlags(f => ({ ...f, ui_meteor_seen: '1' }));
+    reloadWorld();
+    void setUiFlag('ui_meteor_seen', '1').catch(() => undefined);
+  }, [userId, reloadWorld]);
   useEffect(() => {
     if (!userId) return;
     let cancelled = false;
@@ -352,8 +384,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       if (row.levelup_pending && newLevel >= 2) {
         const titleUnlocked = titlesUnlocked({ sam_stage: getFlag('sam_stage') ?? '0' });
         const title = titleUnlocked ? TITLES_BY_LEVEL[newLevel] || row.title || '' : row.title || '';
-        arrivalTimer = setTimeout(() => { if (!cancelled) { keys.current.clear(); setArrival({ newLevel, title, titleUnlocked }); } }, 2000);
-      }
+        arrivalTimer = setTimeout(() => { if (!cancelled) { keys.current.clear(); setArrival({ newLevel, title, titleUnlocked }); setArrivalSettled(true); } }, 2000);
+      } else setArrivalSettled(true);
     })();
     return () => { cancelled = true; if (arrivalTimer) clearTimeout(arrivalTimer); };
   }, [userId, refreshCompleted]);
@@ -624,9 +656,10 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       if (!result.ok) throw new Error(result.reason ?? 'apply_levelup refused');
       setArrival(null); await refreshCompleted();
     }} />}
+    {meteorOpen && <MeteorFall reduced={reduced} onDone={finishMeteor} />}
     {heavyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[25%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{HEAVY_LEGS}</p>}
     {dailyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[18%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{dailyMessage}</p>}
-    <Thumbstick onMove={move} disabled={suppliesOpen || profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || npcCardOpen || (Boolean(placeCard) && !(placeCard && (isWorldConversation(placeCard) || isSignpost(placeCard))))} />
+    <Thumbstick onMove={move} disabled={meteorOpen || suppliesOpen || profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || npcCardOpen || (Boolean(placeCard) && !(placeCard && (isWorldConversation(placeCard) || isSignpost(placeCard))))} />
     {mapOpen && <WorldMap bits={discoveryBits} player={pos} layer={layer} aura={identity.aura_color} dev={identity.registration_number === 1} registrationNumber={identity.registration_number} samStage={samStage} allPlaces={dev ? rawWorld.current?.places : undefined} types={data.terrain} places={data.places} finds={finds} claimed={claimed} players={visitors} target={revealTarget && !finds.some(f => f.x === revealTarget.x && f.y === revealTarget.y && claimed.has(f.id)) ? revealTarget : null} onClose={() => setMapOpen(false)} />}
     {findCard && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={findCard.find.title}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close" onClick={() => setFindCard(null)}><X size={18} /></Button>{litFire(findCard.find, claimed.has(findCard.find.id)) ? <FireRestCard key={findCard.find.id} findKey={findCard.find.find_key} beforeRest={async () => { await stepLedger.current?.flush(); }} onSteps={steps => { stepLedger.current?.refresh(steps); identityRef.current = { ...identityRef.current, steps_remaining: steps }; setIdentity(row => ({ ...row, steps_remaining: steps })); }} /> : <FindCard key={findCard.find.id + String(findCard.reading)} find={findCard.find} reading={findCard.reading} at={() => posRef.current} onClaimed={markClaimed} onRewarded={() => void refreshReward()} onClose={() => setFindCard(null)} auraColor={identity.aura_color} orbDye={identity.orb_dye ?? null} registrationNumber={identity.registration_number} />}</section></div>}
     {jumpOpen && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog" role="dialog" aria-label="Jump to a place"><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close jump menu" onClick={() => setJumpOpen(false)}><X size={18} /></Button><h2 className="font-cinzel">JUMP</h2><form onSubmit={e => { e.preventDefault(); const x = Number(jumpX), y = Number(jumpY); if (Number.isFinite(x) && Number.isFinite(y)) place({ x, y }, layer); }}><label className="font-mono">X<Input aria-label="Jump X" type="number" min={0} max={layerSize(layer) - 1} value={jumpX} onChange={e => setJumpX(e.target.value)} required /></label><label className="font-mono">Y<Input aria-label="Jump Y" type="number" min={0} max={layerSize(layer) - 1} value={jumpY} onChange={e => setJumpY(e.target.value)} required /></label><Button type="submit" className="world-jump">GO</Button></form><Button variant="outline" className="world-jump" onClick={() => place(startPoint(data), 0)}>RESTART AT START</Button>{jumpGroups.map(({ l, kind, items }) => <div key={`${l}-${kind}`} className="world-place-group"><h3 className="font-mono">{l === 1 ? 'UNDERGROUND · ' : 'SURFACE · '}{kind.replace(/_/g, ' ').toUpperCase()}</h3>{items.map((p, i) => <Button key={`${p.name}-${i}`} variant="ghost" onClick={() => place(p, l)}>{p.name}{p.maze_level ? ` · L${p.maze_level}` : ''}<span className="font-mono">{p.x},{p.y}</span></Button>)}</div>)}</section></div>}

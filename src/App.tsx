@@ -10,6 +10,24 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/context/AuthContext";
 import Index from "./pages/Index.tsx";
+import type { ComponentType } from "react";
+
+// If a page file from an older version is gone, reload once to fetch the new one.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function lazyReload<T extends ComponentType<any>>(load: () => Promise<{ default: T }>) {
+  return lazy(() =>
+    load().catch((err) => {
+      const key = "praem.chunkReloadAt";
+      const last = Number(sessionStorage.getItem(key) || 0);
+      if (Date.now() - last > 10_000) {
+        sessionStorage.setItem(key, String(Date.now()));
+        window.location.reload();
+        return new Promise<{ default: T }>(() => {});
+      }
+      throw err;
+    }),
+  );
+}
 
 const ProfileSetup = lazyReload(() => import("./pages/ProfileSetup.tsx"));
 const Door = lazyReload(() => import("./pages/Door.tsx"));

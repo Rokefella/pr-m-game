@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { devSetFlag, setUiFlag } from '@/lib/serverGame';
+import { METEOR_PLAY, WORLD_RELOAD, clearMeteorPending } from '@/lib/meteor';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { MOVEMENT_DEBUG_EVENT } from '@/components/MovementDebugOverlay';
@@ -26,6 +28,17 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
   const [fullResetArmed, setFullResetArmed] = useState(false);
   const [startArmed, setStartArmed] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [meteorBusy, setMeteorBusy] = useState(false);
+  const meteorDev = async (fall: boolean) => {
+    if (meteorBusy || !userId) return;
+    setMeteorBusy(true);
+    try {
+      await devSetFlag('meteor', fall ? 'fallen' : '0');
+      if (fall) await setUiFlag('ui_meteor_seen', '0'); else clearMeteorPending(userId);
+      onClose();
+      window.dispatchEvent(new Event(fall ? METEOR_PLAY : WORLD_RELOAD));
+    } catch { /* failed saves already raise the in-world notice */ } finally { setMeteorBusy(false); }
+  };
   const startFlight = useRef(false);
   const devFlight = useRef(false);
   const [noteButtons, setNoteButtons] = useState(noteButtonsOn);
@@ -102,6 +115,8 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
             <Button variant="outline" onClick={() => { onClose(); window.dispatchEvent(new Event(NOTE_OPEN)); }}>NOTES</Button>
             <Button variant="outline" role="switch" aria-checked={noteButtons} onClick={() => setNoteButtons(toggleNoteButtons())}>NOTE BUTTONS {noteButtons ? 'ON' : 'OFF'}</Button>
             <Button variant="outline" onClick={() => setStartArmed(true)}>GO BACK TO START</Button>
+            <Button variant="outline" disabled={meteorBusy || !userId} onClick={() => void meteorDev(true)}>LET THE METEOR FALL</Button>
+            <Button variant="outline" disabled={meteorBusy || !userId} onClick={() => void meteorDev(false)}>UNDO THE METEOR</Button>
             {startArmed && <section role="alertdialog" aria-label="Go back to start" className="max-w-[320px] text-foreground"><p className="font-fell leading-relaxed">{START_CONFIRMATION}</p><div className="flex gap-2 mt-3"><Button variant="outline" disabled={starting} onClick={() => void handleDevReset()}>{starting ? '…' : 'CONFIRM'}</Button><Button variant="ghost" disabled={starting} onClick={() => setStartArmed(false)}>CANCEL</Button></div></section>}
             <Button variant="ghost" type="button" onClick={async () => {
               if (devFlight.current) return;

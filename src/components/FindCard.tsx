@@ -1,3 +1,4 @@
+import { PATHS_REFRESH } from '@/hooks/usePaths';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -37,7 +38,7 @@ export default function FindCard({ find, reading, at, onClaimed, onRewarded, onC
     try {
       const r = await claimFind(find.id, at());
       if (r.granted) {
-        onClaimed(find.id); onRewarded?.();
+        onClaimed(find.id); onRewarded?.(); window.dispatchEvent(new Event(PATHS_REFRESH));
         if (skin) { setSkinFound({ description: r.text ?? find.text ?? null }); return; }
         setText(r.text || await findWords(find)); setReceipt(findReceipt({ ...r, kind: r.kind ?? find.kind }));
       }

@@ -1,3 +1,4 @@
+import PathBanner from '@/components/PathBanner';
 import { Z } from '@/lib/zIndex';
 import { useNpcQuestStates } from '@/hooks/useNpcQuestStates';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
@@ -924,6 +925,7 @@ const DynamicRoom = () => {
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: ROOM_BG, overflow: 'hidden' }}>
+      <PathBanner userId={user?.id} />
       <style>{`
         @keyframes playerPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
         @keyframes roomPulse { 0%, 100% { opacity: 0.35; } 50% { opacity: 0.9; } }

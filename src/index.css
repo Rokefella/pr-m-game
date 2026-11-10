@@ -569,3 +569,27 @@ body:has([data-profile-open="true"]) :is([data-game-world], .ghost-position, .ec
   background: hsl(var(--background) / 0.92); color: hsl(var(--foreground));
   border: 1px solid var(--plate-gold, #c8943a); font-size: 15px; text-align: center;
 }
+
+/* Paths: start banner, step flash and NPC arrows */
+:root { --path-purple: #AFA9EC; --path-purple-bar: #7F77DD; --path-teal: #5DCAA5; --path-teal-bar: #1D9E75; --path-gold: #FAC775; --path-gold-bar: #EF9F27; --path-line: #d9d4e6; --path-band: rgba(4, 4, 10, .72); }
+.path-purple { --path-c: var(--path-purple); --path-bar: var(--path-purple-bar); }
+.path-teal { --path-c: var(--path-teal); --path-bar: var(--path-teal-bar); }
+.path-gold { --path-c: var(--path-gold); --path-bar: var(--path-gold-bar); }
+.path-banner { position: fixed; left: 0; right: 0; top: 50%; transform: translateY(-50%); z-index: 60; background: var(--path-band); padding: 18px 16px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; animation: pathIn 400ms ease-out both; cursor: pointer; }
+.path-banner.path-leaving { animation: pathOut 600ms ease-in both; }
+.path-banner p { margin: 0; }
+.path-label { font-size: 10px; letter-spacing: .35em; color: var(--path-c); }
+.path-name { font-size: 30px; line-height: 1.1; color: var(--path-c); }
+.path-name-small { font-size: 15px; }
+.path-line { font-style: italic; max-width: 28ch; font-size: 16px; color: var(--path-line); }
+.path-progress { color: var(--path-c); font-style: normal; }
+.path-bar { width: min(240px, 60vw); height: 2px; background: color-mix(in srgb, var(--path-bar) 25%, transparent); margin-top: 6px; }
+.path-bar span { display: block; height: 100%; background: var(--path-bar); transform-origin: left; animation: pathBar linear both; }
+@keyframes pathIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pathOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes pathBar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+.npc-path-arrow.path-purple { color: var(--path-purple); } .npc-path-arrow.path-teal { color: var(--path-teal); } .npc-path-arrow.path-gold { color: var(--path-gold); }
+.npc-path-available { animation: npcQuestBob 1.6s ease-in-out infinite; }
+.npc-path-ready { animation: npcPathPulse 1.2s ease-in-out infinite; }
+@keyframes npcPathPulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
+@media (prefers-reduced-motion: reduce) { .npc-path-available, .npc-path-ready { animation: none; } .path-banner, .path-banner.path-leaving { animation-duration: 1ms; } }

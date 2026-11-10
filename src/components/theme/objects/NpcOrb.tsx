@@ -5,6 +5,17 @@ import OrbLabels from '@/components/OrbLabels';
 import { useNpcDisplayName } from '@/hooks/useNpcQuestStates';
 import { npcColors, npcSkin, useSkins, type Facing, type WalkPhase } from '@/lib/skins';
 import { NpcSkinSprite } from '@/components/SkinSprite';
+import { usePathsSnapshot } from '@/hooks/usePaths';
+import { npcArrow, type NpcArrow } from '@/lib/paths';
+
+const ARROW = 'M3 0H7V4H10V5H9V6H8V7H7V8H6V9H4V8H3V7H2V6H1V5H0V4H3Z';
+/** One downward pixel arrow: solid+bob (available), outline (active), solid+pulse (ready). */
+function PathArrow({ arrow }: { arrow: NonNullable<NpcArrow> }) {
+  const hollow = arrow.state === 'active';
+  return <g className={`npc-path-arrow path-${arrow.colour} npc-path-${arrow.state}`} data-arrow={arrow.state}>
+    <path d={ARROW} fill={hollow ? 'none' : 'currentColor'} stroke={hollow ? 'currentColor' : 'none'} strokeWidth={hollow ? 1 : 0} strokeLinejoin="miter" />
+  </g>;
+}
 
 const SYMBOLS = {
   bernard: 'M1 0h3v1h-3zM0 1h5v3h-5zM2 4h1v1h-1z',
@@ -38,6 +49,7 @@ export default memo(function NpcOrb({ npc, name, size = 29, quest = 'none', faci
   const c = (i: number) => `var(--npc-${identity}-${i})`;
   const lit = quest === 'available' || quest === 'ready';
   const skin = npcSkin(npc) ?? npcSkin(identity);
+  const arrow = npcArrow(quest, npc || identity, usePathsSnapshot());
   if (skin) {
     const height = Math.round(size * 14 / 16);
     return <span ref={box} className={`npc-orb npc-quest-${quest}`} data-npc={identity} data-quest={quest} aria-hidden="true" style={{ position: 'relative', display: 'inline-block', width: size, height }}>
@@ -45,12 +57,7 @@ export default memo(function NpcOrb({ npc, name, size = 29, quest = 'none', faci
         <ellipse className={`npc-orb-halo${lit ? ' npc-quest-halo' : ''}`} cx={size / 2} cy={3} rx={size * 0.52} ry={Math.max(2, size * 0.14)} fill={lit ? 'var(--npc-quest-light)' : c(1)} fillOpacity={lit ? '.3' : '.14'} stroke={lit ? 'var(--npc-quest-light)' : c(1)} strokeOpacity={lit ? '.95' : '.6'} strokeWidth={lit ? 2 : 1} />
       </svg>
       <NpcSkinSprite skin={skin} facing={facing} phase={phase} size={size} colors={npcColors(skin)} />
-      {lit && <svg width="22" height="22" viewBox="0 0 22 22" style={{ position: 'absolute', left: size / 2 - 11, top: -Math.round(size * 0.55) }} shapeRendering="crispEdges"><g className="npc-quest-marker">
-        <path d="M11 0L22 11L11 22L0 11Z" fill="var(--npc-quest-plate)" stroke="var(--npc-quest-outline)" strokeWidth="2" />
-        <path d="M11 4L18 11L11 18L4 11Z" fill="var(--npc-quest-light)" />
-        <path d={quest === 'ready' ? 'M8 6H14V8H16V12H12V14H10V11H13V8H10V10H8ZM10 16H12V18H10Z' : 'M10 5H12V13H10ZM10 15H12V17H10Z'} fill="var(--npc-quest-ink)" />
-      </g></svg>}
-      {quest === 'active' && <svg width="20" height="3" style={{ position: 'absolute', left: size / 2 - 10, top: -9 }} shapeRendering="crispEdges"><g fill="var(--plate-label)"><rect x="0" y="0" width="3" height="3" /><rect x="7" y="0" width="3" height="3" /><rect x="14" y="0" width="3" height="3" /></g></svg>}
+      {arrow && <svg width="20" height="18" viewBox="0 0 10 9" style={{ position: 'absolute', left: size / 2 - 10, top: -Math.round(size * 0.55), overflow: 'visible' }} shapeRendering="crispEdges"><PathArrow arrow={arrow} /></svg>}
       <OrbLabels name={name ?? displayName} size={size} kind="npc" target={() => box.current} />
     </span>;
   }
@@ -66,11 +73,6 @@ export default memo(function NpcOrb({ npc, name, size = 29, quest = 'none', faci
       <rect x="9" y="9" width="3" height="3" fill="var(--npc-specular)" />
     </g>
     {identity !== 'unknown' && <g transform="translate(22,4)"><g className="npc-orb-symbol"><path transform="scale(3)" d={SYMBOLS[identity]} fill={c(3)} /></g></g>}
-    {lit && <g transform="translate(19,-24)"><g className="npc-quest-marker">
-      <path d="M11 0L22 11L11 22L0 11Z" fill="var(--npc-quest-plate)" stroke="var(--npc-quest-outline)" strokeWidth="2" />
-      <path d="M11 4L18 11L11 18L4 11Z" fill="var(--npc-quest-light)" />
-      <path d={quest === 'ready' ? 'M8 6H14V8H16V12H12V14H10V11H13V8H10V10H8ZM10 16H12V18H10Z' : 'M10 5H12V13H10ZM10 15H12V17H10Z'} fill="var(--npc-quest-ink)" />
-    </g></g>}
-    {quest === 'active' && <g fill="var(--plate-label)"><rect x="22" y="-9" width="3" height="3" /><rect x="29" y="-9" width="3" height="3" /><rect x="36" y="-9" width="3" height="3" /></g>}
+    {arrow && <g transform="translate(20,-20) scale(2)"><PathArrow arrow={arrow} /></g>}
   </svg><OrbLabels name={name ?? displayName} size={size} kind="npc" target={() => svg.current} /></>;
 });

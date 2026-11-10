@@ -1,6 +1,7 @@
 import { flagNumber } from '@/lib/flagValues';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { NPC_DIALOGUE_CLOSED } from '@/hooks/useNpcQuestStates';
 import NpcPortrait from '@/components/NpcPortrait';
 import { SAM_KEYS, currentStage, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samFlags, cardTopics, topicRoot, entryVisible, type BookNode, type SamStage } from '@/lib/worldSam';
 
@@ -8,6 +9,7 @@ export const NOTE_ERROR = 'That didn\'t work. Try again in a moment.';
 
 type Props = { userId: string; npcKey: string; playerName: string; fallbackName: string; onRewarded?: () => void | Promise<void> };
 export default function SamCard({ userId, npcKey, playerName, fallbackName, onRewarded }: Props) {
+  useEffect(() => () => { window.dispatchEvent(new Event(NPC_DIALOGUE_CLOSED)); }, []);
   const [sam, setSam] = useState<Awaited<ReturnType<typeof loadSam>>>(null);
   const [stage, setStage] = useState<SamStage | null>(null);
   const [checked, setChecked] = useState(false);

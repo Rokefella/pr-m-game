@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { flagNumber } from '@/lib/flagValues';
 import { notifySaveFailed } from '@/lib/saveNotice';
 import { createPortal } from 'react-dom';
 import { Z } from '@/lib/zIndex';
@@ -8,7 +7,8 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { spendGrowthPoint, renamePlayer, buyFolderSlot, setTitle } from '@/lib/serverGame';
 import { getFlag } from '@/lib/questFlags';
-import { samLandLine, sevenFiresLine } from '@/lib/worldSam';
+import { usePaths } from '@/hooks/usePaths';
+import { pathLegacyEntries, progressText } from '@/lib/paths';
 import { BETA_MODE } from '@/lib/config';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
@@ -129,8 +129,6 @@ const ProfileOverlay = ({
   const [dropSlotMsg, setDropSlotMsg] = useState('');
   const [buyingSlot, setBuyingSlot] = useState(false);
   const slotFlight = useRef(false);
-  const [questTab, setQuestTab] = useState<'active' | 'completed'>('active');
-  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
 
   // Account tab state
   const [accountRow, setAccountRow] = useState<AccountUserRow | null>(null);
@@ -185,7 +183,6 @@ const ProfileOverlay = ({
   // Reset expanded groups whenever the overlay closes
   useEffect(() => {
     if (!isOpen) {
-      setOpenGroups(new Set());
       setEmailForm(false); setEmailMsg('');
       setPasswordMsg('');
       setNameForm(false); setNewName(''); setNameStep('input'); setNameMsg('');
@@ -293,7 +290,6 @@ const ProfileOverlay = ({
       ? `${runProgress.collected}/${runProgress.required}`
       : `${fragmentCount}`;
 
-  const samStage = Math.trunc(flagNumber({ v: getFlag('sam_stage') }, 'v'));
   const alexandraActive = getFlag('alexandra_quest') === 'active';
   const subscribed = BETA_MODE || (accountRow ? ['active','lifetime','dev','beta'].includes(accountRow.subscription_status) : false);
   const subType = accountRow?.subscription_tier ?? '';
@@ -320,18 +316,10 @@ const ProfileOverlay = ({
     }
   })();
 
-  type Quest = { key: string; name: string; giver: string; status: string; gold?: boolean };
-
-  const activeQuests: Quest[] = [];
-  if (alexandraActive) activeQuests.push({ key: 'a-alexandra', name: 'The One Who Was Here Before', giver: 'Sam', status: 'Someone was here before. Follow it far enough and you will find them.', gold: true });
-  activeQuests.push({ key: 'a-sam-land', name: "Sam's land", giver: 'Sam', status: samLandLine(samStage) });
-
-  const completedQuests: Quest[] = [];
-  const sevenFires = getFlag('seven_fires');
-  if (sevenFires === 'active' || sevenFires === 'done') {
-    const quest = { key: 'seven-fires', name: 'Seven fires', giver: 'Sam', status: sevenFiresLine({ seven_fires: sevenFires, fires_lit: getFlag('fires_lit') ?? '0' }) };
-    (sevenFires === 'done' ? completedQuests : activeQuests).push(quest);
-  }
+  const paths = usePaths(user?.id);
+  const activePaths = paths.filter(p => p.state === 'active');
+  const finishedPaths = paths.filter(p => p.state === 'done');
+  const legacyPaths = pathLegacyEntries(paths, { alexandraActive });
 
   const cardStyle: React.CSSProperties = {
     position: 'relative',
@@ -344,9 +332,6 @@ const ProfileOverlay = ({
 
   const questNameStyle: React.CSSProperties = {
     margin: 0, fontSize: 13, color: 'var(--auth-text)', letterSpacing: '0.12em',
-  };
-  const giverStyle: React.CSSProperties = {
-    margin: '2px 0 0', fontSize: 12, color: 'var(--plate-label)',
   };
   const statusStyle: React.CSSProperties = {
     margin: '4px 0 0', fontSize: 13, color: 'var(--auth-text)',
@@ -482,7 +467,7 @@ const ProfileOverlay = ({
             <Button variant="ghost" className="profile-close" aria-label="Close profile" onClick={onClose}><X /></Button>
           </header>
           <nav className="profile-tabs" aria-label="Profile tabs">
-            {(['profile', 'growth', 'quests', 'folder', 'account'] as const).map(t => <Button key={t} variant="ghost" className={`font-mono profile-tab ${mainTab === t ? 'profile-tab-active' : ''}`} aria-pressed={mainTab === t} onClick={() => setMainTab(t)}>{t.toUpperCase()}</Button>)}
+            {(['profile', 'growth', 'quests', 'folder', 'account'] as const).map(t => <Button key={t} variant="ghost" className={`font-mono profile-tab ${mainTab === t ? 'profile-tab-active' : ''}`} aria-pressed={mainTab === t} onClick={() => setMainTab(t)}>{t === 'quests' ? 'PATHS' : t.toUpperCase()}</Button>)}
           </nav>
         {/* PROFILE content */}
         {mainTab === 'profile' && (
@@ -624,179 +609,30 @@ const ProfileOverlay = ({
           </div>
         )}
 
-        {/* QUESTS content */}
+        {/* PATHS content */}
         {mainTab === 'quests' && (
           <div style={{ marginTop: 16 }}>
-            {/* Sub-tabs */}
-            <div style={{ display: 'flex', gap: 4, borderBottom: '0.5px solid var(--plate-edge)' }}>
-              {(['active', 'completed'] as const).map((t) => {
-                const active = questTab === t;
-                return (
-                  <Button variant="ghost"
-                    key={t}
-                    type="button"
-                    onClick={() => setQuestTab(t)}
-                    className="font-cinzel"
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      borderBottom: active ? '1px solid var(--plate-voice)' : '1px solid transparent',
-                      padding: '6px 16px',
-                      fontSize: 11,
-                      letterSpacing: '0.2em',
-                      color: active ? 'var(--auth-text)' : 'var(--plate-label)',
-                      cursor: 'pointer',
-                      marginBottom: -1,
-                    }}
-                  >
-                    {t.toUpperCase()}
-                  </Button>
-                );
-              })}
-            </div>
-
-            <div style={{ marginTop: 16 }}>
-              {(() => {
-                const list = questTab === 'active' ? activeQuests : completedQuests;
-                const alexandra = questTab === 'active'
-                  ? list.find((q) => q.gold)
-                  : undefined;
-                const rest = list.filter((q) => !q.gold);
-
-                const groups = new Map<string, Quest[]>();
-                rest.forEach((q) => {
-                  const arr = groups.get(q.giver) ?? [];
-                  arr.push(q);
-                  groups.set(q.giver, arr);
-                });
-                const groupNames = Array.from(groups.keys());
-
-                const toggleGroup = (name: string) => {
-                  setOpenGroups((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(name)) next.delete(name);
-                    else next.add(name);
-                    return next;
-                  });
-                };
-
-                const renderQuestCard = (q: Quest, completed: boolean) => (
-                  <div
-                    key={q.key}
-                    style={{ ...cardStyle, marginLeft: 12, ...(completed ? { opacity: 0.5 } : {}) }}
-                  >
-                    {completed ? (
-                      <span
-                        className="font-cinzel"
-                        style={{ position: 'absolute', top: 8, right: 12, color: 'var(--plate-gold)', fontSize: 14 }}
-                      >
-                        ✓
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          position: 'absolute', top: 12, right: 12,
-                          width: 6, height: 6, borderRadius: 0,
-                          background: 'var(--plate-voice)',
-                          boxShadow: '0 0 6px var(--plate-voice)',
-                        }}
-                      />
-                    )}
-                    <p className="font-cinzel" style={questNameStyle}>{q.name.toUpperCase()}</p>
-                    <p className="font-fell italic" style={giverStyle}>Given by {q.giver}</p>
-                    <p className="font-fell italic" style={statusStyle}>{q.status}</p>
-                  </div>
-                );
-
-                return (
-                  <>
-                    {alexandra && (
-                      <div
-                        style={{
-                          ...cardStyle,
-                          background: 'var(--plate-edge)',
-                          border: '0.5px solid var(--plate-edge)',
-                          marginBottom: 16,
-                        }}
-                      >
-                        <p
-                          className="font-cinzel"
-                          style={{ margin: 0, fontSize: 11, letterSpacing: '0.2em', color: 'var(--plate-gold)' }}
-                        >
-                          PRIMARY QUEST
-                        </p>
-                        <p
-                          className="font-cinzel"
-                          style={{ ...questNameStyle, color: 'var(--plate-gold)', marginTop: 4 }}
-                        >
-                          {alexandra.name.toUpperCase()}
-                        </p>
-                        <p
-                          className="font-fell italic"
-                          style={{ ...giverStyle, color: 'var(--plate-label)' }}
-                        >
-                          Given by {alexandra.giver}
-                        </p>
-                        <p className="font-fell italic" style={statusStyle}>{alexandra.status}</p>
-                      </div>
-                    )}
-
-                    {groupNames.length === 0 ? (
-                      <p
-                        className="font-fell italic"
-                        style={{ textAlign: 'center', fontSize: 13, color: 'var(--plate-label)', margin: '24px 0' }}
-                      >
-                        {questTab === 'active' ? 'No other active quests.' : 'Nothing completed yet.'}
-                      </p>
-                    ) : (
-                      groupNames.map((name) => {
-                        const expanded = openGroups.has(name);
-                        const items = groups.get(name) ?? [];
-                        return (
-                          <div key={name} style={{ marginBottom: 10 }}>
-                            <Button variant="ghost"
-                              type="button"
-                              onClick={() => toggleGroup(name)}
-                              style={{
-                                width: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                background: 'var(--plate-inset)',
-                                border: '0.5px solid var(--plate-edge)',
-                                borderRadius: 0,
-                                padding: '10px 14px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <span
-                                className="font-cinzel"
-                                style={{ fontSize: 12, letterSpacing: '0.15em', color: 'var(--auth-text)' }}
-                              >
-                                {name.toUpperCase()}
-                              </span>
-                              <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <span className="font-mono" style={{ fontSize: 11, color: 'var(--plate-label)' }}>
-                                  {items.length} quest{items.length === 1 ? '' : 's'}
-                                </span>
-                                <span style={{ fontSize: 11, color: 'var(--plate-label)' }}>
-                                  {expanded ? '▲' : '▼'}
-                                </span>
-                              </span>
-                            </Button>
-                            {expanded && (
-                              <div style={{ marginTop: 8 }}>
-                                {items.map((q) => renderQuestCard(q, questTab === 'completed'))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })
-                    )}
-                  </>
-                );
-              })()}
-            </div>
+            {activePaths.length === 0 && legacyPaths.length === 0 && finishedPaths.length === 0 && (
+              <p className="font-fell italic" style={{ textAlign: 'center', fontSize: 13, color: 'var(--plate-label)', margin: '24px 0' }}>No paths yet.</p>
+            )}
+            {activePaths.map(p => (
+              <div key={p.quest_key} className={`path-${p.colour}`} style={cardStyle}>
+                <span style={{ position: 'absolute', top: 14, left: 14, width: 6, height: 6, background: 'var(--path-c)', boxShadow: '0 0 6px var(--path-c)' }} />
+                <p className="font-fell" style={{ ...questNameStyle, paddingLeft: 14, color: 'var(--path-c)', fontSize: 15, letterSpacing: 0 }}>{p.name}</p>
+                {p.line && <p className="font-fell italic" style={{ ...statusStyle, paddingLeft: 14 }}>{p.line}{p.progress && <span style={{ color: 'var(--path-c)', fontStyle: 'normal' }}> {progressText(p.progress)}</span>}</p>}
+              </div>
+            ))}
+            {legacyPaths.map(p => (
+              <div key={p.key} className="path-gold" style={cardStyle}>
+                <span style={{ position: 'absolute', top: 14, left: 14, width: 6, height: 6, background: 'var(--path-c)', boxShadow: '0 0 6px var(--path-c)' }} />
+                <p className="font-fell" style={{ ...questNameStyle, paddingLeft: 14, color: 'var(--path-c)', fontSize: 15, letterSpacing: 0 }}>{p.name}</p>
+                <p className="font-fell italic" style={{ ...statusStyle, paddingLeft: 14 }}>{p.line}</p>
+              </div>
+            ))}
+            {finishedPaths.length > 0 && <>
+              <p className="font-mono" style={{ margin: '18px 0 8px', fontSize: 10, letterSpacing: '0.3em', color: 'var(--plate-label)' }}>BEHIND YOU</p>
+              {finishedPaths.map(p => <p key={p.quest_key} className="font-fell" style={{ margin: '0 0 6px', fontSize: 14, color: 'var(--plate-label)', opacity: 0.6 }}>{p.name}</p>)}
+            </>}
           </div>
         )}
 

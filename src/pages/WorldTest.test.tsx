@@ -68,7 +68,7 @@ describe('world sandbox access and read-only movement', () => {
     await screen.findByText('300,31 · A 6,0 · Fire');
     expect(screen.queryByRole('dialog', { name: 'Cinder Hollow' })).toBeNull();
     expect(f.mutation).not.toHaveBeenCalled();
-    expect(f.rpc.mock.calls.every(([name]) => name === 'world_window' || name === 'claim_daily_steps')).toBe(true);
+    expect(f.rpc.mock.calls.every(([name]) => name === 'world_window' || name === 'claim_daily_steps' || name === 'my_paths')).toBe(true);
   });
 });
 describe('World home mechanics', () => {

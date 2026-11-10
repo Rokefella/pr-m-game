@@ -4,6 +4,8 @@
 - [ ] Step B live fragment pickup → Shadow bank, Folder slot, growth point and dev level walkthrough — external game session unavailable; /world redirects to /login, managed auth has no mintable users. No sample account created.
 # Roadmap
 
+- [x] NPC talk paging/decline and hidden topics; world banners wait for walking; start spots never interact; all 676 tests pass. Live conversation check unavailable: preview redirects to login.
+
 - [x] Audit quick wins: lazy pages, tap locks, failed-save line, flag helper, server-dated garden door, hidden-page pauses; 612 tests pass, /world and maze 1 walked.
 
 - [x] Era-specific maze veil/door/Instrument art, accent pulses, blue arch and legacy fallback; 595 tests pass. Real Fire maze 1/2 terrain and decoded sprites inspected read-only; maze 2 currently has no authored Instrument point. No database changes.

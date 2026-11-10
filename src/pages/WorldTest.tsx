@@ -175,7 +175,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const buildingSignature = useRef('');
   const buildingEls = useRef(new Map<string, HTMLCanvasElement>());
   const markerCanvas = useRef<HTMLCanvasElement>(null);
-  const currentPlaces = (list: Place[]) => list.map(p => { const pose = npcPoses.current.get(npcId(p)); return pose ? { ...p, ...pose.cell } : p; });
+  const currentPlaces = (list: Place[]) => list.filter(p => p.kind !== 'start').map(p => { const pose = npcPoses.current.get(npcId(p)); return pose ? { ...p, ...pose.cell } : p; });
   useEffect(() => {
     if (!userId) return;
     const publisher = new WorldPresence(writeWorldPlayer); presence.current = publisher;
@@ -219,6 +219,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const [jumpX, setJumpX] = useState('25');
   const [jumpY, setJumpY] = useState('25');
   const [placeCard, setPlaceCard] = useState<Place | null>(null);
+  const [walkedUser, setWalkedUser] = useState<string | null>(null);
   const talkingNpc = useRef<string | null>(null);
   useEffect(() => {
     if (!userId || !placeCard || !shouldMarkMerchantMet(placeCard, flags)) return;
@@ -452,7 +453,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     };
     const bumpOpen = (cell: WorldPoint) => {
       const f = fireAt(findsOn(findsRef.current, l), claimedRef.current, cell) ?? bumpedFind(findsOn(findsRef.current, l), claimedRef.current, cell);
-      const merchant = placesOn(world.places, l).find(p => merchantFigure(p) && p.x === cell.x && p.y === cell.y);
+      const merchant = placesOn(world.places, l).find(p => p.kind !== 'start' && merchantFigure(p) && p.x === cell.x && p.y === cell.y);
       const sign = f ? null : merchant ?? bumpedSignpost(placesOn(world.places, l), cell);
       if (!f && !sign) return;
       blocked.current = true; keys.current.clear();
@@ -462,6 +463,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     moveDuration.current = WORLD_MOVE_MS;
     if (next.x < 0 || next.y < 0 || next.x >= size || next.y >= size || !walkable(next) || (stepX && stepY && !walkable({ x: next.x, y: from.y }) && !walkable({ x: from.x, y: next.y }))) { slide.current = null; setSliding(false); bumpUntil.current = performance.now() + 150; bumpOpen(next); return; }
     posRef.current = next; setPos(next); setWalking(true);
+    if (l === 0) setWalkedUser(userId);
     setFacing(stepX > 0 ? 'right' : stepX < 0 ? 'left' : stepY < 0 ? 'up' : 'down');
     discovery.current?.walk(next.x, next.y, l);
     saveWorldPos({ layer: l, ...next });
@@ -568,7 +570,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
         if (npcFacingsRef.current[key] !== f) { npcFacingsRef.current[key] = f; setNpcFacings({ ...npcFacingsRef.current }); }
         if (npcPhasesRef.current[key] !== pose.phase) { npcPhasesRef.current[key] = pose.phase; setNpcPhases({ ...npcPhasesRef.current }); }
         if (chebyshev(pose.cell, point) > 1) npcApproached.current.delete(key);
-        if (!blocked.current && !npcApproached.current.has(key) && chebyshev(pose.cell, point) <= 1) { npcApproached.current.add(key); keys.current.clear(); setPlaceCard({ ...p, ...pose.cell }); }
+        if (p.kind !== 'start' && !blocked.current && !npcApproached.current.has(key) && chebyshev(pose.cell, point) <= 1) { npcApproached.current.add(key); keys.current.clear(); setPlaceCard({ ...p, ...pose.cell }); }
       }
       // Battery: no frames while hidden; the visibility listener resumes the loop.
       frame = document.visibilityState === 'hidden' ? 0 : requestAnimationFrame(tick);
@@ -648,7 +650,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     <canvas ref={markerCanvas} className="world-markers" aria-hidden="true" /></div>
     <header className="world-hud font-mono">{dev && <div className="world-status"><span>{pos.x},{pos.y} · A {area.x},{area.y} · {era?.name ?? '—'}</span><span>{layer === 1 ? `UNDERGROUND · ABOVE ${surfacePoint.x},${surfacePoint.y}` : 'SURFACE'}</span><span>{terrain?.name ?? (cache.errors.size ? 'Window unavailable' : 'Loading…')} · COST {terrain ? tileCost(terrain, era) : '—'} · SPENT {Number(spent.toFixed(2))}</span>{layer === 0 && <span>{phase.phase.toUpperCase()} · {Math.ceil(phase.minutesLeft)} MIN</span>}</div>}<Button variant="ghost" size="icon" title="MAP" aria-label="MAP" onClick={() => { keys.current.clear(); setMapOpen(true); }}><MapIcon size={18} /></Button>{dev && <Button variant="outline" className="world-jump" onClick={() => { setJumpX(String(pos.x)); setJumpY(String(pos.y)); setJumpOpen(true); }}><Navigation size={14} />JUMP</Button>}</header>
     <GameHud stepsRemaining={stepBalance} stepsExhausted={stepBalance === 0} credits={identity.credits ?? 0} currentLevel={identity.level ?? 1} registrationNumber={identity.registration_number} growthPoints={identity.growth_points ?? 0} subscriptionStatus={subscription} trialDaysRemaining={identity.first_launch_at ? Math.max(0, 14 - Math.floor((Date.now() - new Date(identity.first_launch_at).getTime()) / 86400000)) : identity.trial_end ? getDaysRemainingInTrial(identity.trial_end) : 14} onOpenProfile={() => { keys.current.clear(); setProfileOpen(true); }} onOpenDevMenu={() => { keys.current.clear(); setDevOpen(true); }} onOpenSupplies={() => { keys.current.clear(); setSuppliesOpen(true); }} />
-    <PathBanner userId={userId} paused={meteorOpen || Boolean(arrival)} />
+    <PathBanner userId={userId} ready={Boolean(userId && walkedUser === userId)} paused={meteorOpen || Boolean(arrival)} />
     {userId && <SuppliesCard open={suppliesOpen} onClose={() => setSuppliesOpen(false)} userId={userId} steps={stepBalance} credits={identity.credits ?? 0} beforeBuy={() => stepLedger.current?.flush()} onBalances={(steps, credits) => { if (steps !== stepLedger.current?.balance) stepLedger.current?.refresh(steps); identityRef.current = { ...identityRef.current, steps_remaining: steps, credits }; setIdentity(row => ({ ...row, steps_remaining: steps, credits })); }} />}
     <ProfileOverlay isOpen={profileOpen} onClose={() => { setProfileOpen(false); void refreshCompleted(); }} worldUse={{ position: () => posRef.current, layer }} beforeDropUse={async () => { await stepLedger.current?.flush(); }} context="village" growthPoints={identity.growth_points ?? 0} socialStat={identity.social ?? 0} perceptionStat={identity.perception ?? 0} tradeStat={identity.trade ?? 0} />
     {dev && <DevMenu open={devOpen} onClose={() => setDevOpen(false)} userId={userId} registrationNumber={identity.registration_number} home="world" onBeforeTopup={() => stepLedger.current?.flush()} onChanged={() => void refreshCompleted()} onBeforeStart={async () => { await stepLedger.current?.flush(); await discovery.current?.flush(true); discovery.current?.abandon(); presence.current?.dispose(); stepLedger.current?.discard(); }} />}
@@ -680,7 +682,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       setIdentity(row => ({ ...row, steps_remaining: steps, credits }));
       return { receipt: `+${(Number(r.packs) || qty) * 500} steps · −${Number(r.cost) || qty * 5} credits`, credits };
     })} />}
-    {placeCard && cardAction !== 'merchant' && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={placeCard.name}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close place" onClick={() => setPlaceCard(null)}><X size={18} /></Button>{placeCard.action === 'npc' && placeCard.npc_key && userId ? <SamCard key={placeCard.npc_key} userId={userId} npcKey={placeCard.npc_key} playerName={identity.username || 'Wanderer'} fallbackName={placeCard.name} onRewarded={refreshReward} /> : isGrandExplorerSign(placeCard) ? <GrandExplorerCard beforeProgress={async () => { await discovery.current?.flush(true); }} onClaimed={refreshReward} /> : isSignpost(placeCard) ? <><h2 className="font-cinzel">Signpost</h2>{signpostLines(placeCard.notes).map((line, i) => <p key={i} className="font-fell">{line.dir === 'onward' ? '▶ ' : line.dir === 'back' ? '◀ ' : ''}{line.text}</p>)}</> : <><h2 className="font-cinzel">{placeCard.name}</h2>{placeCard.notes && placeCard.kind !== 'maze_entrance' && cardAction !== 'maze' && cardAction !== 'door_maze' && <p className="font-fell">{placeCard.notes}</p>}
+    {placeCard && cardAction !== 'merchant' && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={placeCard.name}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close place" onClick={() => setPlaceCard(null)}><X size={18} /></Button>{placeCard.action === 'npc' && placeCard.npc_key && userId ? <SamCard key={placeCard.npc_key} userId={userId} npcKey={placeCard.npc_key} playerName={identity.username || 'Wanderer'} fallbackName={placeCard.name} onClose={() => setPlaceCard(null)} onRewarded={refreshReward} /> : isGrandExplorerSign(placeCard) ? <GrandExplorerCard beforeProgress={async () => { await discovery.current?.flush(true); }} onClaimed={refreshReward} /> : isSignpost(placeCard) ? <><h2 className="font-cinzel">Signpost</h2>{signpostLines(placeCard.notes).map((line, i) => <p key={i} className="font-fell">{line.dir === 'onward' ? '▶ ' : line.dir === 'back' ? '◀ ' : ''}{line.text}</p>)}</> : <><h2 className="font-cinzel">{placeCard.name}</h2>{placeCard.notes && placeCard.kind !== 'maze_entrance' && cardAction !== 'maze' && cardAction !== 'door_maze' && <p className="font-fell">{placeCard.notes}</p>}
       {outcome === 'completed' && <p className="font-mono">Completed</p>}
       {outcome === 'locked' && <p className="font-mono">Locked: reach Level {placeCard.maze_level} first</p>}
       {entryMessage && <p className="font-fell">{entryMessage}</p>}

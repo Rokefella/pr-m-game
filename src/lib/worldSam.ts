@@ -55,7 +55,17 @@ export const samLandLine = (samStage: number | null | undefined) => {
   return 'Sam is waiting in Lumen.';
 };
 
-export type SamStage = { id: string; text: string; button_label: string | null; button_action_key?: string | null; condition: unknown; order_index: number };
+export type SamStage = { id: string; text: string; button_label: string | null; decline_label?: string | null; button_action_key?: string | null; condition: unknown; order_index: number };
+/** Authored paragraphs first; long paragraphs fall back to two sentences per page. */
+export function dialoguePages(text: string): string[] {
+  return text.split(/\n\s*\n/).map(page => page.trim()).filter(Boolean).flatMap(page => {
+    const sentences = page.match(/[^.!?]+[.!?]+["'”’]*|[^.!?]+$/g)?.map(s => s.trim()).filter(Boolean) ?? [page];
+    if (sentences.filter(s => /[.!?]["'”’]*$/.test(s)).length <= 2) return [page];
+    const pages: string[] = [];
+    for (let i = 0; i < sentences.length; i += 2) pages.push(sentences.slice(i, i + 2).join(' '));
+    return pages;
+  });
+}
 export const requiredStageDrop = (condition: unknown) => {
   const c = condition as { has_drop?: unknown } | null;
   return typeof c?.has_drop === 'string' ? c.has_drop : null;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fillName, firstMatchingStage, samTopics, visiblePlaces } from './worldSam';
+import { dialoguePages, fillName, firstMatchingStage, samTopics, visiblePlaces } from './worldSam';
 
 const sam = [
   { x: 28, y: 22, npc_key: 'bernard', show_when: { max_completed_level: 0 } },
@@ -20,6 +20,12 @@ describe('Sam place by sam_stage', () => {
 });
 
 describe('stages and text', () => {
+  it('trims three authored blank-line pages', () => expect(dialoguePages(' First.\n\n Second. \n \n Third. ')).toEqual(['First.', 'Second.', 'Third.']));
+  it('falls back to two sentences per page only for long paragraphs', () => {
+    expect(dialoguePages('One. Two? Three! Four. Five.')).toEqual(['One. Two?', 'Three! Four.', 'Five.']);
+    expect(dialoguePages('One. Two?')).toEqual(['One. Two?']);
+    expect(dialoguePages('One.\n\nTwo. Three! Four?')).toEqual(['One.', 'Two. Three!', 'Four?']);
+  });
   it('picks the first matching stage', () => expect(firstMatchingStage(['a', 'b', 'c'], [false, true, true])).toBe('b'));
   it('returns null when none match', () => expect(firstMatchingStage(['a'], [false])).toBeNull());
   it('replaces {name}', () => expect(fillName('Hello {name}, {name}.', 'Rob')).toBe('Hello Rob, Rob.'));

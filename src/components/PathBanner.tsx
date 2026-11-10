@@ -6,7 +6,7 @@ const START_MS = 10000, STEP_MS = 4000, FADE_OUT_MS = 600;
 const dialogOpen = () => typeof document !== 'undefined' && !!document.querySelector('[role="dialog"]:not(.path-banner)');
 
 /** Path discovered / step flashes, one at a time, waiting while any NPC dialogue is open. */
-export default function PathBanner({ userId, paused = false }: { userId?: string | null; paused?: boolean }) {
+export default function PathBanner({ userId, paused = false, ready = true }: { userId?: string | null; paused?: boolean; ready?: boolean }) {
   const paths = usePaths(userId);
   const handled = useRef(new Set<string>());
   const [current, setCurrent] = useState<PathBannerItem | null>(null);
@@ -26,7 +26,7 @@ export default function PathBanner({ userId, paused = false }: { userId?: string
     }
   });
   const next = banners.find(b => !handled.current.has(`${b.path.quest_key}:${b.path.step_key}`)) ?? null;
-  useEffect(() => { if (!current && next && !blocked && !paused) { setLeaving(false); setCurrent(next); } }, [current, next, blocked, paused]);
+  useEffect(() => { if (ready && !current && next && !blocked && !paused) { setLeaving(false); setCurrent(next); } }, [current, next, blocked, paused, ready]);
 
   const finish = useRef<() => void>(() => undefined);
   finish.current = () => {
@@ -42,7 +42,7 @@ export default function PathBanner({ userId, paused = false }: { userId?: string
     return () => clearTimeout(id);
   }, [current]);
 
-  if (!current) return null;
+  if (!ready || !current) return null;
   const { path, kind } = current;
   return <div className={`path-banner path-${path.colour} path-${kind}${leaving ? ' path-leaving' : ''}`} data-game-ui="open" data-no-thumbstick onPointerDown={e => { e.stopPropagation(); finish.current(); }} aria-live="polite">
     {kind === 'start' ? <>

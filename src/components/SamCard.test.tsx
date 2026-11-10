@@ -1,25 +1,27 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import SamCard, { NOTE_ERROR } from './SamCard';
-const f = vi.hoisted(() => ({ flag: 0, run: vi.fn(), load: vi.fn(), noStage: false }));
+const f = vi.hoisted(() => ({ flag: 0, run: vi.fn(), load: vi.fn(), rpc: vi.fn(), noStage: false, stages: null as null | import('@/lib/worldSam').SamStage[] }));
+vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc } }));
 vi.mock('@/components/NpcPortrait', () => ({ default: () => null }));
 vi.mock('@/lib/worldSam', async original => {
   const actual = await original<typeof import('@/lib/worldSam')>();
-  return { ...actual, loadSam: f.load, samFlags: async () => ({ sam_stage: String(f.flag) }), currentStage: async () => f.noStage ? null : ({ id: `stage-${f.flag}`, text: `Stage ${f.flag}`, button_label: f.flag === 0 ? 'Thank you' : "I'll go" }), runStage: f.run, dropNames: async () => ({ map_scrap: 'Map Scrap', recipe_scrap: 'Recipe scrap' }) };
+  return { ...actual, loadSam: f.load, samFlags: async () => ({ sam_stage: String(f.flag) }), currentStage: async () => f.noStage ? null : f.stages ? f.stages[f.flag] : ({ id: `stage-${f.flag}`, text: `Stage ${f.flag}`, button_label: f.flag === 0 ? 'Thank you' : "I'll go" }), runStage: f.run, dropNames: async () => ({ map_scrap: 'Map Scrap', recipe_scrap: 'Recipe scrap' }) };
 });
-afterEach(() => { cleanup(); vi.clearAllMocks(); f.noStage = false; });
-const props = { userId: 'self', npcKey: 'bernard', playerName: 'Rob', fallbackName: 'Sam' };
+afterEach(() => { cleanup(); vi.clearAllMocks(); f.noStage = false; f.stages = null; });
+const props = { userId: 'self', npcKey: 'bernard', playerName: 'Rob', fallbackName: 'Sam', onClose: vi.fn() };
 const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 afterEach(() => errorSpy.mockClear());
 
-it('topics respond and actions advance through stage zero without remounting on world updates', async () => {
+it('keeps topics hidden and actions advance without remounting on world updates', async () => {
   f.flag = 0;
   f.load.mockResolvedValue({ npc: { name: 'Sam' }, stages: [], book: [{ node_key: 'bg_root_a', topic: 'background', text: 'My story' }] });
   f.run.mockImplementation(async () => { f.flag++; return { ok: true }; });
   const view = render(<SamCard {...props} />);
-  fireEvent.click(await screen.findByRole('button', { name: 'Where you came from' })); await screen.findByText('My story');
-  view.rerender(<SamCard {...props} onRewarded={() => {}} />); expect(screen.getByText('My story')).toBeInTheDocument(); expect(f.load).toHaveBeenCalledOnce();
-  fireEvent.click(screen.getByRole('button', { name: 'Back' })); fireEvent.click(screen.getByRole('button', { name: 'Thank you' }));
+  await screen.findByRole('button', { name: 'Thank you' });
+  expect(screen.queryByRole('button', { name: 'Where you came from' })).toBeNull();
+  view.rerender(<SamCard {...props} onRewarded={() => {}} />); expect(f.load).toHaveBeenCalledOnce();
+  fireEvent.click(screen.getByRole('button', { name: 'Thank you' }));
   fireEvent.click(await screen.findByRole('button', { name: "I'll go" })); await screen.findByText('Stage 2');
   expect(f.run.mock.calls).toEqual([['stage-0', 'self'], ['stage-1', 'self']]); expect(f.flag).toBe(2);
 });
@@ -78,4 +80,54 @@ it('waits for the world title refresh when Sam reaches stage three', async () =>
   expect(refreshed).toHaveBeenCalledOnce();
   complete?.();
   await screen.findByText('Stage 3');
+});
+
+const stage = (text: string, button_label: string | null = 'Accept', decline_label: string | null = 'Decline') => ({ id: 'talk', text, button_label, decline_label, condition: {}, order_index: 0 });
+const talk = (stages: import('@/lib/worldSam').SamStage[]) => {
+  f.flag = 0; f.stages = stages;
+  f.load.mockResolvedValue({ npc: { name: 'Sam' }, stages, book: [] });
+  f.rpc.mockResolvedValue({ data: { ok: true }, error: null });
+  return render(<SamCard {...props} />);
+};
+it('three pages require Go on twice before accept and decline, then restart on the next talk', async () => {
+  talk([stage('Hello {name}.\n\nSecond page.\n\nThird page.'), stage('Next first.\n\nNext last.')]);
+  f.run.mockImplementation(async () => { f.flag++; return { ok: true, given: [{ drop: 'recipe_scrap' }] }; });
+  await screen.findByText('Hello Rob.');
+  expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Go on' }));
+  expect(screen.getByText('Second page.')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Go on' }));
+  expect(screen.getByText('Third page.')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Decline' })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Accept' }));
+  await screen.findByText('Next first.');
+  expect(f.run).toHaveBeenCalledWith('talk', 'self');
+  expect(screen.getByText('Kept: Recipe scrap')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Go on' }));
+  expect(screen.queryByText('Kept: Recipe scrap')).toBeNull();
+});
+it('decline calls npc_decline with the stage and closes without accepting', async () => {
+  talk([stage('A choice.')]);
+  fireEvent.click(await screen.findByRole('button', { name: 'Decline' }));
+  await vi.waitFor(() => expect(props.onClose).toHaveBeenCalledOnce());
+  expect(f.rpc).toHaveBeenCalledWith('npc_decline', { p_stage: 'talk' });
+  expect(f.run).not.toHaveBeenCalled();
+});
+it('only-decline stage offers one action and saves decline before closing', async () => {
+  talk([stage('Just leaving.', null, 'Leave')]);
+  fireEvent.click(await screen.findByRole('button', { name: 'Leave' }));
+  await vi.waitFor(() => expect(props.onClose).toHaveBeenCalledOnce());
+  expect(f.rpc).toHaveBeenCalledWith('npc_decline', { p_stage: 'talk' });
+  expect(screen.getAllByRole('button')).toHaveLength(1);
+});
+it('failed decline stays open with the existing failure line', async () => {
+  talk([stage('A choice.')]); f.rpc.mockResolvedValue({ error: null, data: { ok: false } });
+  fireEvent.click(await screen.findByRole('button', { name: 'Decline' }));
+  await screen.findByText(NOTE_ERROR); expect(props.onClose).not.toHaveBeenCalled();
+});
+it('no actions offers Goodbye and preserves the no-stage Sam line', async () => {
+  f.noStage = true; talk([]);
+  await screen.findByText('Sam pokes the fire.');
+  fireEvent.click(screen.getByRole('button', { name: 'Goodbye' }));
+  expect(props.onClose).toHaveBeenCalledOnce(); expect(f.rpc).not.toHaveBeenCalled();
 });

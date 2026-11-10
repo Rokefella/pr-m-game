@@ -24,6 +24,16 @@ afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 const Location = () => <output aria-label="Current URL">{useLocation().pathname}</output>;
 const open = (path = '/world') => render(<MemoryRouter initialEntries={[path]}><Location /><Routes><Route path="/world" element={<WorldTest />} /><Route path="/world-test" element={<Navigate to="/world" replace />} /><Route path="/login" element={<p>Login</p>} /><Route path="/village" element={<p>Village</p>} /></Routes></MemoryRouter>);
 describe('world sandbox access and read-only movement', () => {
+  it('start spots never open a card when walked on or tapped, even with an action', async () => {
+    f.places = [{ kind: 'start', name: 'Silent start', action: 'signpost', x: 26, y: 25 }];
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    await screen.findByText('26,25 · A 0,0 · Fire');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    fireEvent.click(screen.getByLabelText('Open world terrain'), { clientX: 1060, clientY: 1020 });
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
   it('M opens and closes the map and pauses walking while open', async () => {
     open(); await screen.findByText('25,25 · A 0,0 · Fire');
     fireEvent.keyDown(window, { key: 'm' }); await screen.findByRole('dialog', { name: 'World map' });

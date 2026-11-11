@@ -47,6 +47,18 @@ describe('world visual terrain layers', () => {
     expect(gradient).toHaveBeenCalledWith(20, 20, 0, 20, 20, 160);
     gradient.mockClear(); drawWorldFireLight(ctx, cache, types, { x: 0, y: 0 }, 40, 40, ink, 'day'); expect(gradient).not.toHaveBeenCalled();
   });
+  it.each(['dusk', 'night'])('lights glow terrain at %s and centres big meteor anchors in their 2×2 footprint', phase => {
+    const cache = new WorldChunkCache(async () => { throw Error(); });
+    vi.spyOn(cache, 'terrainKey').mockImplementation((x, y) => y === 0 ? x === 0 ? 'meteor_decor_glowing' : x === 1 ? 'bld_meteor_crystal' : x === 2 ? 'bld_part' : undefined : undefined);
+    const types = new Map([terrain('meteor_decor_glowing', { moves: 'glow', light_radius: 2 }), terrain('bld_meteor_crystal', { moves: 'glow', light_radius: 4 }), terrain('bld_part'), terrain('unlit', { moves: 'glow', light_radius: 0 })].map(t => [t.key, t]));
+    const { ctx, rects } = context(), stops = vi.fn();
+    ctx.createRadialGradient = vi.fn(() => ({ addColorStop: stops })) as never;
+    drawWorldFireLight(ctx, cache, types, { x: 0, y: 0 }, 120, 80, ink, phase);
+    expect(ctx.createRadialGradient).toHaveBeenCalledTimes(2);
+    expect(ctx.createRadialGradient).toHaveBeenCalledWith(20, 20, 0, 20, 20, 80);
+    expect(ctx.createRadialGradient).toHaveBeenCalledWith(80, 40, 0, 80, 40, 160);
+    expect(rects.map(r => r[1])).toEqual([.3, .3]);
+  });
   it('only groups complete even-anchored same-key 2×2 blocks', () => {
     const cache = new WorldChunkCache(async () => { throw Error(); });
     const keys = new Map(['2,4', '3,4', '2,5', '3,5'].map(k => [k, 'boulder_large']));

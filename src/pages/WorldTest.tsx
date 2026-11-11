@@ -53,7 +53,7 @@ import { npcFacingToward, npcSkin, setCurrentSkin, useSkins, type Facing } from 
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { worldWalkable } from '@/lib/worldTest';
 import { buildingBox, buildingOpacity, visibleBuildings, type WorldBuilding } from '@/lib/worldBuildings';
-import { drawSpriteAtmosphere, terrainSprite } from '@/lib/terrainTile';
+import { drawSpriteAtmosphere, meteorSmoke, terrainSprite } from '@/lib/terrainTile';
 import { npcId, NpcWander, type NpcPose } from '@/lib/worldNpcMotion';
 import { readWorldPlayers, shownPlayers, WorldPresence, writeWorldPlayer, type WorldPlayer } from '@/lib/worldPlayers';
 import WorldVisitor from '@/components/WorldVisitor';
@@ -551,9 +551,10 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       for (const b of visible) {
         const el = buildingEls.current.get(`${b.x},${b.y}`), box = buildingBox(b), sprite = terrainSprite(b.terrain.key, b.x, b.y);
         if (!el) continue;
-        el.style.transform = `translate(${box.x * WORLD_TILE - camera.current.x}px, ${(box.y - 1) * WORLD_TILE - camera.current.y}px)`;
+        const padding = meteorSmoke(b.terrain) ? 32 : 16;
+        el.style.transform = `translate(${box.x * WORLD_TILE - camera.current.x}px, ${(box.y - padding / 16) * WORLD_TILE - camera.current.y}px)`;
         el.style.zIndex = String(Math.round(box.bottom * WORLD_TILE)); el.style.opacity = String(buildingOpacity(b, point));
-        const c = el.getContext('2d'); if (c && sprite) { c.clearRect(0, 0, el.width, el.height); c.imageSmoothingEnabled = false; c.save(); c.translate(0, 16); c.drawImage(sprite, 0, 0); drawSpriteAtmosphere(c, b.terrain, sprite, b.x, b.y, clock, ink, reduced); c.restore(); }
+        const c = el.getContext('2d'); if (c && sprite) { c.clearRect(0, 0, el.width, el.height); c.imageSmoothingEnabled = false; c.save(); c.translate(0, padding); c.drawImage(sprite, 0, 0); drawSpriteAtmosphere(c, b.terrain, sprite, b.x, b.y, clock, ink, reduced); c.restore(); }
       }
       for (const p of layerPlaces[l]) {
         const npc = figureNpc(p);
@@ -639,7 +640,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       if (litFire(f, isClaimed) || findMarked(f, isClaimed) || (!isClaimed && findShows(f, posRef.current, false))) setFindCard({ find: f, reading: false });
       else if (isClaimed && (f.kind === 'words' || f.kind === 'landmark')) setFindCard({ find: f, reading: true });
     }} />
-    {buildings.map(b => { const box = buildingBox(b), id = `${b.x},${b.y}`; return <canvas key={id} ref={el => { if (el) buildingEls.current.set(id, el); else buildingEls.current.delete(id); }} width={b.terrain.sprite_w ?? box.w * 16} height={(b.terrain.sprite_h ?? box.h * 16) + 16} className="world-building" style={{ width: box.w * WORLD_TILE, height: (box.h + 1) * WORLD_TILE }} aria-hidden="true" />; })}
+    {buildings.map(b => { const box = buildingBox(b), id = `${b.x},${b.y}`, padding = meteorSmoke(b.terrain) ? 32 : 16; return <canvas key={id} ref={el => { if (el) buildingEls.current.set(id, el); else buildingEls.current.delete(id); }} width={b.terrain.sprite_w ?? box.w * 16} height={(b.terrain.sprite_h ?? box.h * 16) + padding} className="world-building" style={{ width: box.w * WORLD_TILE, height: (box.h + padding / 16) * WORLD_TILE }} aria-hidden="true" />; })}
     {visitors.map(p => <WorldVisitor key={p.user_id} player={p} at={pos} camera={camera} reduced={reduced} />)}
     <div ref={avatar} className="world-avatar"><PlayerAvatar size={WORLD_AVATAR_SIZE} palette={orbLook(identity.aura_color, identity.orb_dye, identity.registration_number)} walking={walking && !sliding} skin={identity.avatar_body} facing={facing} registrationNumber={identity.registration_number} auraColor={identity.aura_color} orbDye={identity.orb_dye} /><WorldPlayerLabel username={identity.username} title={identity.title} /></div>
     {placesOn(data.places, layer).filter(p => merchantFigure(p) || (p.npc_key && skinned.has(p.npc_key))).map(p => {

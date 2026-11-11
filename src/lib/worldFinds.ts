@@ -3,7 +3,7 @@ import { inventoryChanged } from './inventoryEvents';
 import { drawTerrainMotion, drawTerrainSprite, spriteLight, type TerrainInk } from './terrainTile';
 import { WORLD_TILE, type Terrain, type WorldPoint } from './worldTest';
 
-export type FindKind = 'cache_steps' | 'cache_credits' | 'thing' | 'tool' | 'words' | 'quest_object' | 'landmark' | 'sigil';
+export type FindKind = 'cache_steps' | 'cache_credits' | 'thing' | 'tool' | 'words' | 'quest_object' | 'landmark' | 'sigil' | 'debris';
 export type WorldFind = {
   id: string; find_key: string; x: number; y: number; layer: number; kind: FindKind | string;
   drop_key?: string | null; amount?: number | null; title: string; text?: string | null;
@@ -29,8 +29,8 @@ export async function restAtFire(key: string): Promise<FireRestResult> {
   const { data, error } = await db.rpc('rest_at_fire', { p_find_key: key });
   return error || !data ? { ok: false } : data;
 }
-export const findButton = (kind: string) => kind === 'landmark' ? 'Look closer' : kind === 'quest_object' ? 'Light it' : kind === 'words' ? 'Read it' : 'Take it';
-export const findReceipt = (r: ClaimResult) => r.kind === 'words' ? 'Kept in your Folder' : r.kind === 'landmark' ? 'Noted in your Folder' : r.drop_name ? `Kept: ${r.drop_name}` : '';
+export const findButton = (kind: string) => kind === 'debris' ? 'Search it' : kind === 'landmark' ? 'Look closer' : kind === 'quest_object' ? 'Light it' : kind === 'words' ? 'Read it' : 'Take it';
+export const findReceipt = (r: ClaimResult) => r.kind === 'debris' && r.drop_name ? `Found: ${r.drop_name}` : r.kind === 'words' ? 'Kept in your Folder' : r.kind === 'landmark' ? 'Noted in your Folder' : r.drop_name ? `Kept: ${r.drop_name}` : '';
 export const claimFailure = (reason?: string) => {
   switch (reason) {
     case 'too_far': return 'Come a little closer.';
@@ -55,7 +55,7 @@ export async function findWords(find: WorldFind): Promise<string> {
 /** Unclaimed glint/hidden finds carry a floating marker at any distance. */
 export const findMarked = (f: WorldFind, claimed: boolean) => !claimed && (f.visibility === 'glint' || f.visibility === 'hidden');
 /** The unclaimed glint/hidden find in a bumped (blocked) cell, if any. */
-export const bumpedFind = (finds: WorldFind[], claimed: Set<string>, cell: WorldPoint) => finds.find(f => f.x === cell.x && f.y === cell.y && findMarked(f, claimed.has(f.id))) ?? null;
+export const bumpedFind = (finds: WorldFind[], claimed: Set<string>, cell: WorldPoint) => finds.find(f => f.x === cell.x && f.y === cell.y && (findMarked(f, claimed.has(f.id)) || (f.kind === 'debris' && !claimed.has(f.id)))) ?? null;
 /** Walk-up rule: only finds on walkable cells open when the player comes within 1. */
 export const approachedFind = (finds: WorldFind[], claimed: Set<string>, skip: Set<string>, at: WorldPoint, walkable: (p: WorldPoint) => boolean) =>
   finds.find(f => !claimed.has(f.id) && !skip.has(f.id) && chebyshev(f, at) <= 1 && findShows(f, at, false) && walkable(f)) ?? null;
@@ -91,18 +91,26 @@ export function drawFinds(ctx: CanvasRenderingContext2D, finds: WorldFind[], cla
     const isClaimed = claimed.has(f.id);
     if (f.visibility === 'visible' || litFire(f, isClaimed)) {
       const key = findSprite(f, isClaimed), terrain = key ? types.get(key) : undefined;
-      if (terrain?.moves === 'flicker') drawTerrainMotion(ctx, terrain, f.x, f.y, px, py, time, ink, reduced, undefined, time, WORLD_TILE);
+      const looted = f.kind === 'debris' && isClaimed;
+      ctx.save(); if (looted) ctx.globalAlpha *= .45;
+      if (!looted && terrain?.moves === 'flicker') drawTerrainMotion(ctx, terrain, f.x, f.y, px, py, time, ink, reduced, undefined, time, WORLD_TILE);
       else if (!terrain || !drawTerrainSprite(ctx, terrain, f.x, f.y, px, py, WORLD_TILE)) { ctx.fillStyle = ink.muted; ctx.fillRect(px + WORLD_TILE / 2 - 3, py + WORLD_TILE / 2 - 3, 6, 6); }
+      if (!looted && terrain && ['glow', 'smoke', 'glint'].includes(terrain.moves ?? '')) drawTerrainMotion(ctx, terrain, f.x, f.y, px, py, time, ink, reduced, undefined, time, WORLD_TILE, false);
+      ctx.restore();
+      if (f.kind === 'debris' && !isClaimed && chebyshev(f, player) <= 3) drawFindSparkle(ctx, px, py, f, time, ink, reduced);
       continue;
     }
     if (!findMarked(f, isClaimed)) continue;
     if (chebyshev(f, player) <= 2) {
-      const frame = reduced ? 1 : Math.floor(time / 220 + f.x + f.y) % 3, s = 2, cx = px + WORLD_TILE / 2, cy = py + WORLD_TILE / 2, arm = [1, 2, 3][frame];
-      ctx.save(); ctx.fillStyle = ink.gold; ctx.globalAlpha = frame === 0 ? .55 : .95;
-      ctx.fillRect(cx - s / 2, cy - s / 2 - arm * s, s, arm * s * 2 + s); ctx.fillRect(cx - s / 2 - arm * s, cy - s / 2, arm * s * 2 + s, s);
-      ctx.fillStyle = ink.text; ctx.fillRect(cx - s / 2, cy - s / 2, s, s); ctx.restore();
+      drawFindSparkle(ctx, px, py, f, time, ink, reduced);
     }
   }
+}
+function drawFindSparkle(ctx: CanvasRenderingContext2D, px: number, py: number, f: WorldFind, time: number, ink: TerrainInk, reduced: boolean) {
+  const frame = reduced ? 1 : Math.floor(time / 220 + f.x + f.y) % 3, s = 2, cx = px + WORLD_TILE / 2, cy = py + WORLD_TILE / 2, arm = [1, 2, 3][frame];
+  ctx.save(); ctx.fillStyle = ink.gold; ctx.globalAlpha = frame === 0 ? .55 : .95;
+  ctx.fillRect(cx - s / 2, cy - s / 2 - arm * s, s, arm * s * 2 + s); ctx.fillRect(cx - s / 2 - arm * s, cy - s / 2, arm * s * 2 + s, s);
+  ctx.fillStyle = ink.text; ctx.fillRect(cx - s / 2, cy - s / 2, s, s); ctx.restore();
 }
 /** Markers drawn after the night tint so they stay readable. */
 export function drawFindMarkers(ctx: CanvasRenderingContext2D, finds: WorldFind[], claimed: Set<string>, camera: WorldPoint, width: number, height: number, time: number, ink: TerrainInk, reduced: boolean) {
@@ -117,11 +125,17 @@ export function drawFindLight(ctx: CanvasRenderingContext2D, finds: WorldFind[],
   if (phase !== 'night' && phase !== 'dusk') return;
   ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .35;
   for (const f of finds) {
-    const terrain = types.get(findSprite(f, claimed.has(f.id)) ?? ''); if ((f.visibility !== 'visible' && !litFire(f, claimed.has(f.id))) || terrain?.moves !== 'flicker') continue;
+    const isClaimed = claimed.has(f.id);
+    if (f.kind === 'debris' && isClaimed) continue;
+    const terrain = types.get(findSprite(f, isClaimed) ?? '');
+    if (!terrain || (f.visibility !== 'visible' && !litFire(f, isClaimed))) continue;
+    const green = !isClaimed && terrain.moves === 'glow' && Number(terrain.light_radius) > 0;
+    if (terrain.moves !== 'flicker' && !green) continue;
+    ctx.globalAlpha = green ? .3 : .35;
     const radius = (terrain.light_radius && terrain.light_radius > 0 ? terrain.light_radius : 3) * WORLD_TILE;
     const px = (f.x + .5) * WORLD_TILE - camera.x, py = (f.y + .5) * WORLD_TILE - camera.y;
     const glow = ctx.createRadialGradient(px, py, 0, px, py, radius);
-    glow.addColorStop(0, spriteLight(terrain, f.x, f.y, ink, true)); glow.addColorStop(1, 'transparent');
+    glow.addColorStop(0, spriteLight(terrain, f.x, f.y, ink, !green)); glow.addColorStop(1, 'transparent');
     ctx.fillStyle = glow; ctx.fillRect(px - radius, py - radius, radius * 2, radius * 2);
   }
   ctx.restore();

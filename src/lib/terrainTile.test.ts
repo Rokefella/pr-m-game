@@ -4,6 +4,25 @@ import { worldHash } from './worldHash';
 import type { Terrain } from './worldTest';
 
 describe('shared terrain variants', () => {
+  it.each(['meteor_decor_smoking', 'debris_smoking', 'bld_meteor_smoking'])('gives %s six stronger, taller smoke puffs', key => {
+    const puffs: number[][] = [], alphas: number[] = [];
+    const ctx = { globalAlpha: 1, save: vi.fn(), restore: vi.fn(), beginPath: vi.fn(),
+      ellipse: vi.fn((...args: number[]) => puffs.push(args)), fill: vi.fn(function () { alphas.push(ctx.globalAlpha); }) } as unknown as CanvasRenderingContext2D;
+    const sprite = document.createElement('canvas'); sprite.width = 32; sprite.height = 48;
+    drawSpriteAtmosphere(ctx, { key, moves: 'smoke' } as Terrain, sprite, 1, 2, 1000, { text: 'light' } as never, false);
+    expect(puffs).toHaveLength(6);
+    for (const [index, puff] of puffs.entries()) {
+      const life = (48 * .15 - puff[1]) / 24;
+      expect(puff[2]).toBeCloseTo(1 + life * 5);
+      expect(alphas[index]).toBeCloseTo(.32 * Math.sin(life * Math.PI));
+    }
+  });
+  it('keeps non-meteor smoke at three original puffs', () => {
+    const ctx = { save: vi.fn(), restore: vi.fn(), beginPath: vi.fn(), ellipse: vi.fn(), fill: vi.fn() } as unknown as CanvasRenderingContext2D;
+    const sprite = document.createElement('canvas'); sprite.width = 16; sprite.height = 16;
+    drawSpriteAtmosphere(ctx, { key: 'chimney', moves: 'smoke' } as Terrain, sprite, 0, 0, 1000, { text: 'light' } as never, false);
+    expect(ctx.ellipse).toHaveBeenCalledTimes(3);
+  });
   it('reduced motion suppresses every new rectangular-structure effect', () => {
     const ctx = { drawImage: vi.fn(), fill: vi.fn(), fillRect: vi.fn() } as unknown as CanvasRenderingContext2D;
     const sprite = document.createElement('canvas'); sprite.width = 48; sprite.height = 64;

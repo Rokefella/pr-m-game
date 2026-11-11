@@ -198,15 +198,20 @@ export function drawWorld(ctx: CanvasRenderingContext2D, cache: WorldChunkCache,
 /** Decorative fire light is applied after the world's tint, never to gameplay vision. */
 export function drawWorldFireLight(ctx: CanvasRenderingContext2D, cache: WorldChunkCache, types: Map<string, Terrain>, camera: WorldPoint, width: number, height: number, ink: WorldInk, phase: string) {
   if (phase !== 'night' && phase !== 'dusk') return;
-  const x0 = Math.max(0, Math.floor(camera.x / WORLD_TILE)), y0 = Math.max(0, Math.floor(camera.y / WORLD_TILE));
-  const x1 = Math.min(cache.size - 1, Math.ceil((camera.x + width) / WORLD_TILE)), y1 = Math.min(cache.size - 1, Math.ceil((camera.y + height) / WORLD_TILE));
-  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .35;
+  const x0 = Math.max(0, Math.floor(camera.x / WORLD_TILE) - 3), y0 = Math.max(0, Math.floor(camera.y / WORLD_TILE) - 3);
+  const x1 = Math.min(cache.size - 1, Math.ceil((camera.x + width) / WORLD_TILE) + 3), y1 = Math.min(cache.size - 1, Math.ceil((camera.y + height) / WORLD_TILE) + 3);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
-    const terrain = types.get(cache.terrainKey(x, y) ?? ''); if (terrain?.moves !== 'flicker') continue;
+    const terrain = types.get(cache.terrainKey(x, y) ?? '');
+    if (!terrain || terrain.key === 'bld_part') continue;
+    const green = terrain.moves === 'glow' && Number(terrain.light_radius) > 0;
+    if (terrain.moves !== 'flicker' && !green) continue;
+    ctx.globalAlpha = green ? .3 : .35;
     const radius = (terrain.light_radius && terrain.light_radius > 0 ? terrain.light_radius : 3) * WORLD_TILE;
-    const px = (x + .5) * WORLD_TILE - camera.x, py = (y + .5) * WORLD_TILE - camera.y;
+    const anchor = terrain.key.startsWith('bld_');
+    const px = (x + (anchor ? (terrain.footprint_w ?? 2) / 2 : .5)) * WORLD_TILE - camera.x, py = (y + (anchor ? (terrain.footprint_h ?? 2) / 2 : .5)) * WORLD_TILE - camera.y;
     const glow = ctx.createRadialGradient(px, py, 0, px, py, radius);
-    glow.addColorStop(0, spriteLight(terrain, x, y, ink, true)); glow.addColorStop(1, 'transparent');
+    glow.addColorStop(0, spriteLight(terrain, x, y, ink, !green)); glow.addColorStop(1, 'transparent');
     ctx.fillStyle = glow; ctx.fillRect(px - radius, py - radius, radius * 2, radius * 2);
   }
   ctx.restore();

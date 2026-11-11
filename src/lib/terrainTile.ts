@@ -177,6 +177,7 @@ export function drawTerrainBase(ctx: CanvasRenderingContext2D, terrain: Terrain,
 
 /** Cached ground stays static; moving objects are composited separately. */
 export const hasMovingSprite = (terrain: Terrain) => Boolean(terrainSprite(terrain.key)) && (canSway(terrain) || terrain.moves === 'flicker' || terrain.moves === 'flow_slow');
+export const meteorSmoke = (terrain: Terrain) => terrain.moves === 'smoke' && (terrain.key.includes('meteor') || terrain.key.startsWith('debris_'));
 /** Native rectangular sprites share the world's clock; no timers or per-frame sprite decoding. */
 export function drawSpriteAtmosphere(ctx: CanvasRenderingContext2D, terrain: Terrain, sprite: HTMLCanvasElement, x: number, y: number, time: number, ink: TerrainInk, reduced: boolean) {
   if (reduced) return;
@@ -187,10 +188,11 @@ export function drawSpriteAtmosphere(ctx: CanvasRenderingContext2D, terrain: Ter
     ctx.drawImage(move === 'flicker' ? warmMasks.get(sprite) ?? sprite : sprite, 0, 0);
   } else if (move === 'smoke' || move === 'steam') {
     ctx.fillStyle = ink.text;
-    for (let i = 0; i < 3; i++) {
-      const life = puffPhase(time, x, y, i), r = 1 + life * 3;
-      ctx.globalAlpha = (move === 'steam' ? .28 : .18) * Math.sin(life * Math.PI);
-      ctx.beginPath(); ctx.ellipse(w / 2 + Math.sin(life * 4 + i) * 2, h * .15 - life * 12, r, r * .7, 0, 0, Math.PI * 2); ctx.fill();
+    const meteor = meteorSmoke(terrain);
+    for (let i = 0; i < (meteor ? 6 : 3); i++) {
+      const life = puffPhase(time, x, y, i), r = 1 + life * (meteor ? 5 : 3);
+      ctx.globalAlpha = (meteor ? .32 : move === 'steam' ? .28 : .18) * Math.sin(life * Math.PI);
+      ctx.beginPath(); ctx.ellipse(w / 2 + Math.sin(life * 4 + i) * 2, h * .15 - life * (meteor ? 24 : 12), r, r * .7, 0, 0, Math.PI * 2); ctx.fill();
     }
   } else if (move === 'glint') {
     const phase = glintPhase(time, x, y);

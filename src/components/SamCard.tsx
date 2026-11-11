@@ -2,6 +2,7 @@ import { flagNumber } from '@/lib/flagValues';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { NPC_DIALOGUE_CLOSED } from '@/hooks/useNpcQuestStates';
+import NellSets from '@/components/NellSets';
 import NpcPortrait from '@/components/NpcPortrait';
 import { supabase } from '@/lib/supabase';
 import { SAM_KEYS, currentStage, dialoguePages, dropNames, fillName, loadSam, pickNode, receiptLine, runStage, samFlags, cardTopics, topicRoot, entryVisible, type BookNode, type SamStage } from '@/lib/worldSam';
@@ -78,6 +79,7 @@ export default function SamCard({ userId, npcKey, playerName, fallbackName, onCl
         {!stage?.button_label && !stage?.decline_label && <Button className="world-jump" onClick={onClose}>Goodbye</Button>}
       </div>}
       {error && <p className="font-mono world-card-error">{error}</p>}
+      {npcKey === 'nell' && flags.nell_met === '1' && <NellSets userId={userId} />}
       {SHOW_ASK_ABOUT && <>
       <h3 className="font-mono world-topics-title">Ask about…</h3>
       <div className="world-topics">{(sam ? cardTopics(samStage, sam.book, flags, npcKey) : []).map(t => <Button key={t.key} variant="ghost" className="font-fell" onClick={() => go(sam ? topicRoot(sam.book.filter(e => entryVisible(e, flags)), t.key) : null)}>{t.label}</Button>)}</div>

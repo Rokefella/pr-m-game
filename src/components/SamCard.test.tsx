@@ -1,14 +1,15 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, expect, it, vi } from 'vitest';
 import SamCard, { NOTE_ERROR } from './SamCard';
-const f = vi.hoisted(() => ({ flag: 0, run: vi.fn(), load: vi.fn(), rpc: vi.fn(), noStage: false, stages: null as null | import('@/lib/worldSam').SamStage[] }));
+const f = vi.hoisted(() => ({ flag: 0, run: vi.fn(), load: vi.fn(), rpc: vi.fn(), noStage: false, extra: {} as Record<string, string>, stages: null as null | import('@/lib/worldSam').SamStage[] }));
 vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc } }));
+vi.mock('@/components/NellSets', () => ({ default: () => <div>SETS PANEL</div> }));
 vi.mock('@/components/NpcPortrait', () => ({ default: () => null }));
 vi.mock('@/lib/worldSam', async original => {
   const actual = await original<typeof import('@/lib/worldSam')>();
-  return { ...actual, loadSam: f.load, samFlags: async () => ({ sam_stage: String(f.flag) }), currentStage: async () => f.noStage ? null : f.stages ? f.stages[f.flag] : ({ id: `stage-${f.flag}`, text: `Stage ${f.flag}`, button_label: f.flag === 0 ? 'Thank you' : "I'll go" }), runStage: f.run, dropNames: async () => ({ map_scrap: 'Map Scrap', recipe_scrap: 'Recipe scrap' }) };
+  return { ...actual, loadSam: f.load, samFlags: async () => ({ sam_stage: String(f.flag), ...f.extra }), currentStage: async () => f.noStage ? null : f.stages ? f.stages[f.flag] : ({ id: `stage-${f.flag}`, text: `Stage ${f.flag}`, button_label: f.flag === 0 ? 'Thank you' : "I'll go" }), runStage: f.run, dropNames: async () => ({ map_scrap: 'Map Scrap', recipe_scrap: 'Recipe scrap' }) };
 });
-afterEach(() => { cleanup(); vi.clearAllMocks(); f.noStage = false; f.stages = null; });
+afterEach(() => { cleanup(); vi.clearAllMocks(); f.noStage = false; f.stages = null; f.extra = {}; });
 const props = { userId: 'self', npcKey: 'bernard', playerName: 'Rob', fallbackName: 'Sam', onClose: vi.fn() };
 const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 afterEach(() => errorSpy.mockClear());
@@ -130,4 +131,12 @@ it('no actions offers Goodbye and preserves the no-stage Sam line', async () => 
   await screen.findByText('Sam pokes the fire.');
   fireEvent.click(screen.getByRole('button', { name: 'Goodbye' }));
   expect(props.onClose).toHaveBeenCalledOnce(); expect(f.rpc).not.toHaveBeenCalled();
+});
+
+it('shows Nell\'s Sets panel only once nell_met is 1', async () => {
+  f.flag = 0; f.load.mockResolvedValue({ npc: { name: 'Nell' }, stages: [], book: [] });
+  const view = render(<SamCard {...props} npcKey="nell" fallbackName="Nell" />);
+  await screen.findByRole('button', { name: 'Thank you' }); expect(screen.queryByText('SETS PANEL')).toBeNull(); view.unmount();
+  f.extra = { nell_met: '1' }; render(<SamCard {...props} npcKey="nell" fallbackName="Nell" />);
+  expect(await screen.findByText('SETS PANEL')).toBeInTheDocument();
 });

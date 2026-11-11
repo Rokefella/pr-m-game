@@ -5,6 +5,7 @@ import { discoverAround } from '@/lib/worldDiscovery';
 import { DEV_MAP_KEY } from '@/lib/devWorldMap';
 vi.mock('@/lib/worldOverview', () => ({ readWorldOverview: () => new Promise(() => {}) }));
 vi.mock('react-zoom-pan-pinch', () => ({ TransformWrapper: ({ children }: { children: (v: unknown) => React.ReactNode }) => children({ setTransform: vi.fn(), instance: { state: { scale: 1, positionX: 0, positionY: 0 } } }), TransformComponent: ({ children }: { children: React.ReactNode }) => <div>{children}</div> }));
+vi.mock('./FindsProgress', () => ({ default: () => null }));
 vi.mock('./theme/useReducedMotion', () => ({ useReducedMotion: () => true }));
 beforeEach(() => { vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); localStorage.removeItem(DEV_MAP_KEY); });

@@ -25,7 +25,7 @@ export function useDevMapEnabled(registration: number | null | undefined) {
   return registration === 1 && enabled;
 }
 export type DevMapMarker = WorldPoint & { id: string; name: string; at: WorldPoint; tone: 'place' | 'trader' | 'fire' | 'item' | 'words' | 'claimed' | 'sam' | 'player'; symbol: string };
-export const placeSymbol = (p: Place) => p.kind === 'maze_entrance' ? '◇' : p.kind === 'npc_home' ? '○' : p.action === 'merchant' ? '¤' : p.action === 'door_library' ? '▥' : '⌂';
+export const placeSymbol = (p: Place) => p.kind === 'maze_entrance' ? '◇' : p.kind === 'npc_home' ? '○' : p.action === 'merchant' ? '¤' : p.action === 'collector' ? '◎' : p.action === 'door_library' ? '▥' : '⌂';
 export function devMapMarkers(registration: number | null | undefined, enabled: boolean, places: Place[], finds: (WorldFind & { enabled?: boolean })[], claimed: Set<string>, samStage: number, player: WorldPoint, layer: 0 | 1): DevMapMarker[] {
   if (registration !== 1 || !enabled) return [];
   const project = (p: WorldPoint & { layer?: number | null }) => eraPointFor(p, Number(p.layer) === 1 ? 1 : 0);

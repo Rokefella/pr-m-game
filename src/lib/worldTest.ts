@@ -35,7 +35,8 @@ export const tileCost = (terrain: Terrain, era?: Era) => (terrain.steps ?? 1) * 
 /** Movement uses terrain steps only; era multipliers still belong to session accounting. */
 export const worldMoveDuration = (terrain: Pick<Terrain, 'steps'>) => WORLD_MOVE_MS * Math.max(1, terrain.steps ?? 1);
 export const isWading = (terrain: Terrain | undefined) => terrain?.walkable === true && terrain.enabled !== false && terrain.grp === 'water';
-export const isWorldConversation = (place: Place) => place.kind !== 'start' && !isSignpost(place) && (place.kind === 'npc_home' || place.action === 'merchant');
+export const isNpcAction = (action?: string | null) => action === 'npc' || action === 'collector';
+export const isWorldConversation = (place: Place) => place.kind !== 'start' && !isSignpost(place) && (place.kind === 'npc_home' || place.action === 'merchant' || isNpcAction(place.action));
 export const isSignpost = (place: Place) => place.kind !== 'start' && place.action === 'signpost';
 /** A signpost place is its foot; the solid terrain post is directly north. */
 export const bumpedSignpost = (places: Place[], cell: WorldPoint) => places.find(p => isSignpost(p) && p.x === cell.x && (p.y === cell.y || p.y - 1 === cell.y));

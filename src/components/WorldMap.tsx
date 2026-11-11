@@ -10,6 +10,7 @@ import { readWorldOverview } from '@/lib/worldOverview';
 import { eraPointFor, type Place, type Terrain, type WorldPoint } from '@/lib/worldTest';
 import { findSprite, type WorldFind } from '@/lib/worldFinds';
 import './world-map.css';
+import FindsProgress from './FindsProgress';
 import type { WorldPlayer } from '@/lib/worldPlayers';
 import { devMapMarkers, useDevMapEnabled } from '@/lib/devWorldMap';
 import DevMapMarkers from './DevMapMarkers';
@@ -40,7 +41,7 @@ export default function WorldMap({ bits, player, layer, aura, dev, registrationN
     }
     ctx.globalAlpha = 1;
   }, [art, bits, reveal, dev, showAll]);
-  const visible = places.filter(p => !isHiddenPlace(p) && (Number(p.layer) || 0) === 0 && (reveal || discoveredBlock(bits, Math.floor(p.x / 10), Math.floor(p.y / 10))) && (p.kind === 'town' || p.kind === 'maze_entrance' || p.kind === 'npc_home' || p.action === 'door_library' || p.action === 'merchant'));
+  const visible = places.filter(p => !isHiddenPlace(p) && (Number(p.layer) || 0) === 0 && (reveal || discoveredBlock(bits, Math.floor(p.x / 10), Math.floor(p.y / 10))) && (p.kind === 'town' || p.kind === 'maze_entrance' || p.kind === 'npc_home' || p.action === 'collector' || p.action === 'door_library' || p.action === 'merchant'));
   const surfaceFinds = finds.filter(f => (Number(f.layer) || 0) === 0);
   const findMarks = [
     ...surfaceFinds.filter(f => f.visibility === 'visible' && (reveal || discoveredBlock(bits, Math.floor(f.x / 10), Math.floor(f.y / 10)))).map(f => ({ f, mark: (findSprite(f, claimed.has(f.id)) ?? '').startsWith('campfire') ? '✶' : '▲', cls: claimed.has(f.id) ? 'world-map-find world-map-find-claimed' : 'world-map-find' })),
@@ -52,7 +53,7 @@ export default function WorldMap({ bits, player, layer, aura, dev, registrationN
       <TransformWrapper initialScale={1} minScale={1} maxScale={4} limitToBounds={false} initialPositionX={innerWidth / 2 - point.x / 1000 * size} initialPositionY={(innerHeight - 90) / 2 - point.y / 1000 * size} centerZoomedOut={false}>
         {({ setTransform, instance }) => <><TransformComponent wrapperClass="world-map-pan" contentClass="world-map-content"><div className="world-map-picture" style={{ width: size, height: size }}>
           <canvas ref={canvas} width={250} height={250} aria-label="Discovered world terrain" />
-          {!showAll && visible.map((p, i) => <span key={i} className="world-map-place font-fell" style={{ left: `${p.x / 10}%`, top: `${p.y / 10}%` }}><span>{p.kind === 'maze_entrance' ? '◇' : p.kind === 'npc_home' ? '○' : p.action === 'merchant' ? '¤' : p.action === 'door_library' ? '▥' : '⌂'}</span>{p.kind === 'maze_entrance' ? `${p.maze_level} ${p.name}` : p.name}</span>)}
+          {!showAll && visible.map((p, i) => <span key={i} className="world-map-place font-fell" style={{ left: `${p.x / 10}%`, top: `${p.y / 10}%` }}><span>{p.kind === 'maze_entrance' ? '◇' : p.kind === 'npc_home' ? '○' : p.action === 'merchant' ? '¤' : p.action === 'collector' ? '◎' : p.action === 'door_library' ? '▥' : '⌂'}</span>{p.kind === 'maze_entrance' ? `${p.maze_level} ${p.name}` : p.name}</span>)}
           {!showAll && findMarks.map(({ f, mark, cls }) => <span key={f.id} className={cls} style={{ left: `${f.x / 10}%`, top: `${f.y / 10}%` }} aria-hidden="true">{mark}</span>)}
           {showAll && <DevMapMarkers markers={devMarks} />}
           {target && <span className="world-map-find text-primary" style={{ left: `${target.x / 10}%`, top: `${target.y / 10}%`, color: 'var(--plate-gold)' }} aria-label={target.title}>◆</span>}
@@ -62,5 +63,6 @@ export default function WorldMap({ bits, player, layer, aura, dev, registrationN
       </TransformWrapper>
       {!art && <p className="world-map-loading font-fell">{error ? 'The map could not be loaded.' : 'Loading…'}</p>}
     </div>
+    <FindsProgress />
   </section>;
 }

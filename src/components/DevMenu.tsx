@@ -1,3 +1,4 @@
+import DevMazeTools, { type DevMazeActions } from '@/components/DevMazeTools';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { METEOR_PLAY, WORLD_RELOAD, clearMeteorPending } from '@/lib/meteor';
 import { useNavigate } from 'react-router-dom';
@@ -15,8 +16,8 @@ import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED } from '@/lib/mechanics';
 import { Switch } from './ui/switch';
 import { setDevMapEnabled, useDevMapEnabled } from '@/lib/devWorldMap';
 
-type Props = { open: boolean; onClose: () => void; userId?: string; registrationNumber?: number | null; home?: 'world'; onChanged?: () => void; onBeforeStart?: () => Promise<void>; onBeforeTopup?: () => Promise<unknown> | void };
-export default function DevMenu({ open, onClose: close, userId, registrationNumber, onChanged, onBeforeStart, onBeforeTopup }: Props) {
+type Props = { open: boolean; onClose: () => void; userId?: string; registrationNumber?: number | null; home?: 'world'; onChanged?: () => void; onBeforeStart?: () => Promise<void>; onBeforeTopup?: () => Promise<unknown> | void; maze?: DevMazeActions };
+export default function DevMenu({ open, onClose: close, userId, registrationNumber, onChanged, onBeforeStart, onBeforeTopup, maze }: Props) {
   const showAll = useDevMapEnabled(registrationNumber);
   const navigate = useNavigate();
   const user = userId ? { id: userId } : null;
@@ -158,6 +159,7 @@ export default function DevMenu({ open, onClose: close, userId, registrationNumb
               onClose();
             }} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>MOVEMENT DEBUG</Button>
             <div style={{ height: 1, background: 'var(--game-dev-divider)', margin: '6px 0' }} />
+            {maze && registrationNumber === 1 && <DevMazeTools maze={maze} />}
             <div style={{ opacity: 0.7, fontSize: 11 }}>SUBSCRIPTION OVERRIDES</div>
             <Button variant="ghost" type="button" onClick={() => { sessionStorage.setItem('dev_sub_override', 'active'); onClose(); }} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>SET SUB: ACTIVE</Button>
             <Button variant="ghost" type="button" onClick={() => { sessionStorage.setItem('dev_sub_override', 'expired'); onClose(); }} style={{ background: 'transparent', border: '1px solid var(--game-dev-text)', color: 'var(--game-dev-text)', padding: '8px 12px', fontFamily: 'inherit', cursor: 'pointer', textAlign: 'left' }}>SET SUB: EXPIRED</Button>

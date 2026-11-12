@@ -7,6 +7,7 @@ import DropIcon from '@/components/DropIcon';
 import { supabase } from '@/lib/supabase';
 import { DIMENSION_GLOW } from '@/lib/theme/tokens';
 import type { ConsoleResult, ConsoleState } from '@/lib/console';
+import { DEV_CONSOLE_ANSWER, applyAnswerSigns, devConsoleAnswerFor } from '@/lib/console';
 import { inventoryChanged } from '@/lib/inventoryEvents';
 import { PRAEMS_CHANGED, praemTone, unlockPraemAudio } from '@/lib/praems';
 
@@ -48,7 +49,8 @@ export default memo(function ConsolePanel({ open, level, onClose }: Props) {
           return;
         }
         setState(next);
-        setTerms([...(next.primes ?? [])].sort((a, b) => a - b));
+        const sorted = [...(next.primes ?? [])].sort((a, b) => a - b);
+        setTerms(applyAnswerSigns(sorted, devConsoleAnswerFor(level)) ?? sorted);
         setMessage('');
         const remaining = next.locked ? Math.max(0, next.retry_in_seconds) : 0;
         setSeconds(remaining);
@@ -61,6 +63,11 @@ export default memo(function ConsolePanel({ open, level, onClose }: Props) {
     return () => { generation.current++; if (previous instanceof HTMLElement) previous.focus(); };
   }, [open, level]);
 
+  useEffect(() => {
+    const onAnswer = (e: Event) => { const d = (e as CustomEvent<{ level: number; terms: number[] }>).detail; if (d?.level === level) setTerms(cur => applyAnswerSigns(cur, d.terms) ?? cur); };
+    window.addEventListener(DEV_CONSOLE_ANSWER, onAnswer);
+    return () => window.removeEventListener(DEV_CONSOLE_ANSWER, onAnswer);
+  }, [level]);
   useEffect(() => { if (open && (state || message)) dialog.current?.focus(); }, [open, state, message]);
   useEffect(() => {
     if (!deadline || !open) return;

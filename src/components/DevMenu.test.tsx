@@ -81,4 +81,22 @@ describe('dev top-ups', () => {
     await screen.findByText('Dev only.'); expect(refreshed).not.toHaveBeenCalled();
     window.removeEventListener(USER_STEPS_REFRESHED, refreshed);
   });
+});describe('maze speedwalk tools', () => {
+  const maze = { level: 4, collectAll: vi.fn(async () => 'done'), jumpDoor: vi.fn() };
+  it('show only inside a maze for registration one', () => {
+    const v = render(<MemoryRouter><DevMenu open registrationNumber={1} onClose={() => {}} /></MemoryRouter>);
+    expect(screen.queryByRole('button', { name: 'COLLECT ALL' })).toBeNull(); v.unmount();
+    const w = render(<MemoryRouter><DevMenu open registrationNumber={2} maze={maze} onClose={() => {}} /></MemoryRouter>);
+    expect(screen.queryByRole('button', { name: 'COLLECT ALL' })).toBeNull(); w.unmount();
+    render(<MemoryRouter><DevMenu open registrationNumber={1} maze={maze} onClose={() => {}} /></MemoryRouter>);
+    expect(screen.getByRole('button', { name: 'COLLECT ALL' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'JUMP TO CONSOLE' })).toBeNull();
+  });
+  it('console answer shows signed primes summing to the target', async () => {
+    rpc.mockResolvedValue({ data: { ok: true, terms: [83, -653, -677, -701, 727], target: -1221 }, error: null });
+    render(<MemoryRouter><DevMenu open registrationNumber={1} maze={maze} onClose={() => {}} /></MemoryRouter>);
+    fireEvent.click(screen.getByRole('button', { name: 'CONSOLE ANSWER' }));
+    await waitFor(() => expect(screen.getByTestId('dev-maze-note').textContent).toBe('+83 −653 −677 −701 +727 = −1221'));
+    expect(rpc).toHaveBeenCalledWith('dev_console_answer', { p_level: 4 });
+  });
 });

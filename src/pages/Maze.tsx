@@ -1,5 +1,5 @@
 import { PraemTreasure, PraemHum, PraemReceipt } from '@/components/PraemTreasure';
-import { myPraems, praemNearby, unlockPraemAudio } from '@/lib/praems';
+import { PRAEMS_CHANGED, myPraems, praemNearby, unlockPraemAudio } from '@/lib/praems';
 import { exitDestination } from '@/lib/worldReturn';
 import { useDevNoteContext } from '@/hooks/useDevNoteContext';
 import { notepadFocused } from '@/lib/devNotes';
@@ -28,6 +28,7 @@ import { setCurrentSkin, useSkins, type Skin } from '@/lib/skins';
 import { useNavigate } from 'react-router-dom';
 import SuppliesCard from '@/components/SuppliesCard';
 import DevMenu from '@/components/DevMenu';
+import { collectAll, nearestOpenNeighbour } from '@/lib/devSpeedwalk';
 import { Button } from '@/components/ui/button';
 import '@/components/game-home.css';
 import FragmentOverlay from '@/components/FragmentOverlay';
@@ -1014,9 +1015,9 @@ const Maze = () => {
     return () => { cancelled = true; };
   }, [config, levelLoaded, user]);
 
-  const claimRunDrop = (col: number, row: number) => {
+  const claimRunDrop = (col: number, row: number, silent = false): Promise<{ granted: boolean; name?: string; kind?: 'key' | 'drop'; reason?: string }> => {
     const key = `${col},${row}`;
-    if (!userIdRef.current || !runDropsRef.current.has(key) || pendingDropClaimsRef.current.has(key)) return;
+    if (!userIdRef.current || !runDropsRef.current.has(key) || pendingDropClaimsRef.current.has(key)) return Promise.resolve({ granted: false });
     const placement = runDropsRef.current.get(key);
     pendingDropClaimsRef.current.add(key);
     const generation = dropGenerationRef.current;
@@ -1027,7 +1028,7 @@ const Maze = () => {
           p_col: col,
           p_row: row,
         } as never);
-        if (generation !== dropGenerationRef.current || leavingRef.current || error) return;
+        if (generation !== dropGenerationRef.current || leavingRef.current || error) return { granted: false, reason: error?.message };
         const result = data as { granted?: boolean; ok?: boolean; drop_name?: string; name?: string; icon_svg?: string | null; kind?: 'key' | 'drop' } | null;
         if (result?.granted === true) {
           window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
@@ -1035,13 +1036,16 @@ const Maze = () => {
           if (uid) void refreshDrops(uid);
           void refreshRunEffects();
           const skin = result.drop_name ? skins.find(s => s.name === result.drop_name) : undefined;
-          if (placement?.praem) {
+          if (silent) { if (placement?.praem) window.dispatchEvent(new Event(PRAEMS_CHANGED)); }
+          else if (placement?.praem) {
             setPraemReceipt({ name: result.drop_name ?? result.name ?? placement.name, icon: result.icon_svg ?? placement.icon_svg });
             void myPraems().then(items => { const item = items.find(p => p.maze === currentLevelRef.current); if (item && generation === dropGenerationRef.current && !leavingRef.current) setPraemReceipt({ name: item.name, icon: item.icon_svg }); }).catch(() => undefined);
           } else if (skin) setSkinFound(skin);
           else showWhisper(`You found: ${result.drop_name ?? result.name ?? placement?.name ?? 'something'}. (carried)`, (result.kind ?? placement?.kind) === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
+          return { granted: true, name: result.drop_name ?? result.name ?? placement?.name, kind: result.kind ?? placement?.kind };
         }
-      } catch { /* silent — a failed claim must not interrupt movement */ }
+        return { granted: false, reason: (result as { reason?: string } | null)?.reason };
+      } catch { /* silent — a failed claim must not interrupt movement */ return { granted: false }; }
       finally {
         if (generation === dropGenerationRef.current) {
           pendingDropClaimsRef.current.delete(key);
@@ -1054,6 +1058,37 @@ const Maze = () => {
     })();
     dropClaimWritesRef.current.add(claim);
     void claim.finally(() => dropClaimWritesRef.current.delete(claim));
+    return claim;
+  };
+
+  // Dev speedwalk: the same claims as walking, run one after another, with one summary.
+  const devBusyRef = useRef(false);
+  const devCollectAll = async () => {
+    const cfg = configRef.current;
+    if (!cfg || !userIdRef.current || devBusyRef.current) return '';
+    devBusyRef.current = true;
+    try {
+      const summary = await collectAll({
+        fragments: cfg.fragments,
+        isCollected: prime => collectedRef.current.has(prime),
+        claimFragment: frag => claimFragment(currentLevelRef.current, frag.prime, frag.col, frag.row, generateFragmentImage(frag.prime, registrationNumberRef.current)),
+        onFragment: prime => { const next = new Set(collectedRef.current); next.add(prime); collectedRef.current = next; setCollected(next); },
+        crates: () => [...runDropsRef.current.keys()],
+        claimCrate: (col, row) => claimRunDrop(col, row, true),
+      });
+      window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
+      window.dispatchEvent(new Event(PRAEMS_CHANGED));
+      try { const row = await fetchOrCreateUser(userIdRef.current!); setCredits(row.credits); } catch { /* HUD keeps last value */ }
+      const text = summary.text;
+      showWhisper(text, 'var(--plate-gold)', 4000);
+      return text;
+    } finally { devBusyRef.current = false; }
+  };
+  const devJumpNear = (target: Cell | undefined) => {
+    const cfg = configRef.current;
+    if (!cfg || !target) return;
+    const best = nearestOpenNeighbour(target, cfg.cols, cfg.rows, isWall);
+    if (best) { prevPosRef.current = { ...posRef.current }; posRef.current = best; setPos(best); }
   };
 
 
@@ -1691,7 +1726,7 @@ const Maze = () => {
       {user && <SuppliesCard open={exchangeOpen} onClose={() => { setExchangeOpen(false); setExchangeError(false); }} userId={user.id} steps={stepsRemaining} credits={credits}
         beforeBuy={() => flushSteps()}
         onBalances={(s, c) => { setLedgerSteps(s); setCredits(c); }} />}
-      {registrationNumber === 1 && <DevMenu open={devOpen} onClose={closeDev} userId={user?.id} registrationNumber={registrationNumber} onBeforeTopup={() => flushSteps()} />}
+      {registrationNumber === 1 && <DevMenu open={devOpen} onClose={closeDev} userId={user?.id} registrationNumber={registrationNumber} onBeforeTopup={() => flushSteps()} maze={{ level: currentLevelRef.current, collectAll: devCollectAll, jumpDoor: () => devJumpNear(config?.door), jumpConsole: config?.visualCells?.some(c => c.type === 'CONSOLE_DOOR') ? () => devJumpNear(config.visualCells!.find(c => c.type === 'CONSOLE_DOOR')) : undefined }} />}
 
       {activeFragment && (
         <FragmentOverlay

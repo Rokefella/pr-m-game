@@ -1,3 +1,5 @@
+import { PraemTreasure, PraemHum, PraemReceipt } from '@/components/PraemTreasure';
+import { myPraems, praemNearby, unlockPraemAudio } from '@/lib/praems';
 import { exitDestination } from '@/lib/worldReturn';
 import { useDevNoteContext } from '@/hooks/useDevNoteContext';
 import { notepadFocused } from '@/lib/devNotes';
@@ -957,8 +959,12 @@ const Maze = () => {
   };
 
   // Placement contents belong to the server; the existing lifecycle decides resume.
-  type RunDrop = { name: string; kind: 'key' | 'drop' };
+  type RunDrop = { name: string; kind: 'key' | 'drop'; praem?: boolean; icon_svg?: string | null };
+  const [praemReceipt, setPraemReceipt] = useState<{ name: string; icon?: string | null } | null>(null);
+  useEffect(() => { if (!praemReceipt) return; const timer = setTimeout(() => setPraemReceipt(null), 5000); return () => clearTimeout(timer); }, [praemReceipt]);
+  useEffect(() => { window.addEventListener('pointerdown', unlockPraemAudio); window.addEventListener('keydown', unlockPraemAudio); return () => { window.removeEventListener('pointerdown', unlockPraemAudio); window.removeEventListener('keydown', unlockPraemAudio); }; }, []);
   const [runDrops, setRunDrops] = useState<Map<string, RunDrop>>(new Map());
+  const [praemCells, setPraemCells] = useState<Set<string>>(new Set());
   const runDropsRef = useRef<Map<string, RunDrop>>(new Map());
   const echoLayerRef = useRef<EchoLayerHandle>(null);
   const [echoSpawns, setEchoSpawns] = useState<Cell[]>([]);
@@ -974,6 +980,7 @@ const Maze = () => {
   useEffect(() => {
     const generation = ++dropGenerationRef.current;
     runDropsRef.current = new Map();
+    setPraemCells(new Set());
     setRunDrops(runDropsRef.current);
     pendingDropClaimsRef.current.clear();
     if (!config || !levelLoaded || !user) return;
@@ -997,9 +1004,10 @@ const Maze = () => {
         for (const item of data as Array<RunDrop & Cell>) {
           if (!item || !Number.isFinite(item.col) || !Number.isFinite(item.row) || typeof item.name !== 'string' || (item.kind !== 'key' && item.kind !== 'drop')) continue;
           const key = `${item.col},${item.row}`;
-          if (points.has(key)) placements.set(key, { name: item.name, kind: item.kind });
+          if (points.has(key)) placements.set(key, { name: item.name, kind: item.kind, praem: item.praem === true, icon_svg: item.icon_svg });
         }
         runDropsRef.current = placements;
+        setPraemCells(new Set([...placements].filter(([, drop]) => drop.praem).map(([key]) => key)));
         setRunDrops(placements);
       } catch { /* no placements; maze loading and movement stay independent */ }
     })();
@@ -1009,6 +1017,7 @@ const Maze = () => {
   const claimRunDrop = (col: number, row: number) => {
     const key = `${col},${row}`;
     if (!userIdRef.current || !runDropsRef.current.has(key) || pendingDropClaimsRef.current.has(key)) return;
+    const placement = runDropsRef.current.get(key);
     pendingDropClaimsRef.current.add(key);
     const generation = dropGenerationRef.current;
     const claim = (async () => {
@@ -1019,14 +1028,17 @@ const Maze = () => {
           p_row: row,
         } as never);
         if (generation !== dropGenerationRef.current || leavingRef.current || error) return;
-        const result = data as { granted?: boolean; drop_name?: string; kind?: 'key' | 'drop' } | null;
+        const result = data as { granted?: boolean; ok?: boolean; drop_name?: string; name?: string; icon_svg?: string | null; kind?: 'key' | 'drop' } | null;
         if (result?.granted === true) {
           window.dispatchEvent(new Event(NPC_INVENTORY_CHANGED));
           const uid = userIdRef.current;
           if (uid) void refreshDrops(uid);
           void refreshRunEffects();
           const skin = result.drop_name ? skins.find(s => s.name === result.drop_name) : undefined;
-          if (skin) setSkinFound(skin);
+          if (placement?.praem) {
+            setPraemReceipt({ name: result.drop_name ?? result.name ?? placement.name, icon: result.icon_svg ?? placement.icon_svg });
+            void myPraems().then(items => { const item = items.find(p => p.maze === currentLevelRef.current); if (item && generation === dropGenerationRef.current && !leavingRef.current) setPraemReceipt({ name: item.name, icon: item.icon_svg }); }).catch(() => undefined);
+          } else if (skin) setSkinFound(skin);
           else showWhisper(`You found: ${result.drop_name ?? 'something'}. (carried)`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
         }
       } catch { /* silent — a failed claim must not interrupt movement */ }
@@ -1388,6 +1400,8 @@ const Maze = () => {
 
   return (
     <div className="maze-theme" style={{ position: 'fixed', inset: 0, background: 'hsl(var(--background))', overflow: 'hidden', '--maze-light-core': `${DIMENSION_GLOW[glow]}14` } as CSSProperties}>
+      <PraemHum nearby={[...runDrops].some(([key, drop]) => { const [col, row] = key.split(',').map(Number); return drop.praem === true && praemNearby({ col, row }, pos); })} />
+      {praemReceipt && <PraemReceipt name={praemReceipt.name} icon={praemReceipt.icon} />}
       {eraSkin && <MazeSkinCanvas ref={skinCanvasRef} skin={eraSkin} grid={config} walls={objectFloorWalls} />}
       <div
         data-game-world ref={worldRef}
@@ -1409,7 +1423,7 @@ const Maze = () => {
           <div key={`object-${cell.type}-${cell.col},${cell.row}-${index}`} data-object={cell.type} style={{ position: 'absolute', left: cell.col * CELL, top: cell.row * CELL, width: CELL, height: CELL, zIndex: 9, pointerEvents: 'none' }}>
             {cell.type === 'ROOM_DOOR' && <><WallTile styleKey={theme.wall} dimension={glow} size={CELL} /><div className="absolute inset-0"><RoomDoorTile dimension={glow} color={cell.color} size={CELL} /></div></>}
             {cell.type === 'CONSOLE_DOOR' && <>{!mazeObjectSprite(eraSkin, 'instrument_point') && <WallTile styleKey={theme.wall} dimension={glow} size={CELL} />}<div className="absolute inset-0"><MazeEraObject skin={eraSkin} kind="instrument_point" size={CELL}><ConsoleDoorTile dimension={glow} size={CELL} /></MazeEraObject></div></>}
-            {(cell.type === 'DROP_SPAWN' || cell.type === 'DROP') && <DropCrate dimension={glow} size={CELL} lit={runDrops.has(`${cell.col},${cell.row}`)} tone={runDrops.get(`${cell.col},${cell.row}`)?.kind} />}
+            {(cell.type === 'DROP_SPAWN' || cell.type === 'DROP') && (praemCells.has(`${cell.col},${cell.row}`) ? (runDrops.has(`${cell.col},${cell.row}`) && <PraemTreasure cell={cell} player={pos} tone={eraSkin?.era_name ?? (currentLevel <= 5 ? 'fire' : currentLevel <= 10 ? 'gods' : currentLevel <= 15 ? 'atoms' : currentLevel <= 20 ? 'stars' : currentLevel <= 25 ? 'quantum' : 'swerve')} />) : <DropCrate dimension={glow} size={CELL} lit={runDrops.has(`${cell.col},${cell.row}`)} tone={runDrops.get(`${cell.col},${cell.row}`)?.kind} />)}
             {cell.type === 'NPC' && <div className="npc-orb-cell"><NpcOrb npc={cell.npc_key || cell.npc_name || cell.name || ''} size={npcBodyPx('maze')} quest={questState(cell.npc_key || cell.npc_name || cell.name || '')} /></div>}
           </div>
         ))}

@@ -5,7 +5,7 @@ vi.mock('@/hooks/useNpcQuestStates', () => ({ useNpcQuestStates: () => () => 'no
 
 const state = vi.hoisted(() => ({
   size: 5, library: 12,
-  carriedDrops: 2, failLibrary: false,
+  carriedDrops: 2, failLibrary: false, praem: false, banked: false,
   calls: [] as { table: string; method: string; args: unknown[] }[],
   slots: [] as { total: number; filled: number; revealed: boolean }[],
 }));
@@ -19,7 +19,7 @@ vi.mock('@/lib/questFlags', () => ({ getAllFlags: async () => ({}), setFlag: vi.
 vi.mock('@/lib/runState', () => ({ endRun: vi.fn() }));
 vi.mock('@/components/Thumbstick', () => ({ default: () => null }));
 vi.mock('@/components/theme/FolderSlots', () => ({ default: (props: { total: number; filled: number; revealed: boolean }) => { state.slots.push(props); return null; } }));
-vi.mock('@/lib/supabase', () => ({ supabase: { rpc: async (fn: string) => { state.calls.push({ table: fn, method: 'rpc', args: [] }); return { data: { ok: !state.failLibrary, banked: state.size, primes: Array.from({length:state.size}, (_, i) => i + 2), library_count: state.library }, error: null }; }, from: (table: string) => {
+vi.mock('@/lib/supabase', () => ({ supabase: { rpc: async (fn: string) => { state.calls.push({ table: fn, method: 'rpc', args: [] }); if (fn === 'my_praems') return { data: state.praem ? [{ maze: 1, state: state.banked ? 'set' : 'asleep', name: 'Ember', maze_name: 'Cinder Hollow', icon_svg: null }] : [], error: null }; if (fn === 'bank_fragments' && !state.failLibrary) state.banked = true; return { data: { ok: !state.failLibrary, banked: state.size, primes: Array.from({length:state.size}, (_, i) => i + 2), library_count: state.library }, error: null }; }, from: (table: string) => {
   let countQuery = false;
   const chain: Record<string, unknown> = {};
   for (const method of ['select', 'eq', 'order', 'update', 'upsert', 'delete', 'in', 'not', 'maybeSingle']) {
@@ -37,7 +37,7 @@ vi.mock('@/lib/supabase', () => ({ supabase: { rpc: async (fn: string) => { stat
 } } }));
 
 beforeEach(() => {
-  vi.useFakeTimers(); state.size = 5; state.library = 12; state.carriedDrops = 2; state.failLibrary = false; state.calls = []; state.slots = [];
+  vi.useFakeTimers(); state.size = 5; state.library = 12; state.carriedDrops = 2; state.failLibrary = false; state.praem = false; state.banked = false; state.calls = []; state.slots = [];
   sessionStorage.setItem('praem_shadow_entry', JSON.stringify({ ts: Date.now() }));
   vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() }));
 });
@@ -52,6 +52,12 @@ async function beginTransfer() {
 }
 
 describe('Shadow transfer counts', () => {
+  it('refreshes sleeping Præms after banking and opens the newly lit Wall', async () => {
+    state.praem = true; await beginTransfer();
+    expect(document.querySelector('[aria-label="The Wall"]')).not.toBeNull();
+    expect(document.body.textContent).toContain('Præm set. The way to Cinder Hollow is open.');
+    expect(state.calls.filter(c => c.table === 'my_praems').length).toBeGreaterThanOrEqual(3);
+  });
   it('snapshots current-level carried drops before fragment banking and refreshes only after success', async () => {
     const { DROPS_REFRESHED } = await import('@/lib/carriedDrops');
     const refreshed = vi.fn(); window.addEventListener(DROPS_REFRESHED, refreshed);
@@ -72,7 +78,7 @@ describe('Shadow transfer counts', () => {
     await beginTransfer();
     expect(state.calls.filter(c => c.table === 'drops' && c.method === 'select')).toHaveLength(1);
     state.failLibrary = false; state.carriedDrops = 0;
-    fireEvent.click(document.querySelector('button') as HTMLButtonElement);
+    fireEvent.click([...document.querySelectorAll('button')].find(button => button.textContent === 'RETRY') as HTMLButtonElement);
     await act(async () => {});
     expect(state.calls.filter(c => c.table === 'drops' && c.method === 'select')).toHaveLength(2);
     // Level and completion are server-owned (complete_maze); banking never writes the player row.

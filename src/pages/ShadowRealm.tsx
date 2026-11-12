@@ -1,3 +1,6 @@
+import PraemWall from '@/components/PraemWall';
+import { Button } from '@/components/ui/button';
+import { myPraems, discoverPraemEntrances, praemTone, unlockPraemAudio, type Praem } from '@/lib/praems';
 import { exitDestination } from '@/lib/worldReturn';
 import { serverNow } from '@/lib/serverClock';
 import { useDevNoteContext } from '@/hooks/useDevNoteContext';
@@ -208,6 +211,14 @@ const ShadowRealm = () => {
   const [wallShadows, setWallShadows] = useState<PlacedCell[]>([]);
   const [mapRect, setMapRect] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
 
+  const [praems, setPraems] = useState<Praem[]>([]);
+  const praemsRef = useRef<Praem[]>([]);
+  const [wallOpen, setWallOpen] = useState(false);
+  const wallOpenRef = useRef(false); wallOpenRef.current = wallOpen;
+  const [justSet, setJustSet] = useState<number[]>([]);
+  const justSetRef = useRef<number[]>([]);
+  useEffect(() => { let off = false; void myPraems().then(items => { if (!off) { praemsRef.current = items; setPraems(items); } }).catch(() => undefined); return () => { off = true; }; }, [user?.id]);
+
   // ----- realm state -----
   const [atmoIndex, setAtmoIndex] = useState(0);
   const [pos, setPos] = useState({ x: 0, y: 0 }); // offset from screen center, px
@@ -240,6 +251,7 @@ const ShadowRealm = () => {
   const [nextLevel, setNextLevel] = useState<number | null>(null);
   const [levelFlash, setLevelFlash] = useState(false);
   const reducedMotion = useReducedMotion();
+  useEffect(() => { window.addEventListener('pointerdown', unlockPraemAudio); window.addEventListener('keydown', unlockPraemAudio); return () => { window.removeEventListener('pointerdown', unlockPraemAudio); window.removeEventListener('keydown', unlockPraemAudio); }; }, []);
   const reducedRef = useRef(reducedMotion);
   reducedRef.current = reducedMotion;
 
@@ -450,11 +462,20 @@ const ShadowRealm = () => {
     if (!user) return false;
     const frags = runFragsRef.current;
     // Level-up guard: with nothing to bank, nothing is written and no level is gained.
-    if (frags.length === 0) return true;
     try {
+      try { praemsRef.current = await myPraems(); } catch { /* retain the entry snapshot */ }
       const result = await bankFragments();
       if (!result.ok) throw new Error(result.reason ?? 'Banking refused');
       setLibraryCount(result.library_count);
+      try {
+        const before = praemsRef.current;
+        const items = await myPraems();
+        const newlySet = items.filter(p => p.state === 'set' && before.some(old => old.maze === p.maze && old.state === 'asleep'));
+        praemsRef.current = items; setPraems(items); justSetRef.current = newlySet.map(p => p.maze); setJustSet(justSetRef.current);
+        if (newlySet.length) { praemTone(true); wallOpenRef.current = true; setWallOpen(true); }
+        void discoverPraemEntrances(user.id, newlySet).catch(() => undefined);
+      } catch { /* presentation reads never undo banking */ }
+
       await getAllFlags(user.id);
       // Maze completion and the pending level-up are recorded by complete_maze at the golden door.
       endRun();
@@ -541,8 +562,9 @@ const ShadowRealm = () => {
     if (!ok) { setError(true); return; }
     if (user) void refreshDrops(user.id);
     if (runFragsRef.current.length > 0) setBankedDrops(carriedDropsSnapshotRef.current ?? 0);
+    if (justSetRef.current.length) { setTransferring(false); transferringRef.current = false; return; }
     playAfterBank();
-  }, [bankFirst, playAfterBank, user]);
+  }, [bankFirst, playAfterBank, user, justSet]);
 
   const transferStartedRef = useRef(false);
   const startTransfer = useCallback(() => {
@@ -569,7 +591,7 @@ const ShadowRealm = () => {
   const move = useCallback(
     (dx: number, dy: number) => {
       if (notepadFocused()) return;
-      if (transferringRef.current) return;
+      if (transferringRef.current || wallOpenRef.current) return;
       const next = { x: posRef.current.x + dx * STEP, y: posRef.current.y + dy * STEP };
       // Walls from the published layout block movement.
       if (wallSetRef.current.has(wallKey(next.x, next.y))) return;
@@ -754,8 +776,11 @@ const ShadowRealm = () => {
         </div>
       )}
 
-      <Thumbstick onMove={(dc, dr) => move(dc, dr)} disabled={transferring} />
+      <Thumbstick onMove={(dc, dr) => move(dc, dr)} disabled={transferring || wallOpen} />
 
+      <Button className="praem-wall-open" disabled={transferring} onClick={() => { unlockPraemAudio(); setWallOpen(true); }}>The Wall</Button>
+      {wallOpen && user && <PraemWall items={praems} justSet={justSet} userId={user.id} onClose={() => { setWallOpen(false); if (justSet.length) navigate(exitDestination()); }} onTravel={() => navigate('/world')} />}
+      {justSet.length > 0 && <p role="status" className="praem-set-notice font-fell italic">{praems.filter(p => justSet.includes(p.maze)).map(p => `Præm set. The way to ${p.maze_name ?? p.name} is open.`).join(' ')}</p>}
       {/* HUD */}
       <div className="font-mono" style={{
         position: 'fixed', left: 0, right: 0, bottom: 0, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'space-between',

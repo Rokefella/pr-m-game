@@ -1,4 +1,5 @@
 import { latestBuiltAt, isStale, CHUNKS_BUILT_KEY } from '@/lib/worldFreshness';
+import { RIFT_ARRIVAL } from '@/lib/praems';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Map as MapIcon, Navigation, X } from 'lucide-react';
@@ -97,6 +98,8 @@ export default function WorldTest() {
 export function WorldSandbox({ identity: initialIdentity, userId }: { identity: Identity; userId?: string }) {
   const navigate = useNavigate();
   const reduced = useReducedMotion();
+  const [riftArrival, setRiftArrival] = useState(() => sessionStorage.getItem(RIFT_ARRIVAL) === '1');
+  useEffect(() => { if (!riftArrival) return; sessionStorage.removeItem(RIFT_ARRIVAL); const timer = setTimeout(() => setRiftArrival(false), reduced ? 100 : 850); return () => clearTimeout(timer); }, [riftArrival, reduced]);
   const [identity, setIdentity] = useState(initialIdentity);
   const identityRef = useRef(identity);
   identityRef.current = identity;
@@ -672,7 +675,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     return [...new Set(list.map(p => p.kind))].map(kind => ({ l, kind, items: list.filter(p => p.kind === kind).sort((a, b) => kind === 'maze_entrance' ? (a.maze_level ?? 0) - (b.maze_level ?? 0) : a.name.localeCompare(b.name)) }));
   });
   const visitors = shownPlayers(players, userId, layer, clock);
-  return <div className="world-test" data-night={phase.phase === 'night' || phase.phase === 'dusk'}><div className="world-scene">
+  return <div className="world-test" data-night={phase.phase === 'night' || phase.phase === 'dusk'}>{riftArrival && <div className="praem-rift-in" aria-hidden="true" />}<div className="world-scene">
     <canvas ref={canvas} aria-label="Open world terrain" onClick={e => {
       if (blocked.current) return;
       const bounds = e.currentTarget.getBoundingClientRect();

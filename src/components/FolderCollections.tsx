@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
+import { myPraems, praemOwned, PRAEMS_CHANGED, ringClass, type Praem } from '@/lib/praems';
 import DropIcon from './DropIcon';
 import PixelSigil from './theme/intro/PixelSigil';
 import type { OwnedDrop } from '@/lib/carriedDrops';
 
-export type Praem = { maze: number; found: boolean; name: string; icon_svg: string | null };
 export function notebookEntries(drops: OwnedDrop[]) {
   return drops.filter(d => d.category === 'words').sort((a, b) => (a.acquired_at ?? '').localeCompare(b.acquired_at ?? ''));
 }
@@ -12,16 +11,17 @@ export default function FolderCollections({ drops, revision }: { drops: OwnedDro
   const [praems, setPraems] = useState<Praem[]>([]);
   useEffect(() => {
     let off = false; setPraems([]);
-    void supabase.rpc('my_praems').then(({ data, error }) => { if (!off && !error && Array.isArray(data)) setPraems(data as Praem[]); });
-    return () => { off = true; };
+    const load = () => { void myPraems().then(data => { if (!off) setPraems(data); }).catch(() => undefined); };
+    load(); window.addEventListener(PRAEMS_CHANGED, load);
+    return () => { off = true; window.removeEventListener(PRAEMS_CHANGED, load); };
   }, [revision]);
-  const slots = Array.from({ length: 30 }, (_, i) => praems.find(p => p.maze === i + 1 && p.found));
+  const slots = Array.from({ length: 30 }, (_, i) => praems.find(p => p.maze === i + 1 && praemOwned(p)));
   const words = notebookEntries(drops);
   return <>
     <section className="mt-10" aria-label="Præms">
       <div className="profile-section-label font-mono"><span>PRÆMS</span><span>{slots.filter(Boolean).length} / 30</span></div>
-      <div className="profile-inventory-grid">{slots.map((p, i) => <div key={i} className={`profile-inventory-tile profile-praem-tile ${p ? '' : 'profile-tile-empty'}`} aria-label={p ? p.name : `Empty Præm slot ${i + 1}`}>
-        {p ? <><DropIcon svg={p.icon_svg} size={36} /><span className="font-fell italic">{p.name}</span></> : <span className="profile-praem-spiral"><PixelSigil id="praem" size={28} /></span>}
+      <div className="profile-inventory-grid">{slots.map((p, i) => <div key={i} className={`profile-inventory-tile profile-praem-tile ${p ? `${ringClass(p.ring)} praem-${p.state}` : 'profile-tile-empty'}`} aria-label={p ? p.name : `Empty Præm slot ${i + 1}`}>
+        {p ? <><DropIcon svg={p.state === 'set' ? p.icon_lit || p.icon_svg : p.icon_svg} size={36} /><span className="font-fell italic">{p.name}</span>{p.state === 'asleep' && <small className="font-fell italic">asleep</small>}</> : <span className="profile-praem-spiral"><PixelSigil id="praem" size={28} /></span>}
       </div>)}</div>
       <p className="profile-carry-note font-fell italic">One for every way in. Each one takes you back.</p>
     </section>

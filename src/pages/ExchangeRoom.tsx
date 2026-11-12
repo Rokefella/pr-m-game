@@ -1,3 +1,5 @@
+import PraemMarket from '@/components/PraemMarket';
+import { Button } from '@/components/ui/button';
 import PathBanner from '@/components/PathBanner';
 import { exitDestination } from '@/lib/worldReturn';
 import { createFragmentListing, cancelFragmentListing } from '@/lib/serverGame';
@@ -128,6 +130,7 @@ const ExchangeRoom = () => {
 
   // ---- Fragment marketplace state (UI only; room logic untouched) ----
   const [marketOpen, setMarketOpen] = useState(false);
+  const [marketTab, setMarketTab] = useState<'fragments' | 'praems'>('fragments');
   const [listings, setListings] = useState<Listing[]>([]);
   const [myListings, setMyListings] = useState<Listing[]>([]);
   const [myFragments, setMyFragments] = useState<OwnedFragment[]>([]);
@@ -723,6 +726,9 @@ const ExchangeRoom = () => {
             {credits} credits · {fragmentCount} fragments held
           </div>
 
+          <div className="flex gap-2 mb-4" role="tablist" aria-label="Banker market"><Button variant="outline" role="tab" aria-selected={marketTab === 'fragments'} onClick={() => setMarketTab('fragments')}>Fragments</Button><Button variant="outline" role="tab" aria-selected={marketTab === 'praems'} onClick={() => setMarketTab('praems')}>Præms</Button></div>
+          {marketTab === 'praems' && user && <PraemMarket userId={user.id} credits={credits} onCredits={setCredits} />}
+          {marketTab === 'fragments' && <>
           {marketError && (
             <div
               className="font-fell italic"
@@ -910,6 +916,7 @@ const ExchangeRoom = () => {
               </div>
             ))
           )}
+          </>}
         </div>
       )}
 

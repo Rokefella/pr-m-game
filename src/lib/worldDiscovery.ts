@@ -37,6 +37,7 @@ export function discoverRadius(bits: string, x: number, y: number, radius: numbe
 }
 export class WorldDiscovery {
   bits: string;
+  readonly ready: Promise<void>;
   private dirty = false;
   private loading = true;
   private loaded = false;
@@ -51,7 +52,7 @@ export class WorldDiscovery {
     let local = ''; try { local = localStorage.getItem(this.key) ?? ''; } catch { /* unavailable */ }
     this.bits = mergeDiscovery(local);
     this.timer = setInterval(() => { if (!this.loaded && !this.loading && Date.now() - this.lastAttempt >= DISCOVERY_SAVE_MS) void this.load(); else void this.flush(); }, 1000);
-    void this.load();
+    this.ready = this.load();
   }
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener); }; };
   private publish() { try { localStorage.setItem(this.key, this.bits); } catch { /* unavailable */ } this.listeners.forEach(f => f()); }

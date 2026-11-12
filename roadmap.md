@@ -4,6 +4,12 @@
 - [ ] Step B live fragment pickup → Shadow bank, Folder slot, growth point and dev level walkthrough — external game session unavailable; /world redirects to /login, managed auth has no mintable users. No sample account created.
 # Roadmap
 
+- [x] Præm treasure: concealed era-colour orb, near hum/compass pulse and special pickup receipt.
+- [x] Shadow Wall: 30 sockets, bank/set animation, rift travel and twelve-tile entrance discovery.
+- [x] Folder asleep/set art and Banker Præm sell/buy tab with confirmation and unsellable Threshold.
+- [x] Præm regression suite: all 727 tests pass and preview compilation OK; isolated desktop/phone Wall shows all 30 sockets without page errors. No database changes.
+- [ ] Real-account Præm pickup/banking/rift/trade and sound check — external game session unavailable; /world redirects to /login. Automated responses and isolated layout checks do not verify live persistence or sound.
+
 - [x] Everyday finds: quest-only floating diamonds, Instrument-aware sparkle radii refreshed from NPC inventory/drop events, and cache titles/+amount receipts; all 715 tests pass and preview compilation OK. No database changes.
 
 - [x] Playtesting fixes: contact-only automatic finds with three-second receipts/retry guard, cold-fire markers/smoke, 30 Præm slots, maze-only fragments and chronological words notebook; all 700 tests pass and preview compilation OK. No database changes.

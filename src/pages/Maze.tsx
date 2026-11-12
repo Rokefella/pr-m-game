@@ -454,7 +454,7 @@ const Maze = () => {
   useEffect(() => { userIdRef.current = user?.id ?? null; }, [user]);
   const leavingRef = useRef(false);
   const fragmentWritesRef = useRef(new Set<Promise<void>>());
-  const dropClaimWritesRef = useRef(new Set<Promise<void>>());
+  const dropClaimWritesRef = useRef(new Set<Promise<unknown>>());
   const [exitError, setExitError] = useState(false);
   const leaveMaze = useCallback(async () => {
     if (leavingRef.current) return;

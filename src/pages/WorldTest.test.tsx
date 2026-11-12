@@ -81,6 +81,31 @@ describe('world sandbox access and read-only movement', () => {
     expect(f.rpc.mock.calls.every(([name]) => name === 'world_window' || name === 'claim_daily_steps' || name === 'my_paths')).toBe(true);
   });
 });
+describe('contact find claims', () => {
+  it.each(['thing', 'words'])('walking onto %s claims without a button or nearby popup', async kind => {
+    const module = await import('@/lib/worldFinds');
+    vi.spyOn(module, 'loadFinds').mockResolvedValue({ finds: [{ id: 'loot', find_key: 'loot', x: 26, y: 25, layer: 0, kind, title: 'Stone', text: 'Carved text', visibility: 'glint' }], claimed: new Set() });
+    const claim = vi.spyOn(module, 'claimFind').mockResolvedValue({ granted: true, kind, drop_name: 'Flint chip' });
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    expect(claim).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    await waitFor(() => expect(claim).toHaveBeenCalledWith('loot', { x: 26, y: 25 }));
+    if (kind === 'words') await screen.findByRole('dialog', { name: 'Stone' });
+    else { await screen.findByText('Kept: Flint chip'); expect(screen.queryByRole('dialog')).toBeNull(); }
+  });
+  it('missing coal shows a toast once and retries only after a real step off', async () => {
+    const module = await import('@/lib/worldFinds');
+    vi.spyOn(module, 'loadFinds').mockResolvedValue({ finds: [{ id: 'fire', find_key: 'fire', x: 26, y: 25, layer: 0, kind: 'quest_object', title: 'Cold fire', sprite_key: 'campfire_cold', visibility: 'visible' }], claimed: new Set() });
+    const claim = vi.spyOn(module, 'claimFind').mockResolvedValue({ granted: false, reason: 'needs' });
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    await screen.findByText('Something is missing.');
+    await new Promise(r => setTimeout(r, 400)); expect(claim).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+});
 describe('World home mechanics', () => {
   it('walking into a lit fire opens resting, flushes spending, and updates HUD from server balance', async () => {
     const fire = { id: 'fire', find_key: 'fire_1', x: 26, y: 25, layer: 0, kind: 'quest_object', sprite_key: 'campfire_cold', visibility: 'visible', title: 'Fire' };

@@ -30,7 +30,7 @@ export async function restAtFire(key: string): Promise<FireRestResult> {
   return error || !data ? { ok: false } : data;
 }
 export const findButton = (kind: string) => kind === 'debris' ? 'Search it' : kind === 'landmark' ? 'Look closer' : kind === 'quest_object' ? 'Light it' : kind === 'words' ? 'Read it' : 'Take it';
-export const findReceipt = (r: ClaimResult) => r.kind === 'debris' && r.drop_name ? `Found: ${r.drop_name}` : r.kind === 'words' ? 'Kept in your Folder' : r.kind === 'landmark' ? 'Noted in your Folder' : r.drop_name ? `Kept: ${r.drop_name}` : '';
+export const findReceipt = (r: ClaimResult) => r.kind === 'debris' && r.drop_name ? `Found: ${r.drop_name}` : r.kind === 'words' ? 'Kept in your Folder' : r.kind === 'landmark' ? 'Noted in your Folder' : r.drop_name ? `Kept: ${r.drop_name}` : r.kind === 'cache_steps' && r.amount != null ? `Found: ${r.amount} steps` : r.kind === 'cache_credits' && r.amount != null ? `+${r.amount} credits` : '';
 export const claimFailure = (reason?: string) => {
   switch (reason) {
     case 'too_far': return 'Come a little closer.';
@@ -53,12 +53,22 @@ export async function findWords(find: WorldFind): Promise<string> {
   return data?.description ?? '';
 }
 /** Unclaimed glint/hidden finds carry a floating marker at any distance. */
-export const findMarked = (f: WorldFind, claimed: boolean) => !claimed && (f.visibility === 'glint' || f.visibility === 'hidden');
+export const findMarked = (f: WorldFind, claimed: boolean) => !claimed && (f.visibility === 'glint' || f.visibility === 'hidden' || (f.kind === 'quest_object' && f.sprite_key === 'campfire_cold'));
 /** The unclaimed glint/hidden find in a bumped (blocked) cell, if any. */
-export const bumpedFind = (finds: WorldFind[], claimed: Set<string>, cell: WorldPoint) => finds.find(f => f.x === cell.x && f.y === cell.y && (findMarked(f, claimed.has(f.id)) || (f.kind === 'debris' && !claimed.has(f.id)))) ?? null;
-/** Walk-up rule: only finds on walkable cells open when the player comes within 1. */
-export const approachedFind = (finds: WorldFind[], claimed: Set<string>, skip: Set<string>, at: WorldPoint, walkable: (p: WorldPoint) => boolean) =>
-  finds.find(f => !claimed.has(f.id) && !skip.has(f.id) && chebyshev(f, at) <= 1 && findShows(f, at, false) && walkable(f)) ?? null;
+export const bumpedFind = (finds: WorldFind[], claimed: Set<string>, cell: WorldPoint) => finds.find(f => f.x === cell.x && f.y === cell.y && !claimed.has(f.id)) ?? null;
+/** One attempt per contact, independent of async claim completion. A real step releases the latch. */
+export class FindContact {
+  private attempted = new Set<string>();
+  private pending = new Set<string>();
+  step(finds: WorldFind[], at: WorldPoint) {
+    for (const id of this.attempted) if (!finds.some(f => f.id === id && f.x === at.x && f.y === at.y)) this.attempted.delete(id);
+  }
+  begin(id: string) {
+    if (this.attempted.has(id) || this.pending.has(id)) return false;
+    this.attempted.add(id); this.pending.add(id); return true;
+  }
+  finish(id: string) { this.pending.delete(id); }
+}
 /** 8-bit gold diamond floating above a cell; two-frame bob, static with reduced motion. */
 export function drawMarker(ctx: CanvasRenderingContext2D, px: number, py: number, time: number, ink: TerrainInk, reduced: boolean) {
   const bob = reduced ? 0 : Math.floor(time / 400) % 2 ? -2 : 0, s = 2, cx = Math.round(px + WORLD_TILE / 2), top = Math.round(py - 12 + bob);

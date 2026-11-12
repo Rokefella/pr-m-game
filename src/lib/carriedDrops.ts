@@ -6,6 +6,7 @@ export type OwnedDrop = {
   category: string | null; icon_svg: string | null; rarity?: string | null;
   effect?: string | null; value?: number | null;
   carried: boolean; run_level: number | null;
+  acquired_at?: string | null;
 };
 export type DropsRefresh = { userId: string; drops: OwnedDrop[] };
 
@@ -22,15 +23,15 @@ export function stackDrops(drops: OwnedDrop[]): DropStack[] {
 
 export async function readOwnedDrops(userId: string): Promise<OwnedDrop[]> {
   const { data, error } = await supabase.from('drops' as never)
-    .select('id, carried, run_level, drop_types(drop_key, name, description, category, icon_svg, rarity, effect, value)')
+    .select('id, carried, run_level, acquired_at, drop_types(drop_key, name, description, category, icon_svg, rarity, effect, value)')
     .eq('user_id', userId);
   if (error) throw error;
   type DropType = Partial<Omit<OwnedDrop, 'id' | 'carried' | 'run_level'>>;
-  const rows = (data ?? []) as unknown as Array<{ id: string; carried?: boolean; run_level?: number | null; drop_types?: DropType | DropType[] }>;
+  const rows = (data ?? []) as unknown as Array<{ id: string; carried?: boolean; run_level?: number | null; acquired_at?: string | null; drop_types?: DropType | DropType[] }>;
   return rows.map(row => {
     const type = Array.isArray(row.drop_types) ? row.drop_types[0] : row.drop_types;
     return {
-      id: row.id, carried: row.carried === true, run_level: row.run_level ?? null,
+      id: row.id, carried: row.carried === true, run_level: row.run_level ?? null, acquired_at: row.acquired_at,
       drop_key: type?.drop_key ?? '', name: type?.name ?? 'Unknown',
       description: type?.description ?? null, category: type?.category ?? null,
       icon_svg: type?.icon_svg ?? null, rarity: type?.rarity ?? null, effect: type?.effect ?? null, value: Number(type?.value) || 0,

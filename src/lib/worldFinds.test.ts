@@ -39,7 +39,7 @@ describe('world finds', () => {
     expect(findButton('tool')).toBe('Take it');
   });
 });
-import { approachedFind, bumpedFind, findMarked, fireAt, litFire } from './worldFinds';
+import { FindContact, bumpedFind, findMarked, fireAt, litFire } from './worldFinds';
 it('only a personally claimed cold quest fire opens resting on its exact cell', () => {
   const fire = f({ kind: 'quest_object', sprite_key: 'campfire_cold' });
   expect(litFire(fire, true)).toBe(true); expect(litFire(fire, false)).toBe(false);
@@ -61,11 +61,19 @@ describe('find markers, bumps and signposts', () => {
     expect(bumpedFind([a], new Set(['a']), { x: 10, y: 10 })).toBeNull();
     expect(bumpedFind([a], new Set(), { x: 11, y: 10 })).toBeNull();
   });
-  it('walk-up opens only finds on walkable cells within 1', () => {
-    const a = f({ id: 'a' });
-    expect(approachedFind([a], new Set(), new Set(), { x: 11, y: 11 }, () => true)).toBe(a);
-    expect(approachedFind([a], new Set(), new Set(), { x: 11, y: 11 }, () => false)).toBeNull();
-    expect(approachedFind([a], new Set(), new Set(), { x: 12, y: 10 }, () => true)).toBeNull();
+  it('contact is exact-cell only, and visible cold fires have a diamond until lit', () => {
+    const fire = f({ kind: 'quest_object', sprite_key: 'campfire_cold', visibility: 'visible' });
+    expect(findMarked(fire, false)).toBe(true); expect(findMarked(fire, true)).toBe(false);
+    expect(bumpedFind([fire], new Set(), { x: 11, y: 10 })).toBeNull();
+    expect(bumpedFind([fire], new Set(), fire)).toBe(fire);
+  });
+  it('failed contact cannot loop; stepping off permits a new attempt but pending claims cannot duplicate', () => {
+    const guard = new FindContact(), find = f({});
+    expect(guard.begin('1')).toBe(true); guard.finish('1');
+    expect(guard.begin('1')).toBe(false);
+    guard.step([find], { x: 11, y: 10 }); expect(guard.begin('1')).toBe(true);
+    guard.step([find], { x: 11, y: 10 }); expect(guard.begin('1')).toBe(false);
+    guard.finish('1'); expect(guard.begin('1')).toBe(true);
   });
   it('parses signpost notes with directions', () => {
     expect(signpostLines('Onward: Lumen, about 1,180 paces\nBack: Mossford, about 360 paces')).toEqual([

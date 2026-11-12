@@ -22,6 +22,7 @@ import { publishOrb, type OrbChange } from '@/lib/orb';
 import { X } from 'lucide-react';
 import { fragmentInventory, type FolderFragment } from '@/lib/carriedFragments';
 import DropIcon from '@/components/DropIcon';
+import FolderCollections from '@/components/FolderCollections';
 import Wardrobe from '@/components/Wardrobe';
 import { INVENTORY_CHANGED } from '@/lib/inventoryEvents';
 import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED, type WorldUseContext, type MazeUseContext } from '@/lib/mechanics';
@@ -646,7 +647,7 @@ const ProfileOverlay = ({
               {(() => {
                 const tradeStat = accountRow?.trade ?? 0;
                 const dropCapacity = 20 + tradeStat * 2 + extraDropCapacity;
-                const stacks = stackDrops(ownedDrops);
+                const stacks = stackDrops(ownedDrops.filter(d => d.category !== 'words'));
                 const owned = stacks.length;
                 const dropCells = Array.from({ length: dropCapacity }, (_, i) => stacks[i] || null);
                 const creditsNum = accountRow?.credits ?? 0;
@@ -683,7 +684,6 @@ const ProfileOverlay = ({
 
                     {selectedDrop && <DropDetail key={selectedDrop.id} drop={selectedDrop} world={worldUse} beforeUse={beforeDropUse} maze={context === 'maze' ? mazeUse : undefined} steps={accountRow?.steps_remaining} onRefresh={() => setDropsNonce(n => n + 1)} onClose={() => setDropTooltip(null)} onUsed={(m, c) => { setDyeWhisper(m); setDropTooltip(null); if (c) applyOrb(c); setDropsNonce(n => n + 1); }} />}
                     {dyeWhisper && <p role="status" className="font-fell italic dye-whisper">{dyeWhisper}</p>}
-                    {ownedDrops.some(d => d.category === 'words') && <div style={{ marginTop: 24 }}><div className="profile-section-label font-mono"><span>CARVED WORDS</span></div>{stacks.filter(d => d.category === 'words').map(d => <div key={d.id} style={{ marginTop: 12 }}><p className="font-cinzel">{d.name}</p>{d.description && <p className="font-fell italic" style={{ whiteSpace: 'pre-line', color: 'var(--plate-label)' }}>{d.description}</p>}</div>)}</div>}
 
                     {/* Status text */}
                     {owned === 0 && (
@@ -721,7 +721,8 @@ const ProfileOverlay = ({
                   </div>
                 );
               })()}
-              <div className="mt-10">
+              <FolderCollections drops={ownedDrops} revision={`${user?.id}:${dropsNonce}`} />
+              {context === 'maze' && <div className="mt-10">
               <div className="profile-section-label font-mono"><span>FRAGMENTS</span><span>{count} / 20</span></div>
               <div className="profile-inventory-grid">
                 {cells.map((frag, i) => <Button key={i} variant="outline" className={`profile-inventory-tile ${frag ? 'profile-fragment-carried' : 'profile-tile-empty'}`} disabled={!frag} aria-label={frag ? `Prime ${formatPrime(frag.prime_number)}` : `Empty fragment slot ${i + 1}`} onClick={() => frag && setFolderTooltip(folderTooltip === frag.id ? null : frag.id)}>{frag && <span className="font-cinzel">{formatPrime(frag.prime_number)}</span>}</Button>)}
@@ -743,7 +744,7 @@ const ProfileOverlay = ({
                 );
               })()}
 
-              </div>
+              </div>}
             </div>
           );
         })()}

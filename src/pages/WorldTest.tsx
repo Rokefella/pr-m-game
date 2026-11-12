@@ -47,8 +47,9 @@ import SamCard from '@/components/SamCard';
 import PathBanner from '@/components/PathBanner';
 import FindCard from '@/components/FindCard';
 import FireRestCard from '@/components/FireRestCard';
+import { PATHS_REFRESH } from '@/hooks/usePaths';
 import { currentStage, figureNpc, merchantFigure, loadSam, shouldMarkMerchantMet, visiblePlaces } from '@/lib/worldSam';
-import { approachedFind, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, fireAt, litFire, findMarked, findShows, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
+import { FindContact, claimFind, claimFailure, findReceipt, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, fireAt, litFire, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
 import { npcFacingToward, npcSkin, setCurrentSkin, useSkins, type Facing } from '@/lib/skins';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
 import { worldWalkable } from '@/lib/worldTest';
@@ -237,7 +238,9 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const findsRef = useRef<WorldFind[]>([]);
   const [claimed, setClaimed] = useState<Set<string>>(new Set());
   const claimedRef = useRef<Set<string>>(new Set());
-  const approached = useRef(new Set<string>());
+  const findContact = useRef(new FindContact());
+  const [findToast, setFindToast] = useState<{ title: string; line: string } | null>(null);
+  useEffect(() => { if (!findToast) return; const timer = setTimeout(() => setFindToast(null), 3000); return () => clearTimeout(timer); }, [findToast]);
   const samLineRef = useRef<Set<string>>(new Set());
   const [samTick, setSamTick] = useState(0);
   const skins = useSkins(); // loading the catalogue re-renders so NPC sprites appear
@@ -338,6 +341,25 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     if (userId) await refreshDrops(userId);
     setSamTick(n => n + 1);
   }, [refreshCompleted, userId]);
+  const collectFind = useCallback(async (find: WorldFind, at: WorldPoint) => {
+    if (!findContact.current.begin(find.id)) return;
+    try {
+      await stepLedger.current?.settled();
+      const result = await claimFind(find.id, at);
+      if (result.granted || result.reason === 'already') {
+        markClaimed(find.id);
+        if (result.granted) {
+          setFindToast({ title: find.title, line: find.kind === 'quest_object' && find.sprite_key === 'campfire_cold' ? 'The fire catches.' : findReceipt({ ...result, kind: result.kind ?? find.kind }) });
+          window.dispatchEvent(new Event(PATHS_REFRESH));
+          void refreshReward().catch(error => notifySaveFailed('find refresh', error));
+        }
+        if (find.kind === 'words' || find.kind === 'landmark') {
+          keys.current.clear(); setFindCard({ find: { ...find, text: result.text || find.text }, reading: true });
+        }
+      } else setFindToast({ title: find.title, line: claimFailure(result.reason) });
+    } catch { setFindToast({ title: find.title, line: claimFailure('error') }); }
+    finally { findContact.current.finish(find.id); }
+  }, [markClaimed, refreshReward]);
   /** Throw away every cached chunk, the M map and the finds so a changed world (the meteor) shows at once. */
   const reloadWorld = useCallback(() => {
     caches.current[0].reset(); caches.current[1].reset();
@@ -456,8 +478,9 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       const merchant = placesOn(world.places, l).find(p => p.kind !== 'start' && merchantFigure(p) && p.x === cell.x && p.y === cell.y);
       const sign = f ? null : merchant ?? bumpedSignpost(placesOn(world.places, l), cell);
       if (!f && !sign) return;
+      if (f && !litFire(f, claimedRef.current.has(f.id))) { void collectFind(f, from); return; }
       blocked.current = true; keys.current.clear();
-      setTimeout(() => { if (f) setFindCard({ find: f, reading: false }); else if (sign) setPlaceCard(sign); }, 160);
+      if (f) setFindCard({ find: f, reading: false }); else if (sign) setPlaceCard(sign);
     };
     lastMove.current = performance.now();
     moveDuration.current = WORLD_MOVE_MS;
@@ -479,18 +502,18 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     journey.current = { from: display.current, started: lastMove.current, duration: moveDuration.current };
     if (terrain) ledger?.move(tileCost(terrain, eraAt(eraPointFor(next, l), world.eras)));
     cache.maintain(next);
+    const layerFinds = findsOn(findsRef.current, l);
+    findContact.current.step(layerFinds, next);
+    const contact = bumpedFind(layerFinds, claimedRef.current, next);
+    if (contact) void collectFind(contact, next);
     if (slide.current) return;
     const layerPlaces = currentPlaces(placesOn(world.places, l));
     for (const p of layerPlaces) if (p.npc_key && chebyshev(p, next) > 1) npcApproached.current.delete(npcId(placesOn(world.places, l).find(home => home.npc_key === p.npc_key) ?? p));
     const spot = layerPlaces.find(p => !p.npc_key && p.x === next.x && p.y === next.y) ?? adjacentConversation(layerPlaces.filter(p => !p.npc_key), next);
-    const layerFinds = findsOn(findsRef.current, l);
     const fire = fireAt(layerFinds, claimedRef.current, next);
     if (fire) { keys.current.clear(); setFindCard({ find: fire, reading: false }); return; }
-    for (const id of [...approached.current]) { const f = layerFinds.find(x => x.id === id); if (!f || chebyshev(f, next) > 1) approached.current.delete(id); }
     if (spot) { if (isSignpost(spot)) keys.current.clear(); setEntryMessage(''); setPlaceCard(spot); return; }
-    const near = approachedFind(layerFinds, claimedRef.current, approached.current, next, walkable);
-    if (near) { approached.current.add(near.id); setFindCard({ find: near, reading: false }); }
-  }, [userId]);
+  }, [userId, collectFind]);
   useEffect(() => {
     const down = (e: KeyboardEvent) => { if (slide.current) { e.preventDefault(); return; } if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return; if (e.key.toLowerCase() === 'm' && !e.repeat) { if (blocked.current && !document.querySelector('[aria-label="World map"]')) return; e.preventDefault(); keys.current.clear(); setMapOpen(open => !open); return; } if (convoOpen.current && /^(Arrow|[wasd]$)/i.test(e.key)) { e.preventDefault(); setPlaceCard(null); setFindCard(null); return; } if (blocked.current) return; if (/^(Arrow|[wasd]$)/i.test(e.key)) { e.preventDefault(); keys.current.add(e.key.toLowerCase()); } };
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
@@ -637,7 +660,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       const f = findsOn(findsRef.current, layer).find(f => f.x === x && f.y === y && chebyshev(f, posRef.current) <= 1);
       if (!f) return;
       const isClaimed = claimedRef.current.has(f.id);
-      if (litFire(f, isClaimed) || findMarked(f, isClaimed) || (!isClaimed && findShows(f, posRef.current, false))) setFindCard({ find: f, reading: false });
+      if (litFire(f, isClaimed)) setFindCard({ find: f, reading: false });
       else if (isClaimed && (f.kind === 'words' || f.kind === 'landmark')) setFindCard({ find: f, reading: true });
     }} />
     {buildings.map(b => { const box = buildingBox(b), id = `${b.x},${b.y}`, padding = meteorSmoke(b.terrain) ? 32 : 16; return <canvas key={id} ref={el => { if (el) buildingEls.current.set(id, el); else buildingEls.current.delete(id); }} width={b.terrain.sprite_w ?? box.w * 16} height={(b.terrain.sprite_h ?? box.h * 16) + padding} className="world-building" style={{ width: box.w * WORLD_TILE, height: (box.h + padding / 16) * WORLD_TILE }} aria-hidden="true" />; })}
@@ -662,11 +685,12 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       setArrival(null); await refreshCompleted();
     }} />}
     {meteorOpen && <MeteorFall reduced={reduced} onDone={finishMeteor} />}
+    {findToast && <div role="status" className="world-find-toast"><p className="font-cinzel">{findToast.title}</p><p className="font-fell italic">{findToast.line}</p></div>}
     {heavyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[25%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{HEAVY_LEGS}</p>}
     {dailyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[18%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{dailyMessage}</p>}
     <Thumbstick onMove={move} disabled={meteorOpen || suppliesOpen || profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || npcCardOpen || (Boolean(placeCard) && !(placeCard && (isWorldConversation(placeCard) || isSignpost(placeCard))))} />
     {mapOpen && <WorldMap bits={discoveryBits} player={pos} layer={layer} aura={identity.aura_color} dev={identity.registration_number === 1} registrationNumber={identity.registration_number} samStage={samStage} allPlaces={dev ? rawWorld.current?.places : undefined} types={data.terrain} places={data.places} finds={finds} claimed={claimed} players={visitors} target={revealTarget && !finds.some(f => f.x === revealTarget.x && f.y === revealTarget.y && claimed.has(f.id)) ? revealTarget : null} onClose={() => setMapOpen(false)} />}
-    {findCard && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={findCard.find.title}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close" onClick={() => setFindCard(null)}><X size={18} /></Button>{litFire(findCard.find, claimed.has(findCard.find.id)) ? <FireRestCard key={findCard.find.id} findKey={findCard.find.find_key} beforeRest={async () => { await stepLedger.current?.flush(); }} onSteps={steps => { stepLedger.current?.refresh(steps); identityRef.current = { ...identityRef.current, steps_remaining: steps }; setIdentity(row => ({ ...row, steps_remaining: steps })); }} /> : <FindCard key={findCard.find.id + String(findCard.reading)} find={findCard.find} reading={findCard.reading} at={() => posRef.current} onClaimed={markClaimed} onRewarded={() => void refreshReward()} onClose={() => setFindCard(null)} auraColor={identity.aura_color} orbDye={identity.orb_dye ?? null} registrationNumber={identity.registration_number} />}</section></div>}
+    {findCard && <div className="world-dialog-backdrop" data-game-ui="open" data-no-thumbstick><section className="world-dialog world-place-card" role="dialog" aria-label={findCard.find.title}><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close" onClick={() => setFindCard(null)}><X size={18} /></Button>{litFire(findCard.find, claimed.has(findCard.find.id)) ? <FireRestCard key={findCard.find.id} findKey={findCard.find.find_key} beforeRest={async () => { await stepLedger.current?.flush(); }} onSteps={steps => { stepLedger.current?.refresh(steps); identityRef.current = { ...identityRef.current, steps_remaining: steps }; setIdentity(row => ({ ...row, steps_remaining: steps })); }} /> : <FindCard key={findCard.find.id} find={findCard.find} />}</section></div>}
     {jumpOpen && <div className="world-dialog-backdrop" data-game-ui="open"><section className="world-dialog" role="dialog" aria-label="Jump to a place"><Button variant="ghost" size="icon" className="world-dialog-close" aria-label="Close jump menu" onClick={() => setJumpOpen(false)}><X size={18} /></Button><h2 className="font-cinzel">JUMP</h2><form onSubmit={e => { e.preventDefault(); const x = Number(jumpX), y = Number(jumpY); if (Number.isFinite(x) && Number.isFinite(y)) place({ x, y }, layer); }}><label className="font-mono">X<Input aria-label="Jump X" type="number" min={0} max={layerSize(layer) - 1} value={jumpX} onChange={e => setJumpX(e.target.value)} required /></label><label className="font-mono">Y<Input aria-label="Jump Y" type="number" min={0} max={layerSize(layer) - 1} value={jumpY} onChange={e => setJumpY(e.target.value)} required /></label><Button type="submit" className="world-jump">GO</Button></form><Button variant="outline" className="world-jump" onClick={() => place(startPoint(data), 0)}>RESTART AT START</Button>{jumpGroups.map(({ l, kind, items }) => <div key={`${l}-${kind}`} className="world-place-group"><h3 className="font-mono">{l === 1 ? 'UNDERGROUND · ' : 'SURFACE · '}{kind.replace(/_/g, ' ').toUpperCase()}</h3>{items.map((p, i) => <Button key={`${p.name}-${i}`} variant="ghost" onClick={() => place(p, l)}>{p.name}{p.maze_level ? ` · L${p.maze_level}` : ''}<span className="font-mono">{p.x},{p.y}</span></Button>)}</div>)}</section></div>}
     {userId && <MerchantOverlay home="world" open={Boolean(placeCard && placeAction(placeCard) === 'merchant')} onClose={() => setPlaceCard(null)} palette="green" title="The Merchant." openingLines={MERCHANT_LINES} userId={userId} credits={identity.credits ?? 0} onCreditsChange={credits => { identityRef.current = { ...identityRef.current, credits }; setIdentity(row => ({ ...row, credits })); }} items={merchantItems(level, 'world', async (qty = 1) => {
       const ledger = stepLedger.current;

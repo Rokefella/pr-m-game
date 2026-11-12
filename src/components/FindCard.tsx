@@ -1,70 +1,13 @@
-import { PATHS_REFRESH } from '@/hooks/usePaths';
-import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Button } from '@/components/ui/button';
-import { claimFailure, claimFind, findButton, findReceipt, findWords, type WorldFind } from '@/lib/worldFinds';
-import { isPlayerSkin, skinForDrop, useSkins } from '@/lib/skins';
-import { publishOrb } from '@/lib/orb';
-import SkinCard from '@/components/SkinCard';
-import type { WorldPoint } from '@/lib/worldTest';
+import { useEffect, useState } from 'react';
+import { findWords, type WorldFind } from '@/lib/worldFinds';
 
-type Props = {
-  find: WorldFind; reading: boolean; at: () => WorldPoint;
-  onClaimed: (id: string) => void; onRewarded?: () => void; onClose?: () => void;
-  auraColor?: string | null; orbDye?: string | null; registrationNumber?: number | null;
-};
-
-/** Small find card; the server decides every grant. Skin finds open the wardrobe card instead. */
-export default function FindCard({ find, reading, at, onClaimed, onRewarded, onClose, auraColor, orbDye, registrationNumber }: Props) {
-  const skins = useSkins();
-  const [busy, setBusy] = useState(false);
-  const flight = useRef(false);
-  const [text, setText] = useState<string | null>(reading ? find.text ?? '' : null);
-  const [receipt, setReceipt] = useState(reading ? 'Already in your Folder' : '');
-  const [note, setNote] = useState('');
-  const [skinFound, setSkinFound] = useState<{ description: string | null } | null>(null);
-  const skinKey = skinForDrop(find.drop_key);
-  const skin = skinKey ? skins.find(s => s.skin_key === skinKey && isPlayerSkin(s)) : undefined;
+/** Reading only: World claims on contact before opening this card. */
+export default function FindCard({ find }: { find: WorldFind }) {
+  const [text, setText] = useState(find.text ?? '');
   useEffect(() => {
-    if (!reading) return;
     let off = false;
     void findWords(find).then(value => { if (!off) setText(value); }).catch(() => undefined);
     return () => { off = true; };
-  }, [find, reading]);
-
-  const press = async () => {
-    if (flight.current) return;
-    flight.current = true; setBusy(true); setNote('');
-    try {
-      const r = await claimFind(find.id, at());
-      if (r.granted) {
-        onClaimed(find.id); onRewarded?.(); window.dispatchEvent(new Event(PATHS_REFRESH));
-        if (skin) { setSkinFound({ description: r.text ?? find.text ?? null }); return; }
-        setText(r.text || await findWords(find)); setReceipt(findReceipt({ ...r, kind: r.kind ?? find.kind }));
-      }
-      else if (r.reason === 'already') { setText(r.text || await findWords(find)); setReceipt('Already in your Folder'); onClaimed(find.id); }
-      else setNote(claimFailure(r.reason));
-    } catch { setNote(claimFailure('error')); }
-    finally { flight.current = false; setBusy(false); }
-  };
-
-  if (skinFound && skin) {
-    const wear = async () => {
-      const { data, error } = await (supabase.rpc as unknown as (f: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>)('equip_skin', { p_skin: skin.skin_key });
-      const res = data as { ok?: boolean; skin?: string } | null;
-      if (error || !res?.ok) return;
-      publishOrb({ aura_color: auraColor ?? null, orb_dye: orbDye ?? null, avatar_body: res.skin ?? skin.skin_key });
-      onClose?.();
-    };
-    return <SkinCard skin={skin} description={skinFound.description} auraColor={auraColor} orbDye={orbDye} registrationNumber={registrationNumber} onWear={wear} onClose={() => onClose?.()} />;
-  }
-
-  return <>
-    <h2 className="font-cinzel">{find.title}</h2>
-    {text != null ? <p className="font-fell world-find-text">{text}</p> : <>
-      {note && <p className="font-fell">{note}</p>}
-      <Button className="world-jump" disabled={busy} onClick={() => void press()}>{busy ? '…' : findButton(find.kind)}</Button>
-    </>}
-    {receipt && <p className="font-mono world-receipt">{receipt}</p>}
-  </>;
+  }, [find]);
+  return <><h2 className="font-cinzel">{find.title}</h2><p className="font-fell world-find-text">{text}</p></>;
 }

@@ -4,6 +4,11 @@
 
 @layer base {
   :root {
+    --notebook-paper: #2a2418;
+    --notebook-ink: #efe4c8;
+    --notebook-rule: rgba(239, 228, 200, .12);
+    --notebook-margin: rgba(200, 148, 58, .35);
+    --notebook-shadow: inset 0 1px 12px rgba(0, 0, 0, .28);
     --background: 240 43% 3%;
     --game-hud-background: rgba(4,4,10,.92);
     --game-hud-border: rgba(169,140,255,.3);
@@ -280,6 +285,16 @@
 .profile-inventory-grid { display: grid; grid-template-columns: repeat(4, minmax(64px, 1fr)); gap: 8px; }
 .profile-inventory-tile { min-width: 64px; min-height: 64px; height: auto; aspect-ratio: 1; padding: 4px; border-radius: 0; background: var(--plate-inset); white-space: normal; color: var(--auth-text); }
 .profile-inventory-tile span { overflow-wrap: anywhere; }
+.profile-praem-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center; font-size: 12px; }
+.profile-praem-spiral { opacity: .12; }
+.profile-notebook { background: repeating-linear-gradient(to bottom, transparent 0, transparent 27px, var(--notebook-rule) 27px, var(--notebook-rule) 28px), var(--notebook-paper); color: var(--notebook-ink); border-radius: 4px; box-shadow: var(--notebook-shadow); padding: 20px 16px 20px 30px; position: relative; line-height: 28px; font-size: 17px; overflow-wrap: anywhere; }
+.profile-notebook::before { content: ''; position: absolute; left: 20px; top: 12px; bottom: 12px; width: 1px; background: var(--notebook-margin); }
+.profile-notebook h3 { font-weight: 400; margin: 0; }
+.profile-notebook p { white-space: pre-wrap; margin: 0; }
+.profile-notebook-flourish { text-align: center; }
+.light { --notebook-paper: #efe4c8; --notebook-ink: #2a2418; --notebook-rule: rgba(42, 36, 24, .13); --notebook-shadow: inset 0 1px 12px rgba(42, 36, 24, .12); }
+.world-find-toast { position: fixed; bottom: max(100px, calc(env(safe-area-inset-bottom) + 80px)); left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100vw - 32px); z-index: var(--z-hud); pointer-events: none; padding: 10px 18px; background: var(--plate-backdrop); border: 1px solid var(--plate-gold); color: var(--auth-text); text-align: center; overflow-wrap: anywhere; }
+.world-find-toast p { margin: 0; font-size: 14px; line-height: 1.5; }
 .profile-fragment-carried { border: 1px dashed var(--instrument-beacon); font-size: 15px; }
 .profile-drop-filled { border: 1px solid var(--plate-filled); font-size: 13px; }
 .profile-drop-carried { border: 1px dashed var(--instrument-beacon); }

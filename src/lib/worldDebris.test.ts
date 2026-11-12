@@ -19,6 +19,12 @@ function context() {
 }
 beforeEach(() => { vi.clearAllMocks(); });
 describe('meteor debris presentation', () => {
+  it('animates the visible cold quest fire with shared smoke', () => {
+    const { ctx } = context();
+    const terrain = { key: 'campfire_cold', moves: 'smoke' } as Terrain;
+    drawFinds(ctx, [{ ...debris, kind: 'quest_object', sprite_key: terrain.key }], new Set(), debris, new Map([[terrain.key, terrain]]), camera, 400, 400, 1000, ink, false);
+    expect(art.motion).toHaveBeenCalledWith(ctx, terrain, 10, 10, 0, 0, 1000, ink, false, undefined, 1000, 40, false);
+  });
   it.each(['glow', 'smoke', 'glint'])('animates visible %s debris with the shared drawer', moves => {
     const { ctx } = context();
     const terrain = { key: debris.sprite_key, moves } as Terrain;

@@ -18,7 +18,8 @@ import { canAccessMaze, checkSubscriptionStatus, getDaysRemainingInTrial, type S
 import { effectiveWorldLevel, worldDoorRefusal, type WorldDoorKind } from '@/lib/worldHome';
 import { claimDailyStepsOnce, takeDailyStepsAnnouncement } from '@/lib/dailySteps';
 import { USER_STEPS_REFRESHED, USER_CREDITS_REFRESHED, WORLD_REVEALED, type MechanicResult } from '@/lib/mechanics';
-import { refreshDrops } from '@/lib/carriedDrops';
+import { readOwnedDrops, refreshDrops, DROPS_REFRESHED, type DropsRefresh } from '@/lib/carriedDrops';
+import { NPC_INVENTORY_CHANGED } from '@/hooks/useNpcQuestStates';
 import { ORB_EVENT, type OrbChange } from '@/lib/orb';
 import GameHud from '@/components/GameHud';
 import MerchantOverlay from '@/components/MerchantOverlay';
@@ -236,6 +237,27 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   useEffect(() => { if (npcCardOpen) keys.current.clear(); }, [npcCardOpen]);
   const [finds, setFinds] = useState<WorldFind[]>([]);
   const findsRef = useRef<WorldFind[]>([]);
+  const instrumentOwned = useRef(false);
+  useEffect(() => {
+    instrumentOwned.current = false;
+    if (!userId) return;
+    let off = false, generation = 0;
+    const read = () => {
+      const request = ++generation;
+      void readOwnedDrops(userId).then(drops => {
+        if (!off && request === generation) instrumentOwned.current = drops.some(d => d.drop_key === 'sam_instrument');
+      }).catch(() => undefined);
+    };
+    const refreshed = (event: Event) => {
+      const detail = (event as CustomEvent<DropsRefresh>).detail;
+      if (detail.userId !== userId) return;
+      generation++; instrumentOwned.current = detail.drops.some(d => d.drop_key === 'sam_instrument');
+    };
+    read();
+    window.addEventListener(NPC_INVENTORY_CHANGED, read);
+    window.addEventListener(DROPS_REFRESHED, refreshed);
+    return () => { off = true; window.removeEventListener(NPC_INVENTORY_CHANGED, read); window.removeEventListener(DROPS_REFRESHED, refreshed); };
+  }, [userId]);
   const [claimed, setClaimed] = useState<Set<string>>(new Set());
   const claimedRef = useRef<Set<string>>(new Set());
   const findContact = useRef(new FindContact());
@@ -349,7 +371,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       if (result.granted || result.reason === 'already') {
         markClaimed(find.id);
         if (result.granted) {
-          setFindToast({ title: find.title, line: find.kind === 'quest_object' && find.sprite_key === 'campfire_cold' ? 'The fire catches.' : findReceipt({ ...result, kind: result.kind ?? find.kind }) });
+          setFindToast({ title: find.title, line: find.kind === 'quest_object' && find.sprite_key === 'campfire_cold' ? 'The fire catches.' : findReceipt({ ...result, kind: find.kind, amount: result.amount ?? find.amount ?? undefined }) });
           window.dispatchEvent(new Event(PATHS_REFRESH));
           void refreshReward().catch(error => notifySaveFailed('find refresh', error));
         }
@@ -553,7 +575,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       lastDraw = time;
       drawWorld(ctx, cache, types, data.eras, layerPlaces[l], camera.current, width, height, time, ink, reduced, l, clock, skinnedRef.current, posRef.current);
       const layerFinds = findsOn(findsRef.current, l);
-      drawFinds(ctx, layerFinds, claimedRef.current, point, types, camera.current, width, height, time, ink, reduced);
+      drawFinds(ctx, layerFinds, claimedRef.current, point, types, camera.current, width, height, time, ink, reduced, instrumentOwned.current);
       const phase = worldPhase(clock, data.cycle);
       // /world is fully visible: day/night colour tint only, no sight radius or vignette (underground darkens via drawWorld's flat tint).
       if (l === 0) {

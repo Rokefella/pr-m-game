@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { findButton, findShows, findSprite, findRadius, normalizeClaim, type WorldFind } from './worldFinds';
+import { findButton, findShows, findSprite, findRadius, findReceipt, normalizeClaim, type WorldFind } from './worldFinds';
 const f = (o: Partial<WorldFind>): WorldFind => ({ id: '1', find_key: 'k', x: 10, y: 10, layer: 0, kind: 'thing', title: 't', visibility: 'glint', glint_radius: 2, ...o });
 describe('world finds', () => {
   it('recognizes current and legacy successful claims without granting failed claims', () => {
@@ -49,11 +49,29 @@ it('only a personally claimed cold quest fire opens resting on its exact cell', 
 });
 import { signpostLines } from './worldTest';
 describe('find markers, bumps and signposts', () => {
-  it('marks unclaimed glint/hidden finds at any distance, not claimed or visible ones', () => {
-    expect(findMarked(f({}), false)).toBe(true);
-    expect(findMarked(f({ visibility: 'hidden' }), false)).toBe(true);
-    expect(findMarked(f({}), true)).toBe(false);
-    expect(findMarked(f({ visibility: 'visible' }), false)).toBe(false);
+  it.each(['thing', 'cache_steps', 'cache_credits'])('ordinary %s never has a diamond', kind => {
+    expect(findMarked(f({ kind }), false)).toBe(false);
+    expect(findMarked(f({ kind, visibility: 'hidden', quest_key: 'quest' }), false)).toBe(false);
+  });
+  it.each(['quest_object', 'words', 'landmark', 'tool', 'sigil'])('unclaimed %s keeps its diamond', kind => {
+    expect(findMarked(f({ kind, visibility: 'visible' }), false)).toBe(true);
+    expect(findMarked(f({ kind }), true)).toBe(false);
+  });
+  it('other quest-key finds keep diamonds', () => {
+    expect(findMarked(f({ kind: 'debris', quest_key: 'meteor' }), false)).toBe(true);
+    expect(findMarked(f({ kind: 'debris' }), false)).toBe(false);
+  });
+  it('Instrument extends hidden radius from one to three and glint radius by one', () => {
+    const hidden = f({ visibility: 'hidden' });
+    expect(findShows(hidden, { x: 13, y: 10 }, false)).toBe(false);
+    expect(findShows(hidden, { x: 13, y: 10 }, false, true)).toBe(true);
+    expect(findShows(hidden, { x: 14, y: 10 }, false, true)).toBe(false);
+    expect(findRadius(f({ glint_radius: 1 }), true)).toBe(2);
+    expect(findRadius(f({ glint_radius: 2 }), true)).toBe(3);
+  });
+  it('cache receipts use returned amounts ahead of generic drop names', () => {
+    expect(findReceipt({ granted: true, kind: 'cache_steps', amount: 150, drop_name: 'Rations' })).toBe('+150 steps');
+    expect(findReceipt({ granted: true, kind: 'cache_credits', amount: 11, drop_name: 'Coins' })).toBe('+11 credits');
   });
   it('a bump into an unclaimed find cell returns that find', () => {
     const a = f({ id: 'a' });

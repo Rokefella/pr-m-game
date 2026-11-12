@@ -1,6 +1,7 @@
 # src/lib rules
 
 - FindContact separates contact retries from in-flight claims; World claims on exact-cell movement or blocked bumps, while reading cards never grant. FolderCollections reads my_praems and orders notebook words by drops.acquired_at, outside capacity-counted stacks.
+- worldFinds shares Instrument-aware visibility and sparkle radii independently of quest diamonds; World reads ownership once and refreshes it from NPC inventory events and authoritative drop snapshots so rendering never fetches inventory.
 
 - worldFinds renders looted debris as static dim husks; terrainTile shares meteor smoke across cell and anchor sprites, and decorative glow light uses spriteLight without changing visibility or collision.
 

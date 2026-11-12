@@ -19,6 +19,22 @@ function context() {
 }
 beforeEach(() => { vi.clearAllMocks(); });
 describe('meteor debris presentation', () => {
+  it('hidden loot sparkles at three cells only with the Instrument and stops at four', () => {
+    const { ctx } = context();
+    const hidden = { ...debris, kind: 'thing', visibility: 'hidden' };
+    const draw = (distance: number, instrument: boolean) => drawFinds(ctx, [hidden], new Set(), { x: 10 + distance, y: 10 }, new Map(), camera, 400, 400, 1000, ink, true, instrument);
+    draw(3, false); expect(ctx.fillRect).not.toHaveBeenCalled();
+    draw(3, true); expect(ctx.fillRect).toHaveBeenCalledTimes(3);
+    vi.mocked(ctx.fillRect).mockClear(); draw(4, true); expect(ctx.fillRect).not.toHaveBeenCalled();
+  });
+  it('ordinary glints sparkle only inside their authored radius, extended by one with the Instrument', () => {
+    const { ctx } = context();
+    const glint = { ...debris, kind: 'cache_steps', visibility: 'glint', glint_radius: 1 };
+    const draw = (distance: number, instrument: boolean) => drawFinds(ctx, [glint], new Set(), { x: 10 + distance, y: 10 }, new Map(), camera, 400, 400, 1000, ink, true, instrument);
+    draw(2, false); expect(ctx.fillRect).not.toHaveBeenCalled();
+    draw(2, true); expect(ctx.fillRect).toHaveBeenCalledTimes(3);
+    vi.mocked(ctx.fillRect).mockClear(); draw(1, false); expect(ctx.fillRect).toHaveBeenCalledTimes(3);
+  });
   it('animates the visible cold quest fire with shared smoke', () => {
     const { ctx } = context();
     const terrain = { key: 'campfire_cold', moves: 'smoke' } as Terrain;

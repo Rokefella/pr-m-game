@@ -6,7 +6,7 @@ const f = vi.hoisted(() => ({ uid: 'player', granted: 0, registration: 1, level:
 vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: f.signedIn ? { id: f.uid } : null, loading: false }) }));
 vi.mock('@/components/ProfileOverlay', () => ({ default: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div role="dialog" aria-label="Profile"><button onClick={onClose}>Close profile</button></div> : null, ProfileButton: ({ onClick }: { onClick: () => void }) => <button onClick={onClick}>Open profile</button> }));
 vi.mock('@/components/Thumbstick', () => ({ default: ({ onMove }: { onMove: (x: number, y: number) => void }) => <button onClick={() => onMove(1, 0)}>Walk east</button> }));
-vi.mock('@/hooks/useNpcQuestStates', () => ({ useNpcQuestStates: () => () => 'none', useNpcDisplayName: () => 'Merchant', NPC_DIALOGUE_CLOSED: 'npc-closed' }));
+vi.mock('@/hooks/useNpcQuestStates', () => ({ useNpcQuestStates: () => () => 'none', useNpcDisplayName: () => 'Merchant', NPC_DIALOGUE_CLOSED: 'npc-closed', NPC_INVENTORY_CHANGED: 'praem:npc-inventory-changed' }));
 vi.mock('@/lib/supabase', () => ({ supabase: { rpc: f.rpc, from: (table: string) => {
   f.reads.push(table);
   const result = () => ({ error: null, data: table === 'users' ? { registration_number: f.registration, aura_color: null, username: 'Rob', level: f.level, maze_completed_level: f.completed, steps_remaining: f.steps, credits: f.credits, levelup_pending: f.pending, levelup_newlevel: f.newLevel, social: f.social, title: f.title, unlocked_titles: f.unlocked } : table === 'quest_flags' ? Object.entries(f.flags).map(([flag_key, flag_value]) => ({ flag_key, flag_value })) : table === 'npcs' ? { id: 'sam', name: 'Sam' } : table === 'npc_dialogue_stages' ? [{ id: 'sam_03_back', condition: {}, text: 'You returned.', button_label: 'I am back.' }] : table === 'world_terrain_types' ? [{ key: 'path', name: 'Path', grp: 'ground', walkable: true, enabled: true, steps: null }, { key: 'wall', walkable: false, enabled: true }] : table === 'world_eras' ? [{ order_index: 1, name: 'Fire', ring_from: 0, ring_to: 500, step_cost: 1.5 }] : table === 'world_places' ? [{ name: 'Start', kind: 'start', x: 25, y: 25 }, { name: 'Cinder Hollow', kind: 'maze_entrance', maze_level: 1, x: 300, y: 31, notes: 'Ash' }, ...f.places] : table === 'world_settings' ? { day_night: {} } : [] });
@@ -82,6 +82,24 @@ describe('world sandbox access and read-only movement', () => {
   });
 });
 describe('contact find claims', () => {
+  it('reads Instrument ownership on arrival and refreshes on NPC inventory changes', async () => {
+    const module = await import('@/lib/carriedDrops');
+    const read = vi.spyOn(module, 'readOwnedDrops').mockResolvedValue([]);
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(read).toHaveBeenCalledTimes(1));
+    fireEvent(window, new Event('praem:npc-inventory-changed'));
+    await waitFor(() => expect(read).toHaveBeenCalledTimes(2));
+    expect(read).toHaveBeenLastCalledWith(f.uid);
+  });
+  it.each([['cache_steps', 'A bundle of rations', 150, '+150 steps'], ['cache_credits', 'A few coins', 11, '+11 credits']] as const)('uses the original %s find title and resource receipt', async (kind, title, amount, receipt) => {
+    const module = await import('@/lib/worldFinds');
+    vi.spyOn(module, 'loadFinds').mockResolvedValue({ finds: [{ id: 'cache', find_key: 'cache', x: 26, y: 25, layer: 0, kind, title, amount, visibility: 'glint' }], claimed: new Set() });
+    vi.spyOn(module, 'claimFind').mockResolvedValue({ granted: true, kind: 'thing', amount, title: 'Server generic title', drop_name: 'Cache' });
+    open(); await screen.findByText('25,25 · A 0,0 · Fire');
+    await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    await screen.findByText(receipt); expect(screen.getByText(title)).toBeInTheDocument();
+  });
   it.each(['thing', 'words'])('walking onto %s claims without a button or nearby popup', async kind => {
     const module = await import('@/lib/worldFinds');
     vi.spyOn(module, 'loadFinds').mockResolvedValue({ finds: [{ id: 'loot', find_key: 'loot', x: 26, y: 25, layer: 0, kind, title: 'Stone', text: 'Carved text', visibility: 'glint' }], claimed: new Set() });

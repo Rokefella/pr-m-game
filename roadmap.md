@@ -4,6 +4,8 @@
 - [ ] Step B live fragment pickup → Shadow bank, Folder slot, growth point and dev level walkthrough — external game session unavailable; /world redirects to /login, managed auth has no mintable users. No sample account created.
 # Roadmap
 
+- [x] Everyday finds: quest-only floating diamonds, Instrument-aware sparkle radii refreshed from NPC inventory/drop events, and cache titles/+amount receipts; all 715 tests pass and preview compilation OK. No database changes.
+
 - [x] Playtesting fixes: contact-only automatic finds with three-second receipts/retry guard, cold-fire markers/smoke, 30 Præm slots, maze-only fragments and chronological words notebook; all 700 tests pass and preview compilation OK. No database changes.
 - [ ] Real-player contact pickup and Folder visual check — external game authentication unavailable; preview redirects to /login. Automated interaction tests pass but do not establish live persistence.
 

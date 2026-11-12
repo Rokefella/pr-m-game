@@ -6,18 +6,18 @@ import { WORLD_TILE, type Terrain, type WorldPoint } from './worldTest';
 export type FindKind = 'cache_steps' | 'cache_credits' | 'thing' | 'tool' | 'words' | 'quest_object' | 'landmark' | 'sigil' | 'debris';
 export type WorldFind = {
   id: string; find_key: string; x: number; y: number; layer: number; kind: FindKind | string;
-  drop_key?: string | null; amount?: number | null; title: string; text?: string | null;
+  drop_key?: string | null; quest_key?: string | null; amount?: number | null; title: string; text?: string | null;
   visibility: 'glint' | 'hidden' | 'visible' | string; glint_radius?: number | null; sprite_key?: string | null;
 };
 export type ClaimResult = { granted: boolean; ok?: boolean; reason?: string; needs?: string; kind?: string; title?: string; text?: string; drop_name?: string; amount?: number };
 
 export const chebyshev = (a: WorldPoint, b: WorldPoint) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
 /** Distance within which an unclaimed find shows; visible finds always show, claimed glint/hidden never. */
-export const findRadius = (f: WorldFind) => f.visibility === 'hidden' ? 1 : Math.max(0, Number(f.glint_radius ?? 2));
-export const findShows = (f: WorldFind, player: WorldPoint, claimed: boolean) => {
+export const findRadius = (f: WorldFind, instrument = false) => f.visibility === 'hidden' ? (instrument ? 3 : 1) : Math.max(0, Number(f.glint_radius ?? 2)) + (instrument && f.visibility === 'glint' ? 1 : 0);
+export const findShows = (f: WorldFind, player: WorldPoint, claimed: boolean, instrument = false) => {
   if (f.visibility === 'visible') return true;
   if (claimed) return false;
-  return chebyshev(f, player) <= findRadius(f);
+  return chebyshev(f, player) <= findRadius(f, instrument);
 };
 /** Sprite to draw for a visible find; a claimed cold quest fire is lit (personal). */
 export const findSprite = (f: WorldFind, claimed: boolean) => f.kind === 'quest_object' && claimed && f.sprite_key === 'campfire_cold' ? 'campfire' : f.sprite_key ?? null;
@@ -30,7 +30,7 @@ export async function restAtFire(key: string): Promise<FireRestResult> {
   return error || !data ? { ok: false } : data;
 }
 export const findButton = (kind: string) => kind === 'debris' ? 'Search it' : kind === 'landmark' ? 'Look closer' : kind === 'quest_object' ? 'Light it' : kind === 'words' ? 'Read it' : 'Take it';
-export const findReceipt = (r: ClaimResult) => r.kind === 'debris' && r.drop_name ? `Found: ${r.drop_name}` : r.kind === 'words' ? 'Kept in your Folder' : r.kind === 'landmark' ? 'Noted in your Folder' : r.drop_name ? `Kept: ${r.drop_name}` : r.kind === 'cache_steps' && r.amount != null ? `Found: ${r.amount} steps` : r.kind === 'cache_credits' && r.amount != null ? `+${r.amount} credits` : '';
+export const findReceipt = (r: ClaimResult) => r.kind === 'cache_steps' && r.amount != null ? `+${r.amount} steps` : r.kind === 'cache_credits' && r.amount != null ? `+${r.amount} credits` : r.kind === 'debris' && r.drop_name ? `Found: ${r.drop_name}` : r.kind === 'words' ? 'Kept in your Folder' : r.kind === 'landmark' ? 'Noted in your Folder' : r.drop_name ? `Kept: ${r.drop_name}` : '';
 export const claimFailure = (reason?: string) => {
   switch (reason) {
     case 'too_far': return 'Come a little closer.';
@@ -52,8 +52,8 @@ export async function findWords(find: WorldFind): Promise<string> {
   const { data } = await db.from('drop_types').select('description').eq('drop_key', find.drop_key).maybeSingle();
   return data?.description ?? '';
 }
-/** Unclaimed glint/hidden finds carry a floating marker at any distance. */
-export const findMarked = (f: WorldFind, claimed: boolean) => !claimed && (f.visibility === 'glint' || f.visibility === 'hidden' || (f.kind === 'quest_object' && f.sprite_key === 'campfire_cold'));
+/** Quest markers are independent of local sparkle distance; everyday loot never gets a diamond. */
+export const findMarked = (f: WorldFind, claimed: boolean) => !claimed && !['thing', 'cache_steps', 'cache_credits'].includes(f.kind) && (['quest_object', 'words', 'landmark', 'tool', 'sigil'].includes(f.kind) || Boolean(f.quest_key));
 /** The unclaimed glint/hidden find in a bumped (blocked) cell, if any. */
 export const bumpedFind = (finds: WorldFind[], claimed: Set<string>, cell: WorldPoint) => finds.find(f => f.x === cell.x && f.y === cell.y && !claimed.has(f.id)) ?? null;
 /** One attempt per contact, independent of async claim completion. A real step releases the latch. */
@@ -94,7 +94,7 @@ export async function claimFind(id: string, at: WorldPoint): Promise<ClaimResult
 }
 
 /** Draws showing finds over the world (sparkles for glint/hidden, sprites for visible). */
-export function drawFinds(ctx: CanvasRenderingContext2D, finds: WorldFind[], claimed: Set<string>, player: WorldPoint, types: Map<string, Terrain>, camera: WorldPoint, width: number, height: number, time: number, ink: TerrainInk, reduced: boolean) {
+export function drawFinds(ctx: CanvasRenderingContext2D, finds: WorldFind[], claimed: Set<string>, player: WorldPoint, types: Map<string, Terrain>, camera: WorldPoint, width: number, height: number, time: number, ink: TerrainInk, reduced: boolean, instrument = false) {
   for (const f of finds) {
     const px = f.x * WORLD_TILE - camera.x, py = f.y * WORLD_TILE - camera.y;
     if (px < -WORLD_TILE || py < -WORLD_TILE || px > width || py > height) continue;
@@ -110,8 +110,8 @@ export function drawFinds(ctx: CanvasRenderingContext2D, finds: WorldFind[], cla
       if (f.kind === 'debris' && !isClaimed && chebyshev(f, player) <= 3) drawFindSparkle(ctx, px, py, f, time, ink, reduced);
       continue;
     }
-    if (!findMarked(f, isClaimed)) continue;
-    if (chebyshev(f, player) <= 2) {
+    if (isClaimed || (f.visibility !== 'glint' && f.visibility !== 'hidden')) continue;
+    if (findShows(f, player, false, instrument)) {
       drawFindSparkle(ctx, px, py, f, time, ink, reduced);
     }
   }

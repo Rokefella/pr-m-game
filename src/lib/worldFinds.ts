@@ -67,6 +67,8 @@ export class FindContact {
     if (this.attempted.has(id) || this.pending.has(id)) return false;
     this.attempted.add(id); this.pending.add(id); return true;
   }
+  /** Claim an item the player already chose to keep: only guards concurrent claims. */
+  claim(id: string) { if (this.pending.has(id)) return false; this.attempted.add(id); this.pending.add(id); return true; }
   finish(id: string) { this.pending.delete(id); }
 }
 /** 8-bit gold diamond floating above a cell; two-frame bob, static with reduced motion. */

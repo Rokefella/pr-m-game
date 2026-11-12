@@ -98,9 +98,10 @@ describe('contact find claims', () => {
     open(); await screen.findByText('25,25 · A 0,0 · Fire');
     await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
     fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Keep it' }));
     await screen.findByText(receipt); expect(screen.getByText(title)).toBeInTheDocument();
   });
-  it.each(['thing', 'words'])('walking onto %s claims without a button or nearby popup', async kind => {
+  it.each(['thing', 'words'])('walking onto %s claims once kept (words straight away)', async kind => {
     const module = await import('@/lib/worldFinds');
     vi.spyOn(module, 'loadFinds').mockResolvedValue({ finds: [{ id: 'loot', find_key: 'loot', x: 26, y: 25, layer: 0, kind, title: 'Stone', text: 'Carved text', visibility: 'glint' }], claimed: new Set() });
     const claim = vi.spyOn(module, 'claimFind').mockResolvedValue({ granted: true, kind, drop_name: 'Flint chip' });
@@ -108,6 +109,7 @@ describe('contact find claims', () => {
     await waitFor(() => expect(f.rpc).toHaveBeenCalledWith('world_window', expect.anything()));
     expect(claim).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Walk east' }));
+    if (kind === 'thing') { expect(claim).not.toHaveBeenCalled(); fireEvent.click(await screen.findByRole('button', { name: 'Keep it' })); }
     await waitFor(() => expect(claim).toHaveBeenCalledWith('loot', { x: 26, y: 25 }));
     if (kind === 'words') await screen.findByRole('dialog', { name: 'Stone' });
     else { await screen.findByText('Kept: Flint chip'); expect(screen.queryByRole('dialog')).toBeNull(); }

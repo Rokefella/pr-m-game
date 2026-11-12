@@ -11,7 +11,7 @@ export type Praem = {
 };
 export type PraemListing = { id: string; maze: number; name: string; ring?: string; description?: string; icon_svg: string | null; price: number; listed_at: string; yours: boolean; owned: boolean };
 export type PraemResult = { ok: boolean; reason?: string; credits?: number; earned?: number; paid?: number; x?: number; y?: number; layer?: number; name?: string };
-const rpc = supabase.rpc as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
 export const PRAEMS_CHANGED = 'praem:praems-changed';
 export const RIFT_ARRIVAL = 'praem.riftArrival';
 export const praemVisible = (a: { col: number; row: number }, b: { col: number; row: number }) => Math.max(Math.abs(a.col - b.col), Math.abs(a.row - b.row)) <= 2;

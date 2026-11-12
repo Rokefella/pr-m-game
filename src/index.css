@@ -665,3 +665,23 @@ body:has([data-profile-open="true"]) :is([data-game-world], .ghost-position, .ec
 .npc-path-ready { animation: npcPathPulse 1.2s ease-in-out infinite; }
 @keyframes npcPathPulse { 0%,100% { opacity: 1; } 50% { opacity: .45; } }
 @media (prefers-reduced-motion: reduce) { .npc-path-available, .npc-path-ready { animation: none; } .path-banner, .path-banner.path-leaving { animation-duration: 1ms; } }
+
+/* Keep it / Leave it card, floating just above the player at screen centre. */
+.keep-card { position: fixed; left: 50%; top: 50%; transform: translate(-50%, calc(-100% - 40px)); z-index: var(--z-overlay); width: max-content; min-width: 200px; max-width: min(280px, calc(100vw - 32px)); padding: 12px 14px; background: var(--plate-backdrop); border: 1px solid var(--plate-gold); color: var(--auth-text); text-align: center; }
+.keep-card-icon { display: block; width: 32px; height: 32px; margin: 0 auto 6px; image-rendering: pixelated; }
+.keep-card-icon svg { width: 100%; height: 100%; }
+.keep-card-name { margin: 0; font-size: 14px; }
+.keep-card-line { margin: 4px 0 0; font-size: 13px; line-height: 1.4; color: var(--plate-label); }
+.keep-card-actions { display: flex; gap: 8px; margin-top: 10px; }
+.keep-card-actions button { flex: 1; padding: 8px 6px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; background: transparent; border: 1px solid var(--plate-edge); color: var(--auth-text); border-radius: 0; cursor: pointer; }
+.keep-card-actions button:first-child { border-color: var(--plate-gold); color: var(--plate-gold); }
+.profile-notebook-book { touch-action: pan-y; }
+.profile-notebook-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.profile-notebook-nav small { font-size: 10px; letter-spacing: .12em; color: var(--plate-label); }
+.profile-notebook-nav button { background: transparent; border: 1px solid var(--plate-edge); color: var(--auth-text); width: 36px; height: 32px; font-size: 18px; border-radius: 0; cursor: pointer; }
+.profile-notebook-nav button:disabled { opacity: .3; cursor: default; }
+.notebook-turn-next { animation: notebook-turn-next .35s ease-out; transform-origin: left center; }
+.notebook-turn-prev { animation: notebook-turn-prev .35s ease-out; transform-origin: right center; }
+@keyframes notebook-turn-next { from { opacity: 0; transform: perspective(800px) rotateY(-14deg) translateX(12px); } to { opacity: 1; transform: none; } }
+@keyframes notebook-turn-prev { from { opacity: 0; transform: perspective(800px) rotateY(14deg) translateX(-12px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .notebook-turn-next, .notebook-turn-prev { animation: none; } }

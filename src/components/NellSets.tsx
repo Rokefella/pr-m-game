@@ -6,7 +6,7 @@ import { USER_CREDITS_REFRESHED } from '@/lib/mechanics';
 
 export type SetItem = { drop_key: string; name: string; icon_svg: string | null; need: number; have: number };
 export type CollectorSet = { set_key: string; name: string; pays: number; complete: boolean; sold_before?: boolean; items: SetItem[] };
-const rpc = supabase.rpc as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
 const iconSrc = (svg: string | null) => svg ? `data:image/svg+xml;utf8,${encodeURIComponent(svg)}` : '';
 
 export default function NellSets({ userId }: { userId: string }) {

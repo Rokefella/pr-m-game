@@ -1,3 +1,4 @@
+import KeepCard, { keptOnContact } from '@/components/KeepCard';
 import { PraemTreasure, PraemHum, PraemReceipt } from '@/components/PraemTreasure';
 import { PRAEMS_CHANGED, myPraems, praemNearby, unlockPraemAudio } from '@/lib/praems';
 import { exitDestination } from '@/lib/worldReturn';
@@ -960,11 +961,14 @@ const Maze = () => {
   };
 
   // Placement contents belong to the server; the existing lifecycle decides resume.
-  type RunDrop = { name: string; kind: 'key' | 'drop'; praem?: boolean; icon_svg?: string | null };
+  type RunDrop = { name: string; kind: 'key' | 'drop'; praem?: boolean; icon_svg?: string | null; description?: string | null };
   const [praemReceipt, setPraemReceipt] = useState<{ name: string; icon?: string | null } | null>(null);
   useEffect(() => { if (!praemReceipt) return; const timer = setTimeout(() => setPraemReceipt(null), 5000); return () => clearTimeout(timer); }, [praemReceipt]);
   useEffect(() => { window.addEventListener('pointerdown', unlockPraemAudio); window.addEventListener('keydown', unlockPraemAudio); return () => { window.removeEventListener('pointerdown', unlockPraemAudio); window.removeEventListener('keydown', unlockPraemAudio); }; }, []);
   const [runDrops, setRunDrops] = useState<Map<string, RunDrop>>(new Map());
+  const keepOfferRef = useRef<{ col: number; row: number; name: string; icon: string | null; line: string | null } | null>(null);
+  const [keepOffer, setKeepOffer] = useState<typeof keepOfferRef.current>(null);
+  const closeKeepOffer = () => { keepOfferRef.current = null; setKeepOffer(null); };
   const [praemCells, setPraemCells] = useState<Set<string>>(new Set());
   const runDropsRef = useRef<Map<string, RunDrop>>(new Map());
   const echoLayerRef = useRef<EchoLayerHandle>(null);
@@ -1005,7 +1009,7 @@ const Maze = () => {
         for (const item of data as Array<RunDrop & Cell>) {
           if (!item || !Number.isFinite(item.col) || !Number.isFinite(item.row) || typeof item.name !== 'string' || (item.kind !== 'key' && item.kind !== 'drop')) continue;
           const key = `${item.col},${item.row}`;
-          if (points.has(key)) placements.set(key, { name: item.name, kind: item.kind, praem: item.praem === true, icon_svg: item.icon_svg });
+          if (points.has(key)) placements.set(key, { name: item.name, kind: item.kind, praem: item.praem === true, icon_svg: item.icon_svg, description: typeof item.description === 'string' ? item.description : null });
         }
         runDropsRef.current = placements;
         setPraemCells(new Set([...placements].filter(([, drop]) => drop.praem).map(([key]) => key)));
@@ -1139,7 +1143,7 @@ const Maze = () => {
   const tryMove = (dc: number, dr: number) => {
     if (notepadFocused()) { heldKeysRef.current.clear(); return; }
     movementDebug.locks = { stepsReady: stepsReadyRef.current, exchangeOpen: exchangeOpenRef.current, noSteps: stepsRemainingRef.current <= 0, leaving: leavingRef.current };
-    if (!stepsReadyRef.current || profileOpenRef.current || devOpenRef.current) return;
+    if (!stepsReadyRef.current || profileOpenRef.current || devOpenRef.current || keepOfferRef.current) return;
     const cfg = configRef.current;
     if (!cfg) return;
     const now = Date.now();
@@ -1269,8 +1273,13 @@ const Maze = () => {
       triggerTileWhisper(nc, nr);
     }
 
-    // Only filled points are claimed, once per entry and never concurrently.
-    claimRunDrop(nc, nr);
+    // Fragments, keys and Præms are kept on contact; other crates ask first (once per entry).
+    const offered = runDropsRef.current.get(`${nc},${nr}`);
+    if (offered && !pendingDropClaimsRef.current.has(`${nc},${nr}`) && !keptOnContact(offered)) {
+      heldKeysRef.current.clear();
+      const o = { col: nc, row: nr, name: offered.name, icon: offered.icon_svg ?? null, line: offered.description ?? null };
+      keepOfferRef.current = o; setKeepOffer(o);
+    } else claimRunDrop(nc, nr);
 
 
 
@@ -1436,6 +1445,7 @@ const Maze = () => {
   return (
     <div className="maze-theme" style={{ position: 'fixed', inset: 0, background: 'hsl(var(--background))', overflow: 'hidden', '--maze-light-core': `${DIMENSION_GLOW[glow]}14` } as CSSProperties}>
       <PraemHum nearby={[...runDrops].some(([key, drop]) => { const [col, row] = key.split(',').map(Number); return drop.praem === true && praemNearby({ col, row }, pos); })} />
+      {keepOffer && <KeepCard name={keepOffer.name} line={keepOffer.line} icon={keepOffer.icon} onKeep={() => { const o = keepOffer; closeKeepOffer(); void claimRunDrop(o.col, o.row); }} onLeave={closeKeepOffer} />}
       {praemReceipt && <PraemReceipt name={praemReceipt.name} icon={praemReceipt.icon} />}
       {eraSkin && <MazeSkinCanvas ref={skinCanvasRef} skin={eraSkin} grid={config} walls={objectFloorWalls} />}
       <div

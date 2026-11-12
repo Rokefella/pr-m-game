@@ -147,6 +147,8 @@ describe('Server-owned maze run drops', () => {
     expect(screen.queryByText(/You found:/)).toBeNull();
     await new Promise(resolve => setTimeout(resolve, 170));
     fireEvent.click(screen.getByRole('button', { name: 'Move right' }));
+    const keep = screen.queryByRole('button', { name: 'Keep it' });
+    if (keep) fireEvent.click(keep);
     await waitFor(() => expect(fixture.rpc).toHaveBeenCalledWith('claim_run_drop', { p_level: 2, p_col: 3, p_row: 1 }));
   });
   it('loads no placements on a server error without blocking the maze', async () => {

@@ -11,7 +11,7 @@ import { DEV_CONSOLE_ANSWER, applyAnswerSigns, devConsoleAnswerFor } from '@/lib
 import { inventoryChanged } from '@/lib/inventoryEvents';
 import { PRAEMS_CHANGED, praemTone, unlockPraemAudio } from '@/lib/praems';
 
-const rpc = supabase.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
+const rpc = supabase.rpc.bind(supabase) as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: unknown }>;
 type Props = { open: boolean; level: number; onClose: () => void };
 export default memo(function ConsolePanel({ open, level, onClose }: Props) {
   const [state, setState] = useState<ConsoleState | null>(null);

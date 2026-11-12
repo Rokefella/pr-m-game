@@ -51,6 +51,7 @@ import FindCard from '@/components/FindCard';
 import FireRestCard from '@/components/FireRestCard';
 import { PATHS_REFRESH } from '@/hooks/usePaths';
 import { currentStage, figureNpc, merchantFigure, loadSam, shouldMarkMerchantMet, visiblePlaces } from '@/lib/worldSam';
+import KeepCard from '@/components/KeepCard';
 import { FindContact, claimFind, claimFailure, findReceipt, bumpedFind, chebyshev, drawFindLight, drawFindMarkers, drawFinds, drawMarker, fireAt, litFire, findsOn, loadFinds, type WorldFind } from '@/lib/worldFinds';
 import { npcFacingToward, npcSkin, setCurrentSkin, useSkins, type Facing } from '@/lib/skins';
 import NpcOrb from '@/components/theme/objects/NpcOrb';
@@ -264,6 +265,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   const [claimed, setClaimed] = useState<Set<string>>(new Set());
   const claimedRef = useRef<Set<string>>(new Set());
   const findContact = useRef(new FindContact());
+  const [keepOffer, setKeepOffer] = useState<{ find: WorldFind; at: WorldPoint } | null>(null);
   const [findToast, setFindToast] = useState<{ title: string; line: string } | null>(null);
   useEffect(() => { if (!findToast) return; const timer = setTimeout(() => setFindToast(null), 3000); return () => clearTimeout(timer); }, [findToast]);
   const samLineRef = useRef<Set<string>>(new Set());
@@ -282,7 +284,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
   }, [userId, findsTick]);
   const markClaimed = useCallback((id: string) => { const next = new Set(claimedRef.current); next.add(id); claimedRef.current = next; setClaimed(next); }, []);
   const blocked = useRef(false);
-  blocked.current = meteorOpen || suppliesOpen || profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || Boolean(placeCard) || Boolean(findCard);
+  blocked.current = meteorOpen || suppliesOpen || profileOpen || devOpen || Boolean(arrival) || jumpOpen || mapOpen || Boolean(placeCard) || Boolean(findCard) || Boolean(keepOffer);
   convoOpen.current = !npcCardOpen && !suppliesOpen && !profileOpen && !devOpen && !arrival && !jumpOpen && !mapOpen && (Boolean(findCard) || Boolean(placeCard && (isWorldConversation(placeCard) || isSignpost(placeCard))));
   const [busy, setBusy] = useState(false);
   const flight = useRef(false);
@@ -366,8 +368,8 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     if (userId) await refreshDrops(userId);
     setSamTick(n => n + 1);
   }, [refreshCompleted, userId]);
-  const collectFind = useCallback(async (find: WorldFind, at: WorldPoint) => {
-    if (!findContact.current.begin(find.id)) return;
+  const collectFind = useCallback(async (find: WorldFind, at: WorldPoint, offered = false) => {
+    if (offered ? !findContact.current.claim(find.id) : !findContact.current.begin(find.id)) return;
     try {
       await stepLedger.current?.settled();
       const result = await claimFind(find.id, at);
@@ -378,13 +380,20 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
           window.dispatchEvent(new Event(PATHS_REFRESH));
           void refreshReward().catch(error => notifySaveFailed('find refresh', error));
         }
-        if (find.kind === 'words' || find.kind === 'landmark') {
+        if (find.kind === 'words' || find.kind === 'landmark' || find.sprite_key === 'campfire_cold') {
           keys.current.clear(); setFindCard({ find: { ...find, text: result.text || find.text }, reading: true });
         }
       } else setFindToast({ title: find.title, line: claimFailure(result.reason) });
     } catch { setFindToast({ title: find.title, line: claimFailure('error') }); }
     finally { findContact.current.finish(find.id); }
   }, [markClaimed, refreshReward]);
+  /** Walking into an item offers it; words/landmarks are read on contact. Only re-offered after stepping off and on. */
+  const offerFind = useCallback((find: WorldFind, at: WorldPoint) => {
+    if (find.kind === 'words' || find.kind === 'landmark' || find.sprite_key === 'campfire_cold') { void collectFind(find, at); return; }
+    if (!findContact.current.begin(find.id)) return;
+    findContact.current.finish(find.id);
+    blocked.current = true; keys.current.clear(); setKeepOffer({ find, at });
+  }, [collectFind]);
   /** Throw away every cached chunk, the M map and the finds so a changed world (the meteor) shows at once. */
   const reloadWorld = useCallback(() => {
     caches.current[0].reset(); caches.current[1].reset();
@@ -503,7 +512,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       const merchant = placesOn(world.places, l).find(p => p.kind !== 'start' && merchantFigure(p) && p.x === cell.x && p.y === cell.y);
       const sign = f ? null : merchant ?? bumpedSignpost(placesOn(world.places, l), cell);
       if (!f && !sign) return;
-      if (f && !litFire(f, claimedRef.current.has(f.id))) { void collectFind(f, from); return; }
+      if (f && !litFire(f, claimedRef.current.has(f.id))) { offerFind(f, from); return; }
       blocked.current = true; keys.current.clear();
       if (f) setFindCard({ find: f, reading: false }); else if (sign) setPlaceCard(sign);
     };
@@ -530,7 +539,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     const layerFinds = findsOn(findsRef.current, l);
     findContact.current.step(layerFinds, next);
     const contact = bumpedFind(layerFinds, claimedRef.current, next);
-    if (contact) void collectFind(contact, next);
+    if (contact) offerFind(contact, next);
     if (slide.current) return;
     const layerPlaces = currentPlaces(placesOn(world.places, l));
     for (const p of layerPlaces) if (p.npc_key && chebyshev(p, next) > 1) npcApproached.current.delete(npcId(placesOn(world.places, l).find(home => home.npc_key === p.npc_key) ?? p));
@@ -538,7 +547,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
     const fire = fireAt(layerFinds, claimedRef.current, next);
     if (fire) { keys.current.clear(); setFindCard({ find: fire, reading: false }); return; }
     if (spot) { if (isSignpost(spot)) keys.current.clear(); setEntryMessage(''); setPlaceCard(spot); return; }
-  }, [userId, collectFind]);
+  }, [userId, offerFind]);
   useEffect(() => {
     const down = (e: KeyboardEvent) => { if (slide.current) { e.preventDefault(); return; } if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return; if (e.key.toLowerCase() === 'm' && !e.repeat) { if (blocked.current && !document.querySelector('[aria-label="World map"]')) return; e.preventDefault(); keys.current.clear(); setMapOpen(open => !open); return; } if (convoOpen.current && /^(Arrow|[wasd]$)/i.test(e.key)) { e.preventDefault(); setPlaceCard(null); setFindCard(null); return; } if (blocked.current) return; if (/^(Arrow|[wasd]$)/i.test(e.key)) { e.preventDefault(); keys.current.add(e.key.toLowerCase()); } };
     const up = (e: KeyboardEvent) => keys.current.delete(e.key.toLowerCase());
@@ -710,6 +719,7 @@ export function WorldSandbox({ identity: initialIdentity, userId }: { identity: 
       setArrival(null); await refreshCompleted();
     }} />}
     {meteorOpen && <MeteorFall reduced={reduced} onDone={finishMeteor} />}
+    {keepOffer && <KeepCard name={keepOffer.find.title} line={keepOffer.find.kind === 'cache_steps' || keepOffer.find.kind === 'cache_credits' ? null : keepOffer.find.text} onKeep={() => { const o = keepOffer; setKeepOffer(null); void collectFind(o.find, o.at, true); }} onLeave={() => setKeepOffer(null)} />}
     {findToast && <div role="status" className="world-find-toast"><p className="font-cinzel">{findToast.title}</p><p className="font-fell italic">{findToast.line}</p></div>}
     {heavyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[25%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{HEAVY_LEGS}</p>}
     {dailyMessage && <p role="status" className="font-fell italic pointer-events-none fixed left-4 right-4 top-[18%] z-[var(--z-hud)] m-0 mx-auto max-w-[520px] break-words text-center text-xl leading-relaxed text-foreground">{dailyMessage}</p>}

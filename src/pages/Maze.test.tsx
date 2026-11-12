@@ -83,6 +83,14 @@ describe('Server-owned maze run drops', () => {
     fixture.dropPoints = true;
     fixture.placements = [{ col: 2, row: 1, name: 'Brass key', kind: 'key' }, { col: 3, row: 1, name: 'Spice', kind: 'drop' }];
   });
+  it('uses the named key placement when the claim omits its name', async () => {
+    fixture.rpc.mockImplementation(async (name: string) => ({ error: null, data: name === 'start_run_drops' ? fixture.placements : { granted: true, kind: 'key' } }));
+    startRun('player', 2); openMaze(); await ready(2);
+    await waitFor(() => expect(fixture.rpc).toHaveBeenCalledWith('start_run_drops', expect.anything()));
+    fireEvent.click(screen.getByRole('button', { name: 'Move right' }));
+    await screen.findByText('You found: Brass key. (carried)');
+    expect(fixture.rpc).toHaveBeenCalledWith('claim_run_drop', { p_level: 2, p_col: 2, p_row: 1 });
+  });
   it('claims a Præm through normal run-drop RPC and uses its special receipt', async () => {
     fixture.placements = [{ col: 2, row: 1, name: 'Ember', kind: 'drop', praem: true }];
     fixture.rpc.mockImplementation(async (name: string) => ({ error: null, data: name === 'start_run_drops' ? fixture.placements : name === 'my_praems' ? [{ maze: 2, name: 'Ember', state: 'asleep', icon_svg: null }] : { granted: true, drop_name: 'Ember', kind: 'drop' } }));

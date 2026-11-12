@@ -4,6 +4,9 @@
 - [ ] Step B live fragment pickup → Shadow bank, Folder slot, growth point and dev level walkthrough — external game session unavailable; /world redirects to /login, managed auth has no mintable users. No sample account created.
 # Roadmap
 
+- [x] Replace retired console keypad/rifts with fresh server-state signed-prime puzzle, sleeping Præm reveal, inventory refresh and state/interaction tests; client only. Preview compiles; controlled desktop/phone signs, receipt and closing verified without page errors; named key pickup tested.
+- [ ] Real-account console puzzle → sleeping Præm/inventory persistence and audible chime — game's external sign-in unavailable; /world redirects to /login. Controlled replies verify presentation, not live grants or sound.
+
 - [x] Præm treasure: concealed era-colour orb, near hum/compass pulse and special pickup receipt.
 - [x] Shadow Wall: 30 sockets, bank/set animation, rift travel and twelve-tile entrance discovery.
 - [x] Folder asleep/set art and Banker Præm sell/buy tab with confirmation and unsellable Threshold.

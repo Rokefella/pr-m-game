@@ -378,6 +378,25 @@
 .console-message span { display: block; font-size: 11px; color: var(--plate-label); }
 .console-message.error { color: var(--auth-error); }
 .console-message.gold { color: var(--instrument-beacon); }
+.console-target strong { font-size: 32px; font-weight: 400; overflow-wrap: anywhere; text-shadow: var(--console-digit-shadow); }
+.console-target-dim { opacity: .35; }
+.console-primes { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 8px; }
+.console-prime { min-width: 0; min-height: 56px; gap: 8px; border-radius: 0; background: var(--console-key-face); border-color: var(--plate-label); color: var(--auth-text); font-size: 14px; padding: 8px; }
+.console-prime:hover { background: var(--console-command-face); color: var(--console-teal); }
+.console-prime[aria-pressed="true"] { border-color: var(--console-amber); color: var(--console-amber); }
+.console-prime span { font-size: 22px; }
+.console-primes-shake { animation: console-wrong 350ms ease-out; }
+.console-praem-reveal { text-align: center; color: var(--plate-voice); }
+.console-praem-reveal p { font-size: 18px; line-height: 1.5; margin: 12px 0; }
+.console-praem-rise { position: relative; height: 128px; display: grid; place-items: center; animation: console-praem-rise 1600ms ease-out both; }
+.console-praem-lit, .console-praem-sleep { position: absolute; }
+.console-praem-lit { filter: drop-shadow(var(--console-key-glow)); animation: console-praem-light 1800ms ease-in forwards; }
+.console-praem-sleep { opacity: .4; animation: console-praem-settle 1800ms ease-in both; }
+@keyframes console-wrong { 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+@keyframes console-praem-rise { from { transform: translateY(36px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes console-praem-light { 0%, 65% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes console-praem-settle { 0%, 65% { opacity: 0; } 100% { opacity: .4; } }
+@media (prefers-reduced-motion: reduce) { .console-primes-shake, .console-praem-rise, .console-praem-lit, .console-praem-sleep { animation: none; } .console-praem-lit { display: none; } }
 .console-keypad { display: grid; grid-template-columns: repeat(3, 76px); justify-content: center; gap: 6px; min-height: 218px; }
 .console-key { width: 76px; height: 50px; min-height: 50px; border-radius: 0; background: var(--console-key-face); border: 0; border-top: 3px solid var(--plate-label); border-bottom: 4px solid var(--console-key-bottom); color: var(--auth-text); font-size: 22px; padding: 0; }
 .console-key:hover { background: var(--console-key-face); color: var(--auth-text); filter: brightness(1.1); }

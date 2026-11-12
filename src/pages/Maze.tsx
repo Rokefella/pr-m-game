@@ -1039,7 +1039,7 @@ const Maze = () => {
             setPraemReceipt({ name: result.drop_name ?? result.name ?? placement.name, icon: result.icon_svg ?? placement.icon_svg });
             void myPraems().then(items => { const item = items.find(p => p.maze === currentLevelRef.current); if (item && generation === dropGenerationRef.current && !leavingRef.current) setPraemReceipt({ name: item.name, icon: item.icon_svg }); }).catch(() => undefined);
           } else if (skin) setSkinFound(skin);
-          else showWhisper(`You found: ${result.drop_name ?? 'something'}. (carried)`, result.kind === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
+          else showWhisper(`You found: ${result.drop_name ?? result.name ?? placement?.name ?? 'something'}. (carried)`, (result.kind ?? placement?.kind) === 'key' ? 'var(--drop-key-edge)' : 'var(--plate-gold)', 3000);
         }
       } catch { /* silent — a failed claim must not interrupt movement */ }
       finally {

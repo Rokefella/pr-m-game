@@ -2,106 +2,118 @@ import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-libra
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ConsolePanel from './ConsolePanel';
 import { consoleLevel } from '@/lib/console';
-
-const api = vi.hoisted(() => ({ rpc: vi.fn(), maybeSingle: vi.fn(), eq: vi.fn(), drops: vi.fn() }));
-vi.mock('@/context/AuthContext', () => ({ useAuth: () => ({ user: { id: 'player' } }) }));
-vi.mock('@/lib/supabase', () => ({ supabase: {
-  rpc: api.rpc,
-  from: (table: string) => ({ select: () => ({ eq: (...args: unknown[]) => { api.eq(...args); return table === 'drops' ? api.drops() : { maybeSingle: api.maybeSingle }; } }) }),
-} }));
-beforeEach(() => { vi.resetAllMocks(); api.maybeSingle.mockResolvedValue({ data: null, error: null }); api.drops.mockResolvedValue({ data: [], error: null }); });
+import { INVENTORY_CHANGED } from '@/lib/inventoryEvents';
+import { PRAEMS_CHANGED } from '@/lib/praems';
+const api = vi.hoisted(() => ({ rpc: vi.fn(), chime: vi.fn(), unlock: vi.fn() }));
+vi.mock('@/lib/supabase', () => ({ supabase: { rpc: api.rpc } }));
+vi.mock('@/lib/praems', () => ({ PRAEMS_CHANGED: 'praem:praems-changed', praemTone: api.chime, unlockPraemAudio: api.unlock }));
+const puzzle = { ok: true, done: false, target: -195, primes: [4483, 181, 1499, 2917, 4297], have: 5, need: 5, has_key: true, key_drop_id: 'key-id', key_name: 'Copper key', locked: false, retry_in_seconds: 0, attempts_left: 3 };
+beforeEach(() => { vi.resetAllMocks(); api.rpc.mockResolvedValue({ data: puzzle, error: null }); });
 afterEach(() => { cleanup(); vi.useRealTimers(); });
-async function open(level = 4, onRift = vi.fn(), onClose = vi.fn()) {
-  render(<ConsolePanel open level={level} onClose={onClose} onRift={onRift} />);
-  await waitFor(() => expect(screen.getByRole('button', { name: '2' })).not.toBeDisabled());
-  return { onRift, onClose };
+async function open(state = puzzle) {
+  api.rpc.mockResolvedValueOnce({ data: state, error: null });
+  const onClose = vi.fn();
+  const view = render(<ConsolePanel open level={4} onClose={onClose} />);
+  await waitFor(() => expect(api.rpc).toHaveBeenCalledWith('console_state', { p_level: 4 }));
+  await act(async () => { await Promise.resolve(); });
+  return { ...view, onClose };
 }
-function digit(n = '2') { fireEvent.click(screen.getByRole('button', { name: n })); }
-function enter() { fireEvent.click(screen.getByRole('button', { name: 'ENTER' })); }
-
-describe('console server interaction rules', () => {
-  it('uses a positive integer query level or defaults to 1', () => {
+const speak = () => fireEvent.click(screen.getByRole('button', { name: 'Speak' }));
+describe('console Præm puzzle', () => {
+  it('uses positive integer levels, defaulting to one', () => {
     expect(consoleLevel('7')).toBe(7);
-    for (const input of [null, '', 'bad', '1.5', '0', '-2']) expect(consoleLevel(input)).toBe(1);
+    for (const value of [null, '', 'bad', '1.5', '0', '-2']) expect(consoleLevel(value)).toBe(1);
   });
-  it('sends the originating level and digits once and clears a wrong code', async () => {
-    api.rpc.mockResolvedValue({ data: { ok: false, reason: 'wrong', attempts_left: 2 }, error: null });
-    await open(); digit(); enter(); enter();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'ENTER' })).toBeDisabled());
-    expect(api.rpc).toHaveBeenCalledExactlyOnceWith('use_console', { p_level: 4, p_code: '2', p_drop_id: null });
-  });
-  it('caps input at 8 digits and supports deletion and clearing', async () => {
+  it('silent closes without showing a card', async () => {
+    const onClose = vi.fn();
     api.rpc.mockResolvedValue({ data: { ok: false, reason: 'silent' }, error: null });
-    await open(); for (let i = 0; i < 9; i++) digit();
-    fireEvent.click(screen.getByRole('button', { name: 'DEL' })); enter();
-    await waitFor(() => expect(api.rpc).toHaveBeenCalledWith('use_console', { p_level: 4, p_code: '2222222', p_drop_id: null }));
-    fireEvent.click(screen.getByRole('button', { name: 'CLEAR' }));
-    expect(screen.getByRole('button', { name: 'ENTER' })).toBeDisabled();
+    render(<ConsolePanel open level={4} onClose={onClose} />);
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
-  it('blocks keypad and submissions until the server lockout ends', async () => {
-    api.rpc.mockResolvedValue({ data: { ok: false, reason: 'locked', retry_in_seconds: 3 }, error: null });
-    await open(); vi.useFakeTimers(); digit(); enter();
+  it('done is dark and cannot submit', async () => {
+    await open({ ...puzzle, done: true });
+    expect(screen.getByRole('status').textContent).toContain('It has nothing more to give.');
+    expect(screen.queryByRole('button', { name: 'Speak' })).toBeNull();
+    expect(screen.queryByLabelText('Target: -195')).toBeNull();
+  });
+  it('no key shows its name and blocks the puzzle', async () => {
+    await open({ ...puzzle, has_key: false, key_drop_id: null });
+    expect(screen.getByRole('status').textContent).toContain("It wants something you don't have yet.");
+    expect(screen.getByRole('status').textContent).toContain('Key: Copper key');
+    expect(screen.queryByRole('button', { name: 'Speak' })).toBeNull();
+  });
+  it('missing fragments displays carried primes and the server counter', async () => {
+    await open({ ...puzzle, have: 3, primes: [181, 1499, 2917] });
+    expect(screen.getByRole('status').textContent).toContain('3 / 5');
+    expect(screen.getByRole('status').textContent).toContain('Something is still missing in here.');
+    expect(screen.getByRole('button', { name: 'Plus 181' })).toBeDisabled();
+  });
+  it('starts ascending positive terms; flips signs and sends exactly the chosen terms once', async () => {
+    await open();
+    expect(screen.getAllByRole('button', { name: /Plus/ }).map(b => b.getAttribute('aria-label'))).toEqual(['Plus 181', 'Plus 1499', 'Plus 2917', 'Plus 4297', 'Plus 4483']);
+    fireEvent.click(screen.getByRole('button', { name: 'Plus 1499' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Plus 4297' }));
+    api.rpc.mockResolvedValue({ data: { ok: false, reason: 'wrong', attempts_left: 2 }, error: null });
+    speak(); speak();
+    await waitFor(() => expect(api.rpc).toHaveBeenCalledWith('console_praem', { p_level: 4, p_terms: [181, -1499, 2917, -4297, 4483], p_drop_id: 'key-id' }));
+    expect(api.rpc.mock.calls.filter(([fn]) => fn === 'console_praem')).toHaveLength(1);
+    expect(screen.getByRole('status').textContent).toContain('Not that. 2 left.');
+  });
+  it('never exposes the all-positive or flipped running total', async () => {
+    await open();
+    expect(screen.queryByText('13377')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Plus 1499' }));
+    expect(screen.queryByText('10379')).toBeNull();
+    expect(screen.queryByLabelText(/total/i)).toBeNull();
+    expect(screen.getByLabelText('Target: -195').textContent).toBe('−195');
+  });
+  it('locked counts down and reloads server state before allowing another attempt', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    await open({ ...puzzle, locked: true, retry_in_seconds: 3 });
+    expect(screen.getByRole('status').textContent).toContain('00:03');
+    expect(screen.queryByRole('button', { name: 'Speak' })).toBeNull();
+    vi.setSystemTime(Date.now() + 3000);
+    await waitFor(() => expect(api.rpc).toHaveBeenCalledTimes(2));
+    expect(screen.getByRole('button', { name: 'Speak' })).toBeEnabled();
+  });
+  it('success publishes both persisted refreshes, chimes, shows the receipt then closes', async () => {
+    const inventory = vi.fn(), praems = vi.fn();
+    window.addEventListener(INVENTORY_CHANGED, inventory); window.addEventListener(PRAEMS_CHANGED, praems);
+    const { onClose } = await open();
+    vi.useFakeTimers();
+    api.rpc.mockResolvedValue({ data: { ok: true, praem: 'Cinder', icon_svg: '<svg/>', icon_lit: '<svg/>' }, error: null });
+    speak();
     await act(async () => { await Promise.resolve(); });
-    expect(screen.getByRole('button', { name: '2' })).toBeDisabled();
-    await act(async () => { vi.advanceTimersByTime(3000); });
-    expect(screen.getByRole('button', { name: '2' })).not.toBeDisabled();
-    expect(api.rpc).toHaveBeenCalledTimes(1);
+    expect(inventory).toHaveBeenCalledOnce(); expect(praems).toHaveBeenCalledOnce(); expect(api.chime).toHaveBeenCalledWith(true);
+    expect(screen.getByRole('status').textContent).toContain('Cinder — it sleeps. Carry it home to the Shadow Realm.');
+    expect(onClose).not.toHaveBeenCalled();
+    await act(async () => { vi.advanceTimersByTime(4500); });
+    expect(onClose).toHaveBeenCalledOnce();
+    window.removeEventListener(INVENTORY_CHANGED, inventory); window.removeEventListener(PRAEMS_CHANGED, praems);
   });
-  it('waits 500ms before sending a successful rift target to the room', async () => {
-    api.rpc.mockResolvedValue({ data: { ok: true, rift: 'teal' }, error: null });
-    const { onRift } = await open(); vi.useFakeTimers(); digit(); enter();
-    await act(async () => { await Promise.resolve(); });
-    await act(async () => { vi.advanceTimersByTime(499); });
-    expect(onRift).not.toHaveBeenCalled();
-    await act(async () => { vi.advanceTimersByTime(1); });
-    expect(onRift).toHaveBeenCalledExactlyOnceWith('teal');
+  it.each(['no_key', 'missing_fragments', 'done', 'locked'])('handles submission reply %s without awarding anything', async reason => {
+    await open();
+    api.rpc.mockImplementation(async fn => ({ data: fn === 'console_state' ? puzzle : { ok: false, reason, retry_in_seconds: 60 }, error: null }));
+    speak();
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Speak' })).toBeNull());
+    expect(api.chime).not.toHaveBeenCalled();
   });
-  it('reads a previous unlock and retrieves its rift once using code 0', async () => {
-    api.maybeSingle.mockResolvedValue({ data: { level_number: 6 }, error: null });
-    api.rpc.mockResolvedValue({ data: { ok: true, already: true, rift: 'amber' }, error: null });
-    const onRift = vi.fn();
-    render(<ConsolePanel open level={6} onClose={vi.fn()} onRift={onRift} />);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'ENTER THE RIFT' })).not.toBeDisabled());
-    expect(api.eq).toHaveBeenCalledWith('level_number', 6);
-    expect(api.rpc).toHaveBeenCalledExactlyOnceWith('use_console', { p_level: 6, p_code: '0', p_drop_id: null });
-    fireEvent.click(screen.getByRole('button', { name: 'ENTER THE RIFT' }));
-    expect(onRift).toHaveBeenCalledExactlyOnceWith('amber');
+  it('zero attempts enters the server lockout', async () => {
+    await open();
+    api.rpc.mockImplementation(async fn => ({ data: fn === 'console_state' ? { ...puzzle, locked: true, retry_in_seconds: 90 } : { ok: false, reason: 'wrong', attempts_left: 0 }, error: null }));
+    speak();
+    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('01:30'));
+    expect(screen.queryByRole('button', { name: 'Speak' })).toBeNull();
   });
-  it('ignores an in-flight answer after closing', async () => {
-    let resolve: (answer: unknown) => void = () => {};
-    api.rpc.mockImplementation(() => new Promise(done => { resolve = done; }));
-    const onRift = vi.fn(); const onClose = vi.fn();
-    const view = render(<ConsolePanel open level={2} onClose={onClose} onRift={onRift} />);
-    await waitFor(() => expect(screen.getByRole('button', { name: '2' })).not.toBeDisabled());
-    digit(); enter();
-    fireEvent.click(screen.getByRole('button', { name: 'Close Instrument' })); expect(onClose).toHaveBeenCalledTimes(1);
-    view.rerender(<ConsolePanel open={false} level={2} onClose={onClose} onRift={onRift} />);
-    await act(async () => { resolve({ data: { ok: true, rift: 'purple' }, error: null }); });
-    expect(onRift).not.toHaveBeenCalled();
-  });
-  it('sends a selected carried drop UUID and removes it on wrong_key without using a try', async () => {
-    api.drops.mockResolvedValue({ data: [
-      { id: 'spice-id', drop_types: { name: 'Spice', category: 'spice' } },
-      { id: 'key-id', drop_types: [{ name: 'Copper key', category: 'key' }] },
-    ], error: null });
-    api.rpc.mockResolvedValue({ data: { ok: false, reason: 'wrong_key' }, error: null });
-    await open(); fireEvent.click(screen.getByRole('button', { name: 'Insert key' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Copper key' })).toBeEnabled());
-    const carried = screen.getByLabelText('Carried drops');
-    expect(Array.from(carried.querySelectorAll('button')).map(button => button.textContent)).toEqual(['Copper key', 'Spice']);
-    fireEvent.click(screen.getByRole('button', { name: 'Copper key' })); digit(); enter();
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Insert key' })).toBeEnabled());
-    expect(api.rpc).toHaveBeenCalledExactlyOnceWith('use_console', { p_level: 4, p_code: '2', p_drop_id: 'key-id' });
-    enter();
-    await waitFor(() => expect(api.rpc).toHaveBeenLastCalledWith('use_console', { p_level: 4, p_code: '2', p_drop_id: null }));
-  });
-  it('allows removing an inserted key without submitting it', async () => {
-    api.drops.mockResolvedValue({ data: [{ id: 'key-id', drop_types: { name: 'Key', category: 'key' } }], error: null });
-    await open(); fireEvent.click(screen.getByRole('button', { name: 'Insert key' }));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Key' })).toBeEnabled());
-    fireEvent.click(screen.getByRole('button', { name: 'Key' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Remove inserted key' }));
-    digit(); api.rpc.mockResolvedValue({ data: { ok: false, reason: 'no_key' }, error: null }); enter();
-    await waitFor(() => expect(api.rpc).toHaveBeenCalledExactlyOnceWith('use_console', { p_level: 4, p_code: '2', p_drop_id: null }));
+  it('reopens with a fresh target and all signs reset', async () => {
+    const view = await open();
+    fireEvent.click(screen.getByRole('button', { name: 'Plus 1499' }));
+    view.rerender(<ConsolePanel open={false} level={4} onClose={view.onClose} />);
+    api.rpc.mockResolvedValue({ data: { ...puzzle, target: 801 }, error: null });
+    view.rerender(<ConsolePanel open level={4} onClose={view.onClose} />);
+    await waitFor(() => expect(screen.getByLabelText('Target: 801')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Plus 1499' })).toHaveAttribute('aria-pressed', 'false');
+    expect(api.rpc).not.toHaveBeenCalledWith('use_console', expect.anything());
   });
 });

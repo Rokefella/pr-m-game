@@ -14,8 +14,7 @@ import { fetchOrCreateUser } from '@/lib/userData';
 import { supabase } from '@/lib/supabase';
 import Thumbstick from '@/components/Thumbstick';
 import ConsolePanel from '@/components/ConsolePanel';
-import ConsoleRift from '@/components/ConsoleRift';
-import { consoleLevel, type RiftTarget } from '@/lib/console';
+import { consoleLevel } from '@/lib/console';
 import { setFlag } from '@/lib/questFlags';
 import { checkSubscriptionStatus } from '@/lib/subscriptionStatus';
 import NpcDialogue from '@/components/NpcDialogue';
@@ -370,12 +369,10 @@ const DynamicRoom = () => {
   const fromMaze = searchParams.get('from') === 'maze';
   const consoleOriginLevel = consoleLevel(searchParams.get('level'));
   const [consoleOpen, setConsoleOpen] = useState(false);
-  const [riftTarget, setRiftTarget] = useState<RiftTarget | null>(null);
   const consoleOpenRef = useRef(false);
   const closeConsole = useCallback(() => {
     consoleOpenRef.current = false;
     setConsoleOpen(false);
-    setRiftTarget(null);
   }, []);
   const locationKey = params.locationKey ?? '';
   const routeLevel = Number(params.levelNumber);
@@ -383,7 +380,7 @@ const DynamicRoom = () => {
 
   const { user, loading: authLoading } = useAuth();
   // Auth refreshes hand out a new user object; key room effects on the id so a
-  // token refresh never reloads the room (and wipes an open rift card).
+  // token refresh never reloads the room (and wipes an open console).
   const userId = user?.id ?? null;
 
   const [room, setRoom] = useState<RoomLayout | null>(null);
@@ -1117,8 +1114,7 @@ const DynamicRoom = () => {
         disabled={openNpcKey !== null || consoleOpen}
       />
       {room?.garden && <GardenParticles config={room.garden} />}
-      <ConsolePanel open={consoleOpen && !riftTarget} level={consoleOriginLevel} onClose={closeConsole} onRift={setRiftTarget} />
-      {riftTarget && <ConsoleRift target={riftTarget} onClose={closeConsole} />}
+      <ConsolePanel open={consoleOpen} level={consoleOriginLevel} onClose={closeConsole} />
     </div>
   );
 };
